@@ -1,0 +1,61 @@
+{
+  "task_id": "MVP-F4-001",
+  "name": "Fase 4 — Finalização (Edge Cases + Infra + Demo)",
+  "status": "pending",
+  "description": "Polimento técnico do MVP: tratamento de edge cases (áudio, imagem, timeouts, leads inativos), rate limiting e logs estruturados no backend, documentação Swagger, containerização Docker Compose, e preparação da demo ponta a ponta de 10 minutos para o PO Diego.",
+  "dependencies": ["MVP-F1-001", "MVP-F2-001", "MVP-F3-001"],
+  "responsible": "Time completo — validação final PO Diego Gil",
+  "estimated_days": "Dias 21–25",
+  "steps": [
+    {
+      "id": "step1",
+      "description": "Tratamento de mídias no webhook: implementar fallback para audio, image e document conforme docs/design/ai_design.md seção 9. Resposta amigável ao cliente + log da mensagem não processada.",
+      "status": "pending"
+    },
+    {
+      "id": "step2",
+      "description": "Rate limiting: configurar slowapi (ou similar) — 100 req/min no webhook, 30 req/min nos endpoints /ia/*. Retornar HTTP 429 com mensagem amigável.",
+      "status": "pending"
+    },
+    {
+      "id": "step3",
+      "description": "Logs estruturados: garantir que todas as interações (entrada webhook, resposta IA, erros, transições de status) sejam logadas em JSON com campos: timestamp, endpoint, lead_id, action, error (quando aplicável).",
+      "status": "pending"
+    },
+    {
+      "id": "step4",
+      "description": "Tratamento de leads inativos: implementar job/cron ou endpoint para transição automática para status PERDIDO quando lead não responde por 30 dias.",
+      "status": "pending"
+    },
+    {
+      "id": "step5",
+      "description": "Revisar e completar documentação Swagger: garantir que todos os endpoints têm description, request body e response schemas documentados. Verificar acesso via GET /docs.",
+      "status": "pending"
+    },
+    {
+      "id": "step6",
+      "description": "Criar docker/docker-compose.yml: serviços backend (FastAPI + uvicorn), postgres:15, chromadb. Volumes para persistência do banco e do ChromaDB. Healthchecks para cada serviço. Testar docker-compose up do zero.",
+      "status": "pending"
+    },
+    {
+      "id": "step7",
+      "description": "Criar .env.example na raiz com todas as variáveis listadas em .claude/steering/tech.md. Garantir que .env está no .gitignore e firebase-service-account.json também.",
+      "status": "pending"
+    },
+    {
+      "id": "step8",
+      "description": "Testes de aceitação (14 critérios do spec.md seção 14.1): (1) WhatsApp → App < 2s, (2) IA responde com RAG correto (10 perguntas PO), (3) briefing ≥ 80% precisão (20 conversas), (4) lead criado automaticamente, (5) push < 2s, (6) lista leads OK, (7) demo ponta a ponta sem erros, (8) mídia tratada.",
+      "status": "pending"
+    },
+    {
+      "id": "step9",
+      "description": "Preparar demo de 10 minutos: roteiro com 12 etapas do fluxo principal (spec.md seção 9.1). Testar com número WhatsApp real. Preparar dispositivos: celular com app agência + celular com app cliente + ngrok ativo.",
+      "status": "pending"
+    },
+    {
+      "id": "step10",
+      "description": "Organização final do GitHub: revisar README (se existir), verificar .gitignore, garantir que não há credenciais commitadas, mover specs ativas para done/ após validação do PO Diego.",
+      "status": "pending"
+    }
+  ]
+}

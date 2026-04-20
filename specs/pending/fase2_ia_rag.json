@@ -1,0 +1,51 @@
+{
+  "task_id": "MVP-F2-001",
+  "name": "Fase 2 — IA + RAG (LangChain + AYA + Extração de Briefing)",
+  "status": "pending",
+  "description": "Implementação completa da camada de IA: assistente AYA com chain LangChain, pipeline RAG sobre a base de conhecimento da Cadife Tour, extração estruturada de briefing via PydanticOutputParser, motor de decisão de fluxo (score ≥ 60% → qualificação) e integração ponta a ponta WhatsApp → IA → Banco.",
+  "dependencies": ["MVP-F1-001"],
+  "responsible": "Frank Willian (AI) + Nikolas Tesch (Backend)",
+  "estimated_days": "Dias 7–13",
+  "steps": [
+    {
+      "id": "step1",
+      "description": "Criar estrutura de arquivos: backend/app/services/ai_service.py, rag_service.py. Configurar Settings para OPENAI_API_KEY e LANGCHAIN_API_KEY.",
+      "status": "pending"
+    },
+    {
+      "id": "step2",
+      "description": "Implementar rag_service.py: carregamento dos documentos .txt da base Cadife Tour, chunking (400 tokens, overlap 50), geração de embeddings OpenAI e indexação no ChromaDB local. Validar com PO Diego os documentos antes de indexar.",
+      "status": "pending"
+    },
+    {
+      "id": "step3",
+      "description": "Implementar o model BriefingExtracted (Pydantic) e o prompt de extração com PydanticOutputParser conforme docs/design/ai_design.md. Incluir testes de extração com 5 conversas de exemplo.",
+      "status": "pending"
+    },
+    {
+      "id": "step4",
+      "description": "Implementar ai_service.py: AYA chain com system prompt completo (restrições obrigatórias), RAG retriever, ConversationBufferWindowMemory por lead_id, chamada de extração de briefing a cada mensagem.",
+      "status": "pending"
+    },
+    {
+      "id": "step5",
+      "description": "Implementar motor de decisão em lead_service.py: calculate_completude_pct(), assign_lead_score(), transição automática de status em_atendimento → qualificado quando score ≥ 60%.",
+      "status": "pending"
+    },
+    {
+      "id": "step6",
+      "description": "Implementar endpoints POST /ia/processar e POST /ia/extrair-briefing conforme docs/contracts/api_contract.md. Adicionar GET /ia/status para health check.",
+      "status": "pending"
+    },
+    {
+      "id": "step7",
+      "description": "Integração ponta a ponta: conectar background task do webhook (Fase 1) ao ai_service.py → atualização do briefing no banco → trigger de notificação FCM (stub) quando lead qualificado.",
+      "status": "pending"
+    },
+    {
+      "id": "step8",
+      "description": "Testes: rodar as 10 perguntas predefinidas pelo PO Diego e validar: (a) respostas corretas via RAG, (b) extração de briefing com ≥ 80% de precisão, (c) IA nunca menciona preços/disponibilidade.",
+      "status": "pending"
+    }
+  ]
+}
