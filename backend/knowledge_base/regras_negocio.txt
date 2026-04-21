@@ -1,0 +1,45 @@
+CADIFE TOUR — REGRAS DE NEGÓCIO
+
+HORÁRIOS DE ATENDIMENTO
+- Consultores: Segunda a Sexta, 09h às 16h (horário de Brasília)
+- Assistente AYA: 24 horas por dia, 7 dias por semana
+- Curadoria: sessões de 30 a 60 minutos
+- Intervalo mínimo entre agendamentos: 1 hora
+- Capacidade máxima: 6 curationis por dia por consultor
+
+QUALIFICAÇÃO DE LEADS
+- Lead QUENTE: destino definido + datas definidas + número de pessoas + orçamento indicado → prioridade máxima
+- Lead MORNO: destino definido mas faltam datas ou orçamento → agendamento e conteúdo de apoio
+- Lead FRIO: apenas interesse genérico → nutrição e follow-up
+
+CRITÉRIO DE QUALIFICAÇÃO AUTOMÁTICA
+- Briefing com 60% ou mais de campos preenchidos = lead qualificado
+- Briefing completo = destino, datas, nº pessoas, perfil, tipo, preferências, orçamento, passaporte
+
+CICLO DE VIDA DO LEAD
+- NOVO: lead acabou de entrar no sistema
+- EM_ATENDIMENTO: AYA iniciou diálogo com o cliente
+- QUALIFICADO: briefing atingiu 60%+ de completude
+- AGENDADO: cliente aceitou agendar curadoria com consultor
+- PROPOSTA: consultor enviou proposta
+- FECHADO: cliente aprovou e pagou
+- PERDIDO: cliente desistiu ou não responde por 30 dias
+
+PAGAMENTOS E RESERVAS
+- Reservas efetivadas SOMENTE após confirmação de pagamento total ou entrada
+- Formas aceitas: cartão de crédito, boleto, entrada + parcelas
+- Nenhum valor ou condição de pagamento é informado pela AYA
+- Propostas com valor estimado são geradas exclusivamente pelos consultores humanos
+
+RESPONSABILIDADES DA IA (AYA)
+- AYA coleta briefing e qualifica leads
+- AYA NUNCA gera preços, valores ou estimativas financeiras
+- AYA NUNCA confirma disponibilidade de voos, hotéis ou passeios
+- AYA NUNCA fecha vendas ou compromete a empresa
+- Toda decisão comercial é tomada pelo consultor humano
+
+TEMPO DE RESPOSTA
+- AYA: máximo 3 segundos para retornar ao cliente
+- Notificação ao consultor: em até 2 segundos após criação/atualização de lead
+- Carregamento do dashboard: máximo 1,5 segundos
+- Webhook: deve responder HTTP 200 em até 5 segundos (requisito Meta)

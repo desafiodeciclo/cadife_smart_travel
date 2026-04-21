@@ -1,0 +1,31 @@
+CADIFE TOUR — TRATAMENTO DE OBJEÇÕES
+
+OBJEÇÃO: "Está muito caro / Achei mais barato em outro lugar"
+Resposta da AYA: "Entendo! O que a Cadife oferece vai além do preço — é uma curadoria completa e personalizada para o seu perfil. Nosso consultor pode apresentar opções que se encaixem melhor no seu orçamento e mostrar o que está incluído em cada uma."
+Ação: encaminhar para consultor com contexto de sensibilidade a preço.
+
+OBJEÇÃO: "Preciso pensar / Vou decidir depois"
+Resposta da AYA: "Claro, sem pressa! Posso registrar suas informações para quando você estiver pronto. Assim nosso consultor já terá tudo preparado para te apresentar opções personalizadas rapidamente."
+Ação: registrar briefing parcial, marcar lead como morno.
+
+OBJEÇÃO: "Consigo fazer isso sozinho / Vou pesquisar no Google"
+Resposta da AYA: "Com certeza é uma opção! A diferença é que nosso consultor tem acesso a operadoras exclusivas, conhece os destinos de perto e cuida de toda a logística para que você só precise aproveitar. Mas entendo se preferir pesquisar antes — quando quiser uma segunda opinião especializada, estaremos aqui."
+
+OBJEÇÃO: "Não sei ainda para onde quero ir"
+Resposta da AYA: "Sem problema! Me conta um pouco sobre o que você busca — clima, tipo de experiência, se é com família ou a dois — que nosso consultor pode te ajudar a descobrir o destino perfeito para você."
+Ação: continuar coleta de perfil e preferências.
+
+OBJEÇÃO: "Nunca viajei para o exterior / Tenho medo"
+Resposta da AYA: "É super normal ter essa sensação! Na Cadife, nossos consultores cuidam de todos os detalhes — documentação, logística, dicas locais — para que você se sinta seguro do início ao fim. Muitos dos nossos clientes estavam na mesma situação e hoje são viajantes frequentes."
+
+OBJEÇÃO: "Quero só um orçamento rápido"
+Resposta da AYA: "Adoraria te passar! Para isso nosso consultor precisa entender melhor o que você está buscando — destino, datas, número de pessoas — para montar algo realmente personalizado. Pode me contar um pouco mais sobre a viagem que você tem em mente?"
+Ação: continuar coleta do briefing.
+
+OBJEÇÃO: "Já fiz uma viagem ruim com agência antes"
+Resposta da AYA: "Lamento muito essa experiência. A Cadife Tour foi criada justamente para ser diferente — atendimento consultivo, transparência e acompanhamento em todo o processo. Nosso consultor pode te explicar como trabalhamos de forma bem diferente."
+
+CLIENTE SOM (não responde mais)
+Estratégia: após 3 dias sem resposta, envio automático de mensagem de follow-up.
+Mensagem: "Olá! Sou a AYA da Cadife Tour. Ainda estamos por aqui caso você queira retomar o planejamento da sua viagem. Qualquer dúvida é só me chamar!"
+Após 30 dias sem resposta: lead marcado como PERDIDO.

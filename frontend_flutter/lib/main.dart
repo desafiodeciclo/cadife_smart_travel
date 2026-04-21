@@ -26,34 +26,15 @@ Future<void> main() async {
 
   final container = ProviderContainer(
     overrides: [
-      // ── Auth ──
       authPortProvider.overrideWithValue(sl<AuthPort>()),
-
-      // ── Agency: Dashboard ──
       agency_dash.dashboardLeadPortProvider.overrideWithValue(sl<LeadPort>()),
-
-      // ── Agency: Leads ──
       agency_leads.leadPortProvider.overrideWithValue(sl<LeadPort>()),
-
-      // ── Agency: Lead Detail ──
       agency_detail.leadPortProvider.overrideWithValue(sl<LeadPort>()),
-
-      // ── Agency: Agenda ──
       agency_agenda.agendaPortProvider.overrideWithValue(sl<AgendaPort>()),
-
-      // ── Agency: Proposals ──
       agency_proposals.proposalPortProvider.overrideWithValue(sl<ProposalPort>()),
-
-      // ── Client: Trip Status ──
       client_trip.clientLeadPortProvider.overrideWithValue(sl<LeadPort>()),
-
-      // ── Client: Interactions ──
       client_interactions.interactionsPortProvider.overrideWithValue(sl<LeadPort>()),
-
-      // ── Client: Documents ──
       client_docs.documentsProvider.overrideWithValue(null),
-
-      // ── Client: Profile ──
       client_profile.profileAuthProvider.overrideWithValue(sl<AuthPort>()),
     ],
   );
