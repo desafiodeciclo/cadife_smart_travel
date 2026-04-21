@@ -1,0 +1,61 @@
+# ========================
+# SISTEMA OPERACIONAL
+# ========================
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+Thumbs.db
+
+# ========================
+# LOGS
+# ========================
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ========================
+# NODE / FRONT-END
+# ========================
+node_modules/
+dist/
+build/
+coverage/
+
+# ========================
+# AMBIENTE
+# ========================
+.env
+.env.*
+
+# ========================
+# IDE / EDITORES
+# ========================
+.vscode/
+.idea/
+*.swp
+
+# ========================
+# PYTHON
+# ========================
+__pycache__/
+*.pyc
+venv/
+.envrc
+
+# ========================
+# FLUTTER / DART
+# ========================
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# ========================
+# GIT PROBLEMAS MAC
+# ========================
+.git/objects/pack/._*
+
+
