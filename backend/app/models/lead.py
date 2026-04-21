@@ -1,7 +1,13 @@
 import uuid
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
+
+if TYPE_CHECKING:
+    from app.models.briefing import Briefing
+    from app.models.interacao import Interacao
+    from app.models.agendamento import Agendamento
+    from app.models.proposta import Proposta
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, String, func
 from sqlalchemy.dialects.postgresql import UUID
@@ -9,6 +15,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from pydantic import BaseModel
 
 from app.core.database import Base
+from app.infrastructure.security.pii_encryption import EncryptedString
 
 
 class LeadOrigem(str, Enum):
@@ -37,8 +44,9 @@ class Lead(Base):
     __tablename__ = "leads"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    nome: Mapped[Optional[str]] = mapped_column(String(255))
-    telefone: Mapped[str] = mapped_column(String(20), unique=True, nullable=False, index=True)
+    # PII: campos criptografados at-rest via Fernet (AES-128)
+    nome: Mapped[Optional[str]] = mapped_column(EncryptedString(512))
+    telefone: Mapped[str] = mapped_column(EncryptedString(512), unique=True, nullable=False, index=True)
     origem: Mapped[LeadOrigem] = mapped_column(String(20), nullable=False, default=LeadOrigem.whatsapp)
     status: Mapped[LeadStatus] = mapped_column(String(30), nullable=False, default=LeadStatus.novo)
     score: Mapped[Optional[LeadScore]] = mapped_column(String(10))
