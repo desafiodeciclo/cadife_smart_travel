@@ -1,4 +1,3 @@
-import math
 import uuid
 from typing import Optional
 
@@ -6,9 +5,10 @@ import structlog
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.domain.entities.enums import LeadScore, LeadStatus, TipoMensagem
 from app.models.briefing import Briefing, BriefingExtracted, calculate_completude
-from app.models.interacao import Interacao, TipoMensagem
-from app.models.lead import Lead, LeadCreate, LeadScore, LeadStatus
+from app.models.interacao import Interacao
+from app.models.lead import Lead
 
 logger = structlog.get_logger()
 
@@ -80,7 +80,7 @@ async def list_leads(
 
     query = query.order_by(Lead.criado_em.desc()).offset((page - 1) * limit).limit(limit)
     result = await db.execute(query)
-    return result.scalars().all(), total
+    return list(result.scalars().all()), total
 
 
 async def update_lead_status(db: AsyncSession, lead: Lead, new_status: LeadStatus) -> Lead:
