@@ -104,20 +104,20 @@ class _BriefingCard extends StatelessWidget {
               ],
             ),
             const Divider(),
-            if (briefing['destino'] != null) _Row('Destino', briefing['destino']),
-            if (briefing['data_ida'] != null) _Row('Ida', briefing['data_ida']),
-            if (briefing['data_volta'] != null) _Row('Volta', briefing['data_volta']),
-            if (briefing['qtd_pessoas'] != null) _Row('Pessoas', '${briefing['qtd_pessoas']}'),
-            if (briefing['perfil'] != null) _Row('Perfil', briefing['perfil']),
-            if (briefing['orcamento'] != null) _Row('Orçamento', briefing['orcamento']),
-            if (briefing['observacoes'] != null) _Row('Obs.', briefing['observacoes']),
+            if (briefing['destino'] != null) _row('Destino', briefing['destino']),
+            if (briefing['data_ida'] != null) _row('Ida', briefing['data_ida']),
+            if (briefing['data_volta'] != null) _row('Volta', briefing['data_volta']),
+            if (briefing['qtd_pessoas'] != null) _row('Pessoas', '${briefing['qtd_pessoas']}'),
+            if (briefing['perfil'] != null) _row('Perfil', briefing['perfil']),
+            if (briefing['orcamento'] != null) _row('Orçamento', briefing['orcamento']),
+            if (briefing['observacoes'] != null) _row('Obs.', briefing['observacoes']),
           ],
         ),
       ),
     );
   }
 
-  Widget _Row(String label, String value) => Padding(
+  Widget _row(String label, String value) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: Row(
           children: [
