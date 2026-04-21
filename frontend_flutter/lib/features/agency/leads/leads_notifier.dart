@@ -1,11 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../services/api_service.dart';
-import '../../auth/auth_notifier.dart';
 import 'leads_repository.dart';
-
-final leadsRepositoryProvider = Provider<LeadsRepository>(
-  (ref) => LeadsRepository(ref.read(apiServiceProvider)),
-);
 
 class LeadsNotifier extends AsyncNotifier<List<Lead>> {
   @override

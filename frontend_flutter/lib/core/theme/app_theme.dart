@@ -36,7 +36,7 @@ class AppTheme {
             textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
         ),
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           color: AppColors.cardBackground,
           elevation: 1,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

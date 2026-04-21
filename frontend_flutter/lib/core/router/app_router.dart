@@ -26,21 +26,21 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
-      GoRoute(path: '/auth/login', builder: (_, __) => const LoginScreen()),
+      GoRoute(path: '/auth/login', builder: (_, _) => const LoginScreen()),
 
       // Agency routes
-      GoRoute(path: '/agency/dashboard', builder: (_, __) => const DashboardScreen()),
-      GoRoute(path: '/agency/leads', builder: (_, __) => const LeadsScreen()),
+      GoRoute(path: '/agency/dashboard', builder: (_, _) => const DashboardScreen()),
+      GoRoute(path: '/agency/leads', builder: (_, _) => const LeadsScreen()),
       GoRoute(
         path: '/agency/leads/:id',
         builder: (_, state) => LeadDetailScreen(leadId: state.pathParameters['id']!),
       ),
-      GoRoute(path: '/agency/agenda', builder: (_, __) => const AgendaScreen()),
+      GoRoute(path: '/agency/agenda', builder: (_, _) => const AgendaScreen()),
 
       // Client routes
-      GoRoute(path: '/client/status', builder: (_, __) => const StatusScreen()),
-      GoRoute(path: '/client/historico', builder: (_, __) => const HistoricoScreen()),
-      GoRoute(path: '/client/documentos', builder: (_, __) => const DocumentosScreen()),
+      GoRoute(path: '/client/status', builder: (_, _) => const StatusScreen()),
+      GoRoute(path: '/client/historico', builder: (_, _) => const HistoricoScreen()),
+      GoRoute(path: '/client/documentos', builder: (_, _) => const DocumentosScreen()),
     ],
   );
 });

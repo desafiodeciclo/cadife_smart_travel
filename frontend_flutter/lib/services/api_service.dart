@@ -1,5 +1,8 @@
 import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+final apiServiceProvider = Provider<ApiService>((ref) => ApiService());
 
 const String _baseUrl = 'http://localhost:8000';
 const String _tokenKey = 'access_token';
