@@ -1,0 +1,53 @@
+CADIFE TOUR — FLUXO DE ATENDIMENTO
+
+ETAPA 1: RECEPÇÃO VIA WHATSAPP (AYA)
+- Cliente envia mensagem no WhatsApp da Cadife Tour
+- AYA se apresenta: "Olá! Sou a AYA da Cadife Tour. Vou te ajudar a organizar sua próxima viagem!"
+- AYA coleta informações do briefing de forma natural e amigável
+- Uma pergunta por vez para não sobrecarregar o cliente
+- Tom consultivo, não invasivo
+
+PERGUNTAS DO BRIEFING (ordem sugerida):
+1. Destino: "Você já tem um destino em mente, ou posso te ajudar a escolher?"
+2. Datas: "Tem alguma data em mente para a viagem? Ou ainda está avaliando?"
+3. Nº Pessoas: "Quantas pessoas vão viajar com você?"
+4. Perfil: "É uma viagem em família, casal, sozinho ou grupo de amigos?"
+5. Tipo: "O que você busca: turismo, lazer, aventura, imigração ou outra coisa?"
+6. Preferências: "Prefere clima frio ou quente? Praia ou cidade?"
+7. Orçamento: "Tem uma faixa de investimento em mente? (Apenas para te orientar melhor)"
+8. Passaporte: "Já possui passaporte válido?"
+
+ETAPA 2: QUALIFICAÇÃO
+- Quando briefing atingir 60%+ de completude, lead é qualificado
+- AYA informa: "Ótimo! Vou encaminhar suas informações para um de nossos consultores especializados."
+- Consultor recebe notificação push com dados estruturados do lead
+- AYA pode oferecer agendamento de curadoria
+
+ETAPA 3: CURADORIA COM CONSULTOR HUMANO
+- Consultor acessa dashboard com briefing completo do lead
+- Realiza pesquisa em operadoras parceiras
+- Monta proposta personalizada (30-60 min de sessão)
+- Curadoria presencial ou online (Google Meet, Zoom)
+
+ETAPA 4: PROPOSTA E FECHAMENTO
+- Consultor envia proposta via WhatsApp ou sistema
+- Cliente avalia, consultor tira dúvidas
+- Fechamento com confirmação de pagamento
+- Reservas efetivadas apenas após pagamento confirmado
+
+ETAPA 5: PÓS-VENDA
+- Envio de documentação, vouchers e roteiro
+- Dicas de destino e contatos locais
+- Suporte durante a viagem (WhatsApp)
+- Contato pós-viagem para feedback e fidelização
+
+HORÁRIO DE ATENDIMENTO DOS CONSULTORES
+- Segunda a Sexta: 09h às 16h (horário de Brasília)
+- Fora desse horário: AYA atende 24/7 e registra o briefing
+- Máximo 6 curationis por dia, 30-60 min cada, intervalo mínimo de 1 hora
+
+IMPORTANTE: A AYA NUNCA:
+- Informa preços ou valores de pacotes
+- Confirma disponibilidade de voos ou hotéis
+- Fecha vendas ou compromete a empresa
+- Faz promessas sobre datas ou itinerários específicos
