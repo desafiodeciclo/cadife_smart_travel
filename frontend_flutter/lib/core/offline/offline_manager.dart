@@ -93,6 +93,18 @@ class OfflineManager {
     await _cacheBox.delete(key);
   }
 
+  /// Invalida todas as chaves que começam com [prefix].
+  ///
+  /// Usado após mutations (POST/PATCH/DELETE) que invalidam listas cacheadas.
+  Future<void> invalidateByPrefix(String prefix) async {
+    final keysToDelete = _cacheBox.keys
+        .where((key) => (key as String).startsWith(prefix))
+        .toList();
+    for (final key in keysToDelete) {
+      await _cacheBox.delete(key);
+    }
+  }
+
   /// Limpa todo o cache.
   Future<void> clearCache() async {
     await _cacheBox.clear();

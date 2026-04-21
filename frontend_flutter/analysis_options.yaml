@@ -1,13 +1,5 @@
 include: package:flutter_lints/flutter.yaml
 
-# ── Custom Lint Rules (Cadife) ──────────────────────────
-# Será habilitado quando custom_lint_builder for compatível com o SDK.
-# custom_lint:
-#   rules:
-#     - no_hardcoded_hex_color
-#     - no_navigator_push_direct
-#     - use_repository_pattern
-
 analyzer:
   exclude:
     - "**/*.g.dart"
@@ -18,7 +10,6 @@ analyzer:
     - "packages/**"
 
   errors:
-    # Erros que impedem merge — tratados como hard errors no CI
     avoid_print: error
     prefer_single_quotes: error
     always_use_package_imports: error
@@ -32,7 +23,6 @@ analyzer:
 
 linter:
   rules:
-    # ── Erros Bloqueantes (PR não merge sem corrigir) ─────
     avoid_print: true
     prefer_single_quotes: true
     always_use_package_imports: true
@@ -44,7 +34,6 @@ linter:
     use_key_in_widget_constructors: true
     sized_box_for_whitespace: true
 
-    # ── Qualidade ────────────────────────────────────────
     avoid_unnecessary_containers: true
     prefer_is_empty: true
     prefer_is_not_empty: true
@@ -53,7 +42,6 @@ linter:
     unnecessary_const: true
     unnecessary_new: true
     unnecessary_this: true
-    prefer_relative_imports: false
     always_specify_types: false
     avoid_types_on_closure_parameters: true
     cancel_subscriptions: true
@@ -67,17 +55,12 @@ linter:
     use_build_context_synchronously: true
     use_rethrow_when_possible: true
 
-    # ── Naming ───────────────────────────────────────────
     library_names: true
     file_names: true
     library_prefixes: true
     type_annotate_public_apis: true
     unnecessary_library_name: true
 
-    # ── Imports ──────────────────────────────────────────
     avoid_relative_lib_imports: true
     no_leading_underscores_for_local_identifiers: true
     no_leading_underscores_for_library_prefixes: true
-
-    # ── Documentation (opcional para MVP) ────────────────
-    # public_member_api_docs: true

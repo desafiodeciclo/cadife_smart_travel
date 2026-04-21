@@ -1,3 +1,1 @@
-// Barrel export — widgets compartilhados
-// export 'error_widget.dart';
-// export 'loading_widget.dart';
+export 'feedback_widgets.dart';

@@ -1,6 +1,3 @@
-// Barrel export — features da Agência
-// export 'dashboard/dashboard.dart';
-// export 'leads/leads.dart';
-// export 'lead_detail/lead_detail.dart';
-// export 'agenda/agenda.dart';
-// export 'proposals/proposals.dart';
+// Features Agency — cada sub-feature exporta seusproviders com prefixo único
+// Para evitar ambiguous exports, NÃO usar barrel global.
+// Importe diretamente: import 'package:cadife_smart_travel/features/agency/leads/leads_provider.dart';

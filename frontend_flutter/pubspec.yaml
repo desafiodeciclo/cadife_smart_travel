@@ -26,14 +26,12 @@ dependencies:
   dio: ^5.7.0
   connectivity_plus: ^6.1.1
 
-  # Offline-First DB (Hive — Isar será adicionado quando resolver conflito de analyzer)
+  # Offline-First DB (Hive)
   hive: ^2.2.3
   hive_flutter: ^1.1.0
 
   # Security
   crypto: ^3.0.5
-
-  # Crypto / Cert Pinning
   flutter_secure_storage: ^9.2.4
 
   # Firebase
@@ -53,13 +51,9 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  # Lint / Analysis
+  # Lint / Analysis / Metrics
   flutter_lints: ^6.0.0
-  # custom_lint_rules: path: packages/custom_lint_rules  # Incompatível com analyzer atual — ativar quando _macros estiver no SDK
-
-  # Build tools (geradores manuais — sem code gen automático por conflitos de analyzer)
-  build_runner: ^2.4.14
-  json_serializable: ^6.9.3
+  dart_code_metrics: ^5.7.6
 
   # Testing
   mocktail: ^1.0.4

@@ -1,0 +1,78 @@
+metrics:
+  cyclomatic-complexity: 20
+  number-of-arguments: 4
+  number-of-parameters: 4
+  maximum-nesting-level: 5
+  source-lines-of-code: 50
+  number-of-methods: 10
+  weight-of-class: 0.5
+  coupling-between-objects: 10
+  maintainability-index: 50
+  technical-debt:
+    threshold: 16
+    todo-cost: 1
+    neglect-cost: 2
+
+rules:
+  # ── Architecture ────────────────────────────────────────
+  - no-boolean-literal-compare
+  - no-empty-block
+  - no-equal-then-else
+  - no-magic-number:
+      allowed: [0, 1, -1, 2, 100, 200, 201, 204, 400, 401, 403, 404, 500]
+  - no-object-declaration-in-interface
+  - prefer-trailing-comma
+  - prefer-single-widget-file-per-file
+  - prefer-match-file-name
+  - prefer-conditional-expressions
+  - avoid-late-keyword:
+      ignore-private: true
+  - avoid-non-null-assertion
+  - avoid-self-compare
+  - avoid-shadowing
+  - avoid-redundant-async
+  - avoid-unnecessary-setstate
+
+  # ── Collection ─────────────────────────────────────────
+  - prefer-iterable-of
+  - list-all-equality
+  - avoid-non-null-assertion
+
+  # ── Flutter-specific ───────────────────────────────────
+  - prefer-using-list-view
+  - prefer-const-border-radius
+  - prefer-const-border-radius
+  - avoid-border-radius-all
+  - prefer-extracting-callbacks
+  - avoid-returning-widgets
+  - avoid-expanded-as-spacer
+  - prefer-const-constructors-in-immutables
+  - prefer-const-literals-as-constructors
+  - use-setstate-safely
+
+  # ── Style ──────────────────────────────────────────────
+  - prefer-single-quotes
+  - prefer-moving-to-variable
+  - member-ordering:
+      ordering:
+        - fields
+        - constructors
+        - methods
+
+anti-patterns:
+  - long-method:
+      threshold: 40
+  - long-parameter-list:
+      threshold: 4
+  - god-class:
+      threshold: 0.7
+  - feature-envy:
+      threshold: 0.5
+
+exclude:
+  - "**/*.g.dart"
+  - "**/*.freezed.dart"
+  - "**/*.gr.dart"
+  - "build/**"
+  - ".dart_tool/**"
+  - "packages/**"

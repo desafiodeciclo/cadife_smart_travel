@@ -1,22 +1,67 @@
 import 'package:cadife_smart_travel/core/di/service_locator.dart';
+import 'package:cadife_smart_travel/core/ports/agenda_port.dart';
+import 'package:cadife_smart_travel/core/ports/auth_port.dart';
+import 'package:cadife_smart_travel/core/ports/lead_port.dart';
+import 'package:cadife_smart_travel/core/ports/proposal_port.dart';
 import 'package:cadife_smart_travel/core/router/app_router.dart';
 import 'package:cadife_smart_travel/core/theme/app_theme.dart';
+import 'package:cadife_smart_travel/features/agency/agenda/agenda_provider.dart' as agency_agenda;
+import 'package:cadife_smart_travel/features/agency/dashboard/dashboard_provider.dart' as agency_dash;
+import 'package:cadife_smart_travel/features/agency/lead_detail/lead_detail_provider.dart' as agency_detail;
+import 'package:cadife_smart_travel/features/agency/leads/leads_provider.dart' as agency_leads;
+import 'package:cadife_smart_travel/features/agency/proposals/proposals_provider.dart' as agency_proposals;
+import 'package:cadife_smart_travel/features/auth/providers/auth_provider.dart';
+import 'package:cadife_smart_travel/features/client/documents/documents_provider.dart' as client_docs;
+import 'package:cadife_smart_travel/features/client/interactions/interactions_provider.dart' as client_interactions;
+import 'package:cadife_smart_travel/features/client/profile/profile_provider.dart' as client_profile;
+import 'package:cadife_smart_travel/features/client/trip_status/trip_status_provider.dart' as client_trip;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 1. Inicializa DI (get_it)
   await setupServiceLocator();
-
-  // 2. Inicializa infra offline (Hive)
   await initDependencies();
 
-  // 3. Firebase — será habilitado na Fase 3
-  // await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  final container = ProviderContainer(
+    overrides: [
+      // ── Auth ──
+      authPortProvider.overrideWithValue(sl<AuthPort>()),
 
-  runApp(const ProviderScope(child: CadifeApp()));
+      // ── Agency: Dashboard ──
+      agency_dash.dashboardLeadPortProvider.overrideWithValue(sl<LeadPort>()),
+
+      // ── Agency: Leads ──
+      agency_leads.leadPortProvider.overrideWithValue(sl<LeadPort>()),
+
+      // ── Agency: Lead Detail ──
+      agency_detail.leadPortProvider.overrideWithValue(sl<LeadPort>()),
+
+      // ── Agency: Agenda ──
+      agency_agenda.agendaPortProvider.overrideWithValue(sl<AgendaPort>()),
+
+      // ── Agency: Proposals ──
+      agency_proposals.proposalPortProvider.overrideWithValue(sl<ProposalPort>()),
+
+      // ── Client: Trip Status ──
+      client_trip.clientLeadPortProvider.overrideWithValue(sl<LeadPort>()),
+
+      // ── Client: Interactions ──
+      client_interactions.interactionsPortProvider.overrideWithValue(sl<LeadPort>()),
+
+      // ── Client: Documents ──
+      client_docs.documentsProvider.overrideWithValue(null),
+
+      // ── Client: Profile ──
+      client_profile.profileAuthProvider.overrideWithValue(sl<AuthPort>()),
+    ],
+  );
+
+  runApp(UncontrolledProviderScope(
+    container: container,
+    child: const CadifeApp(),
+  ));
 }
 
 class CadifeApp extends ConsumerWidget {
