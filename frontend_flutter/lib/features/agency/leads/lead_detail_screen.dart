@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../services/api_service.dart';
 import '../../auth/auth_notifier.dart';
+import 'leads_notifier.dart';
 import 'leads_repository.dart';
 
 final _leadDetailProvider = FutureProvider.family<Map<String, dynamic>, String>(
