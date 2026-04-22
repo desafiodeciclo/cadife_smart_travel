@@ -6,6 +6,7 @@ import 'package:cadife_smart_travel/features/agency/leads/lead_detail_screen.dar
 import 'package:cadife_smart_travel/features/agency/leads/leads_screen.dart';
 import 'package:cadife_smart_travel/features/auth/auth_notifier.dart';
 import 'package:cadife_smart_travel/features/auth/login_screen.dart';
+import 'package:cadife_smart_travel/features/auth/presentation/screens/login_screen.dart';
 import 'package:cadife_smart_travel/features/client/documentos/documentos_screen.dart';
 import 'package:cadife_smart_travel/features/client/historico/historico_screen.dart';
 import 'package:cadife_smart_travel/features/client/status/status_screen.dart';
