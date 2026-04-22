@@ -1,8 +1,7 @@
 import uuid
 from datetime import datetime
 from decimal import Decimal
-from enum import Enum
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import DateTime, ForeignKey, Numeric, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
@@ -10,14 +9,10 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from pydantic import BaseModel
 
 from app.core.database import Base
+from app.domain.entities.enums import PropostaStatus
 
-
-class PropostaStatus(str, Enum):
-    rascunho = "rascunho"
-    enviada = "enviada"
-    aprovada = "aprovada"
-    recusada = "recusada"
-    em_revisao = "em_revisao"
+if TYPE_CHECKING:
+    from app.models.lead import Lead
 
 
 class Proposta(Base):

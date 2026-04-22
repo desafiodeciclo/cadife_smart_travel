@@ -6,7 +6,7 @@ from typing import Optional
 from sqlalchemy import Boolean, DateTime, String, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 
 from app.core.database import Base
 

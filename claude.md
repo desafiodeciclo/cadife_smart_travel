@@ -18,9 +18,15 @@ Plataforma de atendimento turístico inteligente para a **Cadife Tour**:
 
 Execute nesta ordem antes de tocar qualquer código:
 
-1. Leia `.claude/steering/product.md` — propósito, limites e regras de negócio do produto
-2. Leia `.claude/steering/tech.md` — stack, padrões, SLAs e convenções técnicas
-3. Leia `.claude/steering/structure.md` — topologia do monorepo e fronteiras de camada
+1. Leia `.claude/steering/` — modularizado em:
+    - `product.md` (Visão e Identidade)
+    - `tech.md` (Stack e Padrões)
+    - `structure.md` (Topologia e Nomenclatura)
+    - `data_models.md` (Entidades e Schemas)
+    - `api_endpoints.md` (Contratos REST)
+    - `ai_agent.md` (IA/RAG Specs)
+    - `workflows_rules.md` (Fluxos e Regras)
+    - `agile_and_team.md` (Gestão e Equipe)
 4. Leia `.claude/rules/` — regras ativas por camada (backend, flutter, AI)
 5. Verifique `specs/active/` — há tasks em andamento? Retome-as do último step incompleto.
 6. Se `specs/active/` vazio, verifique `specs/pending/` — assuma a próxima task disponível.
@@ -66,6 +72,7 @@ docs/ → specs/pending/ → specs/active/ → [código] → specs/done/
 5. **Briefing score ≥ 60%** para transição de status `em_atendimento → qualificado`.
 6. **Soft delete** no endpoint `DELETE /leads/{id}` — nunca deletar fisicamente registros de leads.
 7. **HTTPS obrigatório** em todos os ambientes (ngrok para dev local).
+8. **Testes Obrigatórios:** Toda nova funcionalidade ou correção deve acompanhar seus respectivos testes (Pytest no backend, Flutter Test no frontend).
 
 ---
 
@@ -91,14 +98,15 @@ docs/ → specs/pending/ → specs/active/ → [código] → specs/done/
 
 | Necessidade | Arquivo |
 |---|---|
-| Regras de negócio completas (score, status, horários) | `docs/requirements/mvp_requirements.md` |
-| Modelagem de dados completa (entidades, campos, tipos) | `docs/design/architecture.md` |
-| Contrato completo da API (endpoints + schemas JSON) | `docs/contracts/api_contract.md` |
-| Design da camada IA / RAG / prompts AYA | `docs/design/ai_design.md` |
+| Regras de negócio completas (score, status, horários) | `.claude/steering/workflows_rules.md` |
+| Modelagem de dados completa (entidades, campos, tipos) | `.claude/steering/data_models.md` |
+| Contrato completo da API (endpoints + schemas JSON) | `.claude/steering/api_endpoints.md` |
+| Design da camada IA / RAG / prompts AYA | `.claude/steering/ai_agent.md` |
+| Gestão, Cronograma e Equipe | `.claude/steering/agile_and_team.md` |
 | Design das telas Flutter (fluxos, estados) | `docs/design/flutter_design.md` |
 | Decisões arquiteturais registradas | `docs/adr/` |
 | Bugs reportados com trace | `docs/bugs/` |
-| Visão executiva do produto (brief) | `docs/brief.md` |
+| Visão executiva do produto (brief) | `.claude/steering/product.md` |
 
 ---
 

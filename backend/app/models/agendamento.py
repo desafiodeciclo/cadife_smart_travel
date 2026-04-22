@@ -1,7 +1,6 @@
 import uuid
 from datetime import date, datetime, time
-from enum import Enum
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import Date, DateTime, ForeignKey, String, Time, func
 from sqlalchemy.dialects.postgresql import UUID
@@ -9,18 +8,10 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from pydantic import BaseModel
 
 from app.core.database import Base
+from app.domain.entities.enums import AgendamentoStatus, AgendamentoTipo
 
-
-class AgendamentoStatus(str, Enum):
-    pendente = "pendente"
-    confirmado = "confirmado"
-    realizado = "realizado"
-    cancelado = "cancelado"
-
-
-class AgendamentoTipo(str, Enum):
-    online = "online"
-    presencial = "presencial"
+if TYPE_CHECKING:
+    from app.models.lead import Lead
 
 
 class Agendamento(Base):

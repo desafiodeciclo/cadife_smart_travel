@@ -1,4 +1,5 @@
-import '../../../services/api_service.dart';
+import 'package:cadife_smart_travel/services/api_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class Lead {
   final String id;
@@ -36,9 +37,9 @@ class LeadsRepository {
 
   Future<List<Lead>> getLeads({String? status, String? score, String? search, int page = 1}) async {
     final response = await _api.get('/leads', queryParameters: {
-      if (status != null) 'status': status,
-      if (score != null) 'score': score,
-      if (search != null) 'search': search,
+      'status': ?status,
+      'score': ?score,
+      'search': ?search,
       'page': page,
       'limit': 20,
     });
@@ -59,3 +60,7 @@ class LeadsRepository {
     await _api.delete('/leads/$id');
   }
 }
+
+final leadsRepositoryProvider = Provider<LeadsRepository>((ref) {
+  return LeadsRepository(ref.watch(apiServiceProvider));
+});

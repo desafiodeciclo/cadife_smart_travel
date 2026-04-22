@@ -24,10 +24,17 @@ build/
 coverage/
 
 # ========================
-# AMBIENTE
+# AMBIENTE / SEGURANÇA
 # ========================
 .env
 .env.*
+claude_local.md
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+secret.txt
 
 # ========================
 # IDE / EDITORES
@@ -43,6 +50,11 @@ __pycache__/
 *.pyc
 venv/
 .envrc
+.mypy_cache/
+.pytest_cache/
+.ipynb_checkpoints/
+local.py
+settings_local.py
 
 # ========================
 # FLUTTER / DART
@@ -57,5 +69,13 @@ build/
 # GIT PROBLEMAS MAC
 # ========================
 .git/objects/pack/._*
+
+# ========================
+# DIVERSOS
+# ========================
+.history/
+*.bak
+*.tmp
+docker-compose.override.yml
 
 

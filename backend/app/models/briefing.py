@@ -1,7 +1,6 @@
 import uuid
 from datetime import date
-from enum import Enum
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import Boolean, Date, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
@@ -9,21 +8,10 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from pydantic import BaseModel, Field
 
 from app.core.database import Base
+from app.domain.entities.enums import PerfilViagem, OrcamentoPerfil as OrcamentoNivel
 
-
-class PerfilViagem(str, Enum):
-    casal = "casal"
-    familia = "família"
-    solo = "solo"
-    grupo = "grupo"
-    amigos = "amigos"
-
-
-class OrcamentoNivel(str, Enum):
-    baixo = "baixo"
-    medio = "médio"
-    alto = "alto"
-    premium = "premium"
+if TYPE_CHECKING:
+    from app.models.lead import Lead
 
 
 BRIEFING_FIELDS = [
