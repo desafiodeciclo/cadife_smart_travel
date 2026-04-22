@@ -1,5 +1,8 @@
 import 'package:cadife_smart_travel/core/network/dio_client.dart';
+import 'package:cadife_smart_travel/core/network/interceptors/auth_interceptor.dart';
+import 'package:cadife_smart_travel/core/network/interceptors/error_interceptor.dart';
 import 'package:cadife_smart_travel/core/network/network_info.dart';
+import 'package:cadife_smart_travel/core/offline/offline_interceptor.dart';
 import 'package:cadife_smart_travel/core/offline/offline_manager.dart';
 import 'package:cadife_smart_travel/core/offline/offline_sync_queue.dart';
 import 'package:cadife_smart_travel/core/ports/agenda_port.dart';
@@ -12,6 +15,7 @@ import 'package:cadife_smart_travel/data/repositories/auth_repository_impl.dart'
 import 'package:cadife_smart_travel/data/repositories/lead_repository_impl.dart';
 import 'package:cadife_smart_travel/data/repositories/proposal_repository_impl.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 
 /// Service Locator global — get_it com registro explícito e lifecycle controlado.
@@ -22,11 +26,13 @@ final sl = GetIt.instance;
 
 /// Registra TODOS os serviços core e ports por módulo.
 ///
+/// [onTokenExpired] — callback acionado quando o refresh de token falha.
+/// Tipicamente chama `authProvider.notifier.logout()` para disparar o redirect do GoRouter.
 /// Chamado uma vez no `main()` antes de `runApp()`.
-/// A ordem importa: camadas internas primeiro.
 Future<void> setupServiceLocator({
   List<String>? pinnedCertificates,
   List<String>? backupCertificates,
+  VoidCallback? onTokenExpired,
 }) async {
   // ── 1. Infra Layer (singletons — performance-critical) ──
 
@@ -39,18 +45,49 @@ Future<void> setupServiceLocator({
     () => OfflineSyncQueue(networkInfo: sl<NetworkInfo>()),
   );
 
-  // ── 2. Network Layer (singleton — reutiliza conexão) ──
+  // ── 2. Network Layer ──────────────────────────────────
 
+  // Lightweight Dio used only by AuthInterceptor (no auth/error interceptors).
+  // Named instance to avoid collision with the main Dio registration.
+  sl.registerLazySingleton<Dio>(
+    () => DioClientFactory.createForRefresh(
+      pinnedSha256: pinnedCertificates ?? [],
+      backupPinnedSha256: backupCertificates,
+    ),
+    instanceName: 'refreshDio',
+  );
+
+  sl.registerLazySingleton<ErrorInterceptor>(ErrorInterceptor.new);
+
+  sl.registerLazySingleton<OfflineInterceptor>(
+    () => OfflineInterceptor(sl<OfflineManager>()),
+  );
+
+  // AuthInterceptor must be a singleton — its Completer<bool> field deduplicates
+  // concurrent 401s across the lifetime of the app.
+  sl.registerLazySingleton<AuthInterceptor>(
+    () => AuthInterceptor(
+      secureConfig: sl<SecureConfig>(),
+      refreshDio: sl<Dio>(instanceName: 'refreshDio'),
+      onTokenExpired: onTokenExpired ?? () {},
+    ),
+  );
+
+  // Main authenticated Dio (unnamed — default instance used by all repositories).
   sl.registerLazySingleton<Dio>(() {
-    const isDebug = bool.fromEnvironment('dart.vm.product');
-    if (!isDebug &&
+    const isRelease = bool.fromEnvironment('dart.vm.product');
+    if (!isRelease &&
         (pinnedCertificates == null || pinnedCertificates.isEmpty)) {
+      // Development without cert pinning — interceptors not wired to unpinned Dio.
+      // TODO: wire interceptors to createUnpinned() once debug flow is validated.
       return DioClientFactory.createUnpinned();
     }
     return DioClientFactory.createPinned(
       pinnedSha256: pinnedCertificates ?? [],
       backupPinnedSha256: backupCertificates,
-      tokenProvider: () => sl<SecureConfig>().getAccessToken(),
+      authInterceptor: sl<AuthInterceptor>(),
+      errorInterceptor: sl<ErrorInterceptor>(),
+      offlineInterceptor: sl<OfflineInterceptor>(),
     );
   });
 
