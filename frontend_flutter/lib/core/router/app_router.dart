@@ -1,78 +1,127 @@
-import 'package:cadife_smart_travel/features/auth/presentation/screens/login_screen.dart';
-import 'package:cadife_smart_travel/features/auth/providers/auth_provider.dart';
-import 'package:cadife_smart_travel/shared/widgets/feedback_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../features/auth/auth_notifier.dart';
+import '../../features/auth/login_screen.dart';
+import '../../features/agency/dashboard/dashboard_screen.dart';
+import '../../features/agency/leads/leads_screen.dart';
+import '../../features/agency/leads/lead_detail_screen.dart';
+import '../../features/agency/agenda/agenda_screen.dart';
+import '../../features/client/status/status_screen.dart';
+import '../../features/client/historico/historico_screen.dart';
+import '../../features/client/documentos/documentos_screen.dart';
+import 'agency_shell.dart';
+import 'client_shell.dart';
+
+// Bridges Riverpod auth state to GoRouter's refreshListenable
+class _RouterNotifier extends ChangeNotifier {
+  _RouterNotifier(Ref ref) {
+    ref.listen<AuthState>(authProvider, (_, _) => notifyListeners());
+  }
+}
+
+final _routerNotifierProvider = Provider<_RouterNotifier>((ref) {
+  final notifier = _RouterNotifier(ref);
+  ref.onDispose(notifier.dispose);
+  return notifier;
+});
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authNotifierProvider);
+  final notifier = ref.watch(_routerNotifierProvider);
 
   return GoRouter(
-    initialLocation: '/',
-    debugLogDiagnostics: true,
+    initialLocation: '/auth/login',
+    refreshListenable: notifier,
     redirect: (context, state) {
-      final isAuthenticated = authState.valueOrNull?.isAuthenticated ?? false;
-      final isAuthRoute = state.matchedLocation.startsWith('/auth');
+      final auth = ref.read(authProvider);
+      final isLogged = auth.isLoggedIn;
+      final loc = state.matchedLocation;
+      final isAuthRoute = loc.startsWith('/auth');
 
-      if (!isAuthenticated && !isAuthRoute) {
-        return '/auth/login';
+      if (!isLogged && !isAuthRoute) return '/auth/login';
+
+      if (isLogged && isAuthRoute) {
+        return auth.userPerfil == 'agencia'
+            ? '/agency/dashboard'
+            : '/client/status';
       }
-      if (isAuthenticated && isAuthRoute) {
-        return '/';
+
+      // Cross-role guard
+      if (isLogged && auth.userPerfil == 'agencia' && loc.startsWith('/client')) {
+        return '/agency/dashboard';
       }
+      if (isLogged && auth.userPerfil == 'cliente' && loc.startsWith('/agency')) {
+        return '/client/status';
+      }
+
       return null;
     },
     routes: [
       GoRoute(
         path: '/auth/login',
-        builder: (context, state) => const LoginScreen(),
+        pageBuilder: (_, state) => NoTransitionPage(
+          key: state.pageKey,
+          child: const LoginScreen(),
+        ),
       ),
-      GoRoute(
-        path: '/',
-        builder: (context, state) => const _HomeShell(),
-      ),
-      GoRoute(
-        path: '/agency',
-        builder: (context, state) => const _AgencyShell(),
+
+      // Agency shell — persistent BottomNavBar with SharedAxis tab transitions
+      ShellRoute(
+        builder: (context, state, child) => AgencyShell(
+          key: const ValueKey('agency-shell'),
+          location: state.matchedLocation,
+          child: child,
+        ),
         routes: [
           GoRoute(
-            path: 'dashboard',
-            builder: (context, state) => const _PlaceholderScreen(title: 'Dashboard'),
+            path: '/agency/dashboard',
+            pageBuilder: (_, state) =>
+                NoTransitionPage(key: state.pageKey, child: const DashboardScreen()),
           ),
           GoRoute(
-            path: 'leads',
-            builder: (context, state) => const _PlaceholderScreen(title: 'Leads'),
+            path: '/agency/leads',
+            pageBuilder: (_, state) =>
+                NoTransitionPage(key: state.pageKey, child: const LeadsScreen()),
           ),
           GoRoute(
-            path: 'leads/:id',
-            builder: (context, state) => _PlaceholderScreen(
-              title: 'Lead ${state.pathParameters['id']}',
-            ),
-          ),
-          GoRoute(
-            path: 'agenda',
-            builder: (context, state) => const _PlaceholderScreen(title: 'Agenda'),
-          ),
-          GoRoute(
-            path: 'proposals',
-            builder: (context, state) => const _PlaceholderScreen(title: 'Propostas'),
+            path: '/agency/agenda',
+            pageBuilder: (_, state) =>
+                NoTransitionPage(key: state.pageKey, child: const AgendaScreen()),
           ),
         ],
       ),
+
+      // Lead detail — full-screen push without BottomNavBar
       GoRoute(
-        path: '/client',
-        builder: (context, state) => const _ClientShell(),
+        path: '/agency/leads/:id',
+        pageBuilder: (_, state) => MaterialPage(
+          key: state.pageKey,
+          child: LeadDetailScreen(leadId: state.pathParameters['id']!),
+        ),
+      ),
+
+      // Client shell — persistent BottomNavBar with SharedAxis tab transitions
+      ShellRoute(
+        builder: (context, state, child) => ClientShell(
+          key: const ValueKey('client-shell'),
+          location: state.matchedLocation,
+          child: child,
+        ),
         routes: [
           GoRoute(
-            path: 'trip/:id',
-            builder: (context, state) => _PlaceholderScreen(
-              title: 'Viagem ${state.pathParameters['id']}',
-            ),
+            path: '/client/status',
+            pageBuilder: (_, state) =>
+                NoTransitionPage(key: state.pageKey, child: const StatusScreen()),
           ),
           GoRoute(
-            path: 'profile',
-            builder: (context, state) => const _PlaceholderScreen(title: 'Perfil'),
+            path: '/client/historico',
+            pageBuilder: (_, state) =>
+                NoTransitionPage(key: state.pageKey, child: const HistoricoScreen()),
+          ),
+          GoRoute(
+            path: '/client/documentos',
+            pageBuilder: (_, state) =>
+                NoTransitionPage(key: state.pageKey, child: const DocumentosScreen()),
           ),
         ],
       ),

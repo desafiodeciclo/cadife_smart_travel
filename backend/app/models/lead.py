@@ -1,7 +1,6 @@
 import uuid
 from datetime import datetime
-from enum import Enum
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, String, func
 from sqlalchemy.dialects.postgresql import UUID
@@ -9,28 +8,13 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from pydantic import BaseModel
 
 from app.core.database import Base
+from app.domain.entities.enums import LeadOrigem, LeadStatus, LeadScore
 
-
-class LeadOrigem(str, Enum):
-    whatsapp = "whatsapp"
-    app = "app"
-    web = "web"
-
-
-class LeadStatus(str, Enum):
-    novo = "novo"
-    em_atendimento = "em_atendimento"
-    qualificado = "qualificado"
-    agendado = "agendado"
-    proposta = "proposta"
-    fechado = "fechado"
-    perdido = "perdido"
-
-
-class LeadScore(str, Enum):
-    quente = "quente"
-    morno = "morno"
-    frio = "frio"
+if TYPE_CHECKING:
+    from app.models.briefing import Briefing
+    from app.models.interacao import Interacao
+    from app.models.agendamento import Agendamento
+    from app.models.proposta import Proposta
 
 
 class Lead(Base):

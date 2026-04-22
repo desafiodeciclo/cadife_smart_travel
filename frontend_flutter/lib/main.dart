@@ -56,6 +56,8 @@ class CadifeApp extends ConsumerWidget {
       title: 'Cadife Smart Travel',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: ThemeMode.system,
       routerConfig: router,
     );
   }

@@ -1,7 +1,6 @@
 import uuid
 from datetime import datetime
-from enum import Enum
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import DateTime, ForeignKey, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
@@ -9,13 +8,10 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from pydantic import BaseModel
 
 from app.core.database import Base
+from app.domain.entities.enums import TipoMensagem
 
-
-class TipoMensagem(str, Enum):
-    texto = "texto"
-    audio = "audio"
-    imagem = "imagem"
-    documento = "documento"
+if TYPE_CHECKING:
+    from app.models.lead import Lead
 
 
 class Interacao(Base):

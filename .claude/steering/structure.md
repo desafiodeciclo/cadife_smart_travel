@@ -92,7 +92,17 @@ cadife_smart_travel/                    ← raiz do repositório
 │   └── docker-compose.yml              ← backend + postgres + chromadb
 │
 ├── .claude/                            ← Configuração do agente Claude Code
-│   ├── steering/                       ← Diretrizes macro (product, tech, structure)
+│   ├── steering/                       ← Diretrizes modularizadas:
+│   │   ├── product.md                  ← Visão de Produto e Identidade
+│   │   ├── tech.md                     ← Stack Tecnológico e Padrões
+│   │   ├── structure.md                ← Topologia e Convenções
+│   │   ├── data_models.md              ← Entidades e Modelagem de Dados
+│   │   ├── api_endpoints.md            ← Contratos REST API
+│   │   ├── ai_agent.md                 ← Especificações da IA e RAG
+│   │   ├── workflows_rules.md          ← Regras de Negócio e Fluxos
+│   │   ├── agile_and_team.md           ← Cronograma, Equipe e Gestão
+│   │   ├── ui_features.md              ← Requisitos de UI e Funcionalidades
+│   │   └── glossary.md                 ← Stakeholders e Glossário
 │   ├── rules/                          ← Regras por camada (backend, flutter, ai)
 │   ├── agents/                         ← Sub-agentes especializados por role
 │   └── skills/                         ← Comandos customizados /slash
