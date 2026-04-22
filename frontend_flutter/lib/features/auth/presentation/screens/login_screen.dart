@@ -28,10 +28,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
-    await ref.read(authNotifierProvider.notifier).login(
-          _emailController.text.trim(),
-          _passwordController.text,
-        );
+    await ref
+        .read(authNotifierProvider.notifier)
+        .login(_emailController.text.trim(), _passwordController.text);
   }
 
   @override
@@ -48,7 +47,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.flight_takeoff, size: 64, color: AppColors.primary),
+                  const Icon(
+                    Icons.flight_takeoff,
+                    size: 64,
+                    color: AppColors.primary,
+                  ),
                   const SizedBox(height: 16),
                   const Text('Cadife Smart Travel', style: AppTextStyles.h2),
                   const SizedBox(height: 8),
@@ -67,7 +70,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       prefixIcon: Icon(Icons.email_outlined),
                     ),
                     validator: (value) {
-                      if (value == null || value.trim().isEmpty) return 'Informe o e-mail';
+                      if (value == null || value.trim().isEmpty)
+                        return 'Informe o e-mail';
                       if (!value.trim().isValidEmail) return 'E-mail inválido';
                       return null;
                     },
@@ -80,12 +84,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       labelText: 'Senha',
                       prefixIcon: const Icon(Icons.lock_outlined),
                       suffixIcon: IconButton(
-                        icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
-                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
+                        onPressed: () => setState(
+                          () => _obscurePassword = !_obscurePassword,
+                        ),
                       ),
                     ),
                     validator: (value) {
-                      if (value == null || value.isEmpty) return 'Informe a senha';
+                      if (value == null || value.isEmpty)
+                        return 'Informe a senha';
                       if (value.length < 6) return 'Mínimo 6 caracteres';
                       return null;
                     },
@@ -111,7 +122,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     const SizedBox(height: 16),
                     Text(
                       'Erro ao fazer login. Verifique suas credenciais.',
-                      style: AppTextStyles.bodySmall.copyWith(color: AppColors.error),
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.error,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                   ],

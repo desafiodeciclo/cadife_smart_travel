@@ -5,14 +5,14 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 /// Impede Navigator.push/pop direto — deve usar GoRouter (context.go/push)
 class NoNavigatorPushRule extends DartLintRule {
   NoNavigatorPushRule()
-      : super(
-          code: const LintCode(
-            name: 'no_navigator_push_direct',
-            problemMessage:
-                'Navigator.push/pop direto detectado. Use GoRouter (context.go / context.push / context.pop).',
-            errorSeverity: ErrorSeverity.ERROR,
-          ),
-        );
+    : super(
+        code: const LintCode(
+          name: 'no_navigator_push_direct',
+          problemMessage:
+              'Navigator.push/pop direto detectado. Use GoRouter (context.go / context.push / context.pop).',
+          errorSeverity: ErrorSeverity.ERROR,
+        ),
+      );
 
   @override
   void run(
@@ -24,7 +24,10 @@ class NoNavigatorPushRule extends DartLintRule {
       final target = node.realTarget?.toSource();
       final method = node.methodName.toSource();
       if (target == 'Navigator' &&
-          (method == 'push' || method == 'pop' || method == 'pushNamed' || method == 'pushReplacement')) {
+          (method == 'push' ||
+              method == 'pop' ||
+              method == 'pushNamed' ||
+              method == 'pushReplacement')) {
         reporter.reportErrorForNode(code, node);
       }
     });

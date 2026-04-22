@@ -4,8 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final leadDetailProvider =
     AsyncNotifierProvider.family<LeadDetailNotifier, LeadModel?, String>(
-  LeadDetailNotifier.new,
-);
+      LeadDetailNotifier.new,
+    );
 
 class LeadDetailNotifier extends FamilyAsyncNotifier<LeadModel?, String> {
   @override

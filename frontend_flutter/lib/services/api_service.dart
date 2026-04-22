@@ -12,37 +12,42 @@ class ApiService {
   late final Dio _dio;
 
   ApiService() {
-    _dio = Dio(BaseOptions(
-      baseUrl: _baseUrl,
-      connectTimeout: const Duration(seconds: 10),
-      receiveTimeout: const Duration(seconds: 30),
-      headers: {'Content-Type': 'application/json'},
-    ));
+    _dio = Dio(
+      BaseOptions(
+        baseUrl: _baseUrl,
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 30),
+        headers: {'Content-Type': 'application/json'},
+      ),
+    );
 
-    _dio.interceptors.add(InterceptorsWrapper(
-      onRequest: (options, handler) async {
-        final prefs = await SharedPreferences.getInstance();
-        final token = prefs.getString(_tokenKey);
-        if (token != null) {
-          options.headers['Authorization'] = 'Bearer $token';
-        }
-        handler.next(options);
-      },
-      onError: (error, handler) async {
-        if (error.response?.statusCode == 401) {
-          final refreshed = await _refreshToken();
-          if (refreshed) {
-            final prefs = await SharedPreferences.getInstance();
-            final newToken = prefs.getString(_tokenKey);
-            error.requestOptions.headers['Authorization'] = 'Bearer $newToken';
-            final response = await _dio.fetch(error.requestOptions);
-            handler.resolve(response);
-            return;
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) async {
+          final prefs = await SharedPreferences.getInstance();
+          final token = prefs.getString(_tokenKey);
+          if (token != null) {
+            options.headers['Authorization'] = 'Bearer $token';
           }
-        }
-        handler.next(error);
-      },
-    ));
+          handler.next(options);
+        },
+        onError: (error, handler) async {
+          if (error.response?.statusCode == 401) {
+            final refreshed = await _refreshToken();
+            if (refreshed) {
+              final prefs = await SharedPreferences.getInstance();
+              final newToken = prefs.getString(_tokenKey);
+              error.requestOptions.headers['Authorization'] =
+                  'Bearer $newToken';
+              final response = await _dio.fetch(error.requestOptions);
+              handler.resolve(response);
+              return;
+            }
+          }
+          handler.next(error);
+        },
+      ),
+    );
   }
 
   Future<bool> _refreshToken() async {
@@ -75,8 +80,10 @@ class ApiService {
     await prefs.remove(_refreshKey);
   }
 
-  Future<Response<T>> get<T>(String path, {Map<String, dynamic>? queryParameters}) =>
-      _dio.get(path, queryParameters: queryParameters);
+  Future<Response<T>> get<T>(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+  }) => _dio.get(path, queryParameters: queryParameters);
 
   Future<Response<T>> post<T>(String path, {dynamic data}) =>
       _dio.post(path, data: data);
@@ -84,6 +91,5 @@ class ApiService {
   Future<Response<T>> put<T>(String path, {dynamic data}) =>
       _dio.put(path, data: data);
 
-  Future<Response<T>> delete<T>(String path) =>
-      _dio.delete(path);
+  Future<Response<T>> delete<T>(String path) => _dio.delete(path);
 }

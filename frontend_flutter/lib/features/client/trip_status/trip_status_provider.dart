@@ -8,8 +8,8 @@ final clientLeadPortProvider = Provider<LeadPort>((ref) {
 
 final clientTripStatusProvider =
     AsyncNotifierProvider.family<ClientTripStatusNotifier, LeadModel?, String>(
-  ClientTripStatusNotifier.new,
-);
+      ClientTripStatusNotifier.new,
+    );
 
 class ClientTripStatusNotifier extends FamilyAsyncNotifier<LeadModel?, String> {
   @override
