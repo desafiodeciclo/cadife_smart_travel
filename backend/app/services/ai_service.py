@@ -5,6 +5,7 @@ from langchain.memory import ConversationBufferWindowMemory
 from langchain.output_parsers import PydanticOutputParser
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder, PromptTemplate
 from langchain_openai import ChatOpenAI
+from pydantic import SecretStr
 
 from app.core.config import get_settings
 from app.models.briefing import BriefingExtracted, calculate_completude
@@ -44,9 +45,9 @@ def get_llm() -> ChatOpenAI:
         _llm = ChatOpenAI(
             model="gpt-4o-mini",
             temperature=0.3,
-            request_timeout=25,
+            timeout=25,
             max_retries=2,
-            openai_api_key=settings.OPENAI_API_KEY,
+            api_key=SecretStr(settings.OPENAI_API_KEY),
         )
     return _llm
 
@@ -91,9 +92,9 @@ async def process_message(phone: str, message: str) -> str:
             "input": message,
         })
 
-        memory.save_context({"input": message}, {"output": response.content})
+        memory.save_context({"input": message}, {"output": str(response.content)})
         logger.info("ai_message_processed", phone=phone)
-        return response.content
+        return str(response.content)
 
     except Exception as exc:
         logger.error("ai_chain_error", phone=phone, error=str(exc))
@@ -123,7 +124,7 @@ Conversa:
         )
         prompt_value = extraction_prompt.format(conversation=conversation_text)
         response = await llm.ainvoke(prompt_value)
-        briefing = parser.parse(response.content)
+        briefing = parser.parse(str(response.content))
         briefing.completude_pct = calculate_completude(briefing.model_dump())
         return briefing
     except Exception as exc:

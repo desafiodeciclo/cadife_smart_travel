@@ -7,6 +7,7 @@ from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
 from langchain_openai import OpenAIEmbeddings
+from pydantic import SecretStr
 
 from app.core.config import get_settings
 
@@ -26,7 +27,7 @@ _vectorstore: Optional[Chroma] = None
 
 
 def _load_documents() -> list[Document]:
-    documents = []
+    documents: list[Document] = []
     if not KNOWLEDGE_BASE_DIR.exists():
         logger.warning("knowledge_base_dir_missing", path=str(KNOWLEDGE_BASE_DIR))
         return documents
@@ -51,7 +52,7 @@ def get_vectorstore() -> Chroma:
     if _vectorstore is None:
         embeddings = OpenAIEmbeddings(
             model="text-embedding-3-small",
-            openai_api_key=settings.OPENAI_API_KEY,
+            api_key=SecretStr(settings.OPENAI_API_KEY),
         )
         persist_dir = settings.CHROMA_PERSIST_DIR
 
