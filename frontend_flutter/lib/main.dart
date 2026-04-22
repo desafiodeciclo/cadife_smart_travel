@@ -22,6 +22,8 @@ class CadifeApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'Cadife Smart Travel',
       theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: ThemeMode.system,
       routerConfig: router,
       debugShowCheckedModeBanner: false,
     );

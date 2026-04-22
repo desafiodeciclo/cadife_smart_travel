@@ -13,6 +13,7 @@ dependencies:
 
   # UI
   cupertino_icons: ^1.0.8
+  animations: ^2.1.2
 
   # State management
   flutter_riverpod: ^2.6.1
