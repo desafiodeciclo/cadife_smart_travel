@@ -10,6 +10,7 @@ import '../../features/agency/agenda/agenda_screen.dart';
 import '../../features/client/status/status_screen.dart';
 import '../../features/client/historico/historico_screen.dart';
 import '../../features/client/documentos/documentos_screen.dart';
+import '../../shared/widgets/feedback_widgets.dart';
 import 'agency_shell.dart';
 import 'client_shell.dart';
 

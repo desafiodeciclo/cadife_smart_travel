@@ -3,10 +3,18 @@ class ApiConstants {
   ApiConstants._();
 
   // ── Base URL ───────────────────────────────────────────
+  // Set at build time via --dart-define=BASE_URL=<url>
+  // flutter run                                     → dev (default)
+  // flutter run --dart-define=BASE_URL=<stagingUrl> → staging
+  // flutter build apk --dart-define=BASE_URL=<prodUrl> → production
   static const String baseUrl = String.fromEnvironment(
     'BASE_URL',
     defaultValue: 'http://10.0.2.2:8000', // emulador Android → localhost
   );
+
+  static const String baseUrlDev = 'http://10.0.2.2:8000';
+  static const String baseUrlStaging = 'https://api-staging.cadife.com';
+  static const String baseUrlProd = 'https://api.cadife.com';
 
   // ── Auth ───────────────────────────────────────────────
   static const String login = '/auth/login';
