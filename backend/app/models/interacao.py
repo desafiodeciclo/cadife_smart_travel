@@ -1,6 +1,8 @@
 import uuid
 from datetime import datetime
+from enum import Enum
 from typing import TYPE_CHECKING, Optional
+
 
 from sqlalchemy import DateTime, ForeignKey, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
@@ -25,6 +27,7 @@ class Interacao(Base):
     timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     lead: Mapped["Lead"] = relationship("Lead", back_populates="interacoes")
+
 
 
 class InteracaoResponse(BaseModel):
