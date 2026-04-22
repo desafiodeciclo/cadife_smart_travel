@@ -128,3 +128,50 @@ final routerProvider = Provider<GoRouter>((ref) {
     ],
   );
 });
+
+class _HomeShell extends StatelessWidget {
+  const _HomeShell();
+
+  @override
+  Widget build(BuildContext context) {
+    return const AppLoadingWidget(message: 'Carregando...');
+  }
+}
+
+class _AgencyShell extends StatelessWidget {
+  const _AgencyShell();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Cadife Smart Travel')),
+      body: const Center(child: AppLoadingWidget(message: 'Carregando dashboard...')),
+    );
+  }
+}
+
+class _ClientShell extends StatelessWidget {
+  const _ClientShell();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Minha Viagem')),
+      body: const Center(child: AppLoadingWidget(message: 'Carregando...')),
+    );
+  }
+}
+
+class _PlaceholderScreen extends StatelessWidget {
+  const _PlaceholderScreen({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(title)),
+      body: Center(child: Text(title, style: const TextStyle(fontSize: 24))),
+    );
+  }
+}

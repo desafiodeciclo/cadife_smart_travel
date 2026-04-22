@@ -1,5 +1,5 @@
+import 'package:cadife_smart_travel/features/agency/leads/leads_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'leads_repository.dart';
 
 class LeadsNotifier extends AsyncNotifier<List<Lead>> {
   @override
