@@ -1,3 +1,14 @@
+import 'package:cadife_smart_travel/core/router/agency_shell.dart';
+import 'package:cadife_smart_travel/core/router/client_shell.dart';
+import 'package:cadife_smart_travel/features/agency/agenda/agenda_screen.dart';
+import 'package:cadife_smart_travel/features/agency/dashboard/dashboard_screen.dart';
+import 'package:cadife_smart_travel/features/agency/leads/lead_detail_screen.dart';
+import 'package:cadife_smart_travel/features/agency/leads/leads_screen.dart';
+import 'package:cadife_smart_travel/features/auth/auth_notifier.dart';
+import 'package:cadife_smart_travel/features/auth/presentation/screens/login_screen.dart';
+import 'package:cadife_smart_travel/features/client/documentos/documentos_screen.dart';
+import 'package:cadife_smart_travel/features/client/historico/historico_screen.dart';
+import 'package:cadife_smart_travel/features/client/status/status_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -130,49 +141,23 @@ final routerProvider = Provider<GoRouter>((ref) {
   );
 });
 
-class _HomeShell extends StatelessWidget {
-  const _HomeShell();
-
-  @override
-  Widget build(BuildContext context) {
-    return const AppLoadingWidget(message: 'Carregando...');
-  }
-}
-
-class _AgencyShell extends StatelessWidget {
-  const _AgencyShell();
+class AppLoadingWidget extends StatelessWidget {
+  const AppLoadingWidget({super.key, required this.message});
+  final String message;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Cadife Smart Travel')),
-      body: const Center(child: AppLoadingWidget(message: 'Carregando dashboard...')),
-    );
-  }
-}
-
-class _ClientShell extends StatelessWidget {
-  const _ClientShell();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Minha Viagem')),
-      body: const Center(child: AppLoadingWidget(message: 'Carregando...')),
-    );
-  }
-}
-
-class _PlaceholderScreen extends StatelessWidget {
-  const _PlaceholderScreen({required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Center(child: Text(title, style: const TextStyle(fontSize: 24))),
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(height: 16),
+            Text(message),
+          ],
+        ),
+      ),
     );
   }
 }

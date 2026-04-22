@@ -1,7 +1,7 @@
 import 'package:cadife_smart_travel/core/theme/app_colors.dart';
 import 'package:cadife_smart_travel/core/theme/app_text_styles.dart';
+import 'package:cadife_smart_travel/core/widgets/app_text_field.dart';
 import 'package:cadife_smart_travel/features/auth/providers/auth_provider.dart';
-import 'package:cadife_smart_travel/shared/extensions/string_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -16,7 +16,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _obscurePassword = true;
 
   @override
   void dispose() {
@@ -39,6 +38,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final authState = ref.watch(authNotifierProvider);
 
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -50,71 +50,74 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 children: [
                   const Icon(Icons.flight_takeoff, size: 64, color: AppColors.primary),
                   const SizedBox(height: 16),
-                  const Text('Cadife Smart Travel', style: AppTextStyles.h2),
+                  const Text(
+                    'CADIFE TOUR',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 2,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   Text(
-                    'Faça login para continuar',
+                    'Plataforma de Atendimento Inteligente',
                     style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.textSecondary,
+                      color: Colors.white60,
                     ),
                   ),
-                  const SizedBox(height: 32),
-                  TextFormField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
-                      labelText: 'E-mail',
-                      prefixIcon: Icon(Icons.email_outlined),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) return 'Informe o e-mail';
-                      if (!value.trim().isValidEmail) return 'E-mail inválido';
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _passwordController,
-                    obscureText: _obscurePassword,
-                    decoration: InputDecoration(
-                      labelText: 'Senha',
-                      prefixIcon: const Icon(Icons.lock_outlined),
-                      suffixIcon: IconButton(
-                        icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
-                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                  const SizedBox(height: 48),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        children: [
+                          AppTextField(
+                            controller: _emailController,
+                            label: 'E-mail',
+                            hint: 'Seu e-mail corporativo',
+                            prefixIcon: Icons.email_outlined,
+                            keyboardType: TextInputType.emailAddress,
+                            validator: AppValidators.email,
+                          ),
+                          const SizedBox(height: 16),
+                          AppTextField(
+                            controller: _passwordController,
+                            label: 'Senha',
+                            hint: 'Informe sua senha',
+                            isPassword: true,
+                            prefixIcon: Icons.lock_outlined,
+                            validator: AppValidators.required,
+                          ),
+                          const SizedBox(height: 24),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: authState.isLoading ? null : _handleLogin,
+                              child: authState.isLoading
+                                  ? const SizedBox(
+                                      height: 20,
+                                      width: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: AppColors.textOnPrimary,
+                                      ),
+                                    )
+                                  : const Text('Entrar'),
+                            ),
+                          ),
+                          if (authState.hasError) ...[
+                            const SizedBox(height: 16),
+                            Text(
+                              'Erro ao fazer login. Verifique suas credenciais.',
+                              style: AppTextStyles.bodySmall.copyWith(color: AppColors.error),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ],
                       ),
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) return 'Informe a senha';
-                      if (value.length < 6) return 'Mínimo 6 caracteres';
-                      return null;
-                    },
                   ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: authState.isLoading ? null : _handleLogin,
-                      child: authState.isLoading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: AppColors.textOnPrimary,
-                              ),
-                            )
-                          : const Text('Entrar'),
-                    ),
-                  ),
-                  if (authState.hasError) ...[
-                    const SizedBox(height: 16),
-                    Text(
-                      'Erro ao fazer login. Verifique suas credenciais.',
-                      style: AppTextStyles.bodySmall.copyWith(color: AppColors.error),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
                 ],
               ),
             ),
@@ -123,4 +126,4 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       ),
     );
   }
-}
+}
