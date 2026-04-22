@@ -1,5 +1,5 @@
+import 'package:cadife_smart_travel/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_colors.dart';
 
 class HistoricoScreen extends StatelessWidget {
   const HistoricoScreen({super.key});

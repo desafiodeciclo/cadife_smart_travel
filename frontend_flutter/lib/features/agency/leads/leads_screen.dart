@@ -1,9 +1,10 @@
+import 'package:cadife_smart_travel/core/theme/app_colors.dart';
+import 'package:cadife_smart_travel/core/widgets/shimmer_loading.dart';
+import 'package:cadife_smart_travel/features/agency/leads/leads_notifier.dart';
+import 'package:cadife_smart_travel/features/agency/leads/leads_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/theme/app_colors.dart';
-import 'leads_notifier.dart';
-import 'leads_repository.dart';
 
 class LeadsScreen extends ConsumerWidget {
   const LeadsScreen({super.key});
@@ -23,7 +24,10 @@ class LeadsScreen extends ConsumerWidget {
         ],
       ),
       body: leadsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => ShimmerLoading(
+          isLoading: true,
+          child: AppSkeletons.listPage(),
+        ),
         error: (e, _) => Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,

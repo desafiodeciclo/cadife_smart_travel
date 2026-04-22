@@ -1,6 +1,6 @@
+import 'package:cadife_smart_travel/services/api_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../services/api_service.dart';
 
 class AuthState {
   final bool isLoggedIn;

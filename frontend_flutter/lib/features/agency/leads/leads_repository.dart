@@ -1,5 +1,5 @@
+import 'package:cadife_smart_travel/services/api_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../services/api_service.dart';
 
 class Lead {
   final String id;
