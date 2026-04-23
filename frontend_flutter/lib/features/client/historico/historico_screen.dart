@@ -14,7 +14,10 @@ class HistoricoScreen extends StatelessWidget {
           children: [
             Icon(Icons.history, size: 64, color: AppColors.textSecondary),
             SizedBox(height: 16),
-            Text('Histórico de interações', style: TextStyle(color: AppColors.textSecondary)),
+            Text(
+              'Histórico de interações',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
           ],
         ),
       ),

@@ -85,7 +85,11 @@ class CadifeThemeExtension extends ThemeExtension<CadifeThemeExtension> {
       textSecondary: Color.lerp(textSecondary, other.textSecondary, t)!,
       cardBackground: Color.lerp(cardBackground, other.cardBackground, t)!,
       shimmerBase: Color.lerp(shimmerBase, other.shimmerBase, t)!,
-      shimmerHighlight: Color.lerp(shimmerHighlight, other.shimmerHighlight, t)!,
+      shimmerHighlight: Color.lerp(
+        shimmerHighlight,
+        other.shimmerHighlight,
+        t,
+      )!,
     );
   }
 }

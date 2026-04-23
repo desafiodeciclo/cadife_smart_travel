@@ -26,13 +26,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    await ref.read(authProvider.notifier).login(
-          _emailController.text.trim(),
-          _passwordController.text,
-        );
+    await ref
+        .read(authProvider.notifier)
+        .login(_emailController.text.trim(), _passwordController.text);
     final auth = ref.read(authProvider);
     if (auth.isLoggedIn && mounted) {
-      final dest = auth.userPerfil == 'agencia' ? '/agency/dashboard' : '/client/status';
+      final dest = auth.userPerfil == 'agencia'
+          ? '/agency/dashboard'
+          : '/client/status';
       context.go(dest);
     }
   }
@@ -78,8 +79,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             labelText: 'E-mail',
                             prefixIcon: Icon(Icons.email_outlined),
                           ),
-                          validator: (v) =>
-                              v == null || !v.contains('@') ? 'E-mail inválido' : null,
+                          validator: (v) => v == null || !v.contains('@')
+                              ? 'E-mail inválido'
+                              : null,
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
@@ -89,8 +91,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             labelText: 'Senha',
                             prefixIcon: const Icon(Icons.lock_outlined),
                             suffixIcon: IconButton(
-                              icon: Icon(_obscure ? Icons.visibility : Icons.visibility_off),
-                              onPressed: () => setState(() => _obscure = !_obscure),
+                              icon: Icon(
+                                _obscure
+                                    ? Icons.visibility
+                                    : Icons.visibility_off,
+                              ),
+                              onPressed: () =>
+                                  setState(() => _obscure = !_obscure),
                             ),
                           ),
                           validator: (v) =>
@@ -100,7 +107,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           const SizedBox(height: 12),
                           Text(
                             auth.error!,
-                            style: const TextStyle(color: AppColors.error, fontSize: 13),
+                            style: const TextStyle(
+                              color: AppColors.error,
+                              fontSize: 13,
+                            ),
                           ),
                         ],
                         const SizedBox(height: 24),

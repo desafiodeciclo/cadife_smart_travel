@@ -6,8 +6,8 @@ import 'package:dio/dio.dart';
 
 class AuthRepositoryImpl implements AuthPort {
   AuthRepositoryImpl({required Dio dio, required SecureConfig secureConfig})
-      : _dio = dio,
-        _secureConfig = secureConfig;
+    : _dio = dio,
+      _secureConfig = secureConfig;
 
   final Dio _dio;
   final SecureConfig _secureConfig;

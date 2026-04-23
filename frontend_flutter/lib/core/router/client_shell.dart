@@ -3,11 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 class ClientShell extends StatefulWidget {
-  const ClientShell({
-    super.key,
-    required this.child,
-    required this.location,
-  });
+  const ClientShell({super.key, required this.child, required this.location});
 
   final Widget child;
   final String location;
@@ -66,10 +62,7 @@ class _ClientShellState extends State<ClientShell> {
               fillColor: Colors.transparent,
               child: child,
             ),
-        child: KeyedSubtree(
-          key: ValueKey(_currentIndex),
-          child: widget.child,
-        ),
+        child: widget.child,
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,

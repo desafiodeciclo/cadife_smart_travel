@@ -32,24 +32,24 @@ class BriefingModel extends Equatable {
   final String? resumoConversa;
 
   factory BriefingModel.fromJson(Map<String, dynamic> json) => BriefingModel(
-        leadId: json['lead_id'] as String,
-        completudePct: json['completude_pct'] as int,
-        destino: json['destino'] as String?,
-        dataIda: json['data_ida'] != null
-            ? DateTime.parse(json['data_ida'] as String)
-            : null,
-        dataVolta: json['data_volta'] != null
-            ? DateTime.parse(json['data_volta'] as String)
-            : null,
-        numPessoas: json['num_pessoas'] as int?,
-        perfil: json['perfil'] as String?,
-        tipoViagem: json['tipo_viagem'] as String?,
-        preferencias: json['preferencias'] as String?,
-        orcamentoFaixa: json['orcamento_faixa'] as String?,
-        passaporteValido: json['passaporte_valido'] as bool?,
-        experienciaInternacional: json['experiencia_internacional'] as bool?,
-        resumoConversa: json['resumo_conversa'] as String?,
-      );
+    leadId: json['lead_id'] as String,
+    completudePct: json['completude_pct'] as int,
+    destino: json['destino'] as String?,
+    dataIda: json['data_ida'] != null
+        ? DateTime.parse(json['data_ida'] as String)
+        : null,
+    dataVolta: json['data_volta'] != null
+        ? DateTime.parse(json['data_volta'] as String)
+        : null,
+    numPessoas: json['num_pessoas'] as int?,
+    perfil: json['perfil'] as String?,
+    tipoViagem: json['tipo_viagem'] as String?,
+    preferencias: json['preferencias'] as String?,
+    orcamentoFaixa: json['orcamento_faixa'] as String?,
+    passaporteValido: json['passaporte_valido'] as bool?,
+    experienciaInternacional: json['experiencia_internacional'] as bool?,
+    resumoConversa: json['resumo_conversa'] as String?,
+  );
 
   @override
   List<Object?> get props => [leadId, completudePct];

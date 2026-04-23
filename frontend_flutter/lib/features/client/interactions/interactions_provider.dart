@@ -7,11 +7,14 @@ final interactionsPortProvider = Provider<LeadPort>((ref) {
 });
 
 final interactionsProvider =
-    AsyncNotifierProvider.family<InteractionsNotifier, List<InteractionModel>, String>(
-  InteractionsNotifier.new,
-);
+    AsyncNotifierProvider.family<
+      InteractionsNotifier,
+      List<InteractionModel>,
+      String
+    >(InteractionsNotifier.new);
 
-class InteractionsNotifier extends FamilyAsyncNotifier<List<InteractionModel>, String> {
+class InteractionsNotifier
+    extends FamilyAsyncNotifier<List<InteractionModel>, String> {
   @override
   Future<List<InteractionModel>> build(String arg) async {
     final leadPort = ref.watch(interactionsPortProvider);

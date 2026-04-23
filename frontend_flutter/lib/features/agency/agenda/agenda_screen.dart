@@ -12,9 +12,16 @@ class AgendaScreen extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.calendar_month, size: 64, color: AppColors.textSecondary),
+            Icon(
+              Icons.calendar_month,
+              size: 64,
+              color: AppColors.textSecondary,
+            ),
             SizedBox(height: 16),
-            Text('Agenda — Em desenvolvimento', style: TextStyle(color: AppColors.textSecondary)),
+            Text(
+              'Agenda — Em desenvolvimento',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
             SizedBox(height: 8),
             Text(
               'Seg–Sex, 09h–16h | Máx. 6 atendimentos/dia',
@@ -27,7 +34,10 @@ class AgendaScreen extends StatelessWidget {
         backgroundColor: AppColors.primary,
         onPressed: () {},
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Novo agendamento', style: TextStyle(color: Colors.white)),
+        label: const Text(
+          'Novo agendamento',
+          style: TextStyle(color: Colors.white),
+        ),
       ),
     );
   }
