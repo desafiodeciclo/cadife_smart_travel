@@ -37,9 +37,9 @@ class LeadsRepository {
 
   Future<List<Lead>> getLeads({String? status, String? score, String? search, int page = 1}) async {
     final response = await _api.get('/leads', queryParameters: {
-      'status': ?status,
-      'score': ?score,
-      'search': ?search,
+      if (status != null) 'status': status,
+      if (score != null) 'score': score,
+      if (search != null) 'search': search,
       'page': page,
       'limit': 20,
     });

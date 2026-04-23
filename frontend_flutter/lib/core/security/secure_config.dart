@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 
-import 'package:cadife_smart_travel/core/constants/app_constants.dart';
+import 'package:cadife_smart_travel/core/security/secure_strings.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -34,21 +34,21 @@ class SecureConfig {
     required String refreshToken,
   }) async {
     await Future.wait([
-      _storage.write(key: AppConstants.keyAccessToken, value: accessToken),
-      _storage.write(key: AppConstants.keyRefreshToken, value: refreshToken),
+      _storage.write(key: SecureStrings.secureStorageKey, value: accessToken),
+      _storage.write(key: SecureStrings.refreshTokenKey, value: refreshToken),
     ]);
   }
 
   Future<String?> getAccessToken() =>
-      _storage.read(key: AppConstants.keyAccessToken);
+      _storage.read(key: SecureStrings.secureStorageKey);
 
   Future<String?> getRefreshToken() =>
-      _storage.read(key: AppConstants.keyRefreshToken);
+      _storage.read(key: SecureStrings.refreshTokenKey);
 
   Future<void> clearTokens() async {
     await Future.wait([
-      _storage.delete(key: AppConstants.keyAccessToken),
-      _storage.delete(key: AppConstants.keyRefreshToken),
+      _storage.delete(key: SecureStrings.secureStorageKey),
+      _storage.delete(key: SecureStrings.refreshTokenKey),
     ]);
   }
 
@@ -56,14 +56,40 @@ class SecureConfig {
 
   Future<void> saveCertificatePins(List<String> pins) async {
     final encoded = jsonEncode(pins);
-    await _storage.write(key: AppConstants.pinningKeyAlias, value: encoded);
+    await _storage.write(key: SecureStrings.pinningKeyAlias, value: encoded);
   }
 
   Future<Set<String>> getCertificatePins() async {
-    final raw = await _storage.read(key: AppConstants.pinningKeyAlias);
+    final raw = await _storage.read(key: SecureStrings.pinningKeyAlias);
     if (raw == null) return {};
     final list = jsonDecode(raw) as List<dynamic>;
     return list.cast<String>().toSet();
+  }
+
+  /// Retorna pins de certificado com fallback estático ofuscado.
+  ///
+  /// 1. Tenta ler pins atualizados do secure storage (rotacionáveis).
+  /// 2. Se não houver, usa o fallback estático embutido (ofuscado).
+  ///
+  /// IMPORTANTE: Substitua [_fallbackPinsObf] pelos pins reais do servidor
+  /// antes do deploy de produção.
+  Future<List<String>> getCertificatePinsWithFallback() async {
+    final dynamicPins = await getCertificatePins();
+    if (dynamicPins.isNotEmpty) {
+      return dynamicPins.toList();
+    }
+    // Fallback estático — ofuscado para dificultar extração do binário.
+    return _decodeFallbackPins();
+  }
+
+  // ── Fallback Pins (obfuscated) ─────────────────────────
+
+  static const String _fallbackPinsObf = '';
+
+  List<String> _decodeFallbackPins() {
+    if (_fallbackPinsObf.isEmpty) return [];
+    final decoded = SecureStrings.deobfuscate(_fallbackPinsObf);
+    return (jsonDecode(decoded) as List<dynamic>).cast<String>();
   }
 
   // ── Key Generation ─────────────────────────────────────

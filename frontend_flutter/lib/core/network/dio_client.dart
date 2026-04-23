@@ -3,6 +3,7 @@ import 'package:cadife_smart_travel/core/constants/app_constants.dart';
 import 'package:cadife_smart_travel/core/security/certificate_pinning_interceptor.dart';
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
+import 'package:flutter/foundation.dart';
 
 /// Factory para criar instância Dio configurada com:
 /// - Base URL, timeouts
@@ -22,6 +23,14 @@ class DioClientFactory {
     List<String>? backupPinnedSha256,
     Future<String?> Function()? tokenProvider,
   }) {
+    const isRelease = bool.fromEnvironment('dart.vm.product');
+    if (isRelease && pinnedSha256.isEmpty) {
+      throw StateError(
+        'Certificate pinning é obrigatório em builds de release. '
+        'Forneça pelo menos um pin SHA-256.',
+      );
+    }
+
     final dio = Dio(
       BaseOptions(
         baseUrl: ApiConstants.baseUrl,
@@ -65,12 +74,23 @@ class DioClientFactory {
       );
     }
 
+    // Debug logging
+    if (kDebugMode) {
+      dio.interceptors.add(
+        LogInterceptor(
+          requestBody: true,
+          responseBody: true,
+          logPrint: (o) => debugPrint(o.toString()),
+        ),
+      );
+    }
+
     return dio;
   }
 
   /// Cria Dio sem pinning (apenas para desenvolvimento local).
   static Dio createUnpinned() {
-    return Dio(
+    final dio = Dio(
       BaseOptions(
         baseUrl: ApiConstants.baseUrl,
         connectTimeout: const Duration(
@@ -85,5 +105,17 @@ class DioClientFactory {
         },
       ),
     );
+
+    if (kDebugMode) {
+      dio.interceptors.add(
+        LogInterceptor(
+          requestBody: true,
+          responseBody: true,
+          logPrint: (o) => debugPrint(o.toString()),
+        ),
+      );
+    }
+
+    return dio;
   }
 }
