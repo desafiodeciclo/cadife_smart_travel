@@ -1,0 +1,17 @@
+fastapi
+uvicorn
+pydantic
+pydantic-settings
+sqlalchemy[asyncio]
+asyncpg
+python-jose[cryptography]
+passlib[argon2]
+python-multipart
+httpx
+pytest
+pytest-asyncio
+langchain
+openai
+chromadb
+firebase-admin
+python-dotenv

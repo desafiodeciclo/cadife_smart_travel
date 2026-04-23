@@ -14,16 +14,16 @@ from app.infrastructure.config.settings import get_settings
 
 settings = get_settings()
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 
 def hash_password(password: str) -> str:
-    """Hash a plain-text password using bcrypt."""
+    """Hash a plain-text password using Argon2."""
     return pwd_context.hash(password)
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    """Verify a plain-text password against a bcrypt hash."""
+    """Verify a plain-text password against an Argon2 hash."""
     return pwd_context.verify(plain, hashed)
 
 
