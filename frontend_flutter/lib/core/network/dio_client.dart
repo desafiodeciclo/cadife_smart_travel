@@ -1,27 +1,38 @@
 import 'package:cadife_smart_travel/core/constants/api_constants.dart';
 import 'package:cadife_smart_travel/core/constants/app_constants.dart';
+import 'package:cadife_smart_travel/core/network/interceptors/auth_interceptor.dart';
+import 'package:cadife_smart_travel/core/network/interceptors/error_interceptor.dart';
+import 'package:cadife_smart_travel/core/offline/offline_interceptor.dart';
 import 'package:cadife_smart_travel/core/security/certificate_pinning_interceptor.dart';
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:flutter/foundation.dart';
 
-/// Factory para criar instância Dio configurada com:
-/// - Base URL, timeouts
-/// - Certificate pinning (SHA-256)
-/// - Auth interceptor (JWT Bearer)
-/// - Logging em debug
 class DioClientFactory {
   DioClientFactory._();
 
-  /// Cria Dio com certificate pinning nativo.
+  static BaseOptions _baseOptions() => BaseOptions(
+        baseUrl: ApiConstants.baseUrl,
+        connectTimeout: const Duration(milliseconds: AppConstants.connectTimeout),
+        receiveTimeout: const Duration(milliseconds: AppConstants.receiveTimeout),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      );
+
+  /// Main authenticated Dio: cert pinning + auth + error + offline interceptors.
   ///
-  /// [pinnedSha256] — lista de hashes SHA-256 em Base64 dos certificados confiáveis.
-  /// [backupPinnedSha256] — pins de backup para rotação sem downtime.
-  /// [tokenProvider] — função que retorna o access token atual (para refresh automático).
+  /// Interceptor registration order (Dio processes errors LIFO — last added fires first):
+  ///   errorInterceptor    → runs LAST:   maps residual DioExceptions to typed ApiExceptions
+  ///   authInterceptor     → runs MIDDLE: handles 401 with token refresh + retry
+  ///   offlineInterceptor  → runs FIRST:  on network error for GETs, resolves from cache
   static Dio createPinned({
     required List<String> pinnedSha256,
     List<String>? backupPinnedSha256,
-    Future<String?> Function()? tokenProvider,
+    required AuthInterceptor authInterceptor,
+    required ErrorInterceptor errorInterceptor,
+    required OfflineInterceptor offlineInterceptor,
   }) {
     const isRelease = bool.fromEnvironment('dart.vm.product');
     if (isRelease && pinnedSha256.isEmpty) {
@@ -31,48 +42,19 @@ class DioClientFactory {
       );
     }
 
-    final dio = Dio(
-      BaseOptions(
-        baseUrl: ApiConstants.baseUrl,
-        connectTimeout: const Duration(
-          milliseconds: AppConstants.connectTimeout,
-        ),
-        receiveTimeout: const Duration(
-          milliseconds: AppConstants.receiveTimeout,
-        ),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-      ),
-    );
+    final dio = Dio(_baseOptions());
 
-    // Certificate pinning via HttpClient nativo
     dio.httpClientAdapter = IOHttpClientAdapter(
       createHttpClient: () =>
           CertificatePinningInterceptor.createPinnedHttpClient(
-            pinnedSha256: pinnedSha256,
-            backupPinnedSha256: backupPinnedSha256,
-          ),
+        pinnedSha256: pinnedSha256,
+        backupPinnedSha256: backupPinnedSha256,
+      ),
     );
 
-    // Auth interceptor: injeta Bearer token
-    if (tokenProvider != null) {
-      dio.interceptors.add(
-        InterceptorsWrapper(
-          onRequest: (options, handler) async {
-            final token = await tokenProvider();
-            if (token != null) {
-              options.headers['Authorization'] = 'Bearer $token';
-            }
-            handler.next(options);
-          },
-          onError: (error, handler) {
-            handler.next(error);
-          },
-        ),
-      );
-    }
+    dio.interceptors.add(errorInterceptor);
+    dio.interceptors.add(authInterceptor);
+    dio.interceptors.add(offlineInterceptor);
 
     // Debug logging
     if (kDebugMode) {
@@ -88,23 +70,31 @@ class DioClientFactory {
     return dio;
   }
 
-  /// Cria Dio sem pinning (apenas para desenvolvimento local).
-  static Dio createUnpinned() {
-    final dio = Dio(
-      BaseOptions(
-        baseUrl: ApiConstants.baseUrl,
-        connectTimeout: const Duration(
-          milliseconds: AppConstants.connectTimeout,
-        ),
-        receiveTimeout: const Duration(
-          milliseconds: AppConstants.receiveTimeout,
-        ),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
+  /// Lightweight Dio used exclusively by AuthInterceptor for:
+  ///   1. Calling POST /auth/refresh
+  ///   2. Retrying the original request after a successful refresh
+  ///
+  /// Has NO auth, error, or offline interceptors — prevents re-entry and infinite loops.
+  static Dio createForRefresh({
+    required List<String> pinnedSha256,
+    List<String>? backupPinnedSha256,
+  }) {
+    final dio = Dio(_baseOptions());
+
+    dio.httpClientAdapter = IOHttpClientAdapter(
+      createHttpClient: () =>
+          CertificatePinningInterceptor.createPinnedHttpClient(
+        pinnedSha256: pinnedSha256,
+        backupPinnedSha256: backupPinnedSha256,
       ),
     );
+
+    return dio;
+  }
+
+  /// Unpinned Dio for local development only (no certificate validation).
+  static Dio createUnpinned() {
+    final dio = Dio(_baseOptions());
 
     if (kDebugMode) {
       dio.interceptors.add(
