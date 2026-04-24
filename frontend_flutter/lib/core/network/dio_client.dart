@@ -6,6 +6,7 @@ import 'package:cadife_smart_travel/core/offline/offline_interceptor.dart';
 import 'package:cadife_smart_travel/core/security/certificate_pinning_interceptor.dart';
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
+import 'package:flutter/foundation.dart';
 
 class DioClientFactory {
   DioClientFactory._();
@@ -33,6 +34,14 @@ class DioClientFactory {
     required ErrorInterceptor errorInterceptor,
     required OfflineInterceptor offlineInterceptor,
   }) {
+    const isRelease = bool.fromEnvironment('dart.vm.product');
+    if (isRelease && pinnedSha256.isEmpty) {
+      throw StateError(
+        'Certificate pinning é obrigatório em builds de release. '
+        'Forneça pelo menos um pin SHA-256.',
+      );
+    }
+
     final dio = Dio(_baseOptions());
 
     dio.httpClientAdapter = IOHttpClientAdapter(
@@ -46,6 +55,17 @@ class DioClientFactory {
     dio.interceptors.add(errorInterceptor);
     dio.interceptors.add(authInterceptor);
     dio.interceptors.add(offlineInterceptor);
+
+    // Debug logging
+    if (kDebugMode) {
+      dio.interceptors.add(
+        LogInterceptor(
+          requestBody: true,
+          responseBody: true,
+          logPrint: (o) => debugPrint(o.toString()),
+        ),
+      );
+    }
 
     return dio;
   }
@@ -74,6 +94,18 @@ class DioClientFactory {
 
   /// Unpinned Dio for local development only (no certificate validation).
   static Dio createUnpinned() {
-    return Dio(_baseOptions());
+    final dio = Dio(_baseOptions());
+
+    if (kDebugMode) {
+      dio.interceptors.add(
+        LogInterceptor(
+          requestBody: true,
+          responseBody: true,
+          logPrint: (o) => debugPrint(o.toString()),
+        ),
+      );
+    }
+
+    return dio;
   }
 }

@@ -1,3 +1,4 @@
+import 'package:cadife_smart_travel/core/cache/isar_cache_manager.dart';
 import 'package:cadife_smart_travel/core/network/dio_client.dart';
 import 'package:cadife_smart_travel/core/network/interceptors/auth_interceptor.dart';
 import 'package:cadife_smart_travel/core/network/interceptors/error_interceptor.dart';
@@ -44,6 +45,7 @@ Future<void> setupServiceLocator({
   sl.registerLazySingleton<OfflineSyncQueue>(
     () => OfflineSyncQueue(networkInfo: sl<NetworkInfo>()),
   );
+  sl.registerLazySingleton<IsarCacheManager>(IsarCacheManager.new);
 
   // ── 2. Network Layer ──────────────────────────────────
 
@@ -76,14 +78,28 @@ Future<void> setupServiceLocator({
   // Main authenticated Dio (unnamed — default instance used by all repositories).
   sl.registerLazySingleton<Dio>(() {
     const isRelease = bool.fromEnvironment('dart.vm.product');
-    if (!isRelease &&
-        (pinnedCertificates == null || pinnedCertificates.isEmpty)) {
-      // Development without cert pinning — interceptors not wired to unpinned Dio.
-      // TODO: wire interceptors to createUnpinned() once debug flow is validated.
+    if (isRelease) {
+      // Fail-closed: em release SEMPRE exige pinning configurado.
+      if (pinnedCertificates == null || pinnedCertificates.isEmpty) {
+        throw StateError(
+          'Certificate pinning é obrigatório em builds de release. '
+          'Forneça pinnedCertificates no setupServiceLocator().',
+        );
+      }
+      return DioClientFactory.createPinned(
+        pinnedSha256: pinnedCertificates,
+        backupPinnedSha256: backupCertificates,
+        authInterceptor: sl<AuthInterceptor>(),
+        errorInterceptor: sl<ErrorInterceptor>(),
+        offlineInterceptor: sl<OfflineInterceptor>(),
+      );
+    }
+    // Debug/dev: permite unpinned para facilitar desenvolvimento local.
+    if (pinnedCertificates == null || pinnedCertificates.isEmpty) {
       return DioClientFactory.createUnpinned();
     }
     return DioClientFactory.createPinned(
-      pinnedSha256: pinnedCertificates ?? [],
+      pinnedSha256: pinnedCertificates,
       backupPinnedSha256: backupCertificates,
       authInterceptor: sl<AuthInterceptor>(),
       errorInterceptor: sl<ErrorInterceptor>(),
@@ -133,9 +149,10 @@ void _registerProposalModule() {
   );
 }
 
-/// Inicializa infra offline (Hive + SyncQueue).
+/// Inicializa infra offline (Hive + Isar + SyncQueue).
 Future<void> initDependencies() async {
   await sl<OfflineManager>().initialize();
+  await sl<IsarCacheManager>().initialize();
   await sl<OfflineSyncQueue>().initialize();
 }
 
@@ -151,5 +168,6 @@ Future<void> resetDependencies() async {
 Future<void> disposeDependencies() async {
   await sl<OfflineSyncQueue>().dispose();
   await sl<OfflineManager>().dispose();
+  await sl<IsarCacheManager>().close();
   await sl.reset(dispose: true);
 }

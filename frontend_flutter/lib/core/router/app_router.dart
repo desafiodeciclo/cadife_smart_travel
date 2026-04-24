@@ -12,18 +12,6 @@ import 'package:cadife_smart_travel/features/client/status/status_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../features/auth/auth_notifier.dart';
-import '../../features/auth/login_screen.dart';
-import '../../features/agency/dashboard/dashboard_screen.dart';
-import '../../features/agency/leads/leads_screen.dart';
-import '../../features/agency/leads/lead_detail_screen.dart';
-import '../../features/agency/agenda/agenda_screen.dart';
-import '../../features/client/status/status_screen.dart';
-import '../../features/client/historico/historico_screen.dart';
-import '../../features/client/documentos/documentos_screen.dart';
-import '../../shared/widgets/feedback_widgets.dart';
-import 'agency_shell.dart';
-import 'client_shell.dart';
 
 // Bridges Riverpod auth state to GoRouter's refreshListenable
 class _RouterNotifier extends ChangeNotifier {
@@ -154,3 +142,27 @@ final routerProvider = Provider<GoRouter>((ref) {
     ],
   );
 });
+<<<<<<< chore/setup-advanced-security
+
+class AppLoadingWidget extends StatelessWidget {
+  const AppLoadingWidget({super.key, required this.message});
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(height: 16),
+            Text(message),
+          ],
+        ),
+      ),
+    );
+  }
+}
+=======
+>>>>>>> developer

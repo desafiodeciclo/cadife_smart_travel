@@ -25,7 +25,7 @@ class ProposalRepositoryImpl implements ProposalPort {
       final response = await _dio.get(
         ApiConstants.proposals,
         queryParameters: {
-          'lead_id': ?leadId,
+          if (leadId != null) 'lead_id': leadId,
           if (status != null) 'status': status.name,
         },
       );

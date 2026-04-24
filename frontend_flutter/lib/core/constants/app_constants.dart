@@ -13,12 +13,6 @@ class AppConstants {
   static const String hiveBoxUser = 'user_prefs';
 
   // ── Key Hive Keys ──────────────────────────────────────
-  static const String keyAccessToken = 'access_token';
-  static const String keyRefreshToken = 'refresh_token';
   static const String keyUserId = 'user_id';
   static const String keyLastSync = 'last_sync_timestamp';
-
-  // ── Security ───────────────────────────────────────────
-  static const String secureStorageKey = 'cadife_secure_key';
-  static const String pinningKeyAlias = 'certificate_pins';
 }
