@@ -4,11 +4,7 @@ import 'package:cadife_smart_travel/core/network/network_info.dart';
 import 'package:cadife_smart_travel/core/utils/result.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
-enum SyncQueueStatus {
-  pending,
-  syncing,
-  failed,
-}
+enum SyncQueueStatus { pending, syncing, failed }
 
 class SyncQueueEntry {
   const SyncQueueEntry({
@@ -30,30 +26,30 @@ class SyncQueueEntry {
   final String? lastError;
 
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'method': method,
-        'path': path,
-        'body': body,
-        'created_at': createdAt.toIso8601String(),
-        'retry_count': retryCount,
-        'last_error': lastError,
-      };
+    'id': id,
+    'method': method,
+    'path': path,
+    'body': body,
+    'created_at': createdAt.toIso8601String(),
+    'retry_count': retryCount,
+    'last_error': lastError,
+  };
 
   factory SyncQueueEntry.fromMap(Map<String, dynamic> map) => SyncQueueEntry(
-        id: map['id'] as String,
-        method: map['method'] as String,
-        path: map['path'] as String,
-        body: map['body'] as String,
-        createdAt: DateTime.parse(map['created_at'] as String),
-        retryCount: map['retry_count'] as int? ?? 0,
-        lastError: map['last_error'] as String?,
-      );
+    id: map['id'] as String,
+    method: map['method'] as String,
+    path: map['path'] as String,
+    body: map['body'] as String,
+    createdAt: DateTime.parse(map['created_at'] as String),
+    retryCount: map['retry_count'] as int? ?? 0,
+    lastError: map['last_error'] as String?,
+  );
 }
 
 class OfflineSyncQueue {
   OfflineSyncQueue({required NetworkInfo networkInfo, HiveInterface? hive})
-      : _networkInfo = networkInfo,
-        _hive = hive ?? Hive;
+    : _networkInfo = networkInfo,
+      _hive = hive ?? Hive;
 
   final NetworkInfo _networkInfo;
   final HiveInterface _hive;

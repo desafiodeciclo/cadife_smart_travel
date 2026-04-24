@@ -8,11 +8,9 @@ class LeadsNotifier extends AsyncNotifier<List<Lead>> {
   Future<void> refresh({String? status, String? score, String? search}) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(
-      () => ref.read(leadsRepositoryProvider).getLeads(
-            status: status,
-            score: score,
-            search: search,
-          ),
+      () => ref
+          .read(leadsRepositoryProvider)
+          .getLeads(status: status, score: score, search: search),
     );
   }
 }

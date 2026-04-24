@@ -47,10 +47,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       // Cross-role guard
-      if (isLogged && auth.userPerfil == 'agencia' && loc.startsWith('/client')) {
+      if (isLogged &&
+          auth.userPerfil == 'agencia' &&
+          loc.startsWith('/client')) {
         return '/agency/dashboard';
       }
-      if (isLogged && auth.userPerfil == 'cliente' && loc.startsWith('/agency')) {
+      if (isLogged &&
+          auth.userPerfil == 'cliente' &&
+          loc.startsWith('/agency')) {
         return '/client/status';
       }
 
@@ -59,34 +63,38 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(
         path: '/auth/login',
-        pageBuilder: (_, state) => NoTransitionPage(
-          key: state.pageKey,
-          child: const LoginScreen(),
-        ),
+        pageBuilder: (_, state) =>
+            NoTransitionPage(key: state.pageKey, child: const LoginScreen()),
       ),
 
       // Agency shell — persistent BottomNavBar with SharedAxis tab transitions
       ShellRoute(
         builder: (context, state, child) => AgencyShell(
           key: const ValueKey('agency-shell'),
-          location: state.matchedLocation,
+          location: state.uri.path,
           child: child,
         ),
         routes: [
           GoRoute(
             path: '/agency/dashboard',
-            pageBuilder: (_, state) =>
-                NoTransitionPage(key: state.pageKey, child: const DashboardScreen()),
+            pageBuilder: (_, state) => NoTransitionPage(
+              key: state.pageKey,
+              child: const DashboardScreen(),
+            ),
           ),
           GoRoute(
             path: '/agency/leads',
-            pageBuilder: (_, state) =>
-                NoTransitionPage(key: state.pageKey, child: const LeadsScreen()),
+            pageBuilder: (_, state) => NoTransitionPage(
+              key: state.pageKey,
+              child: const LeadsScreen(),
+            ),
           ),
           GoRoute(
             path: '/agency/agenda',
-            pageBuilder: (_, state) =>
-                NoTransitionPage(key: state.pageKey, child: const AgendaScreen()),
+            pageBuilder: (_, state) => NoTransitionPage(
+              key: state.pageKey,
+              child: const AgendaScreen(),
+            ),
           ),
         ],
       ),
@@ -104,30 +112,37 @@ final routerProvider = Provider<GoRouter>((ref) {
       ShellRoute(
         builder: (context, state, child) => ClientShell(
           key: const ValueKey('client-shell'),
-          location: state.matchedLocation,
+          location: state.uri.path,
           child: child,
         ),
         routes: [
           GoRoute(
             path: '/client/status',
-            pageBuilder: (_, state) =>
-                NoTransitionPage(key: state.pageKey, child: const StatusScreen()),
+            pageBuilder: (_, state) => NoTransitionPage(
+              key: state.pageKey,
+              child: const StatusScreen(),
+            ),
           ),
           GoRoute(
             path: '/client/historico',
-            pageBuilder: (_, state) =>
-                NoTransitionPage(key: state.pageKey, child: const HistoricoScreen()),
+            pageBuilder: (_, state) => NoTransitionPage(
+              key: state.pageKey,
+              child: const HistoricoScreen(),
+            ),
           ),
           GoRoute(
             path: '/client/documentos',
-            pageBuilder: (_, state) =>
-                NoTransitionPage(key: state.pageKey, child: const DocumentosScreen()),
+            pageBuilder: (_, state) => NoTransitionPage(
+              key: state.pageKey,
+              child: const DocumentosScreen(),
+            ),
           ),
         ],
       ),
     ],
   );
 });
+<<<<<<< chore/setup-advanced-security
 
 class AppLoadingWidget extends StatelessWidget {
   const AppLoadingWidget({super.key, required this.message});
@@ -149,3 +164,5 @@ class AppLoadingWidget extends StatelessWidget {
     );
   }
 }
+=======
+>>>>>>> developer

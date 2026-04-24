@@ -5,9 +5,11 @@ import 'package:cadife_smart_travel/shared/models/models.dart';
 import 'package:dio/dio.dart';
 
 class ProposalRepositoryImpl implements ProposalPort {
-  ProposalRepositoryImpl({required Dio dio, required OfflineManager offlineManager})
-      : _dio = dio,
-        _offlineManager = offlineManager;
+  ProposalRepositoryImpl({
+    required Dio dio,
+    required OfflineManager offlineManager,
+  }) : _dio = dio,
+       _offlineManager = offlineManager;
 
   final Dio _dio;
   final OfflineManager _offlineManager;
@@ -53,12 +55,19 @@ class ProposalRepositoryImpl implements ProposalPort {
   Future<ProposalModel> getProposalById(String id) async {
     try {
       final response = await _dio.get(ApiConstants.proposalById(id));
-      final proposal = ProposalModel.fromJson(response.data as Map<String, dynamic>);
+      final proposal = ProposalModel.fromJson(
+        response.data as Map<String, dynamic>,
+      );
 
-      await _offlineManager.saveToCache('$_cacheKeyPrefix:detail:$id', response.data);
+      await _offlineManager.saveToCache(
+        '$_cacheKeyPrefix:detail:$id',
+        response.data,
+      );
       return proposal;
     } on DioException {
-      final cached = _offlineManager.getFromCacheOffline('$_cacheKeyPrefix:detail:$id');
+      final cached = _offlineManager.getFromCacheOffline(
+        '$_cacheKeyPrefix:detail:$id',
+      );
       if (cached != null) {
         return ProposalModel.fromJson(cached as Map<String, dynamic>);
       }
@@ -72,21 +81,31 @@ class ProposalRepositoryImpl implements ProposalPort {
       ApiConstants.proposals,
       data: request.toJson(),
     );
-    final proposal = ProposalModel.fromJson(response.data as Map<String, dynamic>);
+    final proposal = ProposalModel.fromJson(
+      response.data as Map<String, dynamic>,
+    );
 
     await _offlineManager.invalidateByPrefix('$_cacheKeyPrefix:list:');
     return proposal;
   }
 
   @override
-  Future<ProposalModel> updateProposal(String id, UpdateProposalRequest request) async {
+  Future<ProposalModel> updateProposal(
+    String id,
+    UpdateProposalRequest request,
+  ) async {
     final response = await _dio.patch(
       ApiConstants.proposalById(id),
       data: request.toJson(),
     );
-    final proposal = ProposalModel.fromJson(response.data as Map<String, dynamic>);
+    final proposal = ProposalModel.fromJson(
+      response.data as Map<String, dynamic>,
+    );
 
-    await _offlineManager.saveToCache('$_cacheKeyPrefix:detail:$id', response.data);
+    await _offlineManager.saveToCache(
+      '$_cacheKeyPrefix:detail:$id',
+      response.data,
+    );
     await _offlineManager.invalidateByPrefix('$_cacheKeyPrefix:list:');
     return proposal;
   }

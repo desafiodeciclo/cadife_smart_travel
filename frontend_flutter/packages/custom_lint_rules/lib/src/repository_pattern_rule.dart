@@ -6,14 +6,14 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 /// Força uso do Repository pattern: Notifier → Repository → ApiService → Dio
 class RepositoryPatternRule extends DartLintRule {
   RepositoryPatternRule()
-      : super(
-          code: const LintCode(
-            name: 'use_repository_pattern',
-            problemMessage:
-                'Chamada HTTP direta em Notifier/Provider. Use Repository pattern: Notifier → *_Repository → ApiService → Dio.',
-            errorSeverity: ErrorSeverity.ERROR,
-          ),
-        );
+    : super(
+        code: const LintCode(
+          name: 'use_repository_pattern',
+          problemMessage:
+              'Chamada HTTP direta em Notifier/Provider. Use Repository pattern: Notifier → *_Repository → ApiService → Dio.',
+          errorSeverity: ErrorSeverity.ERROR,
+        ),
+      );
 
   @override
   void run(
@@ -23,7 +23,8 @@ class RepositoryPatternRule extends DartLintRule {
   ) {
     context.registry.addClassDeclaration((node) {
       final className = node.name.lexeme;
-      final isNotifier = className.contains('Notifier') ||
+      final isNotifier =
+          className.contains('Notifier') ||
           className.contains('Provider') ||
           className.contains('Cubit');
 

@@ -118,10 +118,7 @@ Future<void> setupServiceLocator({
 
 void _registerAuthModule() {
   sl.registerLazySingleton<AuthPort>(
-    () => AuthRepositoryImpl(
-      dio: sl<Dio>(),
-      secureConfig: sl<SecureConfig>(),
-    ),
+    () => AuthRepositoryImpl(dio: sl<Dio>(), secureConfig: sl<SecureConfig>()),
   );
 }
 

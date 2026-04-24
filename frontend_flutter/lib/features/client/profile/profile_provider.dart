@@ -6,9 +6,10 @@ final profileAuthProvider = Provider<AuthPort>((ref) {
   throw UnimplementedError('Override em ProviderScope');
 });
 
-final userProfileProvider = AsyncNotifierProvider<UserProfileNotifier, UserModel?>(
-  UserProfileNotifier.new,
-);
+final userProfileProvider =
+    AsyncNotifierProvider<UserProfileNotifier, UserModel?>(
+      UserProfileNotifier.new,
+    );
 
 class UserProfileNotifier extends AsyncNotifier<UserModel?> {
   @override

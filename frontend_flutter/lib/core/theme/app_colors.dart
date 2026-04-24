@@ -32,17 +32,17 @@ class AppColors {
   static Color shadow = const Color(0xFF000000).withValues(alpha: 0.08);
 
   static Color scoreColor(String score) => switch (score) {
-        'quente' => success,
-        'morno' => warning,
-        _ => textSecondary,
-      };
+    'quente' => success,
+    'morno' => warning,
+    _ => textSecondary,
+  };
 
   static Color statusColor(String status) => switch (status) {
-        'qualificado' => success,
-        'fechado' => success,
-        'agendado' => const Color(0xFF1A5276),
-        'proposta' => const Color(0xFF7D6608),
-        'perdido' => textSecondary,
-        _ => primary,
-      };
+    'qualificado' => success,
+    'fechado' => success,
+    'agendado' => const Color(0xFF1A5276),
+    'proposta' => const Color(0xFF7D6608),
+    'perdido' => textSecondary,
+    _ => primary,
+  };
 }

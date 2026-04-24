@@ -19,7 +19,8 @@ class InteractionModel extends Equatable {
   final DateTime timestamp;
   final Map<String, dynamic>? metadata;
 
-  factory InteractionModel.fromJson(Map<String, dynamic> json) => InteractionModel(
+  factory InteractionModel.fromJson(Map<String, dynamic> json) =>
+      InteractionModel(
         id: json['id'] as String,
         leadId: json['lead_id'] as String,
         channel: json['channel'] as String,

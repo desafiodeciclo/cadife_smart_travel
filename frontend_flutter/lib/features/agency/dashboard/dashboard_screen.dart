@@ -30,7 +30,9 @@ class DashboardScreen extends ConsumerWidget {
         error: (e, _) => Center(child: Text('Erro: $e')),
         data: (leads) {
           final novos = leads.where((l) => l.status == 'novo').length;
-          final qualificados = leads.where((l) => l.status == 'qualificado').length;
+          final qualificados = leads
+              .where((l) => l.status == 'qualificado')
+              .length;
           final quentes = leads.where((l) => l.score == 'quente').length;
 
           return RefreshIndicator(
@@ -41,25 +43,55 @@ class DashboardScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Resumo do dia', style: Theme.of(context).textTheme.titleLarge),
+                  Text(
+                    'Resumo do dia',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      Expanded(child: _KpiCard(label: 'Total de Leads', value: '${leads.length}', color: AppColors.primary)),
+                      Expanded(
+                        child: _KpiCard(
+                          label: 'Total de Leads',
+                          value: '${leads.length}',
+                          color: AppColors.primary,
+                        ),
+                      ),
                       const SizedBox(width: 8),
-                      Expanded(child: _KpiCard(label: 'Novos', value: '$novos', color: AppColors.warning)),
+                      Expanded(
+                        child: _KpiCard(
+                          label: 'Novos',
+                          value: '$novos',
+                          color: AppColors.warning,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Expanded(child: _KpiCard(label: 'Qualificados', value: '$qualificados', color: AppColors.success)),
+                      Expanded(
+                        child: _KpiCard(
+                          label: 'Qualificados',
+                          value: '$qualificados',
+                          color: AppColors.success,
+                        ),
+                      ),
                       const SizedBox(width: 8),
-                      Expanded(child: _KpiCard(label: 'Quentes 🔥', value: '$quentes', color: AppColors.success)),
+                      Expanded(
+                        child: _KpiCard(
+                          label: 'Quentes 🔥',
+                          value: '$quentes',
+                          color: AppColors.success,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 24),
-                  Text('Acesso rápido', style: Theme.of(context).textTheme.titleLarge),
+                  Text(
+                    'Acesso rápido',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
                   const SizedBox(height: 12),
                   _QuickAction(
                     icon: Icons.people,
@@ -85,7 +117,11 @@ class _KpiCard extends StatelessWidget {
   final String label;
   final String value;
   final Color color;
-  const _KpiCard({required this.label, required this.value, required this.color});
+  const _KpiCard({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -95,9 +131,22 @@ class _KpiCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+            Text(
+              label,
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 12,
+              ),
+            ),
             const SizedBox(height: 4),
-            Text(value, style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: color)),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
           ],
         ),
       ),
@@ -109,7 +158,11 @@ class _QuickAction extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-  const _QuickAction({required this.icon, required this.label, required this.onTap});
+  const _QuickAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -8,8 +8,8 @@ PluginBase createPlugin() => _CadifeLinterPlugin();
 class _CadifeLinterPlugin extends PluginBase {
   @override
   List<LintRule> getLintRules(CustomLintConfigs configs) => [
-        NoHardcodedHexColorRule(),
-        NoNavigatorPushRule(),
-        RepositoryPatternRule(),
-      ];
+    NoHardcodedHexColorRule(),
+    NoNavigatorPushRule(),
+    RepositoryPatternRule(),
+  ];
 }
