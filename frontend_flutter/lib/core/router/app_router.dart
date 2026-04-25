@@ -1,3 +1,15 @@
+import 'package:cadife_smart_travel/core/router/agency_shell.dart';
+import 'package:cadife_smart_travel/core/router/client_shell.dart';
+import 'package:cadife_smart_travel/features/agency/agenda/agenda_screen.dart';
+import 'package:cadife_smart_travel/features/agency/dashboard/dashboard_screen.dart';
+import 'package:cadife_smart_travel/features/agency/leads/lead_detail_screen.dart';
+import 'package:cadife_smart_travel/features/agency/leads/leads_screen.dart';
+import 'package:cadife_smart_travel/features/auth/auth_notifier.dart';
+import 'package:cadife_smart_travel/features/auth/presentation/screens/login_screen.dart';
+import 'package:cadife_smart_travel/features/client/documentos/documentos_screen.dart';
+import 'package:cadife_smart_travel/features/client/historico/historico_screen.dart';
+import 'package:cadife_smart_travel/features/client/status/status_screen.dart';
+import 'package:cadife_smart_travel/features/onboarding/presentation/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -62,8 +74,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/auth/login',
-        pageBuilder: (_, state) =>
-            NoTransitionPage(key: state.pageKey, child: const LoginScreen()),
+        pageBuilder: (_, state) => NoTransitionPage(
+          key: state.pageKey,
+          child: const LoginScreen(),
+        ),
       ),
 
       // Agency shell — persistent BottomNavBar with SharedAxis tab transitions
@@ -141,7 +155,6 @@ final routerProvider = Provider<GoRouter>((ref) {
     ],
   );
 });
-<<<<<<< chore/setup-advanced-security
 
 class AppLoadingWidget extends StatelessWidget {
   const AppLoadingWidget({super.key, required this.message});
@@ -163,5 +176,4 @@ class AppLoadingWidget extends StatelessWidget {
     );
   }
 }
-=======
->>>>>>> developer
+

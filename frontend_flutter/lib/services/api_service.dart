@@ -2,6 +2,7 @@ import 'package:cadife_smart_travel/core/di/service_locator.dart';
 import 'package:cadife_smart_travel/core/security/secure_config.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final apiServiceProvider = Provider<ApiService>((ref) => ApiService(sl<SecureConfig>()));
 
@@ -67,9 +68,7 @@ class ApiService {
   }
 
   Future<void> clearTokens() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_tokenKey);
-    await prefs.remove(_refreshKey);
+    await _secureConfig.clearTokens();
   }
 
   Future<String?> getAccessToken() => _secureConfig.getAccessToken();

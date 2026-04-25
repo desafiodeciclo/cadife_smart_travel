@@ -35,7 +35,6 @@ class LeadsRepository {
   final ApiService _api;
   LeadsRepository(this._api);
 
-<<<<<<< chore/setup-advanced-security
   Future<List<Lead>> getLeads({String? status, String? score, String? search, int page = 1}) async {
     final response = await _api.get('/leads', queryParameters: {
       if (status != null) 'status': status,
@@ -44,24 +43,6 @@ class LeadsRepository {
       'page': page,
       'limit': 20,
     });
-=======
-  Future<List<Lead>> getLeads({
-    String? status,
-    String? score,
-    String? search,
-    int page = 1,
-  }) async {
-    final response = await _api.get(
-      '/leads',
-      queryParameters: {
-        'status': ?status,
-        'score': ?score,
-        'search': ?search,
-        'page': page,
-        'limit': 20,
-      },
-    );
->>>>>>> developer
     final items = response.data['items'] as List;
     return items.map((e) => Lead.fromJson(e as Map<String, dynamic>)).toList();
   }
