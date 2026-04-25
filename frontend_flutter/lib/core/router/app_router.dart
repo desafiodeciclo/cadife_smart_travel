@@ -142,7 +142,6 @@ final routerProvider = Provider<GoRouter>((ref) {
     ],
   );
 });
-<<<<<<< chore/setup-advanced-security
 
 class AppLoadingWidget extends StatelessWidget {
   const AppLoadingWidget({super.key, required this.message});
@@ -164,5 +163,3 @@ class AppLoadingWidget extends StatelessWidget {
     );
   }
 }
-=======
->>>>>>> developer
