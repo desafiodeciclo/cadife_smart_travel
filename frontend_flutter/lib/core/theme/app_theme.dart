@@ -1,8 +1,6 @@
 import 'package:cadife_smart_travel/core/theme/app_colors.dart';
-import 'package:cadife_smart_travel/core/theme/app_text_styles.dart';
+import 'package:cadife_smart_travel/core/theme/cadife_theme_extension.dart';
 import 'package:flutter/material.dart';
-import 'app_colors.dart';
-import 'cadife_theme_extension.dart';
 
 class AppTheme {
   AppTheme._();

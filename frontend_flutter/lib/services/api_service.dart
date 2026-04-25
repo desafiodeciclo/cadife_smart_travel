@@ -1,7 +1,7 @@
+import 'package:cadife_smart_travel/core/di/service_locator.dart';
+import 'package:cadife_smart_travel/core/security/secure_config.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cadife_smart_travel/core/security/secure_config.dart';
-import 'package:cadife_smart_travel/core/di/service_locator.dart';
 
 final apiServiceProvider = Provider<ApiService>((ref) => ApiService(sl<SecureConfig>()));
 

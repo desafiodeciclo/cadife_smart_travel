@@ -1,6 +1,6 @@
+import 'package:cadife_smart_travel/core/security/security_notifier.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'security_notifier.dart';
 
 class LockScreen extends ConsumerWidget {
   const LockScreen({super.key});

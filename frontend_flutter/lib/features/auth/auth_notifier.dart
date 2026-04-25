@@ -1,6 +1,29 @@
 import 'package:cadife_smart_travel/services/api_service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
+
+// ── Value object retornado pelo isolate background ────────────────────────────
+
+class _JwtCheckResult {
+  const _JwtCheckResult({required this.isExpired, required this.payload});
+  final bool isExpired;
+  final Map<String, dynamic> payload;
+}
+
+// Top-level obrigatório para compute() — não pode ser closure ou método de instância
+_JwtCheckResult _validateJwtInBackground(String token) {
+  try {
+    if (JwtDecoder.isExpired(token)) {
+      return const _JwtCheckResult(isExpired: true, payload: {});
+    }
+    return _JwtCheckResult(isExpired: false, payload: JwtDecoder.decode(token));
+  } catch (_) {
+    return const _JwtCheckResult(isExpired: true, payload: {});
+  }
+}
+
+// ── AuthState ─────────────────────────────────────────────────────────────────
 
 class AuthState {
   final bool isLoggedIn;
@@ -24,29 +47,32 @@ class AuthState {
       );
 }
 
+// ── AuthNotifier ──────────────────────────────────────────────────────────────
+
 class AuthNotifier extends StateNotifier<AuthState> {
   final ApiService _api;
 
   AuthNotifier(this._api) : super(const AuthState());
 
   Future<void> checkSession() async {
+    // Platform channel (flutter_secure_storage) — deve ficar na main isolate
     final token = await _api.getAccessToken();
     if (token == null) return;
-    
-    try {
-      if (JwtDecoder.isExpired(token)) {
-        await _api.clearTokens();
-        return;
-      }
-      
-      final payload = JwtDecoder.decode(token);
-      state = state.copyWith(
-        isLoggedIn: true,
-        userPerfil: payload['perfil'] ?? payload['role'], // Map payload to userPerfil
-      );
-    } catch (_) {
+
+    // CPU-bound (base64 decode) — offloadado para isolate separado via compute()
+    final result = await compute(_validateJwtInBackground, token);
+
+    if (result.isExpired) {
+      // Platform channel — deve ficar na main isolate
       await _api.clearTokens();
+      return;
     }
+
+    // StateNotifier.state — deve ficar na main isolate
+    state = state.copyWith(
+      isLoggedIn: true,
+      userPerfil: result.payload['perfil'] as String? ?? result.payload['role'] as String?,
+    );
   }
 
   Future<void> login(String email, String password) async {

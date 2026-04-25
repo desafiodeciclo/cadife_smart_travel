@@ -1,11 +1,11 @@
 import 'package:cadife_smart_travel/core/di/service_locator.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:cadife_smart_travel/services/notification_service.dart';
 import 'package:cadife_smart_travel/core/ports/agenda_port.dart';
 import 'package:cadife_smart_travel/core/ports/auth_port.dart';
 import 'package:cadife_smart_travel/core/ports/lead_port.dart';
 import 'package:cadife_smart_travel/core/ports/proposal_port.dart';
 import 'package:cadife_smart_travel/core/router/app_router.dart';
+import 'package:cadife_smart_travel/core/security/lock_screen.dart';
+import 'package:cadife_smart_travel/core/security/security_notifier.dart';
 import 'package:cadife_smart_travel/core/theme/app_theme.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/agenda_provider.dart' as agency_agenda;
 import 'package:cadife_smart_travel/features/agency/dashboard/dashboard_provider.dart' as agency_dash;
@@ -17,8 +17,8 @@ import 'package:cadife_smart_travel/features/client/documents/documents_provider
 import 'package:cadife_smart_travel/features/client/interactions/interactions_provider.dart' as client_interactions;
 import 'package:cadife_smart_travel/features/client/profile/profile_provider.dart' as client_profile;
 import 'package:cadife_smart_travel/features/client/trip_status/trip_status_provider.dart' as client_trip;
-import 'package:cadife_smart_travel/core/security/security_notifier.dart';
-import 'package:cadife_smart_travel/core/security/lock_screen.dart';
+import 'package:cadife_smart_travel/services/notification_service.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

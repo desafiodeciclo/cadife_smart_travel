@@ -1,8 +1,9 @@
 import 'dart:async';
+
+import 'package:cadife_smart_travel/core/di/service_locator.dart';
+import 'package:cadife_smart_travel/core/security/biometric_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'biometric_service.dart';
-import '../di/service_locator.dart';
 
 class SecurityState {
   final bool isLocked;
@@ -33,10 +34,10 @@ class SecurityNotifier extends StateNotifier<SecurityState> with WidgetsBindingO
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState lifeState) {
-    if (lifeState == AppLifecycleState.paused) {
-      state = state.copyWith(lastActive: DateTime.now());
-    } else if (lifeState == AppLifecycleState.resumed) {
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      this.state = this.state.copyWith(lastActive: DateTime.now());
+    } else if (state == AppLifecycleState.resumed) {
       _checkLock();
     }
   }
