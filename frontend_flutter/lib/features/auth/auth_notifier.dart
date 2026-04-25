@@ -38,13 +38,17 @@ class AuthState {
     this.error,
   });
 
-  AuthState copyWith({bool? isLoggedIn, String? userPerfil, bool? isLoading, String? error}) =>
-      AuthState(
-        isLoggedIn: isLoggedIn ?? this.isLoggedIn,
-        userPerfil: userPerfil ?? this.userPerfil,
-        isLoading: isLoading ?? this.isLoading,
-        error: error,
-      );
+  AuthState copyWith({
+    bool? isLoggedIn,
+    String? userPerfil,
+    bool? isLoading,
+    String? error,
+  }) => AuthState(
+    isLoggedIn: isLoggedIn ?? this.isLoggedIn,
+    userPerfil: userPerfil ?? this.userPerfil,
+    isLoading: isLoading ?? this.isLoading,
+    error: error,
+  );
 }
 
 // ── AuthNotifier ──────────────────────────────────────────────────────────────
@@ -78,10 +82,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> login(String email, String password) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final response = await _api.post('/auth/login', data: {
-        'email': email,
-        'password': password,
-      });
+      final response = await _api.post(
+        '/auth/login',
+        data: {'email': email, 'password': password},
+      );
       await _api.saveTokens(
         response.data['access_token'],
         response.data['refresh_token'],

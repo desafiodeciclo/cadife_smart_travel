@@ -13,6 +13,8 @@ dependencies:
   # UI / Design
   cupertino_icons: ^1.0.8
   animations: ^2.1.2
+  shimmer: ^3.0.0
+  mask_text_input_formatter: ^2.5.0
 
   # State Management
   flutter_riverpod: ^2.6.1
@@ -50,6 +52,8 @@ dependencies:
   lottie: ^3.1.2
   local_auth: ^2.3.0
   jwt_decoder: ^2.0.1
+  isar: ^3.1.0+1
+  isar_flutter_libs: ^3.1.0+1
 
   local_auth_android: any
   local_auth_darwin: any
@@ -63,6 +67,8 @@ dev_dependencies:
   # Testing
   mocktail: ^1.0.4
   network_image_mock: ^2.1.1
+  isar_generator: ^3.1.0+1
+  build_runner: ^2.4.13
 
 flutter:
   uses-material-design: true

@@ -6,6 +6,8 @@
 .LSOverride
 ._*
 Thumbs.db
+*.bak
+*.tmp
 
 # ========================
 # LOGS
@@ -16,66 +18,132 @@ yarn-debug.log*
 yarn-error.log*
 
 # ========================
-# NODE / FRONT-END
-# ========================
-node_modules/
-dist/
-build/
-coverage/
-
-# ========================
 # AMBIENTE / SEGURANÇA
 # ========================
 .env
-.env.*
-claude_local.md
+.env.local
+.env.*.local
+.envrc
 *.pem
 *.key
 *.p12
 *.pfx
 credentials.json
 secret.txt
+key.properties
+**/*.keystore
+**/*.jks
+
+# ========================
+# BANCOS DE DATOS (Local)
+# ========================
+*.db
+*.sqlite
+*.sqlite3
+*.sqlite-journal
 
 # ========================
 # IDE / EDITORES
 # ========================
 .vscode/
 .idea/
+*.iml
+*.ipr
+*.iws
 *.swp
+*.suo
+*.user
+.history/
+.buildlog/
 
 # ========================
-# PYTHON
+# PYTHON (Backend)
 # ========================
-__pycache__/
-*.pyc
-venv/
-.envrc
-.mypy_cache/
-.pytest_cache/
-.ipynb_checkpoints/
-local.py
-settings_local.py
+backend/**/__pycache__/
+backend/**/*.py[cod]
+backend/**/*$py.class
+backend/**/*.so
+backend/**/env/
+backend/**/venv/
+backend/**/.venv/
+backend/**/build/
+backend/**/develop-eggs/
+backend/**/dist/
+backend/**/downloads/
+backend/**/eggs/
+backend/**/.eggs/
+backend/**/lib/
+backend/**/lib64/
+backend/**/parts/
+backend/**/sdist/
+backend/**/var/
+backend/**/wheels/
+backend/**/*.egg-info/
+backend/**/.installed.cfg
+backend/**/*.egg
+backend/**/.mypy_cache/
+backend/**/.pytest_cache/
+backend/**/.ipynb_checkpoints/
+backend/**/local.py
+backend/**/settings_local.py
 
 # ========================
-# FLUTTER / DART
+# FLUTTER / DART (Frontend)
 # ========================
 .dart_tool/
-.packages
-build/
 .flutter-plugins
 .flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+**/build/
+**/doc/api/
+
+# Android específico
+**/android/.gradle/
+**/android/local.properties
+**/android/app/debug/
+**/android/app/profile/
+**/android/app/release/
+**/android/sdk_snapshot/
+**/android/app/src/main/java/**/GeneratedPluginRegistrant.java
+
+# iOS específico
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/ephemeral/
+**/ios/Flutter/App.framework
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/Runner/GeneratedPluginRegistrant.*
+**/ios/.last_build_id
+**/Pods/
+**/.symlinks/
+userdata
+xcuserdata
+
+# Web/Desktop
+**/linux/flutter/ephemeral/
+**/macos/Flutter/ephemeral/
+**/windows/flutter/ephemeral/
 
 # ========================
-# GIT PROBLEMAS MAC
+# DOCKER / FERRAMENTAS
 # ========================
-.git/objects/pack/._*
-
-# ========================
-# DIVERSOS
-# ========================
-.history/
-*.bak
-*.tmp
 docker-compose.override.yml
+.claude/
+claude_local.md
 
+# ========================
+# FLUTTER WINDOWS (Arquivos Gerados)
+# ========================
+**/generated_plugin_registrant.cc
+**/generated_plugin_registrant.h
+**/generated_plugins.cmake
 
+# ========================
+# FLUTTER MACOS (Arquivos Gerados)
+# ========================
+**/macos/Flutter/GeneratedPluginRegistrant.swift
+**/macos/Flutter/flutter_export_environment.sh
+**/macos/Runner/GeneratedPluginRegistrant.swift

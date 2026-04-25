@@ -25,11 +25,7 @@ class AppLoadingWidget extends StatelessWidget {
 }
 
 class AppErrorWidget extends StatelessWidget {
-  const AppErrorWidget({
-    super.key,
-    required this.message,
-    this.onRetry,
-  });
+  const AppErrorWidget({super.key, required this.message, this.onRetry});
 
   final String message;
   final VoidCallback? onRetry;
@@ -44,7 +40,11 @@ class AppErrorWidget extends StatelessWidget {
           children: [
             const Icon(Icons.error_outline, size: 48, color: AppColors.error),
             const SizedBox(height: 16),
-            Text(message, style: AppTextStyles.bodyMedium, textAlign: TextAlign.center),
+            Text(
+              message,
+              style: AppTextStyles.bodyMedium,
+              textAlign: TextAlign.center,
+            ),
             if (onRetry != null) ...[
               const SizedBox(height: 16),
               ElevatedButton(
@@ -75,7 +75,9 @@ class AppOfflineBanner extends StatelessWidget {
           Expanded(
             child: Text(
               'Você está offline. Dados podem estar desatualizados.',
-              style: AppTextStyles.labelSmall.copyWith(color: AppColors.textOnPrimary),
+              style: AppTextStyles.labelSmall.copyWith(
+                color: AppColors.textOnPrimary,
+              ),
             ),
           ),
         ],
@@ -111,12 +113,13 @@ class AppEmptyStateWidget extends StatelessWidget {
             Text(title, style: AppTextStyles.h4, textAlign: TextAlign.center),
             if (subtitle != null) ...[
               const SizedBox(height: 8),
-              Text(subtitle!, style: AppTextStyles.bodySmall, textAlign: TextAlign.center),
+              Text(
+                subtitle!,
+                style: AppTextStyles.bodySmall,
+                textAlign: TextAlign.center,
+              ),
             ],
-            if (action != null) ...[
-              const SizedBox(height: 24),
-              action!,
-            ],
+            if (action != null) ...[const SizedBox(height: 24), action!],
           ],
         ),
       ),

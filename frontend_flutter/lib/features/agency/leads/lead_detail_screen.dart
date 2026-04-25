@@ -27,7 +27,8 @@ class LeadDetailScreen extends ConsumerWidget {
             children: [
               _InfoCard(lead: lead),
               const SizedBox(height: 16),
-              if (lead['briefing'] != null) _BriefingCard(briefing: lead['briefing']),
+              if (lead['briefing'] != null)
+                _BriefingCard(briefing: lead['briefing']),
               const SizedBox(height: 16),
               _ActionButtons(leadId: leadId, currentStatus: lead['status']),
             ],
@@ -50,13 +51,22 @@ class _InfoCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(lead['nome'] ?? 'Sem nome', style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              lead['nome'] ?? 'Sem nome',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
             const SizedBox(height: 4),
-            Text(lead['telefone'], style: const TextStyle(color: AppColors.textSecondary)),
+            Text(
+              lead['telefone'],
+              style: const TextStyle(color: AppColors.textSecondary),
+            ),
             const SizedBox(height: 8),
             Row(
               children: [
-                _Chip(label: lead['status'], color: AppColors.statusColor(lead['status'])),
+                _Chip(
+                  label: lead['status'],
+                  color: AppColors.statusColor(lead['status']),
+                ),
                 if (lead['score'] != null) ...[
                   const SizedBox(width: 8),
                   _Chip(
@@ -101,13 +111,18 @@ class _BriefingCard extends StatelessWidget {
               ],
             ),
             const Divider(),
-            if (briefing['destino'] != null) _row('Destino', briefing['destino']),
+            if (briefing['destino'] != null)
+              _row('Destino', briefing['destino']),
             if (briefing['data_ida'] != null) _row('Ida', briefing['data_ida']),
-            if (briefing['data_volta'] != null) _row('Volta', briefing['data_volta']),
-            if (briefing['qtd_pessoas'] != null) _row('Pessoas', '${briefing['qtd_pessoas']}'),
+            if (briefing['data_volta'] != null)
+              _row('Volta', briefing['data_volta']),
+            if (briefing['qtd_pessoas'] != null)
+              _row('Pessoas', '${briefing['qtd_pessoas']}'),
             if (briefing['perfil'] != null) _row('Perfil', briefing['perfil']),
-            if (briefing['orcamento'] != null) _row('Orçamento', briefing['orcamento']),
-            if (briefing['observacoes'] != null) _row('Obs.', briefing['observacoes']),
+            if (briefing['orcamento'] != null)
+              _row('Orçamento', briefing['orcamento']),
+            if (briefing['observacoes'] != null)
+              _row('Obs.', briefing['observacoes']),
           ],
         ),
       ),
@@ -115,17 +130,20 @@ class _BriefingCard extends StatelessWidget {
   }
 
   Widget _row(String label, String value) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(
-          children: [
-            SizedBox(
-              width: 80,
-              child: Text(label, style: const TextStyle(color: AppColors.textSecondary)),
-            ),
-            Expanded(child: Text(value)),
-          ],
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Row(
+      children: [
+        SizedBox(
+          width: 80,
+          child: Text(
+            label,
+            style: const TextStyle(color: AppColors.textSecondary),
+          ),
         ),
-      );
+        Expanded(child: Text(value)),
+      ],
+    ),
+  );
 }
 
 class _ActionButtons extends ConsumerWidget {
@@ -175,7 +193,11 @@ class _Chip extends StatelessWidget {
       ),
       child: Text(
         label.replaceAll('_', ' '),
-        style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 12),
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.w600,
+          fontSize: 12,
+        ),
       ),
     );
   }

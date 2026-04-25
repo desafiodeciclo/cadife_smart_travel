@@ -6,8 +6,8 @@ import 'package:dio/dio.dart';
 
 class LeadRepositoryImpl implements LeadPort {
   LeadRepositoryImpl({required Dio dio, required OfflineManager offlineManager})
-      : _dio = dio,
-        _offlineManager = offlineManager;
+    : _dio = dio,
+      _offlineManager = offlineManager;
 
   final Dio _dio;
   final OfflineManager _offlineManager;
@@ -15,7 +15,10 @@ class LeadRepositoryImpl implements LeadPort {
   static const _cacheKeyPrefix = 'leads';
 
   @override
-  Future<List<LeadModel>> getLeads({LeadStatus? status, LeadScore? score}) async {
+  Future<List<LeadModel>> getLeads({
+    LeadStatus? status,
+    LeadScore? score,
+  }) async {
     try {
       final response = await _dio.get(
         ApiConstants.leads,
@@ -52,10 +55,15 @@ class LeadRepositoryImpl implements LeadPort {
       final response = await _dio.get(ApiConstants.leadById(id));
       final lead = LeadModel.fromJson(response.data as Map<String, dynamic>);
 
-      await _offlineManager.saveToCache('$_cacheKeyPrefix:detail:$id', response.data);
+      await _offlineManager.saveToCache(
+        '$_cacheKeyPrefix:detail:$id',
+        response.data,
+      );
       return lead;
     } on DioException {
-      final cached = _offlineManager.getFromCacheOffline('$_cacheKeyPrefix:detail:$id');
+      final cached = _offlineManager.getFromCacheOffline(
+        '$_cacheKeyPrefix:detail:$id',
+      );
       if (cached != null) {
         return LeadModel.fromJson(cached as Map<String, dynamic>);
       }
@@ -71,7 +79,10 @@ class LeadRepositoryImpl implements LeadPort {
     );
     final lead = LeadModel.fromJson(response.data as Map<String, dynamic>);
 
-    await _offlineManager.saveToCache('$_cacheKeyPrefix:detail:$id', response.data);
+    await _offlineManager.saveToCache(
+      '$_cacheKeyPrefix:detail:$id',
+      response.data,
+    );
     await _offlineManager.invalidateByPrefix('$_cacheKeyPrefix:list:');
     return lead;
   }
@@ -80,7 +91,9 @@ class LeadRepositoryImpl implements LeadPort {
   Future<BriefingModel> getBriefing(String leadId) async {
     try {
       final response = await _dio.get(ApiConstants.leadBriefing(leadId));
-      final briefing = BriefingModel.fromJson(response.data as Map<String, dynamic>);
+      final briefing = BriefingModel.fromJson(
+        response.data as Map<String, dynamic>,
+      );
 
       await _offlineManager.saveToCache('briefing:$leadId', response.data);
       return briefing;
@@ -96,7 +109,9 @@ class LeadRepositoryImpl implements LeadPort {
   @override
   Future<List<InteractionModel>> getInteractions(String leadId) async {
     try {
-      final response = await _dio.get('${ApiConstants.leadById(leadId)}/interactions');
+      final response = await _dio.get(
+        '${ApiConstants.leadById(leadId)}/interactions',
+      );
       final interactions = (response.data as List)
           .map((e) => InteractionModel.fromJson(e as Map<String, dynamic>))
           .toList();
@@ -104,7 +119,9 @@ class LeadRepositoryImpl implements LeadPort {
       await _offlineManager.saveToCache('interactions:$leadId', response.data);
       return interactions;
     } on DioException {
-      final cached = _offlineManager.getFromCacheOffline('interactions:$leadId');
+      final cached = _offlineManager.getFromCacheOffline(
+        'interactions:$leadId',
+      );
       if (cached != null) {
         return (cached as List)
             .map((e) => InteractionModel.fromJson(e as Map<String, dynamic>))

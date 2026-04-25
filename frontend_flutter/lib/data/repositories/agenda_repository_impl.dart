@@ -5,9 +5,11 @@ import 'package:cadife_smart_travel/shared/models/models.dart';
 import 'package:dio/dio.dart';
 
 class AgendaRepositoryImpl implements AgendaPort {
-  AgendaRepositoryImpl({required Dio dio, required OfflineManager offlineManager})
-      : _dio = dio,
-        _offlineManager = offlineManager;
+  AgendaRepositoryImpl({
+    required Dio dio,
+    required OfflineManager offlineManager,
+  }) : _dio = dio,
+       _offlineManager = offlineManager;
 
   final Dio _dio;
   final OfflineManager _offlineManager;
@@ -19,9 +21,7 @@ class AgendaRepositoryImpl implements AgendaPort {
     try {
       final response = await _dio.get(
         ApiConstants.agenda,
-        queryParameters: {
-          if (date != null) 'date': date.toIso8601String(),
-        },
+        queryParameters: {if (date != null) 'date': date.toIso8601String()},
       );
       final items = (response.data as List)
           .map((e) => AgendaModel.fromJson(e as Map<String, dynamic>))
@@ -49,12 +49,19 @@ class AgendaRepositoryImpl implements AgendaPort {
   Future<AgendaModel> getAgendaById(String id) async {
     try {
       final response = await _dio.get(ApiConstants.agendaById(id));
-      final agenda = AgendaModel.fromJson(response.data as Map<String, dynamic>);
+      final agenda = AgendaModel.fromJson(
+        response.data as Map<String, dynamic>,
+      );
 
-      await _offlineManager.saveToCache('$_cacheKeyPrefix:detail:$id', response.data);
+      await _offlineManager.saveToCache(
+        '$_cacheKeyPrefix:detail:$id',
+        response.data,
+      );
       return agenda;
     } on DioException {
-      final cached = _offlineManager.getFromCacheOffline('$_cacheKeyPrefix:detail:$id');
+      final cached = _offlineManager.getFromCacheOffline(
+        '$_cacheKeyPrefix:detail:$id',
+      );
       if (cached != null) {
         return AgendaModel.fromJson(cached as Map<String, dynamic>);
       }
@@ -75,14 +82,20 @@ class AgendaRepositoryImpl implements AgendaPort {
   }
 
   @override
-  Future<AgendaModel> updateAgenda(String id, UpdateAgendaRequest request) async {
+  Future<AgendaModel> updateAgenda(
+    String id,
+    UpdateAgendaRequest request,
+  ) async {
     final response = await _dio.patch(
       ApiConstants.agendaById(id),
       data: request.toJson(),
     );
     final agenda = AgendaModel.fromJson(response.data as Map<String, dynamic>);
 
-    await _offlineManager.saveToCache('$_cacheKeyPrefix:detail:$id', response.data);
+    await _offlineManager.saveToCache(
+      '$_cacheKeyPrefix:detail:$id',
+      response.data,
+    );
     await _offlineManager.invalidateByPrefix('$_cacheKeyPrefix:list:');
     return agenda;
   }
@@ -102,11 +115,13 @@ class AgendaRepositoryImpl implements AgendaPort {
         queryParameters: {'date': date.toIso8601String()},
       );
       final slots = (response.data as List)
-          .map((e) => TimeSlotModel(
-                startTime: DateTime.parse(e['start_time'] as String),
-                endTime: DateTime.parse(e['end_time'] as String),
-                available: e['available'] as bool,
-              ))
+          .map(
+            (e) => TimeSlotModel(
+              startTime: DateTime.parse(e['start_time'] as String),
+              endTime: DateTime.parse(e['end_time'] as String),
+              available: e['available'] as bool,
+            ),
+          )
           .toList();
 
       await _offlineManager.saveToCache(
@@ -120,11 +135,13 @@ class AgendaRepositoryImpl implements AgendaPort {
       );
       if (cached != null) {
         return (cached as List)
-            .map((e) => TimeSlotModel(
-                  startTime: DateTime.parse(e['start_time'] as String),
-                  endTime: DateTime.parse(e['end_time'] as String),
-                  available: e['available'] as bool,
-                ))
+            .map(
+              (e) => TimeSlotModel(
+                startTime: DateTime.parse(e['start_time'] as String),
+                endTime: DateTime.parse(e['end_time'] as String),
+                available: e['available'] as bool,
+              ),
+            )
             .toList();
       }
       rethrow;

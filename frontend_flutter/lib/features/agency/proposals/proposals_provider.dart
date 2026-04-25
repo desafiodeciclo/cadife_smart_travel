@@ -6,9 +6,10 @@ final proposalPortProvider = Provider<ProposalPort>((ref) {
   throw UnimplementedError('Override em ProviderScope');
 });
 
-final proposalsProvider = AsyncNotifierProvider<ProposalsNotifier, List<ProposalModel>>(
-  ProposalsNotifier.new,
-);
+final proposalsProvider =
+    AsyncNotifierProvider<ProposalsNotifier, List<ProposalModel>>(
+      ProposalsNotifier.new,
+    );
 
 class ProposalsNotifier extends AsyncNotifier<List<ProposalModel>> {
   @override

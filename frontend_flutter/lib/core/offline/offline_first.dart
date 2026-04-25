@@ -10,15 +10,13 @@ class OfflineFirst {
     required OfflineManager offlineManager,
     required NetworkInfo networkInfo,
     required OfflineSyncQueue syncQueue,
-  })  : _offlineManager = offlineManager,
-        _networkInfo = networkInfo,
-        _syncQueue = syncQueue;
+  }) : _offlineManager = offlineManager,
+       _networkInfo = networkInfo,
+       _syncQueue = syncQueue;
 
   final OfflineManager _offlineManager;
   final NetworkInfo _networkInfo;
   final OfflineSyncQueue _syncQueue;
-
-  
 
   Future<Result<T>> onlineFirst<T>({
     required String cacheKey,
@@ -50,7 +48,10 @@ class OfflineFirst {
     required T Function(dynamic cached) fromCache,
     int? expiryMinutes,
   }) async {
-    final cached = _offlineManager.getFromCache(cacheKey, expiryMinutes: expiryMinutes);
+    final cached = _offlineManager.getFromCache(
+      cacheKey,
+      expiryMinutes: expiryMinutes,
+    );
     if (cached != null) {
       try {
         return Success(fromCache(cached));

@@ -6,8 +6,9 @@ final authPortProvider = Provider<AuthPort>((ref) {
   throw UnimplementedError('Override em ProviderScope');
 });
 
-final authNotifierProvider =
-    AsyncNotifierProvider<AuthNotifier, AuthState>(AuthNotifier.new);
+final authNotifierProvider = AsyncNotifierProvider<AuthNotifier, AuthState>(
+  AuthNotifier.new,
+);
 
 class AuthNotifier extends AsyncNotifier<AuthState> {
   @override

@@ -24,9 +24,10 @@ final dashboardLeadPortProvider = Provider<LeadPort>((ref) {
   throw UnimplementedError('Override em ProviderScope');
 });
 
-final dashboardStatsProvider = AsyncNotifierProvider<DashboardStatsNotifier, DashboardStats>(
-  DashboardStatsNotifier.new,
-);
+final dashboardStatsProvider =
+    AsyncNotifierProvider<DashboardStatsNotifier, DashboardStats>(
+      DashboardStatsNotifier.new,
+    );
 
 class DashboardStatsNotifier extends AsyncNotifier<DashboardStats> {
   @override

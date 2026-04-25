@@ -3,11 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 class AgencyShell extends StatefulWidget {
-  const AgencyShell({
-    super.key,
-    required this.child,
-    required this.location,
-  });
+  const AgencyShell({super.key, required this.child, required this.location});
 
   final Widget child;
   final String location;
@@ -17,11 +13,7 @@ class AgencyShell extends StatefulWidget {
 }
 
 class _AgencyShellState extends State<AgencyShell> {
-  static const _tabs = [
-    '/agency/dashboard',
-    '/agency/leads',
-    '/agency/agenda',
-  ];
+  static const _tabs = ['/agency/dashboard', '/agency/leads', '/agency/agenda'];
 
   int _currentIndex = 0;
   int _previousIndex = 0;
@@ -66,10 +58,7 @@ class _AgencyShellState extends State<AgencyShell> {
               fillColor: Colors.transparent,
               child: child,
             ),
-        child: KeyedSubtree(
-          key: ValueKey(_currentIndex),
-          child: widget.child,
-        ),
+        child: widget.child,
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,

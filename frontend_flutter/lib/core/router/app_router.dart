@@ -1,15 +1,3 @@
-import 'package:cadife_smart_travel/core/router/agency_shell.dart';
-import 'package:cadife_smart_travel/core/router/client_shell.dart';
-import 'package:cadife_smart_travel/features/agency/agenda/agenda_screen.dart';
-import 'package:cadife_smart_travel/features/agency/dashboard/dashboard_screen.dart';
-import 'package:cadife_smart_travel/features/agency/leads/lead_detail_screen.dart';
-import 'package:cadife_smart_travel/features/agency/leads/leads_screen.dart';
-import 'package:cadife_smart_travel/features/auth/auth_notifier.dart';
-import 'package:cadife_smart_travel/features/auth/login_screen.dart';
-import 'package:cadife_smart_travel/features/client/documentos/documentos_screen.dart';
-import 'package:cadife_smart_travel/features/client/historico/historico_screen.dart';
-import 'package:cadife_smart_travel/features/client/status/status_screen.dart';
-import 'package:cadife_smart_travel/features/onboarding/presentation/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -51,10 +39,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       // Cross-role guard
-      if (isLogged && auth.userPerfil == 'agencia' && loc.startsWith('/client')) {
+      if (isLogged &&
+          auth.userPerfil == 'agencia' &&
+          loc.startsWith('/client')) {
         return '/agency/dashboard';
       }
-      if (isLogged && auth.userPerfil == 'cliente' && loc.startsWith('/agency')) {
+      if (isLogged &&
+          auth.userPerfil == 'cliente' &&
+          loc.startsWith('/agency')) {
         return '/client/status';
       }
 
@@ -70,34 +62,38 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/auth/login',
-        pageBuilder: (_, state) => NoTransitionPage(
-          key: state.pageKey,
-          child: const LoginScreen(),
-        ),
+        pageBuilder: (_, state) =>
+            NoTransitionPage(key: state.pageKey, child: const LoginScreen()),
       ),
 
       // Agency shell — persistent BottomNavBar with SharedAxis tab transitions
       ShellRoute(
         builder: (context, state, child) => AgencyShell(
           key: const ValueKey('agency-shell'),
-          location: state.matchedLocation,
+          location: state.uri.path,
           child: child,
         ),
         routes: [
           GoRoute(
             path: '/agency/dashboard',
-            pageBuilder: (_, state) =>
-                NoTransitionPage(key: state.pageKey, child: const DashboardScreen()),
+            pageBuilder: (_, state) => NoTransitionPage(
+              key: state.pageKey,
+              child: const DashboardScreen(),
+            ),
           ),
           GoRoute(
             path: '/agency/leads',
-            pageBuilder: (_, state) =>
-                NoTransitionPage(key: state.pageKey, child: const LeadsScreen()),
+            pageBuilder: (_, state) => NoTransitionPage(
+              key: state.pageKey,
+              child: const LeadsScreen(),
+            ),
           ),
           GoRoute(
             path: '/agency/agenda',
-            pageBuilder: (_, state) =>
-                NoTransitionPage(key: state.pageKey, child: const AgendaScreen()),
+            pageBuilder: (_, state) => NoTransitionPage(
+              key: state.pageKey,
+              child: const AgendaScreen(),
+            ),
           ),
         ],
       ),
@@ -115,74 +111,57 @@ final routerProvider = Provider<GoRouter>((ref) {
       ShellRoute(
         builder: (context, state, child) => ClientShell(
           key: const ValueKey('client-shell'),
-          location: state.matchedLocation,
+          location: state.uri.path,
           child: child,
         ),
         routes: [
           GoRoute(
             path: '/client/status',
-            pageBuilder: (_, state) =>
-                NoTransitionPage(key: state.pageKey, child: const StatusScreen()),
+            pageBuilder: (_, state) => NoTransitionPage(
+              key: state.pageKey,
+              child: const StatusScreen(),
+            ),
           ),
           GoRoute(
             path: '/client/historico',
-            pageBuilder: (_, state) =>
-                NoTransitionPage(key: state.pageKey, child: const HistoricoScreen()),
+            pageBuilder: (_, state) => NoTransitionPage(
+              key: state.pageKey,
+              child: const HistoricoScreen(),
+            ),
           ),
           GoRoute(
             path: '/client/documentos',
-            pageBuilder: (_, state) =>
-                NoTransitionPage(key: state.pageKey, child: const DocumentosScreen()),
+            pageBuilder: (_, state) => NoTransitionPage(
+              key: state.pageKey,
+              child: const DocumentosScreen(),
+            ),
           ),
         ],
       ),
     ],
   );
 });
+<<<<<<< chore/setup-advanced-security
 
-class _HomeShell extends StatelessWidget {
-  const _HomeShell();
-
-  @override
-  Widget build(BuildContext context) {
-    return const AppLoadingWidget(message: 'Carregando...');
-  }
-}
-
-class _AgencyShell extends StatelessWidget {
-  const _AgencyShell();
+class AppLoadingWidget extends StatelessWidget {
+  const AppLoadingWidget({super.key, required this.message});
+  final String message;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Cadife Smart Travel')),
-      body: const Center(child: AppLoadingWidget(message: 'Carregando dashboard...')),
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(height: 16),
+            Text(message),
+          ],
+        ),
+      ),
     );
   }
 }
-
-class _ClientShell extends StatelessWidget {
-  const _ClientShell();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Minha Viagem')),
-      body: const Center(child: AppLoadingWidget(message: 'Carregando...')),
-    );
-  }
-}
-
-class _PlaceholderScreen extends StatelessWidget {
-  const _PlaceholderScreen({required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Center(child: Text(title, style: const TextStyle(fontSize: 24))),
-    );
-  }
-}
+=======
+>>>>>>> developer

@@ -63,12 +63,15 @@ async def list_leads(
     search: Optional[str] = None,
     page: int = 1,
     limit: int = 20,
+    consultor_id: Optional[uuid.UUID] = None,
 ) -> tuple[list[Lead], int]:
     query = select(Lead).where(Lead.is_archived == False)
     if status:
         query = query.where(Lead.status == status)
     if score:
         query = query.where(Lead.score == score)
+    if consultor_id:
+        query = query.where(Lead.consultor_id == consultor_id)
     if search:
         query = query.where(
             (Lead.nome.ilike(f"%{search}%")) | (Lead.telefone.ilike(f"%{search}%"))

@@ -67,13 +67,17 @@ class ApiService {
   }
 
   Future<void> clearTokens() async {
-    await _secureConfig.clearTokens();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_tokenKey);
+    await prefs.remove(_refreshKey);
   }
 
   Future<String?> getAccessToken() => _secureConfig.getAccessToken();
 
-  Future<Response<T>> get<T>(String path, {Map<String, dynamic>? queryParameters}) =>
-      _dio.get(path, queryParameters: queryParameters);
+  Future<Response<T>> get<T>(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+  }) => _dio.get(path, queryParameters: queryParameters);
 
   Future<Response<T>> post<T>(String path, {dynamic data}) =>
       _dio.post(path, data: data);
@@ -81,6 +85,5 @@ class ApiService {
   Future<Response<T>> put<T>(String path, {dynamic data}) =>
       _dio.put(path, data: data);
 
-  Future<Response<T>> delete<T>(String path) =>
-      _dio.delete(path);
+  Future<Response<T>> delete<T>(String path) => _dio.delete(path);
 }
