@@ -14,6 +14,8 @@ from app.core.database import Base
 class UserPerfil(str, Enum):
     agencia = "agencia"
     cliente = "cliente"
+    consultor = "consultor"
+    admin = "admin"
 
 
 class User(Base):
@@ -25,6 +27,7 @@ class User(Base):
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     perfil: Mapped[UserPerfil] = mapped_column(String(20), nullable=False, default=UserPerfil.agencia)
     fcm_token: Mapped[Optional[str]] = mapped_column(String(500))
+    avatar_url: Mapped[Optional[str]] = mapped_column(String(500))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
@@ -52,6 +55,7 @@ class UserResponse(BaseModel):
     email: str
     nome: str
     perfil: UserPerfil
+    avatar_url: Optional[str]
     is_active: bool
     criado_em: datetime
 
