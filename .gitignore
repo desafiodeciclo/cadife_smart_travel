@@ -59,34 +59,33 @@ key.properties
 # ========================
 # PYTHON (Backend)
 # ========================
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-env/
-venv/
-.venv/
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-.mypy_cache/
-.pytest_cache/
-.ipynb_checkpoints/
-local.py
-settings_local.py
+backend/**/__pycache__/
+backend/**/*.py[cod]
+backend/**/*$py.class
+backend/**/*.so
+backend/**/env/
+backend/**/venv/
+backend/**/.venv/
+backend/**/build/
+backend/**/develop-eggs/
+backend/**/dist/
+backend/**/downloads/
+backend/**/eggs/
+backend/**/.eggs/
+backend/**/lib/
+backend/**/lib64/
+backend/**/parts/
+backend/**/sdist/
+backend/**/var/
+backend/**/wheels/
+backend/**/*.egg-info/
+backend/**/.installed.cfg
+backend/**/*.egg
+backend/**/.mypy_cache/
+backend/**/.pytest_cache/
+backend/**/.ipynb_checkpoints/
+backend/**/local.py
+backend/**/settings_local.py
 
 # ========================
 # FLUTTER / DART (Frontend)
@@ -134,3 +133,17 @@ xcuserdata
 docker-compose.override.yml
 .claude/
 claude_local.md
+
+# ========================
+# FLUTTER WINDOWS (Arquivos Gerados)
+# ========================
+**/generated_plugin_registrant.cc
+**/generated_plugin_registrant.h
+**/generated_plugins.cmake
+
+# ========================
+# FLUTTER MACOS (Arquivos Gerados)
+# ========================
+**/macos/Flutter/GeneratedPluginRegistrant.swift
+**/macos/Flutter/flutter_export_environment.sh
+**/macos/Runner/GeneratedPluginRegistrant.swift

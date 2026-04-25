@@ -1,0 +1,1 @@
+export 'lead_detail_provider.dart';
