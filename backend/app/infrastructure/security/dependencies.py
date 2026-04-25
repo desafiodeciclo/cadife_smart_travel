@@ -47,3 +47,18 @@ async def get_current_user(
     if not user or not user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuário não encontrado")
     return user
+
+
+class RequiresRole:
+    """Dependency factory for role-based access control (RBAC)."""
+
+    def __init__(self, *allowed_roles: str):
+        self.allowed_roles = allowed_roles
+
+    async def __call__(self, user: "User" = Depends(get_current_user)) -> "User":
+        if user.perfil not in self.allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Acesso negado: permissão insuficiente",
+            )
+        return user

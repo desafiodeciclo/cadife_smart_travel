@@ -3,6 +3,21 @@ allprojects {
         google()
         mavenCentral()
     }
+    afterEvaluate {
+        extensions.findByType(com.android.build.gradle.LibraryExtension::class.java)?.let { ext ->
+            if (ext.namespace == null) {
+                val manifestFile = projectDir.resolve("src/main/AndroidManifest.xml")
+                if (manifestFile.exists()) {
+                    val packageName = javax.xml.parsers.DocumentBuilderFactory.newInstance()
+                        .newDocumentBuilder()
+                        .parse(manifestFile)
+                        .documentElement
+                        .getAttribute("package")
+                    if (packageName.isNotEmpty()) ext.namespace = packageName
+                }
+            }
+        }
+    }
 }
 
 val newBuildDir: Directory =

@@ -6,14 +6,18 @@ import structlog
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.dependencies import get_current_user, get_db
+from app.infrastructure.security.dependencies import RequiresRole, get_current_user, get_db
 from app.models.briefing import BriefingResponse, BriefingUpdate, calculate_completude
 from app.models.interacao import InteracaoListResponse
 from app.models.lead import LeadCreate, LeadListItem, LeadListResponse, LeadResponse, LeadUpdate
 from app.services import lead_service
 
 logger = structlog.get_logger()
-router = APIRouter(prefix="/leads", tags=["Leads"])
+router = APIRouter(
+    prefix="/leads",
+    tags=["Leads"],
+    dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))]
+)
 
 
 @router.get("", response_model=LeadListResponse)
@@ -26,7 +30,15 @@ async def list_leads(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    leads, total = await lead_service.list_leads(db, status=status, score=score, search=search, page=page, limit=limit)
+    # RBAC: Se o usuário for 'consultor', ele só vê os próprios leads.
+    # Se for 'admin' ou 'agencia', vê todos.
+    consultor_id = None
+    if current_user.perfil == "consultor":
+        consultor_id = current_user.id
+
+    leads, total = await lead_service.list_leads(
+        db, status=status, score=score, search=search, page=page, limit=limit, consultor_id=consultor_id
+    )
     pages = math.ceil(total / limit) if total else 1
     items = []
     for lead in leads:
@@ -70,6 +82,11 @@ async def get_lead(
     lead = await lead_service.get_lead_by_id(db, lead_id)
     if not lead:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead não encontrado")
+
+    # Scope Check
+    if current_user.perfil == "consultor" and lead.consultor_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado ao lead")
+
     return LeadResponse.model_validate(lead)
 
 
