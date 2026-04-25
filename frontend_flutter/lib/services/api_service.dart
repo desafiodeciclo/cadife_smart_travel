@@ -1,17 +1,17 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cadife_smart_travel/core/security/secure_config.dart';
+import 'package:cadife_smart_travel/core/di/service_locator.dart';
 
-final apiServiceProvider = Provider<ApiService>((ref) => ApiService());
+final apiServiceProvider = Provider<ApiService>((ref) => ApiService(sl<SecureConfig>()));
 
 const String _baseUrl = 'http://localhost:8000';
-const String _tokenKey = 'access_token';
-const String _refreshKey = 'refresh_token';
 
 class ApiService {
   late final Dio _dio;
+  final SecureConfig _secureConfig;
 
-  ApiService() {
+  ApiService(this._secureConfig) {
     _dio = Dio(BaseOptions(
       baseUrl: _baseUrl,
       connectTimeout: const Duration(seconds: 10),
@@ -21,8 +21,7 @@ class ApiService {
 
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
-        final prefs = await SharedPreferences.getInstance();
-        final token = prefs.getString(_tokenKey);
+        final token = await _secureConfig.getAccessToken();
         if (token != null) {
           options.headers['Authorization'] = 'Bearer $token';
         }
@@ -32,8 +31,7 @@ class ApiService {
         if (error.response?.statusCode == 401) {
           final refreshed = await _refreshToken();
           if (refreshed) {
-            final prefs = await SharedPreferences.getInstance();
-            final newToken = prefs.getString(_tokenKey);
+            final newToken = await _secureConfig.getAccessToken();
             error.requestOptions.headers['Authorization'] = 'Bearer $newToken';
             final response = await _dio.fetch(error.requestOptions);
             handler.resolve(response);
@@ -47,16 +45,17 @@ class ApiService {
 
   Future<bool> _refreshToken() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final refreshToken = prefs.getString(_refreshKey);
+      final refreshToken = await _secureConfig.getRefreshToken();
       if (refreshToken == null) return false;
 
       final response = await Dio().post(
         '$_baseUrl/auth/refresh',
         data: {'refresh_token': refreshToken},
       );
-      await prefs.setString(_tokenKey, response.data['access_token']);
-      await prefs.setString(_refreshKey, response.data['refresh_token']);
+      await _secureConfig.saveTokens(
+        accessToken: response.data['access_token'],
+        refreshToken: response.data['refresh_token'],
+      );
       return true;
     } catch (_) {
       return false;
@@ -64,16 +63,14 @@ class ApiService {
   }
 
   Future<void> saveTokens(String accessToken, String refreshToken) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_tokenKey, accessToken);
-    await prefs.setString(_refreshKey, refreshToken);
+    await _secureConfig.saveTokens(accessToken: accessToken, refreshToken: refreshToken);
   }
 
   Future<void> clearTokens() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_tokenKey);
-    await prefs.remove(_refreshKey);
+    await _secureConfig.clearTokens();
   }
+
+  Future<String?> getAccessToken() => _secureConfig.getAccessToken();
 
   Future<Response<T>> get<T>(String path, {Map<String, dynamic>? queryParameters}) =>
       _dio.get(path, queryParameters: queryParameters);

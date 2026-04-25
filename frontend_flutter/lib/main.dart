@@ -1,4 +1,6 @@
 import 'package:cadife_smart_travel/core/di/service_locator.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:cadife_smart_travel/services/notification_service.dart';
 import 'package:cadife_smart_travel/core/ports/agenda_port.dart';
 import 'package:cadife_smart_travel/core/ports/auth_port.dart';
 import 'package:cadife_smart_travel/core/ports/lead_port.dart';
@@ -15,11 +17,15 @@ import 'package:cadife_smart_travel/features/client/documents/documents_provider
 import 'package:cadife_smart_travel/features/client/interactions/interactions_provider.dart' as client_interactions;
 import 'package:cadife_smart_travel/features/client/profile/profile_provider.dart' as client_profile;
 import 'package:cadife_smart_travel/features/client/trip_status/trip_status_provider.dart' as client_trip;
+import 'package:cadife_smart_travel/core/security/security_notifier.dart';
+import 'package:cadife_smart_travel/core/security/lock_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  await NotificationService.initialize();
 
   await setupServiceLocator();
   await initDependencies();
@@ -51,6 +57,7 @@ class CadifeApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
+    final security = ref.watch(securityProvider);
 
     return MaterialApp.router(
       title: 'Cadife Smart Travel',
@@ -59,6 +66,12 @@ class CadifeApp extends ConsumerWidget {
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.system,
       routerConfig: router,
+      builder: (context, child) {
+        if (security.isLocked) {
+          return const LockScreen();
+        }
+        return child!;
+      },
     );
   }
 }

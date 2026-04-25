@@ -1,6 +1,6 @@
 import 'package:cadife_smart_travel/services/api_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
 
 class AuthState {
   final bool isLoggedIn;
@@ -27,19 +27,22 @@ class AuthState {
 class AuthNotifier extends StateNotifier<AuthState> {
   final ApiService _api;
 
-  AuthNotifier(this._api) : super(const AuthState()) {
-    _checkSession();
-  }
+  AuthNotifier(this._api) : super(const AuthState());
 
-  Future<void> _checkSession() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('access_token');
+  Future<void> checkSession() async {
+    final token = await _api.getAccessToken();
     if (token == null) return;
+    
     try {
-      final response = await _api.get('/users/me');
+      if (JwtDecoder.isExpired(token)) {
+        await _api.clearTokens();
+        return;
+      }
+      
+      final payload = JwtDecoder.decode(token);
       state = state.copyWith(
         isLoggedIn: true,
-        userPerfil: response.data['perfil'],
+        userPerfil: payload['perfil'] ?? payload['role'], // Map payload to userPerfil
       );
     } catch (_) {
       await _api.clearTokens();

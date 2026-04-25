@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/auth/auth_notifier.dart';
 import '../../features/auth/login_screen.dart';
+import '../../features/onboarding/presentation/splash_screen.dart';
 import '../../features/agency/dashboard/dashboard_screen.dart';
 import '../../features/agency/leads/leads_screen.dart';
 import '../../features/agency/leads/lead_detail_screen.dart';
@@ -30,13 +31,16 @@ final routerProvider = Provider<GoRouter>((ref) {
   final notifier = ref.watch(_routerNotifierProvider);
 
   return GoRouter(
-    initialLocation: '/auth/login',
+    initialLocation: '/splash',
     refreshListenable: notifier,
     redirect: (context, state) {
       final auth = ref.read(authProvider);
       final isLogged = auth.isLoggedIn;
       final loc = state.matchedLocation;
       final isAuthRoute = loc.startsWith('/auth');
+      final isSplash = loc == '/splash';
+
+      if (isSplash) return null; // Let SplashScreen handle logic
 
       if (!isLogged && !isAuthRoute) return '/auth/login';
 
@@ -57,6 +61,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
+      GoRoute(
+        path: '/splash',
+        pageBuilder: (_, state) => NoTransitionPage(
+          key: state.pageKey,
+          child: const SplashScreen(),
+        ),
+      ),
       GoRoute(
         path: '/auth/login',
         pageBuilder: (_, state) => NoTransitionPage(
