@@ -137,13 +137,17 @@ claude_local.md
 # ========================
 # FLUTTER WINDOWS (Arquivos Gerados)
 # ========================
-**/generated_plugin_registrant.cc
+**/windows/**/generated_plugin_registrant.cc
 **/generated_plugin_registrant.h
 **/generated_plugins.cmake
+
+frontend_flutter/linux/flutter/generated_plugin_registrant.cc
+frontend_flutter/linux/flutter/generated_plugin_registrant.h
+frontend_flutter/linux/flutter/generated_plugins.cmake
 
 # ========================
 # FLUTTER MACOS (Arquivos Gerados)
 # ========================
 **/macos/Flutter/GeneratedPluginRegistrant.swift
 **/macos/Flutter/flutter_export_environment.sh
-**/macos/Runner/GeneratedPluginRegistrant.swift
+**/macos/Flutter/GeneratedPluginRegistrant.swift
