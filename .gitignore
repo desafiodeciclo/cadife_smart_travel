@@ -137,7 +137,7 @@ claude_local.md
 # ========================
 # FLUTTER WINDOWS (Arquivos Gerados)
 # ========================
-**/windows/**/generated_plugin_registrant.cc
+**/generated_plugin_registrant.cc
 **/generated_plugin_registrant.h
 **/generated_plugins.cmake
 
