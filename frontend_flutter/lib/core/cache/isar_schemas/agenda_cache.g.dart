@@ -15,7 +15,7 @@ extension GetAgendaCacheCollection on Isar {
 
 const AgendaCacheSchema = CollectionSchema(
   name: r'AgendaCache',
-  id: 8190662257771454529,
+  id: 10000000000001,
   properties: {
     r'cachedAt': PropertySchema(
       id: 0,
@@ -75,7 +75,7 @@ const AgendaCacheSchema = CollectionSchema(
   idName: r'id',
   indexes: {
     r'serverId': IndexSchema(
-      id: -7950187970872907662,
+      id: 20000000000001,
       name: r'serverId',
       unique: true,
       replace: false,

@@ -14,7 +14,7 @@ class MockRequestInterceptorHandler extends Mock
 class MockErrorInterceptorHandler extends Mock
     implements ErrorInterceptorHandler {}
 
-DioException _401({String path = '/leads'}) => DioException(
+DioException create401Exception({String path = '/leads'}) => DioException(
       requestOptions: RequestOptions(path: path),
       response: Response(
         requestOptions: RequestOptions(path: path),
@@ -101,7 +101,7 @@ void main() {
     test('skips refresh when path is /auth/refresh (prevents infinite loop)',
         () async {
       final handler = MockErrorInterceptorHandler();
-      final err = _401(path: '/auth/refresh');
+      final err = create401Exception(path: '/auth/refresh');
 
       await interceptor.onError(err, handler);
 
@@ -145,7 +145,7 @@ void main() {
           .thenAnswer((_) async => retryResponse);
 
       final handler = MockErrorInterceptorHandler();
-      await interceptor.onError(_401(), handler);
+      await interceptor.onError(create401Exception(), handler);
 
       verify(
         () => secureConfig.saveTokens(
@@ -166,7 +166,7 @@ void main() {
       when(() => secureConfig.clearTokens()).thenAnswer((_) async {});
 
       final handler = MockErrorInterceptorHandler();
-      await interceptor.onError(_401(), handler);
+      await interceptor.onError(create401Exception(), handler);
 
       verify(() => secureConfig.clearTokens()).called(1);
       expect(expiredCalls, ['expired']);
@@ -183,7 +183,7 @@ void main() {
           .thenThrow(DioException(requestOptions: RequestOptions(path: '/auth/refresh')));
 
       final handler = MockErrorInterceptorHandler();
-      await interceptor.onError(_401(), handler);
+      await interceptor.onError(create401Exception(), handler);
 
       verify(() => secureConfig.clearTokens()).called(1);
       expect(expiredCalls, ['expired']);
@@ -225,8 +225,8 @@ void main() {
 
       // Fire both 401s concurrently — do NOT await sequentially.
       await Future.wait([
-        interceptor.onError(_401(path: '/leads'), handler1),
-        interceptor.onError(_401(path: '/agenda'), handler2),
+        interceptor.onError(create401Exception(path: '/leads'), handler1),
+        interceptor.onError(create401Exception(path: '/agenda'), handler2),
       ]);
 
       // Refresh should have been called exactly once.

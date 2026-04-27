@@ -6,7 +6,7 @@ final authPortProvider = Provider<AuthPort>((ref) {
   throw UnimplementedError('Override em ProviderScope');
 });
 
-final authNotifierProvider = AsyncNotifierProvider<AuthNotifier, AuthState>(
+final authProvider = AsyncNotifierProvider<AuthNotifier, AuthState>(
   AuthNotifier.new,
 );
 
@@ -59,6 +59,10 @@ class AuthLoading implements AuthState {
 
 extension AuthStateX on AuthState {
   bool get isAuthenticated => this is AuthAuthenticated;
+  String? get userPerfil => maybeWhen(
+    authenticated: (u) => u.role == UserRole.cliente ? 'cliente' : 'agencia',
+    orElse: () => null,
+  );
   UserModel? get user => maybeWhen(authenticated: (u) => u, orElse: () => null);
   T maybeWhen<T>({
     T Function(UserModel user)? authenticated,
