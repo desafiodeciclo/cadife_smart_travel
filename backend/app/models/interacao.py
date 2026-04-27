@@ -26,6 +26,11 @@ class Interacao(Base):
     tipo_mensagem: Mapped[TipoMensagem] = mapped_column(String(20), nullable=False, default=TipoMensagem.texto)
     timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
+    # Outbound send tracking (spec.md §9.1 — reply back to customer)
+    enviado_em: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    status_envio: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)   # "sent" | "failed"
+    erro_envio: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
     lead: Mapped["Lead"] = relationship("Lead", back_populates="interacoes")
 
 

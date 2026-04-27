@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime, timezone
 from typing import Optional
 
 import structlog
@@ -9,6 +10,7 @@ from app.domain.entities.enums import LeadScore, LeadStatus, TipoMensagem
 from app.models.briefing import Briefing, BriefingExtracted, calculate_completude
 from app.models.interacao import Interacao
 from app.models.lead import Lead
+from app.services.whatsapp_service import SendResult
 
 logger = structlog.get_logger()
 
@@ -139,6 +141,18 @@ async def save_interacao(
     db.add(interacao)
     await db.commit()
     return interacao
+
+
+async def update_interacao_send_result(
+    db: AsyncSession,
+    interacao: Interacao,
+    result: SendResult,
+) -> None:
+    """Persist outbound WhatsApp send outcome — spec §9.1 / §12.1."""
+    interacao.enviado_em = datetime.now(timezone.utc) if result.success else None
+    interacao.status_envio = "sent" if result.success else "failed"
+    interacao.erro_envio = result.error if not result.success else None
+    await db.commit()
 
 
 async def get_user_by_id(db: AsyncSession, user_id: str):
