@@ -34,10 +34,15 @@ Future<void> main() async {
   // The callback is only invoked at 401 token expiry — always after runApp().
   late final ProviderContainer container;
 
-  await setupServiceLocator(
-    onTokenExpired: () => container.read(authProvider.notifier).logout(),
-  );
-  await initDependencies();
+  try {
+    await setupServiceLocator(
+      onTokenExpired: () => container.read(authProvider.notifier).logout(),
+    );
+    await initDependencies();
+  } catch (e, stack) {
+    debugPrint('Initialization Error: $e');
+    debugPrint(stack.toString());
+  }
 
   container = ProviderContainer(
     overrides: [

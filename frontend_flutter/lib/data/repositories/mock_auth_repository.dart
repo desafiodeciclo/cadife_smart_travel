@@ -37,10 +37,28 @@ class MockAuthRepository implements AuthPort {
   }
 
   @override
-  Future<UserModel?> getCurrentUser() async => _currentUser;
+  Future<UserModel?> getCurrentUser() async {
+    if (_currentUser != null) return _currentUser;
+
+    // Se houver token salvo, restaura um usuário mockado para manter a sessão ativa
+    final token = await _secureConfig.getAccessToken();
+    if (token != null) {
+      _currentUser = const UserModel(
+        id: 'mock-id-123',
+        name: 'Usuário Restaurado',
+        email: 'restored@mock.com',
+        role: UserRole.cliente, // Default para restauração mock
+      );
+    }
+    return _currentUser;
+  }
 
   @override
-  Future<bool> isLoggedIn() async => _currentUser != null;
+  Future<bool> isLoggedIn() async {
+    if (_currentUser != null) return true;
+    final token = await _secureConfig.getAccessToken();
+    return token != null;
+  }
 
   @override
   Future<void> logout() async {

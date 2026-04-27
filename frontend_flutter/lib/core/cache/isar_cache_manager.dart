@@ -29,27 +29,43 @@ class IsarCacheManager {
   Future<void> initialize() async {
     if (_initialized) return;
 
+    // Proteção: Verifica se já existe uma instância aberta com este nome
+    final existing = Isar.getInstance('cadife_cache_v3');
+    if (existing != null) {
+      _isar = existing;
+      _initialized = true;
+      return;
+    }
+
     // Isar 3 web support can be unstable. Skipping it on web to prevent white screen.
     if (kIsWeb) {
       _initialized = true;
       return;
     }
 
-    String path = '';
-    final dir = await getApplicationDocumentsDirectory();
-    path = dir.path;
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      final path = dir.path;
 
-    _isar = await Isar.open(
-      [
-        LeadCacheSchema,
-        BriefingCacheSchema,
-        AgendaCacheSchema,
-        ProposalCacheSchema,
-      ],
-      directory: path,
-      name: 'cadife_cache_v2',
-    );
-    _initialized = true;
+      _isar = await Isar.open(
+        [
+          LeadCacheSchema,
+          BriefingCacheSchema,
+          AgendaCacheSchema,
+          ProposalCacheSchema,
+        ],
+        directory: path,
+        name: 'cadife_cache_v3',
+      );
+      debugPrint('Isar initialized successfully (v3)');
+    } catch (e, stack) {
+      debugPrint('CRITICAL: Isar failed to open: $e');
+      debugPrint(stack.toString());
+      // On failure, we don't set _isar, but we mark as initialized
+      // so the app can at least start (without local cache).
+    } finally {
+      _initialized = true;
+    }
   }
 
   /// Fecha a instância do Isar.
