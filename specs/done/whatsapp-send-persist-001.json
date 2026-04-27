@@ -1,0 +1,25 @@
+{
+  "id": "whatsapp-send-persist-001",
+  "title": "WhatsApp Send Result Persistence — Worker Integration (spec §9.1)",
+  "status": "done",
+  "priority": "high",
+  "assignee": "Claude",
+  "created_at": "2026-04-27T00:00:00Z",
+  "completed_at": "2026-04-27T00:00:00Z",
+  "context": "whatsapp_service.send_message() e lead_service.save_interacao() já existem. O gap é que o SendResult retornado por send_message() é descartado — enviado_em / status_envio / erro_envio nunca são gravados no registro Interacao. Sem isso o fluxo ponta a ponta é inoperante: AYA processa mas não confirma envio.",
+  "steps": [
+    { "id": 1, "task": "Criar spec JSON em specs/active/", "status": "done" },
+    { "id": 2, "task": "Adicionar update_interacao_send_result() em lead_service.py", "status": "done" },
+    { "id": 3, "task": "Atualizar process_whatsapp_message.py — capturar Interacao e SendResult, chamar update_interacao_send_result()", "status": "done" },
+    { "id": 4, "task": "Criar tests/test_services/test_whatsapp_service.py — 12 testes", "status": "done" },
+    { "id": 5, "task": "Criar tests/test_use_cases/test_process_whatsapp_message.py — 4 testes", "status": "done" }
+  ],
+  "acceptance_criteria": [
+    "Interacao.enviado_em preenchido com UTC timestamp quando envio bem-sucedido ✓",
+    "Interacao.status_envio = 'sent' em sucesso, 'failed' em falha ✓",
+    "Interacao.erro_envio = mensagem de erro quando status_envio = 'failed' ✓",
+    "Timeout 3s respeitado (TIMEOUT_S = 3.0 em whatsapp_service.py) ✓",
+    "Worker continua sem crashar em caso de falha no envio ✓",
+    "16/16 testes passando ✓"
+  ]
+}
