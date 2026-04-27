@@ -7,12 +7,19 @@ services:
       - "8000:8000"
     env_file:
       - ../backend/.env
+    environment:
+      # Sobrescreve os hostnames do .env para resolução correta dentro da rede Docker
+      DATABASE_URL: postgresql+asyncpg://cadife:cadife@db:5432/cadife_db
+      REDIS_URL: redis://redis:6379/0
+      CHROMA_HOST: chroma
+      CHROMA_PORT: "8000"
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
       - ../backend:/app
-      - chroma_data:/app/chroma_db
     restart: unless-stopped
 
   db:
@@ -32,6 +39,19 @@ services:
       retries: 5
     restart: unless-stopped
 
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
   chroma:
     image: chromadb/chroma:latest
     ports:
@@ -42,4 +62,5 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:
   chroma_data:
