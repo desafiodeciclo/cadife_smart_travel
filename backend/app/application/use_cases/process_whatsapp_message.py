@@ -77,15 +77,24 @@ async def execute(payload: dict, db: AsyncSession) -> None:
             await _notify_consultants(db, lead, briefing)
 
     # ── Step 6: Persist interaction record ────────────────────────────────
-    await lead_service.save_interacao(
+    interacao = await lead_service.save_interacao(
         db, lead.id,
         msg_cliente=text,
         msg_ia=reply if msg_type == "text" else None,
         tipo=tipo,
     )
 
-    # ── Step 7: Reply to client via WhatsApp ──────────────────────────────
-    await whatsapp_service.send_message(phone, reply)
+    # ── Step 7: Reply to client via WhatsApp; persist send outcome ────────
+    send_result = await whatsapp_service.send_message(phone, reply)
+    await lead_service.update_interacao_send_result(db, interacao, send_result)
+    logger.info(
+        "whatsapp_reply_dispatched",
+        lead_id=str(lead.id),
+        success=send_result.success,
+        wamid=send_result.wamid,
+        latency_ms=send_result.latency_ms,
+        retries=send_result.retries_used,
+    )
 
 
 async def _notify_consultants(db: AsyncSession, lead: Lead, briefing) -> None:
