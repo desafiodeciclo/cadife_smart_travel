@@ -15,7 +15,7 @@ dependencies:
   animations: ^2.1.2
   shimmer: ^3.0.0
   mask_text_input_formatter: ^2.5.0
-
+  flutter_svg: ^2.0.9
   # State Management
   flutter_riverpod: ^2.6.1
 
@@ -68,3 +68,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/images/
