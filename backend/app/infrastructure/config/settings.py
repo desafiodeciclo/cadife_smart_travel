@@ -38,15 +38,15 @@ class Settings(BaseSettings):
     DEBUG: bool = Field(default=False)
 
     # ── WhatsApp Cloud API (spec.md §15) ──────────────────────────────────
-    WHATSAPP_TOKEN: str = Field(description="Meta WhatsApp access token")
-    PHONE_NUMBER_ID: str = Field(description="Meta registered phone number ID")
+    WHATSAPP_TOKEN: str = Field(default="", description="Meta WhatsApp access token")
+    PHONE_NUMBER_ID: str = Field(default="", description="Meta registered phone number ID")
     VERIFY_TOKEN: str = Field(
         default="cadife_verify_token",
         description="Secret token for Meta webhook verification",
     )
 
     # ── OpenAI / LangChain (spec.md §15) ──────────────────────────────────
-    OPENAI_API_KEY: str = Field(description="OpenAI GPT API Key")
+    GEMINI_API_KEY: str = Field(default="", description="Gemini API Key")
     LANGCHAIN_API_KEY: str = Field(default="", description="LangSmith observability key (optional)")
 
     # ── Database (spec.md §3.3 — PostgreSQL preferred) ────────────────────

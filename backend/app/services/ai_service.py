@@ -1,9 +1,9 @@
 from typing import Optional
 
 import structlog
-from langchain.memory import ConversationBufferWindowMemory
-from langchain.output_parsers import PydanticOutputParser
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder, PromptTemplate
+from langchain_classic.memory import ConversationBufferWindowMemory
+from langchain_core.output_parsers import PydanticOutputParser
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder, PromptTemplate
 from langchain_openai import ChatOpenAI
 from pydantic import SecretStr
 
@@ -72,7 +72,17 @@ def _retrieve_context(query: str) -> str:
         return ""
 
 
+FALLBACK_REPLY = (
+    "Olá! Recebemos sua mensagem. "
+    "Em breve um consultor da Cadife Tour irá te atender. 😊"
+)
+
+
 async def process_message(phone: str, message: str) -> str:
+    if not settings.OPENAI_API_KEY:
+        logger.warning("ai_disabled", reason="OPENAI_API_KEY not set", phone=phone)
+        return FALLBACK_REPLY
+
     try:
         llm = get_llm()
         memory = get_memory(phone)
@@ -102,6 +112,9 @@ async def process_message(phone: str, message: str) -> str:
 
 
 async def extract_briefing(conversation: list[dict]) -> BriefingExtracted:
+    if not settings.OPENAI_API_KEY:
+        return BriefingExtracted()
+
     parser = PydanticOutputParser(pydantic_object=BriefingExtracted)
 
     extraction_prompt = PromptTemplate(

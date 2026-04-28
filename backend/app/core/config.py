@@ -1,8 +1,15 @@
-from pydantic_settings import BaseSettings
 from functools import lru_cache
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
     WHATSAPP_TOKEN: str = ""
     PHONE_NUMBER_ID: str = ""
     VERIFY_TOKEN: str = "cadife_verify_token"
@@ -25,10 +32,6 @@ class Settings(BaseSettings):
 
     # Criptografia PII at-rest (Fernet/AES-128)
     ENCRYPTION_KEY: str = ""
-
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
 
 
 @lru_cache
