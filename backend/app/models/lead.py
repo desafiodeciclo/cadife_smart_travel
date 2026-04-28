@@ -17,7 +17,9 @@ from pydantic import BaseModel
 
 from app.core.database import Base
 from app.infrastructure.security.pii_encryption import EncryptedString
-from app.domain.entities.enums import LeadOrigem, LeadStatus, LeadScore
+from decimal import Decimal
+
+from app.domain.entities.enums import LeadOrigem, LeadStatus, LeadScore, PropostaStatus
 
 
 
@@ -57,6 +59,16 @@ class LeadUpdate(BaseModel):
     consultor_id: Optional[uuid.UUID] = None
 
 
+class PropostaListItem(BaseModel):
+    id: uuid.UUID
+    descricao: str
+    status: PropostaStatus
+    valor_estimado: Optional[Decimal]
+    criado_em: datetime
+
+    model_config = {"from_attributes": True}
+
+
 class LeadResponse(BaseModel):
     id: uuid.UUID
     nome: Optional[str]
@@ -68,6 +80,7 @@ class LeadResponse(BaseModel):
     is_archived: bool
     criado_em: datetime
     atualizado_em: datetime
+    propostas: list[PropostaListItem] = []
 
     model_config = {"from_attributes": True}
 

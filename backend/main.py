@@ -80,11 +80,6 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# ── Middlewares (ordem importa: o último adicionado executa primeiro) ─────────
-# 1. CORS (mais externo — retorna antes de qualquer outro processamento)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # TODO: restringir em produção para domínios conhecidos
 # ── Middleware Registration (order matters — outermost executes first) ────
 # 1. RequestId must be first to assign ID before all other processing
 # 2. Timeout wraps inner handlers to enforce SLAs
