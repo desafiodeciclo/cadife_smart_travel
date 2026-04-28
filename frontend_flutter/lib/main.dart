@@ -5,6 +5,7 @@ import 'package:cadife_smart_travel/core/ports/lead_port.dart';
 import 'package:cadife_smart_travel/core/ports/proposal_port.dart';
 import 'package:cadife_smart_travel/core/router/app_router.dart';
 import 'package:cadife_smart_travel/core/theme/app_theme.dart';
+import 'package:cadife_smart_travel/core/theme/theme_provider.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/agenda_provider.dart'
     as agency_agenda;
 import 'package:cadife_smart_travel/features/agency/dashboard/dashboard_provider.dart'
@@ -80,7 +81,7 @@ class CadifeApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
-      themeMode: ThemeMode.system,
+      themeMode: ref.watch(themeModeProvider),
       routerConfig: router,
     );
   }

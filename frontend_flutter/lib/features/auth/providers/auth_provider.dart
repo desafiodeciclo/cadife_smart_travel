@@ -1,4 +1,5 @@
 import 'package:cadife_smart_travel/core/ports/auth_port.dart';
+import 'package:cadife_smart_travel/services/notification_service.dart';
 import 'package:cadife_smart_travel/shared/models/models.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -26,8 +27,18 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     state = await AsyncValue.guard(() async {
       final authPort = ref.read(authPortProvider);
       final user = await authPort.login(email, password);
+      _registerFcmToken(authPort);
       return AuthState.authenticated(user);
     });
+  }
+
+  void _registerFcmToken(AuthPort authPort) async {
+    try {
+      final fcmToken = await NotificationService.getToken();
+      if (fcmToken != null) await authPort.saveFcmToken(fcmToken);
+    } catch (_) {
+      // FCM registration failure is non-fatal
+    }
   }
 
   Future<void> logout() async {

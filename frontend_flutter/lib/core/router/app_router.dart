@@ -4,7 +4,9 @@ import 'package:cadife_smart_travel/features/agency/agenda/agenda_screen.dart';
 import 'package:cadife_smart_travel/features/agency/dashboard/dashboard_screen.dart';
 import 'package:cadife_smart_travel/features/agency/leads/lead_detail_screen.dart';
 import 'package:cadife_smart_travel/features/agency/leads/leads_screen.dart';
+import 'package:cadife_smart_travel/features/auth/presentation/screens/forgot_password_screen.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/screens/login_screen.dart';
+import 'package:cadife_smart_travel/features/auth/presentation/screens/register_screen.dart';
 import 'package:cadife_smart_travel/features/auth/providers/auth_provider.dart';
 import 'package:cadife_smart_travel/features/client/documentos/documentos_screen.dart';
 import 'package:cadife_smart_travel/features/client/historico/historico_screen.dart';
@@ -66,6 +68,20 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/auth/login',
         pageBuilder: (_, state) =>
             NoTransitionPage(key: state.pageKey, child: const LoginScreen()),
+      ),
+      GoRoute(
+        path: '/auth/forgot-password',
+        pageBuilder: (_, state) => MaterialPage(
+          key: state.pageKey,
+          child: const ForgotPasswordScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/auth/register',
+        pageBuilder: (_, state) => MaterialPage(
+          key: state.pageKey,
+          child: const RegisterScreen(),
+        ),
       ),
 
       // Agency shell — persistent BottomNavBar with SharedAxis tab transitions
