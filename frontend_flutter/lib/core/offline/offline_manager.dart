@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cadife_smart_travel/core/constants/app_constants.dart';
 import 'package:cadife_smart_travel/core/network/network_info.dart';
+import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -35,8 +36,12 @@ class OfflineManager {
   Future<void> initialize() async {
     if (_isInitialized) return;
 
-    final appDir = await getApplicationDocumentsDirectory();
-    await _hive.initFlutter(appDir.path);
+    if (!kIsWeb) {
+      final appDir = await getApplicationDocumentsDirectory();
+      await _hive.initFlutter(appDir.path);
+    } else {
+      await _hive.initFlutter();
+    }
 
     _configBox = await _hive.openBox<dynamic>(AppConstants.hiveBoxConfig);
     _cacheBox = await _hive.openBox<dynamic>(AppConstants.hiveBoxCache);

@@ -12,8 +12,8 @@ import 'package:cadife_smart_travel/core/ports/lead_port.dart';
 import 'package:cadife_smart_travel/core/ports/proposal_port.dart';
 import 'package:cadife_smart_travel/core/security/secure_config.dart';
 import 'package:cadife_smart_travel/data/repositories/agenda_repository_impl.dart';
-import 'package:cadife_smart_travel/data/repositories/auth_repository_impl.dart';
 import 'package:cadife_smart_travel/data/repositories/lead_repository_impl.dart';
+import 'package:cadife_smart_travel/data/repositories/mock_auth_repository.dart';
 import 'package:cadife_smart_travel/data/repositories/proposal_repository_impl.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -117,9 +117,13 @@ Future<void> setupServiceLocator({
 }
 
 void _registerAuthModule() {
-  sl.registerLazySingleton<AuthPort>(
-    () => AuthRepositoryImpl(dio: sl<Dio>(), secureConfig: sl<SecureConfig>()),
-  );
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  // MOCK LOGIN ATIVADO — COMENTE A LINHA ABAIXO E DESCOMENTE A SEGUINTE PARA PROD
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  sl.registerLazySingleton<AuthPort>(() => MockAuthRepository(secureConfig: sl<SecureConfig>()));
+  // sl.registerLazySingleton<AuthPort>(
+  //   () => AuthRepositoryImpl(dio: sl<Dio>(), secureConfig: sl<SecureConfig>()),
+  // );
 }
 
 void _registerLeadModule() {

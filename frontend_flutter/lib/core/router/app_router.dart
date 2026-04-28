@@ -4,8 +4,8 @@ import 'package:cadife_smart_travel/features/agency/agenda/agenda_screen.dart';
 import 'package:cadife_smart_travel/features/agency/dashboard/dashboard_screen.dart';
 import 'package:cadife_smart_travel/features/agency/leads/lead_detail_screen.dart';
 import 'package:cadife_smart_travel/features/agency/leads/leads_screen.dart';
-import 'package:cadife_smart_travel/features/auth/auth_notifier.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/screens/login_screen.dart';
+import 'package:cadife_smart_travel/features/auth/providers/auth_provider.dart';
 import 'package:cadife_smart_travel/features/client/documentos/documentos_screen.dart';
 import 'package:cadife_smart_travel/features/client/historico/historico_screen.dart';
 import 'package:cadife_smart_travel/features/client/status/status_screen.dart';
@@ -16,7 +16,7 @@ import 'package:go_router/go_router.dart';
 // Bridges Riverpod auth state to GoRouter's refreshListenable
 class _RouterNotifier extends ChangeNotifier {
   _RouterNotifier(Ref ref) {
-    ref.listen<AuthState>(authProvider, (_, _) => notifyListeners());
+    ref.listen<AsyncValue<AuthState>>(authProvider, (_, _) => notifyListeners());
   }
 }
 
@@ -33,27 +33,28 @@ final routerProvider = Provider<GoRouter>((ref) {
     initialLocation: '/auth/login',
     refreshListenable: notifier,
     redirect: (context, state) {
-      final auth = ref.read(authProvider);
-      final isLogged = auth.isLoggedIn;
+      final authValue = ref.read(authProvider);
+      final auth = authValue.valueOrNull;
+      final isLogged = auth?.isAuthenticated ?? false;
       final loc = state.matchedLocation;
       final isAuthRoute = loc.startsWith('/auth');
 
       if (!isLogged && !isAuthRoute) return '/auth/login';
 
       if (isLogged && isAuthRoute) {
-        return auth.userPerfil == 'agencia'
+        return auth?.userPerfil == 'agencia'
             ? '/agency/dashboard'
             : '/client/status';
       }
 
       // Cross-role guard
       if (isLogged &&
-          auth.userPerfil == 'agencia' &&
+          auth?.userPerfil == 'agencia' &&
           loc.startsWith('/client')) {
         return '/agency/dashboard';
       }
       if (isLogged &&
-          auth.userPerfil == 'cliente' &&
+          auth?.userPerfil == 'cliente' &&
           loc.startsWith('/agency')) {
         return '/client/status';
       }

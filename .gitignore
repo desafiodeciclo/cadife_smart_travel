@@ -131,7 +131,6 @@ xcuserdata
 # DOCKER / FERRAMENTAS
 # ========================
 docker-compose.override.yml
-.claude/
 claude_local.md
 
 # ========================
