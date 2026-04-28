@@ -35,6 +35,32 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     await authPort.logout();
     state = const AsyncData(AuthState.unauthenticated());
   }
+
+  /// Valida o JWT armazenado localmente (decode offline do claim `exp`).
+  ///
+  /// Chamado pela SplashScreen durante a animação — evita round-trip ao backend.
+  /// Se o token for válido, restaura a sessão; se inválido/ausente, faz logout.
+  Future<void> validateLocalToken() async {
+    state = const AsyncLoading();
+    try {
+      final authPort = ref.read(authPortProvider);
+      final isLoggedIn = await authPort.isLoggedIn();
+      if (!isLoggedIn) {
+        await authPort.logout();
+        state = const AsyncData(AuthState.unauthenticated());
+        return;
+      }
+      final user = await authPort.getCurrentUser();
+      if (user == null) {
+        await authPort.logout();
+        state = const AsyncData(AuthState.unauthenticated());
+        return;
+      }
+      state = AsyncData(AuthState.authenticated(user));
+    } catch (_) {
+      state = const AsyncData(AuthState.unauthenticated());
+    }
+  }
 }
 
 sealed class AuthState {
@@ -60,9 +86,9 @@ class AuthLoading implements AuthState {
 extension AuthStateX on AuthState {
   bool get isAuthenticated => this is AuthAuthenticated;
   String? get userPerfil => maybeWhen(
-    authenticated: (u) => u.role == UserRole.cliente ? 'cliente' : 'agencia',
-    orElse: () => null,
-  );
+        authenticated: (u) => u.role == UserRole.cliente ? 'cliente' : 'agencia',
+        orElse: () => null,
+      );
   UserModel? get user => maybeWhen(authenticated: (u) => u, orElse: () => null);
   T maybeWhen<T>({
     T Function(UserModel user)? authenticated,

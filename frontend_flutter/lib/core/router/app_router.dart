@@ -5,6 +5,7 @@ import 'package:cadife_smart_travel/features/agency/dashboard/dashboard_screen.d
 import 'package:cadife_smart_travel/features/agency/leads/lead_detail_screen.dart';
 import 'package:cadife_smart_travel/features/agency/leads/leads_screen.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/screens/login_screen.dart';
+import 'package:cadife_smart_travel/features/auth/presentation/screens/splash_screen.dart';
 import 'package:cadife_smart_travel/features/auth/providers/auth_provider.dart';
 import 'package:cadife_smart_travel/features/client/documentos/documentos_screen.dart';
 import 'package:cadife_smart_travel/features/client/historico/historico_screen.dart';
@@ -30,13 +31,17 @@ final routerProvider = Provider<GoRouter>((ref) {
   final notifier = ref.watch(_routerNotifierProvider);
 
   return GoRouter(
-    initialLocation: '/auth/login',
+    initialLocation: '/splash',
     refreshListenable: notifier,
     redirect: (context, state) {
+      final loc = state.matchedLocation;
+
+      // Splash gerencia sua própria navegação — não redirecionar daqui
+      if (loc == '/splash') return null;
+
       final authValue = ref.read(authProvider);
       final auth = authValue.valueOrNull;
       final isLogged = auth?.isAuthenticated ?? false;
-      final loc = state.matchedLocation;
       final isAuthRoute = loc.startsWith('/auth');
 
       if (!isLogged && !isAuthRoute) return '/auth/login';
@@ -62,6 +67,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
+      GoRoute(
+        path: '/splash',
+        pageBuilder: (_, state) =>
+            NoTransitionPage(key: state.pageKey, child: const SplashScreen()),
+      ),
       GoRoute(
         path: '/auth/login',
         pageBuilder: (_, state) =>
