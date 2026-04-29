@@ -24,12 +24,22 @@ from app.core.config import get_settings
 logger = structlog.get_logger()
 settings = get_settings()
 
-# Instância global do limiter — importada em main.py e nas rotas que precisam
-# de thresholds específicos. O storage_uri aponta para o Redis configurado em env.
-limiter = Limiter(
-    key_func=get_remote_address,
-    storage_uri=settings.REDIS_URL,
-    default_limits=[settings.RATE_LIMIT_DEFAULT],
-    headers_enabled=True,  # Retorna X-RateLimit-* headers na resposta
-    swallow_errors=False,   # Propaga erros de conexão Redis em vez de ignorar silenciosamente
-)
+try:
+    limiter = Limiter(
+        key_func=get_remote_address,
+        storage_uri=settings.REDIS_URL,
+        default_limits=[settings.RATE_LIMIT_DEFAULT],
+        headers_enabled=True,
+        swallow_errors=False,
+    )
+    logger.info("rate_limiter_ready", storage=settings.REDIS_URL)
+except Exception as exc:
+    # Redis indisponível — usa memória local (não compartilhada entre workers)
+    logger.warning("rate_limiter_redis_unavailable", error=str(exc), fallback="memory://")
+    limiter = Limiter(
+        key_func=get_remote_address,
+        storage_uri="memory://",
+        default_limits=[settings.RATE_LIMIT_DEFAULT],
+        headers_enabled=True,
+        swallow_errors=True,
+    )

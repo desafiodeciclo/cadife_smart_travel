@@ -15,8 +15,13 @@ redis[hiredis]
 pytest
 pytest-asyncio
 langchain
+langchain-community
+langchain-classic
 langchain-openai
+langchain-text-splitters
 openai
 chromadb
 firebase-admin
 python-dotenv
+structlog
+slowapi

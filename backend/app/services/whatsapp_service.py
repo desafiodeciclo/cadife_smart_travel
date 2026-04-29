@@ -74,14 +74,11 @@ def _mask_phone(phone: str) -> str:
 # ── Public API ────────────────────────────────────────────────────────────────
 
 def verify_signature(body: bytes, signature_header: str) -> bool:
-    """Validate HMAC-SHA256 signature from Meta webhook (spec.md §12.1)."""
+    """Valida X-Hub-Signature-256 usando META_APP_SECRET conforme spec Meta."""
     if not signature_header.startswith("sha256="):
         return False
-    expected = hmac.new(
-        settings.WHATSAPP_TOKEN.encode(),
-        body,
-        hashlib.sha256,
-    ).hexdigest()
+    secret = settings.META_APP_SECRET.encode()
+    expected = hmac.new(secret, body, hashlib.sha256).hexdigest()
     return hmac.compare_digest(f"sha256={expected}", signature_header)
 
 

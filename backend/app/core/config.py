@@ -1,11 +1,19 @@
-from pydantic_settings import BaseSettings
 from functools import lru_cache
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
     WHATSAPP_TOKEN: str = ""
     PHONE_NUMBER_ID: str = ""
     VERIFY_TOKEN: str = "cadife_verify_token"
+    META_APP_SECRET: str = ""
     OPENAI_API_KEY: str = ""
     DATABASE_URL: str = "postgresql+asyncpg://cadife:cadife@localhost:5432/cadife_db"
     JWT_SECRET_KEY: str = "change-me-in-production"
@@ -27,10 +35,9 @@ class Settings(BaseSettings):
 
     # Criptografia PII at-rest (Fernet/AES-128)
     ENCRYPTION_KEY: str = ""
-
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+    # Chave para HMAC-SHA256 de campos buscáveis (telefone_hash)
+    # Gere com: python -c "import secrets; print(secrets.token_hex(32))"
+    HASH_KEY: str = ""
 
 
 @lru_cache

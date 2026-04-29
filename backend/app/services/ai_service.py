@@ -1,6 +1,9 @@
 from typing import Optional
 
 import structlog
+from langchain_classic.memory import ConversationBufferWindowMemory
+from langchain_core.output_parsers import PydanticOutputParser
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder, PromptTemplate
 from langchain.memory import ConversationBufferWindowMemory
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_openai import ChatOpenAI
@@ -127,6 +130,11 @@ def _retrieve_context(
         return ""
 
 
+FALLBACK_REPLY = (
+    "Olá! Recebemos sua mensagem. "
+    "Em breve um consultor da Cadife Tour irá te atender. 😊"
+)
+
 async def process_message(
     phone: str,
     message: str,
@@ -195,11 +203,9 @@ Você DEVE:
 
 
 async def extract_briefing(conversation: list[dict]) -> BriefingExtracted:
-    """Extrai dados do briefing usando Structured Outputs API.
+    if not settings.OPENAI_API_KEY:
+        return BriefingExtracted()
 
-    Utiliza llm.with_structured_output() para garantir que a resposta
-    da IA sempre respeite o schema Pydantic definido em BriefingExtracted.
-    """
     try:
         llm = get_llm()
         structured_llm = llm.with_structured_output(BriefingExtracted)
