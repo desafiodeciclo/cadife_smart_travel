@@ -5,10 +5,15 @@ de campos com dados pessoais identificáveis (PII) usando Fernet (AES-128).
 
 Uso:
     class Lead(Base):
-        telefone = mapped_column(EncryptedString(255))
-        nome     = mapped_column(EncryptedString(255))
+        telefone      = mapped_column(EncryptedString(512))
+        telefone_hash = mapped_column(String(64), index=True)
+
+    # Para buscar:
+    lead = db.execute(select(Lead).where(Lead.telefone_hash == hmac_hash(phone)))
 """
 
+import hashlib
+import hmac
 import structlog
 from sqlalchemy import String
 from sqlalchemy.types import TypeDecorator
@@ -17,6 +22,22 @@ from app.core.config import get_settings
 
 logger = structlog.get_logger()
 settings = get_settings()
+
+
+def hmac_hash(value: str) -> str:
+    """HMAC-SHA256 determinístico para campos PII buscáveis (ex: telefone_hash).
+
+    Fernet é não-determinístico (IV aleatório), portanto não pode ser usado
+    em cláusulas WHERE. Este hash é estável para o mesmo valor + HASH_KEY,
+    permitindo lookup no DB sem expor o dado em texto plano.
+    """
+    key = settings.HASH_KEY
+    if not key:
+        raise RuntimeError(
+            "HASH_KEY não configurada. "
+            "Gere com: python -c \"import secrets; print(secrets.token_hex(32))\""
+        )
+    return hmac.new(key.encode(), value.encode(), hashlib.sha256).hexdigest()
 
 
 def _get_fernet():

@@ -56,6 +56,9 @@ async def execute(payload: dict, db: AsyncSession) -> None:
         logger.info("lead_status_updated", lead_id=str(lead.id), new_status=LeadStatus.em_atendimento)
 
     # ── Step 3: Generate AI reply or media fallback ────────────────────────
+    reply: str
+    tipo: TipoMensagem
+
     if msg_type != "text" or not text:
         reply = MEDIA_FALLBACK_REPLY
         tipo = (
@@ -67,16 +70,18 @@ async def execute(payload: dict, db: AsyncSession) -> None:
         reply = await ai_service.process_message(phone, text)
         tipo = TipoMensagem.texto
 
-        # ── Step 4: Extract briefing & update score ───────────────────────
-        extracted = await ai_service.extract_briefing([{"role": "user", "content": text}])
-        briefing = await lead_service.update_briefing_from_extraction(db, lead, extracted)
+        try:
+            # ── Step 4: Extract briefing & update score ───────────────────
+            extracted = await ai_service.extract_briefing([{"role": "user", "content": text}])
+            briefing = await lead_service.update_briefing_from_extraction(db, lead, extracted)
 
-        # ── Step 5: FCM notification when lead qualifies ──────────────────
-        # spec.md §8.1: notify consultant in < 2 seconds
-        if briefing.completude_pct >= 60 and lead.status == LeadStatus.qualificado:
-            await _notify_consultants(db, lead, briefing)
+            # ── Step 5: FCM notification when lead qualifies ──────────────
+            if briefing.completude_pct >= 60 and lead.status == LeadStatus.qualificado:
+                await _notify_consultants(db, lead, briefing)
+        except Exception as exc:
+            logger.error("briefing_update_error", lead_id=str(lead.id), error=str(exc))
 
-    # ── Step 6: Persist interaction record ────────────────────────────────
+    # ── Step 6: Persist interaction record (sempre executado) ─────────────
     await lead_service.save_interacao(
         db, lead.id,
         msg_cliente=text,

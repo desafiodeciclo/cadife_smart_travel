@@ -14,13 +14,11 @@ WHATSAPP_API_URL = "https://graph.facebook.com/v19.0"
 
 
 def verify_signature(body: bytes, signature_header: str) -> bool:
+    """Valida X-Hub-Signature-256 usando META_APP_SECRET conforme spec Meta."""
     if not signature_header.startswith("sha256="):
         return False
-    expected = hmac.new(
-        settings.WHATSAPP_TOKEN.encode(),
-        body,
-        hashlib.sha256,
-    ).hexdigest()
+    secret = settings.META_APP_SECRET.encode()
+    expected = hmac.new(secret, body, hashlib.sha256).hexdigest()
     return hmac.compare_digest(f"sha256={expected}", signature_header)
 
 

@@ -6,6 +6,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.entities.enums import LeadScore, LeadStatus, TipoMensagem
+from app.infrastructure.security.pii_encryption import hmac_hash
 from app.models.briefing import Briefing, BriefingExtracted, calculate_completude
 from app.models.interacao import Interacao
 from app.models.lead import Lead
@@ -32,13 +33,15 @@ def _score_from_briefing(briefing: Briefing) -> LeadScore:
 
 
 async def get_or_create_by_phone(db: AsyncSession, phone: str, name: Optional[str] = None) -> Lead:
-    result = await db.execute(select(Lead).where(Lead.telefone == phone))
+    phone_hash = hmac_hash(phone)
+    result = await db.execute(select(Lead).where(Lead.telefone_hash == phone_hash))
     lead = result.scalar_one_or_none()
     if lead:
         return lead
 
     lead = Lead(
         telefone=phone,
+        telefone_hash=phone_hash,
         nome=name,
         status=LeadStatus.novo,
     )
@@ -101,11 +104,12 @@ async def soft_delete(db: AsyncSession, lead: Lead) -> None:
 async def update_briefing_from_extraction(
     db: AsyncSession, lead: Lead, extracted: BriefingExtracted
 ) -> Briefing:
-    if not lead.briefing:
+    # Busca explícita para evitar lazy load em contexto async
+    result = await db.execute(select(Briefing).where(Briefing.lead_id == lead.id))
+    briefing = result.scalar_one_or_none()
+    if briefing is None:
         briefing = Briefing(lead_id=lead.id)
         db.add(briefing)
-    else:
-        briefing = lead.briefing
 
     for field, value in extracted.model_dump(exclude={"completude_pct"}).items():
         if value not in (None, [], ""):
