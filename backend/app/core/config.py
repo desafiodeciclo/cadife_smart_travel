@@ -1,45 +1,7 @@
-from functools import lru_cache
-
-from pydantic_settings import BaseSettings, SettingsConfigDict
-
-
-class Settings(BaseSettings):
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        extra="ignore",
-    )
-
-    WHATSAPP_TOKEN: str = ""
-    PHONE_NUMBER_ID: str = ""
-    VERIFY_TOKEN: str = "cadife_verify_token"
-    META_APP_SECRET: str = ""
-    OPENAI_API_KEY: str = ""
-    DATABASE_URL: str = "postgresql+asyncpg://cadife:cadife@localhost:5432/cadife_db"
-    JWT_SECRET_KEY: str = "change-me-in-production"
-    JWT_ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
-    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
-    FIREBASE_CREDENTIALS: str = "./firebase_credentials.json"
-    CHROMA_PERSIST_DIR: str = "./chroma_db"
-    KNOWLEDGE_BASE_DIR: str = "./knowledge_base"
-    INGESTION_CACHE_PATH: str = "./chroma_db/ingestion_cache.json"
-    LANGCHAIN_API_KEY: str = ""
-    DEBUG: bool = False
-
-    # Rate Limiting
-    REDIS_URL: str = "redis://localhost:6379/0"
-    RATE_LIMIT_WEBHOOK: str = "100/minute"
-    RATE_LIMIT_IA: str = "30/minute"
-    RATE_LIMIT_DEFAULT: str = "60/minute"
-
-    # Criptografia PII at-rest (Fernet/AES-128)
-    ENCRYPTION_KEY: str = ""
-    # Chave para HMAC-SHA256 de campos buscáveis (telefone_hash)
-    # Gere com: python -c "import secrets; print(secrets.token_hex(32))"
-    HASH_KEY: str = ""
-
-
-@lru_cache
-def get_settings() -> Settings:
-    return Settings()
+"""
+Backward-compatibility shim for app.core.config
+================================================
+Re-exports from the canonical infrastructure/config location.
+All services should continue importing from here — no changes required.
+"""
+from app.infrastructure.config.settings import Settings, get_settings  # noqa: F401

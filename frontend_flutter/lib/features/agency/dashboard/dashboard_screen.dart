@@ -82,7 +82,7 @@ class DashboardScreen extends ConsumerWidget {
                         child: _KpiCard(
                           label: 'Quentes 🔥',
                           value: '$quentes',
-                          color: AppColors.success,
+                          color: AppColors.warning,
                         ),
                       ),
                     ],

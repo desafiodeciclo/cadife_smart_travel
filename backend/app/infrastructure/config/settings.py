@@ -44,9 +44,11 @@ class Settings(BaseSettings):
         default="cadife_verify_token",
         description="Secret token for Meta webhook verification",
     )
+    META_APP_SECRET: str = Field(default="", description="Meta App Secret for X-Hub-Signature-256 validation")
 
     # ── OpenAI / LangChain (spec.md §15) ──────────────────────────────────
-    GEMINI_API_KEY: str = Field(default="", description="Gemini API Key")
+    OPENAI_API_KEY: str = Field(default="", description="OpenAI API key for GPT + embeddings")
+    GEMINI_API_KEY: str = Field(default="", description="Gemini API Key (reserved for future use)")
     LANGCHAIN_API_KEY: str = Field(default="", description="LangSmith observability key (optional)")
 
     # ── Database (spec.md §3.3 — PostgreSQL preferred) ────────────────────
@@ -72,6 +74,24 @@ class Settings(BaseSettings):
 
     # ── RAG / ChromaDB (spec.md §3.3) ─────────────────────────────────────
     CHROMA_PERSIST_DIR: str = Field(default="./chroma_db")
+    KNOWLEDGE_BASE_DIR: str = Field(default="./knowledge_base")
+    INGESTION_CACHE_PATH: str = Field(default="./chroma_db/ingestion_cache.json")
+
+    # ── CORS (spec.md §12.2) ──────────────────────────────────────────────
+    ALLOWED_ORIGINS: str = Field(
+        default="http://localhost:3000,http://localhost:8080",
+        description="Comma-separated list of allowed CORS origins",
+    )
+
+    # ── Rate Limiting (spec.md §12.3) ─────────────────────────────────────
+    REDIS_URL: str = Field(default="redis://localhost:6379/0")
+    RATE_LIMIT_WEBHOOK: str = Field(default="100/minute")
+    RATE_LIMIT_IA: str = Field(default="30/minute")
+    RATE_LIMIT_DEFAULT: str = Field(default="60/minute")
+
+    # ── PII Encryption at-rest (Fernet/AES-128) ───────────────────────────
+    ENCRYPTION_KEY: str = Field(default="", description="Fernet key for PII encryption")
+    HASH_KEY: str = Field(default="", description="HMAC-SHA256 key for searchable phone hash")
 
     # ── Request Timeout (spec.md §12.3 — webhook must respond in < 5s) ────
     REQUEST_TIMEOUT_SECONDS: float = Field(

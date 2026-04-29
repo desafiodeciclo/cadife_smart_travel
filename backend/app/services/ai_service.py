@@ -1,9 +1,6 @@
 from typing import Optional
 
 import structlog
-from langchain_classic.memory import ConversationBufferWindowMemory
-from langchain_core.output_parsers import PydanticOutputParser
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder, PromptTemplate
 from langchain.memory import ConversationBufferWindowMemory
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_openai import ChatOpenAI
@@ -66,7 +63,7 @@ def get_memory(phone: str) -> ConversationBufferWindowMemory:
     if phone not in _memories:
         _memories[phone] = ConversationBufferWindowMemory(
             k=20,
-            memory_key="chat_history",
+            memory_key=f"chat_history_{phone}",
             return_messages=True,
         )
     return _memories[phone]
@@ -189,7 +186,7 @@ Você DEVE:
         history = memory.load_memory_variables({})
         response = await chain.ainvoke({
             "context": context,
-            "chat_history": history.get("chat_history", []),
+            "chat_history": history.get(f"chat_history_{phone}", []),
             "input": message,
         })
 

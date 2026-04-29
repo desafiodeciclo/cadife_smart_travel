@@ -10,11 +10,6 @@ Spec references:
   - §12.2 Security: HTTPS, JWT, rate limiting (middleware hooks)
   - §12.3 Reliability: structured logs, timeout middleware
 """
-"""
-Cadife Smart Travel API
-Application Entry Point
-Clean / Production Ready
-"""
 
 from contextlib import asynccontextmanager
 
@@ -114,7 +109,7 @@ app.add_middleware(TimeoutMiddleware)
 # 3. CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],   # trocar em produção
+    allow_origins=[o.strip() for o in settings.ALLOWED_ORIGINS.split(",") if o.strip()],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

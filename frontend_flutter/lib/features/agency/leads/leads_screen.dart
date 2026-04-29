@@ -74,7 +74,7 @@ class _LeadCard extends StatelessWidget {
           child: Text(
             (lead.nome?.isNotEmpty == true ? lead.nome![0] : '?').toUpperCase(),
             style: const TextStyle(
-              color: Colors.white,
+              color: AppColors.textOnPrimary,
               fontWeight: FontWeight.bold,
             ),
           ),

@@ -10,7 +10,11 @@ from app.domain.entities.enums import LeadStatus, PropostaStatus
 from app.models.proposta import Proposta, PropostaCreate, PropostaResponse, PropostaUpdate
 from app.services import lead_service
 
-router = APIRouter(prefix="/propostas", tags=["Propostas"])
+router = APIRouter(
+    prefix="/propostas",
+    tags=["Propostas"],
+    dependencies=[Depends(RequiresRole("consultor", "admin"))],
+)
 
 
 def _check_lead_access(current_user, lead) -> None:

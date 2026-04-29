@@ -1,11 +1,8 @@
 import 'package:cadife_smart_travel/core/theme/app_colors.dart';
-import 'package:cadife_smart_travel/features/agency/leads/leads_repository.dart';
+import 'package:cadife_smart_travel/features/agency/lead_detail/lead_detail_provider.dart';
+import 'package:cadife_smart_travel/shared/models/lead_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-final _leadDetailProvider = FutureProvider.family<Map<String, dynamic>, String>(
-  (ref, id) => ref.read(leadsRepositoryProvider).getLeadDetail(id),
-);
 
 class LeadDetailScreen extends ConsumerWidget {
   final String leadId;
@@ -13,34 +10,35 @@ class LeadDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final detailAsync = ref.watch(_leadDetailProvider(leadId));
+    final detailAsync = ref.watch(leadDetailProvider(leadId));
 
     return Scaffold(
       appBar: AppBar(title: const Text('Detalhe do Lead')),
       body: detailAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Erro: $e')),
-        data: (lead) => SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _InfoCard(lead: lead),
-              const SizedBox(height: 16),
-              if (lead['briefing'] != null)
-                _BriefingCard(briefing: lead['briefing']),
-              const SizedBox(height: 16),
-              _ActionButtons(leadId: leadId, currentStatus: lead['status']),
-            ],
-          ),
-        ),
+        data: (lead) => lead == null
+            ? const Center(child: Text('Lead não encontrado.'))
+            : SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _InfoCard(lead: lead),
+                    const SizedBox(height: 16),
+                    if (lead.destino != null) _BriefingCard(lead: lead),
+                    const SizedBox(height: 16),
+                    _ActionButtons(leadId: leadId, currentStatus: lead.status),
+                  ],
+                ),
+              ),
       ),
     );
   }
 }
 
 class _InfoCard extends StatelessWidget {
-  final Map<String, dynamic> lead;
+  final LeadModel lead;
   const _InfoCard({required this.lead});
 
   @override
@@ -52,28 +50,26 @@ class _InfoCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              lead['nome'] ?? 'Sem nome',
+              lead.name,
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 4),
             Text(
-              lead['telefone'],
+              lead.phone,
               style: const TextStyle(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 8),
             Row(
               children: [
                 _Chip(
-                  label: lead['status'],
-                  color: AppColors.statusColor(lead['status']),
+                  label: lead.status.name,
+                  color: AppColors.statusColor(lead.status.name),
                 ),
-                if (lead['score'] != null) ...[
-                  const SizedBox(width: 8),
-                  _Chip(
-                    label: lead['score'],
-                    color: AppColors.scoreColor(lead['score']),
-                  ),
-                ],
+                const SizedBox(width: 8),
+                _Chip(
+                  label: lead.score.name,
+                  color: AppColors.scoreColor(lead.score.name),
+                ),
               ],
             ),
           ],
@@ -84,8 +80,8 @@ class _InfoCard extends StatelessWidget {
 }
 
 class _BriefingCard extends StatelessWidget {
-  final Map<String, dynamic> briefing;
-  const _BriefingCard({required this.briefing});
+  final LeadModel lead;
+  const _BriefingCard({required this.lead});
 
   @override
   Widget build(BuildContext context) {
@@ -100,9 +96,9 @@ class _BriefingCard extends StatelessWidget {
               children: [
                 Text('Briefing', style: Theme.of(context).textTheme.titleLarge),
                 Text(
-                  '${briefing['completude_pct'] ?? 0}%',
+                  '${lead.completudePct}%',
                   style: TextStyle(
-                    color: (briefing['completude_pct'] ?? 0) >= 60
+                    color: lead.completudePct >= 60
                         ? AppColors.success
                         : AppColors.warning,
                     fontWeight: FontWeight.bold,
@@ -111,18 +107,16 @@ class _BriefingCard extends StatelessWidget {
               ],
             ),
             const Divider(),
-            if (briefing['destino'] != null)
-              _row('Destino', briefing['destino']),
-            if (briefing['data_ida'] != null) _row('Ida', briefing['data_ida']),
-            if (briefing['data_volta'] != null)
-              _row('Volta', briefing['data_volta']),
-            if (briefing['qtd_pessoas'] != null)
-              _row('Pessoas', '${briefing['qtd_pessoas']}'),
-            if (briefing['perfil'] != null) _row('Perfil', briefing['perfil']),
-            if (briefing['orcamento'] != null)
-              _row('Orçamento', briefing['orcamento']),
-            if (briefing['observacoes'] != null)
-              _row('Obs.', briefing['observacoes']),
+            if (lead.destino != null) _row('Destino', lead.destino!),
+            if (lead.dataIda != null)
+              _row('Ida', lead.dataIda!.toLocal().toString().split(' ')[0]),
+            if (lead.dataVolta != null)
+              _row('Volta', lead.dataVolta!.toLocal().toString().split(' ')[0]),
+            if (lead.numPessoas != null)
+              _row('Pessoas', '${lead.numPessoas}'),
+            if (lead.perfil != null) _row('Perfil', lead.perfil!),
+            if (lead.orcamentoFaixa != null)
+              _row('Orçamento', lead.orcamentoFaixa!),
           ],
         ),
       ),
@@ -148,7 +142,7 @@ class _BriefingCard extends StatelessWidget {
 
 class _ActionButtons extends ConsumerWidget {
   final String leadId;
-  final String currentStatus;
+  final LeadStatus currentStatus;
   const _ActionButtons({required this.leadId, required this.currentStatus});
 
   @override
@@ -166,7 +160,7 @@ class _ActionButtons extends ConsumerWidget {
           label: const Text('Criar Proposta'),
           onPressed: () {},
         ),
-        if (currentStatus == 'qualificado')
+        if (currentStatus == LeadStatus.qualificado)
           ElevatedButton.icon(
             icon: const Icon(Icons.check),
             label: const Text('Aprovar'),
