@@ -58,27 +58,12 @@ cd backend
 
 ## 5. Configuração das Variáveis de Ambiente (`.env`)
 
-Crie o arquivo `.env` a partir do modelo:
-```bash
-cp .env.example .env
-```
-
-Abra o arquivo `.env` e ajuste as configurações. **Atenção especial para o `DATABASE_URL`**:
-Como você vai rodar o FastAPI localmente (fora do Docker) e o banco está no Docker (exposto na porta 5432), a conexão deve ser feita via `localhost`:
-
-```env
-# Mude isso:
-# DATABASE_URL=postgresql+asyncpg://cadife:cadife@db:5432/cadife_db
-
-# Para isso:
-DATABASE_URL=postgresql+asyncpg://cadife:cadife@localhost:5432/cadife_db
-```
-
-Preencha também outras variáveis (como as chaves da OpenAI, JWT_SECRET_KEY, etc.).
+Já está configurado.
 
 ## 6. Rodando as Migrations (Alembic)
 
-Para criar as tabelas no banco de dados, rode as migrations:
+Para criar as tabelas no banco de dados, rode as migrations, precisa rodar somente uma vez, depois de criado
+o banco não precisa mais rodar as migrations:
 
 ```bash
 alembic upgrade head
@@ -111,3 +96,35 @@ Se tudo estiver correto, você verá no terminal uma mensagem indicando que a ap
   ```bash
   ngrok http 8000
   ```
+
+### Conexão com o Banco de Dados
+| Campo | Valor |
+| :--- | :--- |
+| **Host** | `localhost` |
+| **Porta** | `5433` *(mapeada para 5432 dentro do container)* |
+| **Usuário** | `cadife` |
+| **Senha** | `cadife` |
+| **Banco** | `cadife_db` |
+#### Opção 1 — Via terminal (psql dentro do container)
+
+```bash
+docker exec -it cadife_smart_travel-db-1 psql -U cadife -d cadife_db
+```
+
+> **Nota:** O nome do container pode variar. Para ver o nome exato, execute: `docker ps`
+
+#### Opção 2 — Via psql local (se tiver instalado)
+
+```bash
+psql -h localhost -p 5433 -U cadife -d cadife_db
+```
+
+  > Vai pedir a senha: `cadife`
+
+#### Opção 3 — Via GUI (DBeaver, TablePlus, pgAdmin)
+
+*   **Host:** `localhost`
+*   **Port:** `5433`
+*   **Database:** `cadife_db`
+*   **User:** `cadife`
+*   **Password:** `cadife`
