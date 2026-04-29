@@ -6,6 +6,7 @@ import 'package:cadife_smart_travel/core/ports/profile_port.dart';
 import 'package:cadife_smart_travel/core/ports/proposal_port.dart';
 import 'package:cadife_smart_travel/core/router/app_router.dart';
 import 'package:cadife_smart_travel/core/theme/app_theme.dart';
+import 'package:cadife_smart_travel/core/theme/theme_provider.dart';
 import 'package:cadife_smart_travel/core/theme/theme_mode_provider.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/agenda_provider.dart'
     as agency_agenda;
@@ -84,6 +85,7 @@ class CadifeApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
+      themeMode: ref.watch(themeModeProvider),
       themeMode: themeMode,
       themeMode: ThemeMode.system,
       // AppLockWrapper fica dentro do MaterialApp para herdar Theme e MediaQuery.

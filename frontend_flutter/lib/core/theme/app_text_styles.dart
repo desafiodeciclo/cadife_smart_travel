@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 class AppTextStyles {
   AppTextStyles._();
 
-  static const String fontFamily = 'Inter';
+  static const String fontFamily = 'roboto';
 
   // ── Headings ───────────────────────────────────────────
   static const TextStyle h1 = TextStyle(

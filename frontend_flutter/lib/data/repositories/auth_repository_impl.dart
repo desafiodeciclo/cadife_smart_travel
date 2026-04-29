@@ -1,5 +1,6 @@
 import 'package:cadife_smart_travel/core/constants/api_constants.dart';
 import 'package:cadife_smart_travel/core/ports/auth_port.dart';
+import 'package:cadife_smart_travel/core/security/jwt_utils.dart';
 import 'package:cadife_smart_travel/core/security/secure_config.dart';
 import 'package:cadife_smart_travel/shared/models/models.dart';
 import 'package:dio/dio.dart';
@@ -65,8 +66,24 @@ class AuthRepositoryImpl implements AuthPort {
       final response = await _dio.get('/users/me');
       return UserModel.fromJson(response.data as Map<String, dynamic>);
     } on DioException {
-      return null;
+      return _getUserFromStoredToken();
     }
+  }
+
+  Future<UserModel?> _getUserFromStoredToken() async {
+    final token = await _secureConfig.getAccessToken();
+    if (token == null) return null;
+    final payload = JwtUtils.decodePayload(token);
+    if (payload == null) return null;
+    return UserModel(
+      id: payload['sub'] as String? ?? '',
+      name: payload['name'] as String? ?? '',
+      email: payload['email'] as String? ?? '',
+      role: UserRole.values.firstWhere(
+        (e) => e.name == (payload['role'] as String?),
+        orElse: () => UserRole.consultor,
+      ),
+    );
   }
 
   @override
