@@ -1,3 +1,5 @@
+import 'dart:developer' as dev;
+
 import 'package:cadife_smart_travel/core/di/service_locator.dart';
 import 'package:cadife_smart_travel/core/ports/agenda_port.dart';
 import 'package:cadife_smart_travel/core/ports/auth_port.dart';
@@ -6,7 +8,6 @@ import 'package:cadife_smart_travel/core/ports/profile_port.dart';
 import 'package:cadife_smart_travel/core/ports/proposal_port.dart';
 import 'package:cadife_smart_travel/core/router/app_router.dart';
 import 'package:cadife_smart_travel/core/theme/app_theme.dart';
-import 'package:cadife_smart_travel/core/theme/theme_provider.dart';
 import 'package:cadife_smart_travel/core/theme/theme_mode_provider.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/agenda_provider.dart'
     as agency_agenda;
@@ -44,8 +45,7 @@ Future<void> main() async {
     );
     await initDependencies();
   } catch (e, stack) {
-    debugPrint('Initialization Error: $e');
-    debugPrint(stack.toString());
+    dev.log('Initialization Error', error: e, stackTrace: stack, name: 'main');
   }
 
   container = ProviderContainer(
@@ -85,9 +85,7 @@ class CadifeApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
-      themeMode: ref.watch(themeModeProvider),
       themeMode: themeMode,
-      themeMode: ThemeMode.system,
       // AppLockWrapper fica dentro do MaterialApp para herdar Theme e MediaQuery.
       // Observa lifecycle e sobrepõe AppLockScreen quando o timeout é atingido.
       builder: (context, child) => AppLockWrapper(

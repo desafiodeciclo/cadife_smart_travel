@@ -31,6 +31,16 @@ class AppColors {
 
   static Color shadow = const Color(0xFF000000).withValues(alpha: 0.08);
 
+  // Dark mode surfaces
+  static const Color darkSurface = Color(0xFF1C1917);
+  static const Color darkCard = Color(0xFF292524);
+  static const Color darkTextHint = Color(0xFFB0BEC5);
+
+  // Passaporte toggle states
+  static const Color passaporteBgDark = Color(0xFF1E3A2F);
+  static const Color passaporteBgLight = Color(0xFFE8F5E9);
+  static const Color successTextDark = Color(0xFF81C784);
+
   static Color scoreColor(String score) => switch (score) {
     'quente' => success,
     'morno' => warning,

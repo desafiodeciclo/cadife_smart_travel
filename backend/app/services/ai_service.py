@@ -69,6 +69,33 @@ def get_memory(phone: str) -> ConversationBufferWindowMemory:
     return _memories[phone]
 
 
+def preload_memory_from_db(
+    phone: str,
+    interacoes: list[dict],
+) -> None:
+    """Populate LangChain memory from persisted interacoes rows.
+
+    Call this at the start of a conversation when _memories[phone] is
+    absent (e.g. after a server restart) to restore the AI's context.
+
+    Args:
+        phone: Customer phone number (used as memory key).
+        interacoes: List of dicts with keys 'mensagem_cliente' and
+                    'mensagem_ia', ordered oldest-first.
+    """
+    if phone in _memories:
+        return  # already loaded in this session
+
+    memory = get_memory(phone)
+    for row in interacoes[-20:]:  # honour k=20 window
+        cliente = row.get("mensagem_cliente") or ""
+        ia = row.get("mensagem_ia") or ""
+        if cliente or ia:
+            memory.save_context({"input": cliente}, {"output": ia})
+
+    logger.info("memory_preloaded_from_db", phone=phone, rows=len(interacoes))
+
+
 def _resolve_destino_tag(destino: Optional[str]) -> Optional[str]:
     """
     Map a free-text destination (from briefing) to a taxonomy tag for metadata filtering.

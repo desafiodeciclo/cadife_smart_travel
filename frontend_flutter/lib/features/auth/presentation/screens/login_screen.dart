@@ -1,9 +1,10 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:cadife_smart_travel/core/theme/app_colors.dart';
 import 'package:cadife_smart_travel/core/theme/app_text_styles.dart';
 import 'package:cadife_smart_travel/core/theme/cadife_theme_extension.dart';
-import 'package:cadife_smart_travel/core/theme/theme_provider.dart';
+import 'package:cadife_smart_travel/core/theme/theme_mode_provider.dart';
 import 'package:cadife_smart_travel/features/auth/providers/auth_provider.dart';
 import 'package:cadife_smart_travel/shared/extensions/string_extensions.dart';
 import 'package:flutter/material.dart';
@@ -356,7 +357,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 label: 'Google',
                                 icon: const _GoogleIcon(),
                                 isDark: isDark,
-                                onTap: () {},
+                                onTap: () => ScaffoldMessenger.of(context)
+                                    .showSnackBar(const SnackBar(
+                                        content: Text('Login social em breve'))),
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -366,10 +369,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 icon: Icon(
                                   Icons.apple,
                                   size: 22,
-                                  color: isDark ? Colors.white : Colors.black87,
+                                  color: isDark
+                                      ? Colors.white
+                                      : AppColors.textPrimary,
                                 ),
                                 isDark: isDark,
-                                onTap: () {},
+                                onTap: () => ScaffoldMessenger.of(context)
+                                    .showSnackBar(const SnackBar(
+                                        content: Text('Login social em breve'))),
                               ),
                             ),
                           ],
@@ -428,8 +435,11 @@ class _ThemeToggle extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return GestureDetector(
       onTap: () {
-        ref.read(themeModeProvider.notifier).state =
-            isDark ? ThemeMode.light : ThemeMode.dark;
+        if (isDark) {
+          ref.read(themeModeProvider.notifier).setLight();
+        } else {
+          ref.read(themeModeProvider.notifier).setDark();
+        }
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -452,7 +462,7 @@ class _ThemeToggle extends ConsumerWidget {
             Icon(
               Icons.nightlight_round,
               size: 16,
-              color: isDark ? Colors.white : Colors.black38,
+              color: isDark ? Colors.white : AppColors.textSecondary,
             ),
           ],
         ),
@@ -562,7 +572,7 @@ class _GoogleIconPainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = strokeW
         ..strokeCap = StrokeCap.butt;
-      const toRad = 3.14159265358979 / 180;
+      const toRad = math.pi / 180;
       canvas.drawArc(
         Rect.fromCircle(center: Offset(cx, cy), radius: arcR),
         startDeg * toRad,

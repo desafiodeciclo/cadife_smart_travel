@@ -31,6 +31,26 @@ depends_on = None
 
 
 def upgrade() -> None:
+    # ── users (must exist before leads/agendamentos/propostas FK) ─────────
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    if not inspector.has_table('users'):
+        op.create_table(
+            'users',
+            sa.Column('id', postgresql.UUID(as_uuid=True), primary_key=True),
+            sa.Column('email', sa.String(255), nullable=False, unique=True),
+            sa.Column('nome', sa.String(255), nullable=False),
+            sa.Column('hashed_password', sa.String(255), nullable=False),
+            sa.Column('perfil', sa.String(20), nullable=False, server_default='agencia'),
+            sa.Column('telefone', sa.String(20), nullable=True),
+            sa.Column('fcm_token', sa.String(500), nullable=True),
+            sa.Column('avatar_url', sa.String(500), nullable=True),
+            sa.Column('is_active', sa.Boolean, nullable=False, server_default='true'),
+            sa.Column('criado_em', sa.DateTime(timezone=True),
+                      server_default=sa.func.now(), nullable=False),
+        )
+        op.create_index('ix_users_email', 'users', ['email'], unique=True)
+
     # ── PostgreSQL ENUM types ──────────────────────────────────────────────
     lead_status_enum = postgresql.ENUM(
         'novo', 'em_atendimento', 'qualificado', 'agendado', 'proposta', 'fechado', 'perdido',

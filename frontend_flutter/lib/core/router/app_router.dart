@@ -3,7 +3,9 @@ import 'package:cadife_smart_travel/core/router/client_shell.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/agenda_screen.dart';
 import 'package:cadife_smart_travel/features/agency/dashboard/dashboard_screen.dart';
 import 'package:cadife_smart_travel/features/agency/leads/lead_detail_screen.dart';
+import 'package:cadife_smart_travel/features/agency/leads/lead_edit_screen.dart';
 import 'package:cadife_smart_travel/features/agency/leads/leads_screen.dart';
+import 'package:cadife_smart_travel/features/agency/proposals/proposal_create_screen.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/screens/forgot_password_screen.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/screens/login_screen.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/screens/register_screen.dart';
@@ -134,6 +136,30 @@ final routerProvider = Provider<GoRouter>((ref) {
           key: state.pageKey,
           child: LeadDetailScreen(leadId: state.pathParameters['id']!),
         ),
+      ),
+
+      // Lead edit — full-screen push without BottomNavBar
+      GoRoute(
+        path: '/agency/leads/:id/edit',
+        pageBuilder: (_, state) => MaterialPage(
+          key: state.pageKey,
+          child: LeadEditScreen(leadId: state.pathParameters['id']!),
+        ),
+      ),
+
+      // Proposal create — full-screen modal
+      GoRoute(
+        path: '/agency/proposals/new',
+        pageBuilder: (_, state) {
+          final extra = state.extra as Map<String, String>? ?? {};
+          return MaterialPage(
+            key: state.pageKey,
+            child: ProposalCreateScreen(
+              leadId: extra['leadId'] ?? '',
+              consultorId: extra['consultorId'] ?? '',
+            ),
+          );
+        },
       ),
 
       // Client shell — persistent BottomNavBar with SharedAxis tab transitions
