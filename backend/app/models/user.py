@@ -4,9 +4,9 @@ from enum import Enum
 from typing import Optional
 
 from sqlalchemy import Boolean, DateTime, String, func
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import Mapped, mapped_column
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.core.database import Base
 
@@ -26,10 +26,16 @@ class User(Base):
     nome: Mapped[str] = mapped_column(String(255), nullable=False)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     perfil: Mapped[UserPerfil] = mapped_column(String(20), nullable=False, default=UserPerfil.agencia)
+    telefone: Mapped[Optional[str]] = mapped_column(String(20))
     fcm_token: Mapped[Optional[str]] = mapped_column(String(500))
     avatar_url: Mapped[Optional[str]] = mapped_column(String(500))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    # Preferências de viagem do cliente
+    tipo_viagem: Mapped[Optional[list[str]]] = mapped_column(ARRAY(String))
+    preferencias: Mapped[Optional[list[str]]] = mapped_column(ARRAY(String))
+    tem_passaporte: Mapped[Optional[bool]] = mapped_column(Boolean)
 
 
 # Pydantic schemas
@@ -55,11 +61,22 @@ class UserResponse(BaseModel):
     email: str
     nome: str
     perfil: UserPerfil
+    telefone: Optional[str]
     avatar_url: Optional[str]
     is_active: bool
     criado_em: datetime
+    tipo_viagem: Optional[list[str]]
+    preferencias: Optional[list[str]]
+    tem_passaporte: Optional[bool]
 
     model_config = {"from_attributes": True}
+
+
+class UserProfileUpdate(BaseModel):
+    nome: Optional[str] = None
+    tipo_viagem: Optional[list[str]] = None
+    preferencias: Optional[list[str]] = None
+    tem_passaporte: Optional[bool] = None
 
 
 class FcmTokenRequest(BaseModel):

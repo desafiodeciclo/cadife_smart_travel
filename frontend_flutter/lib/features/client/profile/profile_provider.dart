@@ -1,8 +1,8 @@
-import 'package:cadife_smart_travel/core/ports/auth_port.dart';
+import 'package:cadife_smart_travel/core/ports/profile_port.dart';
 import 'package:cadife_smart_travel/shared/models/models.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-final profileAuthProvider = Provider<AuthPort>((ref) {
+final profilePortProvider = Provider<ProfilePort>((ref) {
   throw UnimplementedError('Override em ProviderScope');
 });
 
@@ -14,15 +14,33 @@ final userProfileProvider =
 class UserProfileNotifier extends AsyncNotifier<UserModel?> {
   @override
   Future<UserModel?> build() async {
-    final authPort = ref.watch(profileAuthProvider);
-    return authPort.getCurrentUser();
+    final profilePort = ref.watch(profilePortProvider);
+    return profilePort.getCurrentUser();
   }
 
   Future<void> refresh() async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
-      final authPort = ref.read(profileAuthProvider);
-      return authPort.getCurrentUser();
+      final profilePort = ref.read(profilePortProvider);
+      return profilePort.getCurrentUser();
+    });
+  }
+
+  Future<void> updateProfile({
+    String? name,
+    List<String>? tipoViagem,
+    List<String>? preferencias,
+    bool? temPassaporte,
+  }) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      final profilePort = ref.read(profilePortProvider);
+      return profilePort.updateProfile(
+        name: name,
+        tipoViagem: tipoViagem,
+        preferencias: preferencias,
+        temPassaporte: temPassaporte,
+      );
     });
   }
 }

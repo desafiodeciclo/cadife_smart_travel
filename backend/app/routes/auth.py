@@ -8,8 +8,8 @@ from app.core.security import (
     decode_token,
     verify_password,
 )
-from app.models.user import FcmTokenRequest, LoginRequest, RefreshRequest, TokenResponse, UserResponse
-from app.services.user_service import get_user_by_email, get_user_by_id, update_fcm_token
+from app.models.user import FcmTokenRequest, LoginRequest, RefreshRequest, TokenResponse, UserProfileUpdate, UserResponse
+from app.services.user_service import get_user_by_email, get_user_by_id, update_fcm_token, update_user_profile
 
 router = APIRouter(tags=["Auth"])
 
@@ -51,6 +51,16 @@ async def refresh_token(body: RefreshRequest, db: AsyncSession = Depends(get_db)
 @router.get("/users/me", response_model=UserResponse)
 async def get_me(current_user=Depends(get_current_user)):
     return UserResponse.model_validate(current_user)
+
+
+@router.patch("/users/me", response_model=UserResponse)
+async def update_me(
+    body: UserProfileUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    updated = await update_user_profile(db, current_user, body)
+    return UserResponse.model_validate(updated)
 
 
 @router.post("/users/fcm-token")

@@ -9,11 +9,13 @@ import 'package:cadife_smart_travel/core/offline/offline_sync_queue.dart';
 import 'package:cadife_smart_travel/core/ports/agenda_port.dart';
 import 'package:cadife_smart_travel/core/ports/auth_port.dart';
 import 'package:cadife_smart_travel/core/ports/lead_port.dart';
+import 'package:cadife_smart_travel/core/ports/profile_port.dart';
 import 'package:cadife_smart_travel/core/ports/proposal_port.dart';
 import 'package:cadife_smart_travel/core/security/secure_config.dart';
 import 'package:cadife_smart_travel/data/repositories/agenda_repository_impl.dart';
 import 'package:cadife_smart_travel/data/repositories/lead_repository_impl.dart';
 import 'package:cadife_smart_travel/data/repositories/mock_auth_repository.dart';
+import 'package:cadife_smart_travel/data/repositories/mock_profile_repository.dart';
 import 'package:cadife_smart_travel/data/repositories/proposal_repository_impl.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -114,6 +116,7 @@ Future<void> setupServiceLocator({
   _registerLeadModule();
   _registerAgendaModule();
   _registerProposalModule();
+  _registerProfileModule();
 }
 
 void _registerAuthModule() {
@@ -151,6 +154,19 @@ void _registerProposalModule() {
       offlineManager: sl<OfflineManager>(),
     ),
   );
+}
+
+void _registerProfileModule() {
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  // MOCK PROFILE ATIVADO — COMENTE A LINHA ABAIXO E DESCOMENTE A SEGUINTE PARA PROD
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  sl.registerLazySingleton<ProfilePort>(MockProfileRepository.new);
+  // sl.registerLazySingleton<ProfilePort>(
+  //   () => ProfileRepositoryImpl(
+  //     dio: sl<Dio>(),
+  //     offlineManager: sl<OfflineManager>(),
+  //   ),
+  // );
 }
 
 /// Inicializa infra offline (Hive + Isar + SyncQueue).
