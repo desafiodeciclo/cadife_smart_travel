@@ -1,0 +1,46 @@
+{
+  "task_id": "MVP-F3-000",
+  "name": "Fase 3 Pre — Fundação Flutter: Arquitetura Modular, Offline-First, DI e Segurança",
+  "status": "done",
+  "description": "Pilar inicial do projeto Flutter com arquitetura modular (micro-apps/packages), database local offline-first (Hive), injeção de dependências (get_it) com lint pipeline severo, e implementações nativas/criptográficas de segurança client-side (certificate pinning, obfuscation).",
+  "dependencies": [],
+  "responsible": "Nikolas Tesch / Jakeline / Otávio Grotto",
+  "estimated_hours": "8h",
+  "steps": [
+    {
+      "id": "step1",
+      "description": "Criar projeto Flutter base com `flutter create` e estrutura inicial de diretórios",
+      "status": "done"
+    },
+    {
+      "id": "step2",
+      "description": "Estruturar módulos independentes (packages): core_ui, core_network, core_offline, features/agency, features/client — com fronteiras de importação via barrel exports e portas/interfaces",
+      "status": "done"
+    },
+    {
+      "id": "step3",
+      "description": "Implementar Data Caching & Offline-FirstDB com Hive: salvar stubs localmente para modo offline sem crash/flickering, suportar pre-cache de dados essenciais. Isar será adicionado quando resolver conflito de analyzer.",
+      "status": "done"
+    },
+    {
+      "id": "step4",
+      "description": "Configurar Injeção de Dependências com get_it: singletons para performance-critical features (NetworkInfo, SecureConfig, OfflineManager, Dio), módulos de registro por feature",
+      "status": "done"
+    },
+    {
+      "id": "step5",
+      "description": "Configurar pipeline de lint severo: analysis_options.yaml com regras imutáveis impedindo código sub-padrão (prefer_const_constructors, always_use_package_imports, directives_ordering, prefer_final_locals como errors no CI). Custom lint rules code preparado em packages/custom_lint_rules/ — será habilitado quando analyzer/sdk compatível.",
+      "status": "done"
+    },
+    {
+      "id": "step6",
+      "description": "Implementar segurança client-side: certificate pinning via HttpClient nativo (SHA-256 + backup pins) no CertificatePinningInterceptor + DioClientFactory, secure storage com FlutterSecureStorage (Keychain/EncryptedSharedPreferences), hash de certificado",
+      "status": "done"
+    },
+    {
+      "id": "step7",
+      "description": "Validação final: `flutter analyze` 0 issues, `dart format` limpo, estrutura de diretórios modular verificada",
+      "status": "done"
+    }
+  ]
+}

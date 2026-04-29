@@ -1,5 +1,5 @@
+import 'package:cadife_smart_travel/services/api_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../services/api_service.dart';
 
 class Lead {
   final String id;
@@ -21,28 +21,28 @@ class Lead {
   });
 
   factory Lead.fromJson(Map<String, dynamic> json) => Lead(
-        id: json['id'],
-        nome: json['nome'],
-        telefone: json['telefone'],
-        status: json['status'],
-        score: json['score'],
-        completudePct: json['completude_pct'],
-        criadoEm: json['criado_em'],
-      );
+    id: json['id'],
+    nome: json['nome'],
+    telefone: json['telefone'],
+    status: json['status'],
+    score: json['score'],
+    completudePct: json['completude_pct'],
+    criadoEm: json['criado_em'],
+  );
 }
 
 class LeadsRepository {
   final ApiService _api;
   LeadsRepository(this._api);
-
   Future<List<Lead>> getLeads({String? status, String? score, String? search, int page = 1}) async {
     final response = await _api.get('/leads', queryParameters: {
-      'status': ?status,
-      'score': ?score,
-      'search': ?search,
+      'status': status,
+      'score': score,
+      'search': search,
       'page': page,
       'limit': 20,
     });
+
     final items = response.data['items'] as List;
     return items.map((e) => Lead.fromJson(e as Map<String, dynamic>)).toList();
   }

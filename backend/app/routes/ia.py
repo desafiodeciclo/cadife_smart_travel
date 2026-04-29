@@ -1,12 +1,14 @@
 from typing import Optional
 import uuid
 
-from fastapi import APIRouter
+from fastapi import APIRouter, BackgroundTasks, Depends
 from pydantic import BaseModel
 
+from app.infrastructure.security.dependencies import get_current_user
 from app.models.briefing import calculate_completude
 from app.services import ai_service, rag_service
 from app.services.domain_validator import BriefingValidator, ValidationResult
+from app.services.ingestion_pipeline import get_ingestion_pipeline
 
 router = APIRouter(prefix="/ia", tags=["IA"])
 
@@ -46,6 +48,14 @@ class ExtrairBriefingResponse(BaseModel):
     validation_errors: list[str]
 
 
+class ReindexarRequest(BaseModel):
+    force: bool = False
+
+
+# ---------------------------------------------------------------------------
+# Existing endpoints
+# ---------------------------------------------------------------------------
+
 @router.post("/processar", response_model=ProcessarResponse)
 async def processar_mensagem(body: ProcessarRequest):
     # 1. Extrair briefing
@@ -61,7 +71,9 @@ async def processar_mensagem(body: ProcessarRequest):
             body.phone, body.message, validation_errors=validation.errors
         )
     else:
-        response = await ai_service.process_message(body.phone, body.message)
+        response = await ai_service.process_message(
+            body.phone, body.message, briefing=extracted
+        )
 
     return ProcessarResponse(
         response=response,
@@ -99,3 +111,29 @@ async def ia_status():
         "vector_db": "chromadb",
         "domain_validator": "active",
     }
+
+
+# ---------------------------------------------------------------------------
+# Ingestion endpoints (JWT protected)
+# ---------------------------------------------------------------------------
+
+@router.post("/reindexar", dependencies=[Depends(get_current_user)])
+async def reindexar_base(body: ReindexarRequest, background_tasks: BackgroundTasks):
+    """
+    Trigger a full knowledge-base re-ingestion in the background.
+
+    - force=false (default): only changed/new documents are re-indexed.
+    - force=true: all documents are deleted and re-embedded from scratch.
+
+    Returns immediately with HTTP 202; actual indexing runs asynchronously.
+    """
+    pipeline = get_ingestion_pipeline()
+    background_tasks.add_task(pipeline.ingest_all, body.force)
+    return {"status": "accepted", "message": "Reindexação iniciada em background", "force": body.force}
+
+
+@router.get("/ingestion-status", dependencies=[Depends(get_current_user)])
+async def ingestion_status():
+    """Return the current ingestion cache summary (indexed documents + chunk counts)."""
+    pipeline = get_ingestion_pipeline()
+    return pipeline.get_status()

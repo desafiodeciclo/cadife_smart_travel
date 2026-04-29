@@ -1,0 +1,118 @@
+{
+  "id": "flutter-network-http-layer-001",
+  "title": "Flutter HTTP Client Layer — Auth + Error Interceptors",
+  "status": "in-progress",
+  "priority": "high",
+  "assignee": "Claude",
+  "created_at": "2026-04-22T00:00:00Z",
+  "steps": [
+    {
+      "id": 1,
+      "task": "Criar hierarquia de exceções tipadas (ApiException sealed class)",
+      "status": "pending",
+      "details": [
+        "lib/core/network/exceptions/api_exception.dart",
+        "Sealed class com: UnauthorizedException, ForbiddenException, ConflictException, ServerException, NetworkException, UnknownApiException",
+        "Todos os construtores const"
+      ]
+    },
+    {
+      "id": 2,
+      "task": "Criar ErrorInterceptor — mapeia DioException para ApiException tipada",
+      "status": "pending",
+      "details": [
+        "lib/core/network/interceptors/error_interceptor.dart",
+        "Usa handler.next(modifiedDioException) — NÃO handler.reject()",
+        "Mapeia: 401→UnauthorizedException, 403→ForbiddenException, 409→ConflictException, 5xx→ServerException, timeout/connection→NetworkException",
+        "Debug-only logging via kDebugMode"
+      ]
+    },
+    {
+      "id": 3,
+      "task": "Criar AuthInterceptor — injeta Bearer token + refresh automático com lock",
+      "status": "pending",
+      "details": [
+        "lib/core/network/interceptors/auth_interceptor.dart",
+        "onRequest: injeta Authorization: Bearer $token",
+        "onError: 401 → refresh via refreshDio (sem interceptors) → retry original request",
+        "Completer<bool> para deduplicação: evita múltiplas chamadas simultâneas ao /auth/refresh",
+        "Guard: skip refresh se path == ApiConstants.refresh (evita loop infinito)",
+        "onTokenExpired callback acionado quando refresh falha"
+      ]
+    },
+    {
+      "id": 4,
+      "task": "Refatorar DioClientFactory — adicionar createForRefresh() e injetar interceptors",
+      "status": "pending",
+      "details": [
+        "lib/core/network/dio_client.dart",
+        "Novo método createForRefresh(): mesma configuração base + cert pinning, SEM interceptors",
+        "createPinned() recebe AuthInterceptor, ErrorInterceptor, OfflineInterceptor como parâmetros",
+        "Ordem de registro (LIFO para erros): errorInterceptor → authInterceptor → offlineInterceptor"
+      ]
+    },
+    {
+      "id": 5,
+      "task": "Atualizar service_locator.dart — registrar interceptors e wiring completo",
+      "status": "pending",
+      "details": [
+        "lib/core/di/service_locator.dart",
+        "Novo parâmetro: VoidCallback? onTokenExpired",
+        "Registrar refreshDio (instanceName: 'refreshDio'), ErrorInterceptor, OfflineInterceptor, AuthInterceptor",
+        "Main Dio usa createPinned() com interceptors injetados"
+      ]
+    },
+    {
+      "id": 6,
+      "task": "Atualizar main.dart — late final ProviderContainer para callback onTokenExpired",
+      "status": "pending",
+      "details": [
+        "lib/main.dart",
+        "Usar late final container para captura segura no closure onTokenExpired",
+        "onTokenExpired: () => container.read(authProvider.notifier).logout()"
+      ]
+    },
+    {
+      "id": 7,
+      "task": "Atualizar api_constants.dart e barrel network.dart",
+      "status": "pending",
+      "details": [
+        "lib/core/constants/api_constants.dart: adicionar baseUrlDev, baseUrlStaging, baseUrlProd",
+        "lib/core/network/network.dart: exportar exceptions e interceptors novos"
+      ]
+    },
+    {
+      "id": 8,
+      "task": "Criar testes — ErrorInterceptor e AuthInterceptor",
+      "status": "pending",
+      "details": [
+        "test/core/network/interceptors/error_interceptor_test.dart",
+        "test/core/network/interceptors/auth_interceptor_test.dart",
+        "Usar mocktail para MockDio, MockSecureConfig",
+        "Testar: mapeamento de status codes, refresh flow, deduplicação concorrente, onTokenExpired"
+      ]
+    }
+  ],
+  "architecture_decisions": [
+    {
+      "decision": "handler.next() em vez de handler.reject() no ErrorInterceptor",
+      "rationale": "Preserva o envelope DioException para que todos os catches existentes nos repositories continuem funcionando. A ApiException tipada fica em DioException.error.",
+      "adr": null
+    },
+    {
+      "decision": "Completer<bool> para deduplicação de refresh",
+      "rationale": "Evita múltiplas chamadas simultâneas ao /auth/refresh quando requests concorrentes recebem 401. O primeiro request owna o refresh; os demais aguardam o Completer.",
+      "adr": null
+    },
+    {
+      "decision": "refreshDio separado (sem interceptors) para refresh e retry",
+      "rationale": "Usar o Dio principal para retry causaria reentrada no AuthInterceptor, criando loop infinito. O refreshDio tem a mesma cert pinning mas nenhum interceptor.",
+      "adr": null
+    },
+    {
+      "decision": "onTokenExpired chama authProvider (OLD StateNotifier), não authNotifierProvider",
+      "rationale": "O GoRouter atual em app_router.dart ouve apenas authProvider (StateNotifier). Chamar o novo AsyncNotifier não dispararia o redirect. Tech debt: migrar router para authNotifierProvider.",
+      "adr": null
+    }
+  ]
+}

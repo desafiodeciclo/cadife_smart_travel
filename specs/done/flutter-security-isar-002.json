@@ -1,0 +1,91 @@
+{
+  "id": "flutter-security-isar-002",
+  "title": "Flutter Security & Local DB Hardening — Isar Pre-Cache, Build Obfuscation, and String Obfuscation",
+  "status": "done",
+  "priority": "high",
+  "assignee": "Claude",
+  "created_at": "2026-04-22T14:00:00Z",
+  "steps": [
+    {
+      "id": 1,
+      "task": "Integrar Isar como database local estruturado de pre-cache",
+      "status": "done",
+      "details": [
+        "Adicionar isar, isar_flutter_libs e isar_generator ao pubspec.yaml",
+        "Criar schemas Isar em core/cache/isar_schemas/: LeadCache, BriefingCache, AgendaCache, ProposalCache",
+        "Gerar código de coleções Isar (.g.dart)",
+        "Hive permanece para configurações, sync queue e cache simples (KV); Isar assume dados estruturados complexos"
+      ]
+    },
+    {
+      "id": 2,
+      "task": "Implementar IsarCacheManager — pre-cache tipado, queries e fallback offline",
+      "status": "done",
+      "details": [
+        "Criar IsarCacheManager com initialize(), close()",
+        "Métodos específicos por tipo: putLead, getLeadByServerId, putAgenda, etc.",
+        "Estratégia de fallback: API sucesso → grava Isar + retorna; API falha → lê Isar (anti-flickering)",
+        "Integrado com service_locator.dart (singleton) e initDependencies()"
+      ]
+    },
+    {
+      "id": 3,
+      "task": "Configurar obfuscate de builds Android e iOS",
+      "status": "done",
+      "details": [
+        "Atualizar android/app/build.gradle.kts: minifyEnabled, shrinkResources, proguard-rules",
+        "Criar android/app/proguard-rules.pro com regras para Flutter, Dio, Isar, Firebase",
+        "Documentar comando de release com --obfuscate e split-debug-info",
+        "Criar scripts/build_release.sh (Linux/Mac) e scripts/build_release.ps1 (Windows)"
+      ]
+    },
+    {
+      "id": 4,
+      "task": "Implementar ofuscação de strings sensíveis (pins, chaves, aliases)",
+      "status": "done",
+      "details": [
+        "Criar SecureStrings com XOR + base64 para ofuscação em tempo de compilação (não apenas runtime)",
+        "Ofuscar: secure storage key, pinning key alias, refresh token key",
+        "Integrar SecureStrings em SecureConfig; nenhuma string sensível em plain-text no código fonte"
+      ]
+    },
+    {
+      "id": 5,
+      "task": "Reforço de Certificate Pinning — fail-closed em release e backup pins",
+      "status": "done",
+      "details": [
+        "DioClientFactory: em release (dart.vm.product), SEMPRE exigir pins válidos; crash/exception se ausente",
+        "Adicionar backup pins ao SecureConfig (load dinâmico + fallback estático ofuscado)",
+        "CertificatePinningInterceptor: log seguro via debugPrint apenas em debug"
+      ]
+    },
+    {
+      "id": 6,
+      "task": "Testes unitários para segurança e cache",
+      "status": "done",
+      "details": [
+        "Testes para SecureStrings: de-obfuscate deve ser idêntico ao original",
+        "Testes para IsarCacheManager: CRUD, fallback offline, clear",
+        "Testes para CertificatePinningInterceptor: match pin válido, rejeição pin inválido, backup pin aceito",
+        "Todos os testes passam com flutter test"
+      ]
+    }
+  ],
+  "architecture_decisions": [
+    {
+      "decision": "Isar para dados estruturados, Hive para KV e sync queue",
+      "rationale": "Isar oferece queries tipadas e performance superior para objetos complexos (leads, briefings). Hive continua como KV leve para configurações e fila de sync offline.",
+      "adr": "docs/adr/0009-isar-hybrid-cache.md"
+    },
+    {
+      "decision": "Ofuscação de strings sensíveis via XOR+base64 em tempo de build",
+      "rationale": "Evitar que strings como certificate pins e key aliases sejam legíveis em strings do binário. Não usamos envied (code-gen pesado) — preferimos obfuscação manual leve e auditável.",
+      "adr": "docs/adr/0010-string-obfuscation.md"
+    },
+    {
+      "decision": "Fail-closed em release: app crasha se pinning não configurado",
+      "rationale": "Em produção, é preferível que o app não funcione a operar sem validação de certificado, prevenindo MITM silencioso.",
+      "adr": "docs/adr/0011-fail-closed-pinning.md"
+    }
+  ]
+}
