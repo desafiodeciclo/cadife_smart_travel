@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:cadife_smart_travel/core/ports/auth_port.dart';
+import 'package:cadife_smart_travel/core/security/jwt_validator.dart';
 import 'package:cadife_smart_travel/core/security/secure_config.dart';
 import 'package:cadife_smart_travel/shared/models/user_model.dart';
 
@@ -7,18 +10,18 @@ import 'package:cadife_smart_travel/shared/models/user_model.dart';
 /// DEVE SER REMOVIDO OU SUBSTITUÍDO PELO AuthRepositoryImpl EM PRODUÇÃO.
 /// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 class MockAuthRepository implements AuthPort {
-  MockAuthRepository({required SecureConfig secureConfig}) : _secureConfig = secureConfig;
+  MockAuthRepository({required SecureConfig secureConfig})
+      : _secureConfig = secureConfig;
 
   final SecureConfig _secureConfig;
   UserModel? _currentUser;
 
   @override
   Future<UserModel> login(String email, String password) async {
-    // Simula delay de rede
     await Future.delayed(const Duration(milliseconds: 800));
 
-    // Determina o papel do usuário pelo e-mail para facilitar testes
-    final role = email.contains('agencia') ? UserRole.consultor : UserRole.cliente;
+    final role =
+        email.contains('agencia') ? UserRole.consultor : UserRole.cliente;
 
     _currentUser = UserModel(
       id: 'mock-id-123',
@@ -27,10 +30,9 @@ class MockAuthRepository implements AuthPort {
       role: role,
     );
 
-    // Salva tokens fakes para o interceptor não reclamar
     await _secureConfig.saveTokens(
-      accessToken: 'mock-access-token',
-      refreshToken: 'mock-refresh-token',
+      accessToken: _buildMockJwt(_currentUser!.id, role),
+      refreshToken: _buildMockJwt(_currentUser!.id, role, hours: 168),
     );
 
     return _currentUser!;
@@ -40,14 +42,13 @@ class MockAuthRepository implements AuthPort {
   Future<UserModel?> getCurrentUser() async {
     if (_currentUser != null) return _currentUser;
 
-    // Se houver token salvo, restaura um usuário mockado para manter a sessão ativa
     final token = await _secureConfig.getAccessToken();
-    if (token != null) {
+    if (token != null && JwtValidator.isTokenValid(token)) {
       _currentUser = const UserModel(
         id: 'mock-id-123',
         name: 'Usuário Restaurado',
         email: 'restored@mock.com',
-        role: UserRole.cliente, // Default para restauração mock
+        role: UserRole.cliente,
       );
     }
     return _currentUser;
@@ -57,7 +58,7 @@ class MockAuthRepository implements AuthPort {
   Future<bool> isLoggedIn() async {
     if (_currentUser != null) return true;
     final token = await _secureConfig.getAccessToken();
-    return token != null;
+    return JwtValidator.isTokenValid(token);
   }
 
   @override
@@ -68,9 +69,10 @@ class MockAuthRepository implements AuthPort {
 
   @override
   Future<TokenModel> refreshToken(String refreshToken) async {
-    return const TokenModel(
-      accessToken: 'mock-access-token',
-      refreshToken: 'mock-refresh-token',
+    final newToken = _buildMockJwt('mock-id-123', UserRole.cliente);
+    return TokenModel(
+      accessToken: newToken,
+      refreshToken: _buildMockJwt('mock-id-123', UserRole.cliente, hours: 168),
       expiresIn: 3600,
     );
   }
@@ -81,7 +83,27 @@ class MockAuthRepository implements AuthPort {
   }
 
   @override
-  Future<void> saveFcmToken(String token) async {
-    // Mock: faz nada
+  Future<void> saveFcmToken(String token) async {}
+
+  /// Constrói um JWT com payload base64url válido (sem verificação de assinatura).
+  /// Necessário para que JwtValidator.isTokenValid() funcione corretamente em dev.
+  String _buildMockJwt(String userId, UserRole role, {int hours = 24}) {
+    final header = base64Url
+        .encode(utf8.encode('{"alg":"none","typ":"JWT"}'))
+        .replaceAll('=', '');
+
+    final exp =
+        DateTime.now().add(Duration(hours: hours)).millisecondsSinceEpoch ~/
+            1000;
+    final payloadMap = {
+      'sub': userId,
+      'exp': exp,
+      'role': role.name,
+      'iss': 'cadife-mock',
+    };
+    final payload =
+        base64Url.encode(utf8.encode(jsonEncode(payloadMap))).replaceAll('=', '');
+
+    return '$header.$payload.mock-signature';
   }
 }
