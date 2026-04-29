@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from app.infrastructure.security.dependencies import get_current_user
 from app.models.briefing import calculate_completude
 from app.services import ai_service, rag_service
-from app.services.domain_validator import BriefingValidator, ValidationResult
+from app.services.domain_validator import BriefingValidator
 from app.services.ingestion_pipeline import get_ingestion_pipeline
 
 router = APIRouter(prefix="/ia", tags=["IA"])
