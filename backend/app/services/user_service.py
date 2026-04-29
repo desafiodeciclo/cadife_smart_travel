@@ -4,7 +4,7 @@ from typing import Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.user import User
+from app.models.user import User, UserProfileUpdate
 
 
 async def get_user_by_email(db: AsyncSession, email: str) -> Optional[User]:
@@ -19,6 +19,22 @@ async def get_user_by_id(db: AsyncSession, user_id: str) -> Optional[User]:
 
 async def update_fcm_token(db: AsyncSession, user: User, fcm_token: str) -> User:
     user.fcm_token = fcm_token
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+
+async def update_user_profile(
+    db: AsyncSession, user: User, data: UserProfileUpdate
+) -> User:
+    if data.nome is not None:
+        user.nome = data.nome
+    if data.tipo_viagem is not None:
+        user.tipo_viagem = data.tipo_viagem
+    if data.preferencias is not None:
+        user.preferencias = data.preferencias
+    if data.tem_passaporte is not None:
+        user.tem_passaporte = data.tem_passaporte
     await db.commit()
     await db.refresh(user)
     return user

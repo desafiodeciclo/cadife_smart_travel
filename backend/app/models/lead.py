@@ -17,7 +17,9 @@ from pydantic import BaseModel
 
 from app.core.database import Base
 from app.infrastructure.security.pii_encryption import EncryptedString
-from app.domain.entities.enums import LeadOrigem, LeadStatus, LeadScore
+from decimal import Decimal
+
+from app.domain.entities.enums import LeadOrigem, LeadStatus, LeadScore, PropostaStatus
 
 
 
@@ -27,7 +29,8 @@ class Lead(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     # PII: campos criptografados at-rest via Fernet (AES-128)
     nome: Mapped[Optional[str]] = mapped_column(EncryptedString(512))
-    telefone: Mapped[str] = mapped_column(EncryptedString(512), unique=True, nullable=False, index=True)
+    telefone: Mapped[str] = mapped_column(EncryptedString(512), nullable=False)
+    telefone_hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, index=True)
     origem: Mapped[LeadOrigem] = mapped_column(String(20), nullable=False, default=LeadOrigem.whatsapp)
     status: Mapped[LeadStatus] = mapped_column(String(30), nullable=False, default=LeadStatus.novo)
     score: Mapped[Optional[LeadScore]] = mapped_column(String(10))
@@ -57,6 +60,16 @@ class LeadUpdate(BaseModel):
     consultor_id: Optional[uuid.UUID] = None
 
 
+class PropostaListItem(BaseModel):
+    id: uuid.UUID
+    descricao: str
+    status: PropostaStatus
+    valor_estimado: Optional[Decimal]
+    criado_em: datetime
+
+    model_config = {"from_attributes": True}
+
+
 class LeadResponse(BaseModel):
     id: uuid.UUID
     nome: Optional[str]
@@ -68,6 +81,7 @@ class LeadResponse(BaseModel):
     is_archived: bool
     criado_em: datetime
     atualizado_em: datetime
+    propostas: list[PropostaListItem] = []
 
     model_config = {"from_attributes": True}
 

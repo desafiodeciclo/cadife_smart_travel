@@ -15,4 +15,9 @@ class AppConstants {
   // ── Key Hive Keys ──────────────────────────────────────
   static const String keyUserId = 'user_id';
   static const String keyLastSync = 'last_sync_timestamp';
+
+  // ── App Lock ───────────────────────────────────────────
+  // Decisão PO: 3 min de background dispara re-autenticação biométrica
+  static const Duration appLockTimeout = Duration(minutes: 3);
+  static const int appLockMaxFailures = 3;
 }

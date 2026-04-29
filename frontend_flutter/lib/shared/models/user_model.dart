@@ -9,6 +9,9 @@ class UserModel extends Equatable {
     this.phone,
     this.avatarUrl,
     this.createdAt,
+    this.tipoViagem,
+    this.preferencias,
+    this.temPassaporte,
   });
 
   final String id;
@@ -18,31 +21,62 @@ class UserModel extends Equatable {
   final String? phone;
   final String? avatarUrl;
   final DateTime? createdAt;
+  final List<String>? tipoViagem;
+  final List<String>? preferencias;
+  final bool? temPassaporte;
 
   factory UserModel.fromJson(Map<String, dynamic> json) => UserModel(
     id: json['id'] as String,
-    name: json['name'] as String,
+    name: json['nome'] as String? ?? json['name'] as String,
     email: json['email'] as String,
     role: UserRole.values.firstWhere(
-      (e) => e.name == json['role'],
+      (e) => e.name == (json['perfil'] ?? json['role']),
       orElse: () => UserRole.consultor,
     ),
-    phone: json['phone'] as String?,
+    phone: json['telefone'] as String? ?? json['phone'] as String?,
     avatarUrl: json['avatar_url'] as String?,
-    createdAt: json['created_at'] != null
-        ? DateTime.parse(json['created_at'] as String)
-        : null,
+    createdAt: json['criado_em'] != null
+        ? DateTime.parse(json['criado_em'] as String)
+        : json['created_at'] != null
+            ? DateTime.parse(json['created_at'] as String)
+            : null,
+    tipoViagem: (json['tipo_viagem'] as List<dynamic>?)?.cast<String>(),
+    preferencias: (json['preferencias'] as List<dynamic>?)?.cast<String>(),
+    temPassaporte: json['tem_passaporte'] as bool?,
   );
 
   Map<String, dynamic> toJson() => {
     'id': id,
-    'name': name,
+    'nome': name,
     'email': email,
-    'role': role.name,
-    'phone': phone,
+    'perfil': role.name,
+    'telefone': phone,
     'avatar_url': avatarUrl,
-    'created_at': createdAt?.toIso8601String(),
+    'criado_em': createdAt?.toIso8601String(),
+    'tipo_viagem': tipoViagem,
+    'preferencias': preferencias,
+    'tem_passaporte': temPassaporte,
   };
+
+  UserModel copyWith({
+    String? name,
+    String? phone,
+    String? avatarUrl,
+    List<String>? tipoViagem,
+    List<String>? preferencias,
+    bool? temPassaporte,
+  }) => UserModel(
+    id: id,
+    name: name ?? this.name,
+    email: email,
+    role: role,
+    phone: phone ?? this.phone,
+    avatarUrl: avatarUrl ?? this.avatarUrl,
+    createdAt: createdAt,
+    tipoViagem: tipoViagem ?? this.tipoViagem,
+    preferencias: preferencias ?? this.preferencias,
+    temPassaporte: temPassaporte ?? this.temPassaporte,
+  );
 
   @override
   List<Object?> get props => [
@@ -53,6 +87,9 @@ class UserModel extends Equatable {
     phone,
     avatarUrl,
     createdAt,
+    tipoViagem,
+    preferencias,
+    temPassaporte,
   ];
 }
 

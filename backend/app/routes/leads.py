@@ -10,6 +10,8 @@ from app.infrastructure.security.dependencies import RequiresRole, get_current_u
 from app.models.briefing import BriefingResponse, BriefingUpdate, calculate_completude
 from app.models.interacao import InteracaoListResponse
 from app.models.lead import LeadCreate, LeadListItem, LeadListResponse, LeadResponse, LeadUpdate
+from app.application.services.lead_state_machine import InvalidStateTransitionError, LeadStateMachine
+from app.domain.entities.enums import LeadStatus
 from app.services import lead_service
 
 logger = structlog.get_logger()
@@ -101,8 +103,32 @@ async def update_lead(
     if not lead:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead não encontrado")
 
-    for field, value in lead_in.model_dump(exclude_none=True).items():
+    data = lead_in.model_dump(exclude_none=True)
+
+    # ── State Machine validation ──────────────────────────────────────────
+    if "status" in data:
+        try:
+            LeadStateMachine.validate_transition(lead.status, LeadStatus(data["status"]))
+        except InvalidStateTransitionError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=str(exc),
+            ) from exc
+
+    for field, value in data.items():
         setattr(lead, field, value)
+
+    # ── Auto-score trigger on transition to QUALIFICADO ───────────────────
+    if data.get("status") == LeadStatus.qualificado.value:
+        from app.services.lead_service import calculate_score_from_briefing
+        lead.score = calculate_score_from_briefing(lead.briefing)
+        logger.info(
+            "lead_auto_scored",
+            lead_id=str(lead.id),
+            status=lead.status.value,
+            score=lead.score.value if lead.score else None,
+        )
+
     await db.commit()
     await db.refresh(lead)
     return LeadResponse.model_validate(lead)

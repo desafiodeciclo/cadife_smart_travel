@@ -53,18 +53,17 @@ def calculate_completude(briefing_data: dict) -> int:
 # Pydantic schemas
 
 class BriefingExtracted(BaseModel):
-    """Schema para PydanticOutputParser — extração automática pela IA."""
-    destino: Optional[str] = None
-    data_ida: Optional[date] = None
-    data_volta: Optional[date] = None
-    qtd_pessoas: Optional[int] = None
-    perfil: Optional[PerfilViagem] = None
-    tipo_viagem: list[str] = Field(default_factory=list)
-    preferencias: list[str] = Field(default_factory=list)
-    orcamento: Optional[OrcamentoNivel] = None
-    tem_passaporte: Optional[bool] = None
-    observacoes: Optional[str] = None
-    completude_pct: int = 0
+    """Schema para Structured Outputs API — extração automática pela IA."""
+    destino: Optional[str] = Field(None, description="Cidade ou país de destino da viagem mencionado pelo cliente")
+    data_ida: Optional[date] = Field(None, description="Data de ida no formato YYYY-MM-DD, apenas se o cliente mencionou explicitamente")
+    data_volta: Optional[date] = Field(None, description="Data de volta no formato YYYY-MM-DD, apenas se o cliente mencionou explicitamente")
+    qtd_pessoas: Optional[int] = Field(None, description="Quantidade total de viajantes")
+    perfil: Optional[PerfilViagem] = Field(None, description="Perfil do grupo: casal, família, solo, grupo ou amigos")
+    tipo_viagem: list[str] = Field(default_factory=list, description="Tipos de viagem desejados: aventura, cultural, romântica, negócios, etc.")
+    preferencias: list[str] = Field(default_factory=list, description="Preferências específicas: praias, gastronomia, museus, compras, etc.")
+    orcamento: Optional[OrcamentoNivel] = Field(None, description="Nível de orçamento informado: baixo, médio, alto ou premium")
+    tem_passaporte: Optional[bool] = Field(None, description="Se o cliente informou que possui passaporte válido")
+    observacoes: Optional[str] = Field(None, description="Qualquer outra informação relevante mencionada pelo cliente")
 
 
 class BriefingUpdate(BaseModel):
