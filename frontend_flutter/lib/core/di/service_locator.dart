@@ -1,8 +1,11 @@
 import 'package:cadife_smart_travel/core/cache/isar_cache_manager.dart';
+import 'package:cadife_smart_travel/core/network/connectivity_service.dart';
 import 'package:cadife_smart_travel/core/network/dio_client.dart';
 import 'package:cadife_smart_travel/core/network/interceptors/auth_interceptor.dart';
 import 'package:cadife_smart_travel/core/network/interceptors/error_interceptor.dart';
 import 'package:cadife_smart_travel/core/network/network_info.dart';
+import 'package:cadife_smart_travel/core/notifications/fcm_manager.dart';
+import 'package:cadife_smart_travel/core/notifications/local_notification_manager.dart';
 import 'package:cadife_smart_travel/core/offline/offline_interceptor.dart';
 import 'package:cadife_smart_travel/core/offline/offline_manager.dart';
 import 'package:cadife_smart_travel/core/offline/offline_sync_queue.dart';
@@ -12,12 +15,17 @@ import 'package:cadife_smart_travel/core/ports/lead_port.dart';
 import 'package:cadife_smart_travel/core/ports/profile_port.dart';
 import 'package:cadife_smart_travel/core/ports/proposal_port.dart';
 import 'package:cadife_smart_travel/core/security/secure_config.dart';
+import 'package:cadife_smart_travel/data/local/database_helper.dart';
 import 'package:cadife_smart_travel/data/repositories/agenda_repository_impl.dart';
 import 'package:cadife_smart_travel/data/repositories/lead_repository_impl.dart';
 import 'package:cadife_smart_travel/data/repositories/mock_auth_repository.dart';
 import 'package:cadife_smart_travel/data/repositories/mock_profile_repository.dart';
+import 'package:cadife_smart_travel/data/repositories/offline_event_repository_impl.dart';
 import 'package:cadife_smart_travel/data/repositories/proposal_repository_impl.dart';
+import 'package:cadife_smart_travel/domain/repositories/i_offline_event_repository.dart';
+import 'package:cadife_smart_travel/domain/usecases/process_offline_queue_usecase.dart';
 import 'package:dio/dio.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 
@@ -48,6 +56,14 @@ Future<void> setupServiceLocator({
     () => OfflineSyncQueue(networkInfo: sl<NetworkInfo>()),
   );
   sl.registerLazySingleton<IsarCacheManager>(IsarCacheManager.new);
+  
+  sl.registerLazySingleton<DatabaseHelper>(DatabaseHelper.new);
+  sl.registerLazySingleton<IOfflineEventRepository>(
+    () => OfflineEventRepositoryImpl(sl<DatabaseHelper>()),
+  );
+  sl.registerLazySingleton<ProcessOfflineQueueUseCase>(
+    () => ProcessOfflineQueueUseCase(sl<IOfflineEventRepository>()),
+  );
 
   // ── 2. Network Layer ──────────────────────────────────
 
@@ -171,9 +187,14 @@ void _registerProfileModule() {
 
 /// Inicializa infra offline (Hive + Isar + SyncQueue).
 Future<void> initDependencies() async {
+  await Firebase.initializeApp();
   await sl<OfflineManager>().initialize();
   await sl<IsarCacheManager>().initialize();
   await sl<OfflineSyncQueue>().initialize();
+  
+  await LocalNotificationManager.init();
+  await FCMManager.init();
+  ConnectivityService.init();
 }
 
 /// Limpa dados do usuário (logout). NÃO descarta infra singletons.
@@ -189,5 +210,6 @@ Future<void> disposeDependencies() async {
   await sl<OfflineSyncQueue>().dispose();
   await sl<OfflineManager>().dispose();
   await sl<IsarCacheManager>().close();
+  await sl<DatabaseHelper>().close();
   await sl.reset(dispose: true);
 }

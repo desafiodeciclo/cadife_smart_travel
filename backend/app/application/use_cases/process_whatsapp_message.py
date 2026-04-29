@@ -7,10 +7,12 @@ Orchestrates the full message-processing flow defined in spec.md §9.1:
   3. Update lead status
   4. Process text with AI / handle media fallback
   5. Extract briefing data
-  6. Update briefing & compute score
-  7. Trigger FCM notification if lead qualifies
-  8. Save interaction record
-  9. Reply via WhatsApp
+  6. Validate domain rules
+  7. Update briefing & compute score (only if validation passes)
+  8. Trigger FCM notification if lead qualifies
+  9. Save interaction record
+  10. Reply via WhatsApp
+  11. Update interaction with send outcome
 """
 from __future__ import annotations
 
@@ -21,6 +23,7 @@ from app.domain.entities.enums import LeadStatus, TipoMensagem
 from app.models.lead import Lead
 from app.models.user import User
 from app.services import ai_service, fcm_service, lead_service, whatsapp_service
+from app.services.domain_validator import BriefingValidator
 
 logger = structlog.get_logger()
 
@@ -29,6 +32,8 @@ MEDIA_FALLBACK_REPLY = (
     "Recebi sua mensagem! No momento aceito apenas textos. "
     "Um consultor irá te atender em breve. 😊"
 )
+
+_validator = BriefingValidator()
 
 
 async def execute(payload: dict, db: AsyncSession) -> None:
@@ -64,28 +69,54 @@ async def execute(payload: dict, db: AsyncSession) -> None:
             else TipoMensagem.texto
         )
     else:
-        reply = await ai_service.process_message(phone, text)
-        tipo = TipoMensagem.texto
-
-        # ── Step 4: Extract briefing & update score ───────────────────────
+        # ── Step 4: Extract briefing ────────────────────────────────────
         extracted = await ai_service.extract_briefing([{"role": "user", "content": text}])
-        briefing = await lead_service.update_briefing_from_extraction(db, lead, extracted)
 
-        # ── Step 5: FCM notification when lead qualifies ──────────────────
-        # spec.md §8.1: notify consultant in < 2 seconds
-        if briefing.completude_pct >= 60 and lead.status == LeadStatus.qualificado:
-            await _notify_consultants(db, lead, briefing)
+        # ── Step 5: Validate domain rules ───────────────────────────────
+        validation = _validator.validate(extracted)
 
-    # ── Step 6: Persist interaction record ────────────────────────────────
-    await lead_service.save_interacao(
-        db, lead.id,
+        if not validation.is_valid:
+            # Domain validation failed → corrective feedback via AI
+            reply = await ai_service.process_message(
+                phone, text, validation_errors=validation.errors
+            )
+            logger.info(
+                "validation_corrective_response",
+                phone=phone,
+                errors=validation.errors,
+            )
+            tipo = TipoMensagem.texto
+        else:
+            # Domain validation passed → normal response + persist briefing
+            reply = await ai_service.process_message(phone, text, briefing=extracted)
+            briefing = await lead_service.update_briefing_from_extraction(db, lead, extracted)
+            tipo = TipoMensagem.texto
+
+            # ── Step 6: FCM notification when lead qualifies ──────────
+            # spec.md §8.1: notify consultant in < 2 seconds
+            if briefing.completude_pct >= 60 and lead.status == LeadStatus.qualificado:
+                await _notify_consultants(db, lead, briefing)
+
+    # ── Step 7: Persist interaction record ────────────────────────────────
+    interacao = await lead_service.save_interacao(
+        db,
+        lead.id,
         msg_cliente=text,
         msg_ia=reply if msg_type == "text" else None,
         tipo=tipo,
     )
 
-    # ── Step 7: Reply to client via WhatsApp ──────────────────────────────
-    await whatsapp_service.send_message(phone, reply)
+    # ── Step 8: Reply to client via WhatsApp; persist send outcome ────────
+    send_result = await whatsapp_service.send_message(phone, reply)
+    await lead_service.update_interacao_send_result(db, interacao, send_result)
+    logger.info(
+        "whatsapp_reply_dispatched",
+        lead_id=str(lead.id),
+        success=send_result.success,
+        wamid=send_result.wamid,
+        latency_ms=send_result.latency_ms,
+        retries=send_result.retries_used,
+    )
 
 
 async def _notify_consultants(db: AsyncSession, lead: Lead, briefing) -> None:

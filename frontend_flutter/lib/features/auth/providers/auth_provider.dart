@@ -1,3 +1,4 @@
+import 'package:cadife_smart_travel/core/notifications/fcm_manager.dart';
 import 'package:cadife_smart_travel/core/ports/auth_port.dart';
 import 'package:cadife_smart_travel/shared/models/models.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -26,6 +27,8 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     state = await AsyncValue.guard(() async {
       final authPort = ref.read(authPortProvider);
       final user = await authPort.login(email, password);
+      // Envia o token FCM para o backend assim que o usuário está autenticado.
+      await FCMManager.sendTokenToBackend();
       return AuthState.authenticated(user);
     });
   }
@@ -34,6 +37,32 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     final authPort = ref.read(authPortProvider);
     await authPort.logout();
     state = const AsyncData(AuthState.unauthenticated());
+  }
+
+  /// Valida o JWT armazenado localmente (decode offline do claim `exp`).
+  ///
+  /// Chamado pela SplashScreen durante a animação — evita round-trip ao backend.
+  /// Se o token for válido, restaura a sessão; se inválido/ausente, faz logout.
+  Future<void> validateLocalToken() async {
+    state = const AsyncLoading();
+    try {
+      final authPort = ref.read(authPortProvider);
+      final isLoggedIn = await authPort.isLoggedIn();
+      if (!isLoggedIn) {
+        await authPort.logout();
+        state = const AsyncData(AuthState.unauthenticated());
+        return;
+      }
+      final user = await authPort.getCurrentUser();
+      if (user == null) {
+        await authPort.logout();
+        state = const AsyncData(AuthState.unauthenticated());
+        return;
+      }
+      state = AsyncData(AuthState.authenticated(user));
+    } catch (_) {
+      state = const AsyncData(AuthState.unauthenticated());
+    }
   }
 }
 
@@ -60,9 +89,9 @@ class AuthLoading implements AuthState {
 extension AuthStateX on AuthState {
   bool get isAuthenticated => this is AuthAuthenticated;
   String? get userPerfil => maybeWhen(
-    authenticated: (u) => u.role == UserRole.cliente ? 'cliente' : 'agencia',
-    orElse: () => null,
-  );
+        authenticated: (u) => u.role == UserRole.cliente ? 'cliente' : 'agencia',
+        orElse: () => null,
+      );
   UserModel? get user => maybeWhen(authenticated: (u) => u, orElse: () => null);
   T maybeWhen<T>({
     T Function(UserModel user)? authenticated,
