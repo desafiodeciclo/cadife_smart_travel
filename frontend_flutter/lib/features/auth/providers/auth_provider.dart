@@ -1,3 +1,4 @@
+import 'package:cadife_smart_travel/core/notifications/fcm_manager.dart';
 import 'package:cadife_smart_travel/core/ports/auth_port.dart';
 import 'package:cadife_smart_travel/shared/models/models.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -26,6 +27,8 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     state = await AsyncValue.guard(() async {
       final authPort = ref.read(authPortProvider);
       final user = await authPort.login(email, password);
+      // Envia o token FCM para o backend assim que o usuário está autenticado.
+      await FCMManager.sendTokenToBackend();
       return AuthState.authenticated(user);
     });
   }

@@ -194,5 +194,6 @@ Future<void> disposeDependencies() async {
   await sl<OfflineSyncQueue>().dispose();
   await sl<OfflineManager>().dispose();
   await sl<IsarCacheManager>().close();
+  await sl<DatabaseHelper>().close();
   await sl.reset(dispose: true);
 }

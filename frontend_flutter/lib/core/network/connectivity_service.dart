@@ -4,12 +4,12 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 
 class ConnectivityService {
   static void init() {
-    Connectivity().onConnectivityChanged.listen((results) {
+    Connectivity().onConnectivityChanged.listen((results) async {
       if (results.contains(ConnectivityResult.mobile) || results.contains(ConnectivityResult.wifi)) {
         // Internet voltou, processa a fila
         try {
           final processQueueUseCase = sl<ProcessOfflineQueueUseCase>();
-          processQueueUseCase.execute();
+          await processQueueUseCase.execute();
         } catch (e) {
           // Em caso de inicialização precoce
         }
