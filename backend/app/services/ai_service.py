@@ -2,8 +2,7 @@ from typing import Optional
 
 import structlog
 from langchain.memory import ConversationBufferWindowMemory
-from langchain.output_parsers import PydanticOutputParser
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder, PromptTemplate
+from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_openai import ChatOpenAI
 
 from app.core.config import get_settings
@@ -33,6 +32,13 @@ OBJETIVO: Coletar o briefing completo da viagem de forma natural e amigável.
 
 Contexto da Cadife Tour (base de conhecimento):
 {context}"""
+
+EXTRACTION_SYSTEM_PROMPT = """Com base na conversa abaixo, extraia os dados do briefing de viagem.
+Preencha APENAS os campos que o cliente mencionou explicitamente.
+NÃO infira dados que não foram ditos.
+
+Conversa:
+{conversation}"""
 
 _memories: dict[str, ConversationBufferWindowMemory] = {}
 _llm: Optional[ChatOpenAI] = None
@@ -71,14 +77,50 @@ def _retrieve_context(query: str) -> str:
         return ""
 
 
-async def process_message(phone: str, message: str) -> str:
+async def process_message(
+    phone: str,
+    message: str,
+    validation_errors: Optional[list[str]] = None,
+) -> str:
+    """Processa mensagem do cliente com a AYA.
+
+    Args:
+        phone: Telefone do cliente.
+        message: Mensagem enviada pelo cliente.
+        validation_errors: Lista opcional de erros de validação de domínio.
+            Quando presente, a AYA é instruída a informar o cliente que
+            a proposta contém inconsistências e pedir novos dados.
+    """
     try:
         llm = get_llm()
         memory = get_memory(phone)
         context = _retrieve_context(message)
 
+        system_prompt = AYA_SYSTEM_PROMPT
+
+        # Se houver erros de validação, injeta instrução corretiva no prompt
+        if validation_errors:
+            errors_text = "\n".join(f"- {e}" for e in validation_errors)
+            system_prompt += f"""
+
+ATENÇÃO — INSTRUÇÃO CORRETIVA OBRIGATÓRIA:
+O sistema de validação detectou que os dados informados pelo cliente contêm inconsistências:
+{errors_text}
+
+Você DEVE:
+1. Informar o cliente de forma educada e natural que a proposta atual não é viável
+2. Explicar brevemente o motivo (sem mencionar valores específicos)
+3. Pedir que ele forneça novos dados coerentes para que possamos montar uma proposta adequada
+4. Manter o tom consultivo e acolhedor — nunca culpar o cliente"""
+
+            logger.info(
+                "validation_correction_injected",
+                phone=phone,
+                errors=validation_errors,
+            )
+
         prompt = ChatPromptTemplate.from_messages([
-            ("system", AYA_SYSTEM_PROMPT),
+            ("system", system_prompt),
             MessagesPlaceholder(variable_name="chat_history"),
             ("human", "{input}"),
         ])
@@ -101,31 +143,35 @@ async def process_message(phone: str, message: str) -> str:
 
 
 async def extract_briefing(conversation: list[dict]) -> BriefingExtracted:
-    parser = PydanticOutputParser(pydantic_object=BriefingExtracted)
+    """Extrai dados do briefing usando Structured Outputs API.
 
-    extraction_prompt = PromptTemplate(
-        template="""Com base na conversa abaixo, extraia os dados do briefing de viagem.
-Preencha APENAS os campos que o cliente mencionou explicitamente.
-NÃO infira dados que não foram ditos.
-
-Conversa:
-{conversation}
-
-{format_instructions}""",
-        input_variables=["conversation"],
-        partial_variables={"format_instructions": parser.get_format_instructions()},
-    )
-
+    Utiliza llm.with_structured_output() para garantir que a resposta
+    da IA sempre respeite o schema Pydantic definido em BriefingExtracted.
+    """
     try:
         llm = get_llm()
+        structured_llm = llm.with_structured_output(BriefingExtracted)
+
         conversation_text = "\n".join(
             f"{msg['role'].upper()}: {msg['content']}" for msg in conversation
         )
-        prompt_value = extraction_prompt.format(conversation=conversation_text)
-        response = await llm.ainvoke(prompt_value)
-        briefing = parser.parse(response.content)
-        briefing.completude_pct = calculate_completude(briefing.model_dump())
+
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", EXTRACTION_SYSTEM_PROMPT),
+        ])
+
+        chain = prompt | structured_llm
+        briefing = await chain.ainvoke({"conversation": conversation_text})
+
+        briefing_data = briefing.model_dump()
+        completude = calculate_completude(briefing_data)
+        logger.info(
+            "briefing_extracted_structured",
+            completude=completude,
+            fields_filled=[k for k, v in briefing_data.items() if v not in (None, [], "")],
+        )
         return briefing
+
     except Exception as exc:
         logger.error("briefing_extraction_error", error=str(exc))
         return BriefingExtracted()

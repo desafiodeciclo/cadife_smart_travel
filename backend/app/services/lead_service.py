@@ -104,7 +104,7 @@ async def update_briefing_from_extraction(
     else:
         briefing = lead.briefing
 
-    for field, value in extracted.model_dump(exclude={"completude_pct"}).items():
+    for field, value in extracted.model_dump().items():
         if value not in (None, [], ""):
             setattr(briefing, field, value)
 
