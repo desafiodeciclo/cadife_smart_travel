@@ -5,11 +5,15 @@ from fastapi import APIRouter, BackgroundTasks, Depends
 from pydantic import BaseModel
 
 from app.infrastructure.security.dependencies import get_current_user
-from app.services import rag_service
-from app.services import ai_service
+from app.models.briefing import calculate_completude
+from app.services import ai_service, rag_service
+from app.services.domain_validator import BriefingValidator
 from app.services.ingestion_pipeline import get_ingestion_pipeline
 
 router = APIRouter(prefix="/ia", tags=["IA"])
+
+# Instância única do validador
+_validator = BriefingValidator()
 
 
 class ProcessarRequest(BaseModel):
@@ -23,6 +27,8 @@ class ProcessarResponse(BaseModel):
     lead_id: Optional[uuid.UUID]
     briefing_updated: bool
     completude_pct: int
+    validation_passed: bool
+    validation_errors: list[str]
 
 
 class ConversationMessage(BaseModel):
@@ -35,6 +41,13 @@ class ExtrairBriefingRequest(BaseModel):
     conversation: list[ConversationMessage]
 
 
+class ExtrairBriefingResponse(BaseModel):
+    briefing: dict
+    completude_pct: int
+    validation_passed: bool
+    validation_errors: list[str]
+
+
 class ReindexarRequest(BaseModel):
     force: bool = False
 
@@ -45,21 +58,48 @@ class ReindexarRequest(BaseModel):
 
 @router.post("/processar", response_model=ProcessarResponse)
 async def processar_mensagem(body: ProcessarRequest):
+    # 1. Extrair briefing
     extracted = await ai_service.extract_briefing([{"role": "user", "content": body.message}])
-    response = await ai_service.process_message(body.phone, body.message, briefing=extracted)
+    completude = calculate_completude(extracted.model_dump())
+
+    # 2. Validar domínio
+    validation = _validator.validate(extracted)
+
+    # 3. Gerar resposta (com ou sem erros de validação)
+    if not validation.is_valid:
+        response = await ai_service.process_message(
+            body.phone, body.message, validation_errors=validation.errors
+        )
+    else:
+        response = await ai_service.process_message(
+            body.phone, body.message, briefing=extracted
+        )
+
     return ProcessarResponse(
         response=response,
         lead_id=body.lead_id,
-        briefing_updated=extracted.completude_pct > 0,
-        completude_pct=extracted.completude_pct,
+        briefing_updated=validation.is_valid and completude > 0,
+        completude_pct=completude,
+        validation_passed=validation.is_valid,
+        validation_errors=validation.errors,
     )
 
 
-@router.post("/extrair-briefing")
+@router.post("/extrair-briefing", response_model=ExtrairBriefingResponse)
 async def extrair_briefing(body: ExtrairBriefingRequest):
     conversation = [{"role": m.role, "content": m.content} for m in body.conversation]
     briefing = await ai_service.extract_briefing(conversation)
-    return briefing.model_dump()
+    completude = calculate_completude(briefing.model_dump())
+
+    # Validar domínio
+    validation = _validator.validate(briefing)
+
+    return ExtrairBriefingResponse(
+        briefing=briefing.model_dump(),
+        completude_pct=completude,
+        validation_passed=validation.is_valid,
+        validation_errors=validation.errors,
+    )
 
 
 @router.get("/status")
@@ -69,6 +109,7 @@ async def ia_status():
         "model": "gpt-4o-mini",
         "rag_documents": rag_service.get_rag_document_count(),
         "vector_db": "chromadb",
+        "domain_validator": "active",
     }
 
 

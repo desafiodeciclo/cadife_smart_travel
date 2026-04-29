@@ -2,9 +2,9 @@ import structlog
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.application.use_cases import process_whatsapp_message
 from app.core.config import get_settings
 from app.core.dependencies import get_db
-from app.application.use_cases import process_whatsapp_message
 from app.services import whatsapp_service
 
 logger = structlog.get_logger()
