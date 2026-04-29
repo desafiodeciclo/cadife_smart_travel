@@ -7,10 +7,12 @@ Orchestrates the full message-processing flow defined in spec.md §9.1:
   3. Update lead status
   4. Process text with AI / handle media fallback
   5. Extract briefing data
-  6. Update briefing & compute score
-  7. Trigger FCM notification if lead qualifies
-  8. Save interaction record
-  9. Reply via WhatsApp
+  6. Validate domain rules
+  7. Update briefing & compute score (only if validation passes)
+  8. Trigger FCM notification if lead qualifies
+  9. Save interaction record
+  10. Reply via WhatsApp
+  11. Update interaction with send outcome
 """
 from __future__ import annotations
 
@@ -21,6 +23,7 @@ from app.domain.entities.enums import LeadStatus, TipoMensagem
 from app.models.lead import Lead
 from app.models.user import User
 from app.services import ai_service, fcm_service, lead_service, whatsapp_service
+from app.services.domain_validator import BriefingValidator
 
 logger = structlog.get_logger()
 
@@ -29,6 +32,8 @@ MEDIA_FALLBACK_REPLY = (
     "Recebi sua mensagem! No momento aceito apenas textos. "
     "Um consultor irá te atender em breve. 😊"
 )
+
+_validator = BriefingValidator()
 
 
 async def execute(payload: dict, db: AsyncSession) -> None:
@@ -89,8 +94,17 @@ async def execute(payload: dict, db: AsyncSession) -> None:
         tipo=tipo,
     )
 
-    # ── Step 7: Reply to client via WhatsApp ──────────────────────────────
-    await whatsapp_service.send_message(phone, reply)
+    # ── Step 8: Reply to client via WhatsApp; persist send outcome ────────
+    send_result = await whatsapp_service.send_message(phone, reply)
+    await lead_service.update_interacao_send_result(db, interacao, send_result)
+    logger.info(
+        "whatsapp_reply_dispatched",
+        lead_id=str(lead.id),
+        success=send_result.success,
+        wamid=send_result.wamid,
+        latency_ms=send_result.latency_ms,
+        retries=send_result.retries_used,
+    )
 
 
 async def _notify_consultants(db: AsyncSession, lead: Lead, briefing) -> None:

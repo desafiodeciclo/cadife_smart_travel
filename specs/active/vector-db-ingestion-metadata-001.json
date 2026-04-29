@@ -1,0 +1,45 @@
+{
+  "task_id": "VECT-001",
+  "name": "Vector DB — Modular Ingestion Pipeline + Semantic Metadata Filtering",
+  "branch": "chore/setup-vector-database",
+  "status": "in-progress",
+  "description": "Implementar pipeline de ingestão modular com cache de embeddings por hash documental e filtragem semântica por metadados de tópicos (Hard constraints metadata filtering) para tornar as queries RAG do bot AYA mais assertivas e contextuais.",
+  "responsible": "Nikolas Tesch (Backend) + Frank Willian (AI)",
+  "steps": [
+    {
+      "id": "step1",
+      "description": "Criar metadata_tagger.py: taxonomia de tópicos por palavras-chave (Destino, Tema, Perfil). Extrai tags rule-based dos chunks para gravação como metadados no ChromaDB.",
+      "status": "done"
+    },
+    {
+      "id": "step2",
+      "description": "Criar ingestion_pipeline.py: pipeline modular Document Loader → Text Splitter → MetadataTagger → EmbeddingCache → VectorStore. Cache hash-based (SHA-256) para evitar re-embedding de documentos não alterados. Suporte a .txt, .md, .pdf.",
+      "status": "done"
+    },
+    {
+      "id": "step3",
+      "description": "Atualizar rag_service.py: adicionar retrieve_with_metadata_filter() com suporte a hard-constraints via where clause do ChromaDB. Manter backward compat com get_vectorstore() e get_rag_document_count().",
+      "status": "done"
+    },
+    {
+      "id": "step4",
+      "description": "Atualizar ai_service.py: _retrieve_context() recebe briefing_context opcional e deriva filtros de metadata do destino/perfil/tipo_viagem do lead.",
+      "status": "done"
+    },
+    {
+      "id": "step5",
+      "description": "Atualizar routes/ia.py: adicionar POST /ia/reindexar (dispara pipeline completo via BackgroundTasks) e GET /ia/ingestion-status.",
+      "status": "done"
+    },
+    {
+      "id": "step6",
+      "description": "Atualizar config.py: adicionar KNOWLEDGE_BASE_DIR e INGESTION_CACHE_DIR.",
+      "status": "done"
+    },
+    {
+      "id": "step7",
+      "description": "Escrever testes unitários para metadata_tagger e ingestion_pipeline (mocks ChromaDB + OpenAI).",
+      "status": "done"
+    }
+  ]
+}

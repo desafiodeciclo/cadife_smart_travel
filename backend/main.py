@@ -100,6 +100,10 @@ app.add_exception_handler(
 # -------------------------------------------------------------------
 # Middlewares (order matters)
 # -------------------------------------------------------------------
+# ── Middleware Registration (order matters — outermost executes first) ────
+# 1. RequestId must be first to assign ID before all other processing
+# 2. Timeout wraps inner handlers to enforce SLAs
+# 3. CORS handles preflight before any business logic
 
 # 1. Request ID
 app.add_middleware(RequestIdMiddleware)

@@ -20,6 +20,7 @@ class ApiConstants {
   static const String login = '/auth/login';
   static const String refresh = '/auth/refresh';
   static const String registerFcmToken = '/users/fcm-token';
+  static const String me = '/users/me';
 
   // ── Leads ──────────────────────────────────────────────
   static const String leads = '/leads';

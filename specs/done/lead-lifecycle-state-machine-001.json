@@ -1,0 +1,59 @@
+{
+  "id": "lead-lifecycle-state-machine-001",
+  "title": "Lead Lifecycle State Machine",
+  "description": "Implementar máquina de estados do lead a nível de domínio e banco de dados, garantindo que apenas transições válidas sejam permitidas e que leads sem resposta por 30 dias transitem automaticamente para PERDIDO.",
+  "status": "done",
+  "assignee": "Nikolas Tesch",
+  "created_at": "2026-04-27",
+  "completed_at": "2026-04-27",
+  "priority": "high",
+  "epic": "Backend — Leads CRM",
+  "source": "spec.md §8.4",
+  "acceptance_criteria": [
+    "LeadStateMachine na Application Layer mapeia explicitamente transições permitidas por estado",
+    "PUT /leads/{id} retorna HTTP 422 para transições inválidas com mensagem descritiva",
+    "PERDIDO é alcançável de qualquer estado",
+    "Lead sem interação por 30 dias transita automaticamente para PERDIDO",
+    "Testes pytest cobrem todas as transições válidas e inválidas"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "title": "Criar LeadStateMachine",
+      "description": "Classe no application layer com mapeamento de transições permitidas e método can_transition / validate_transition",
+      "status": "done",
+      "files": [
+        "backend/app/application/services/lead_state_machine.py"
+      ]
+    },
+    {
+      "step": 2,
+      "title": "Integrar validação no endpoint PUT /leads/{id}",
+      "description": "Chamar LeadStateMachine no update_lead para rejeitar transições inválidas com HTTP 422",
+      "status": "done",
+      "files": [
+        "backend/app/routes/leads.py"
+      ]
+    },
+    {
+      "step": 3,
+      "title": "Implementar transição automática PERDIDO (30 dias)",
+      "description": "Método no lead_service para identificar leads inativos e transitar para perdido",
+      "status": "done",
+      "files": [
+        "backend/app/services/lead_service.py"
+      ]
+    },
+    {
+      "step": 4,
+      "title": "Escrever testes",
+      "description": "Testes unitários para LeadStateMachine, testes de integração para PUT /leads/{id} e testes para mark_stale_leads_as_perdido",
+      "status": "done",
+      "files": [
+        "backend/tests/test_application/test_lead_state_machine.py",
+        "backend/tests/test_presentation/test_leads_state_machine.py",
+        "backend/tests/test_services/test_lead_stale_transition.py"
+      ]
+    }
+  ]
+}

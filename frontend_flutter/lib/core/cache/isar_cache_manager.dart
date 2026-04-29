@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cadife_smart_travel/core/cache/isar_schemas/isar_schemas.dart';
+import 'package:flutter/foundation.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -18,11 +19,8 @@ class IsarCacheManager {
   Isar? _isar;
   bool _initialized = false;
 
-  Isar get isar {
-    if (_isar == null || !_initialized) {
-      throw StateError('IsarCacheManager não inicializado. Chame initialize() primeiro.');
-    }
-    return _isar!;
+  Isar? get isar {
+    return _isar;
   }
 
   bool get isInitialized => _initialized;
@@ -31,18 +29,43 @@ class IsarCacheManager {
   Future<void> initialize() async {
     if (_initialized) return;
 
-    final dir = await getApplicationDocumentsDirectory();
-    _isar = await Isar.open(
-      [
-        LeadCacheSchema,
-        BriefingCacheSchema,
-        AgendaCacheSchema,
-        ProposalCacheSchema,
-      ],
-      directory: dir.path,
-      name: 'cadife_cache',
-    );
-    _initialized = true;
+    // Proteção: Verifica se já existe uma instância aberta com este nome
+    final existing = Isar.getInstance('cadife_cache_v3');
+    if (existing != null) {
+      _isar = existing;
+      _initialized = true;
+      return;
+    }
+
+    // Isar 3 web support can be unstable. Skipping it on web to prevent white screen.
+    if (kIsWeb) {
+      _initialized = true;
+      return;
+    }
+
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      final path = dir.path;
+
+      _isar = await Isar.open(
+        [
+          LeadCacheSchema,
+          BriefingCacheSchema,
+          AgendaCacheSchema,
+          ProposalCacheSchema,
+        ],
+        directory: path,
+        name: 'cadife_cache_v3',
+      );
+      debugPrint('Isar initialized successfully (v3)');
+    } catch (e, stack) {
+      debugPrint('CRITICAL: Isar failed to open: $e');
+      debugPrint(stack.toString());
+      // On failure, we don't set _isar, but we mark as initialized
+      // so the app can at least start (without local cache).
+    } finally {
+      _initialized = true;
+    }
   }
 
   /// Fecha a instância do Isar.
@@ -56,148 +79,172 @@ class IsarCacheManager {
   // ── LeadCache CRUD ─────────────────────────────────────
 
   Future<void> putLead(LeadCache lead) async {
-    await isar.writeTxn(() async {
-      await isar.leadCaches.put(lead);
+    if (isar == null) return;
+    await isar!.writeTxn(() async {
+      await isar!.leadCaches.put(lead);
     });
   }
 
   Future<void> putLeads(List<LeadCache> leads) async {
-    await isar.writeTxn(() async {
-      await isar.leadCaches.putAll(leads);
+    if (isar == null) return;
+    await isar!.writeTxn(() async {
+      await isar!.leadCaches.putAll(leads);
     });
   }
 
   Future<LeadCache?> getLeadByServerId(String serverId) async {
-    return await isar.leadCaches.where().serverIdEqualTo(serverId).findFirst();
+    if (isar == null) return null;
+    return await isar!.leadCaches.where().serverIdEqualTo(serverId).findFirst();
   }
 
   Future<List<LeadCache>> getAllLeads() async {
-    return await isar.leadCaches.where().findAll();
+    if (isar == null) return [];
+    return await isar!.leadCaches.where().findAll();
   }
 
   Future<void> deleteLeadByServerId(String serverId) async {
-    final id = await isar.leadCaches.where().serverIdEqualTo(serverId).idProperty().findFirst();
+    if (isar == null) return;
+    final id = await isar!.leadCaches.where().serverIdEqualTo(serverId).idProperty().findFirst();
     if (id != null) {
-      await isar.writeTxn(() async {
-        await isar.leadCaches.delete(id);
+      await isar!.writeTxn(() async {
+        await isar!.leadCaches.delete(id);
       });
     }
   }
 
   Future<void> clearLeads() async {
-    await isar.writeTxn(() async {
-      await isar.leadCaches.clear();
+    if (isar == null) return;
+    await isar!.writeTxn(() async {
+      await isar!.leadCaches.clear();
     });
   }
 
   // ── BriefingCache CRUD ─────────────────────────────────
 
   Future<void> putBriefing(BriefingCache briefing) async {
-    await isar.writeTxn(() async {
-      await isar.briefingCaches.put(briefing);
+    if (isar == null) return;
+    await isar!.writeTxn(() async {
+      await isar!.briefingCaches.put(briefing);
     });
   }
 
   Future<void> putBriefings(List<BriefingCache> briefings) async {
-    await isar.writeTxn(() async {
-      await isar.briefingCaches.putAll(briefings);
+    if (isar == null) return;
+    await isar!.writeTxn(() async {
+      await isar!.briefingCaches.putAll(briefings);
     });
   }
 
   Future<BriefingCache?> getBriefingByLeadId(String leadId) async {
-    return await isar.briefingCaches.where().leadIdEqualTo(leadId).findFirst();
+    if (isar == null) return null;
+    return await isar!.briefingCaches.where().leadIdEqualTo(leadId).findFirst();
   }
 
   Future<List<BriefingCache>> getAllBriefings() async {
-    return await isar.briefingCaches.where().findAll();
+    if (isar == null) return [];
+    return await isar!.briefingCaches.where().findAll();
   }
 
   Future<void> deleteBriefingByLeadId(String leadId) async {
-    final id = await isar.briefingCaches.where().leadIdEqualTo(leadId).idProperty().findFirst();
+    if (isar == null) return;
+    final id = await isar!.briefingCaches.where().leadIdEqualTo(leadId).idProperty().findFirst();
     if (id != null) {
-      await isar.writeTxn(() async {
-        await isar.briefingCaches.delete(id);
+      await isar!.writeTxn(() async {
+        await isar!.briefingCaches.delete(id);
       });
     }
   }
 
   Future<void> clearBriefings() async {
-    await isar.writeTxn(() async {
-      await isar.briefingCaches.clear();
+    if (isar == null) return;
+    await isar!.writeTxn(() async {
+      await isar!.briefingCaches.clear();
     });
   }
 
   // ── AgendaCache CRUD ───────────────────────────────────
 
   Future<void> putAgenda(AgendaCache agenda) async {
-    await isar.writeTxn(() async {
-      await isar.agendaCaches.put(agenda);
+    if (isar == null) return;
+    await isar!.writeTxn(() async {
+      await isar!.agendaCaches.put(agenda);
     });
   }
 
   Future<void> putAgendas(List<AgendaCache> agendas) async {
-    await isar.writeTxn(() async {
-      await isar.agendaCaches.putAll(agendas);
+    if (isar == null) return;
+    await isar!.writeTxn(() async {
+      await isar!.agendaCaches.putAll(agendas);
     });
   }
 
   Future<AgendaCache?> getAgendaByServerId(String serverId) async {
-    return await isar.agendaCaches.where().serverIdEqualTo(serverId).findFirst();
+    if (isar == null) return null;
+    return await isar!.agendaCaches.where().serverIdEqualTo(serverId).findFirst();
   }
 
   Future<List<AgendaCache>> getAllAgendas() async {
-    return await isar.agendaCaches.where().findAll();
+    if (isar == null) return [];
+    return await isar!.agendaCaches.where().findAll();
   }
 
   Future<void> deleteAgendaByServerId(String serverId) async {
-    final id = await isar.agendaCaches.where().serverIdEqualTo(serverId).idProperty().findFirst();
+    if (isar == null) return;
+    final id = await isar!.agendaCaches.where().serverIdEqualTo(serverId).idProperty().findFirst();
     if (id != null) {
-      await isar.writeTxn(() async {
-        await isar.agendaCaches.delete(id);
+      await isar!.writeTxn(() async {
+        await isar!.agendaCaches.delete(id);
       });
     }
   }
 
   Future<void> clearAgendas() async {
-    await isar.writeTxn(() async {
-      await isar.agendaCaches.clear();
+    if (isar == null) return;
+    await isar!.writeTxn(() async {
+      await isar!.agendaCaches.clear();
     });
   }
 
   // ── ProposalCache CRUD ─────────────────────────────────
 
   Future<void> putProposal(ProposalCache proposal) async {
-    await isar.writeTxn(() async {
-      await isar.proposalCaches.put(proposal);
+    if (isar == null) return;
+    await isar!.writeTxn(() async {
+      await isar!.proposalCaches.put(proposal);
     });
   }
 
   Future<void> putProposals(List<ProposalCache> proposals) async {
-    await isar.writeTxn(() async {
-      await isar.proposalCaches.putAll(proposals);
+    if (isar == null) return;
+    await isar!.writeTxn(() async {
+      await isar!.proposalCaches.putAll(proposals);
     });
   }
 
   Future<ProposalCache?> getProposalByServerId(String serverId) async {
-    return await isar.proposalCaches.where().serverIdEqualTo(serverId).findFirst();
+    if (isar == null) return null;
+    return await isar!.proposalCaches.where().serverIdEqualTo(serverId).findFirst();
   }
 
   Future<List<ProposalCache>> getAllProposals() async {
-    return await isar.proposalCaches.where().findAll();
+    if (isar == null) return [];
+    return await isar!.proposalCaches.where().findAll();
   }
 
   Future<void> deleteProposalByServerId(String serverId) async {
-    final id = await isar.proposalCaches.where().serverIdEqualTo(serverId).idProperty().findFirst();
+    if (isar == null) return;
+    final id = await isar!.proposalCaches.where().serverIdEqualTo(serverId).idProperty().findFirst();
     if (id != null) {
-      await isar.writeTxn(() async {
-        await isar.proposalCaches.delete(id);
+      await isar!.writeTxn(() async {
+        await isar!.proposalCaches.delete(id);
       });
     }
   }
 
   Future<void> clearProposals() async {
-    await isar.writeTxn(() async {
-      await isar.proposalCaches.clear();
+    if (isar == null) return;
+    await isar!.writeTxn(() async {
+      await isar!.proposalCaches.clear();
     });
   }
 
@@ -205,20 +252,22 @@ class IsarCacheManager {
 
   /// Remove todo o cache (todas as coleções).
   Future<void> clearAll() async {
-    await isar.writeTxn(() async {
-      await isar.leadCaches.clear();
-      await isar.briefingCaches.clear();
-      await isar.agendaCaches.clear();
-      await isar.proposalCaches.clear();
+    if (isar == null) return;
+    await isar!.writeTxn(() async {
+      await isar!.leadCaches.clear();
+      await isar!.briefingCaches.clear();
+      await isar!.agendaCaches.clear();
+      await isar!.proposalCaches.clear();
     });
   }
 
   /// Contagem total de objetos cacheados.
   Future<int> totalCount() async {
-    final leads = await isar.leadCaches.count();
-    final briefings = await isar.briefingCaches.count();
-    final agendas = await isar.agendaCaches.count();
-    final proposals = await isar.proposalCaches.count();
+    if (isar == null) return 0;
+    final leads = await isar!.leadCaches.count();
+    final briefings = await isar!.briefingCaches.count();
+    final agendas = await isar!.agendaCaches.count();
+    final proposals = await isar!.proposalCaches.count();
     return leads + briefings + agendas + proposals;
   }
 }

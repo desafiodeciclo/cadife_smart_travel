@@ -15,7 +15,7 @@ extension GetBriefingCacheCollection on Isar {
 
 const BriefingCacheSchema = CollectionSchema(
   name: r'BriefingCache',
-  id: 445350745023676970,
+  id: 10000000000002,
   properties: {
     r'cachedAt': PropertySchema(
       id: 0,
@@ -95,7 +95,7 @@ const BriefingCacheSchema = CollectionSchema(
   idName: r'id',
   indexes: {
     r'leadId': IndexSchema(
-      id: 2640900727793063999,
+      id: 20000000000002,
       name: r'leadId',
       unique: true,
       replace: false,

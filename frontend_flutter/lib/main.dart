@@ -2,9 +2,11 @@ import 'package:cadife_smart_travel/core/di/service_locator.dart';
 import 'package:cadife_smart_travel/core/ports/agenda_port.dart';
 import 'package:cadife_smart_travel/core/ports/auth_port.dart';
 import 'package:cadife_smart_travel/core/ports/lead_port.dart';
+import 'package:cadife_smart_travel/core/ports/profile_port.dart';
 import 'package:cadife_smart_travel/core/ports/proposal_port.dart';
 import 'package:cadife_smart_travel/core/router/app_router.dart';
 import 'package:cadife_smart_travel/core/theme/app_theme.dart';
+import 'package:cadife_smart_travel/core/theme/theme_mode_provider.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/agenda_provider.dart'
     as agency_agenda;
 import 'package:cadife_smart_travel/features/agency/dashboard/dashboard_provider.dart'
@@ -15,12 +17,7 @@ import 'package:cadife_smart_travel/features/agency/leads/leads_provider.dart'
     as agency_leads;
 import 'package:cadife_smart_travel/features/agency/proposals/proposals_provider.dart'
     as agency_proposals;
-import 'package:cadife_smart_travel/features/agency/agenda/agenda_provider.dart' as agency_agenda;
-import 'package:cadife_smart_travel/features/agency/dashboard/dashboard_provider.dart' as agency_dash;
-import 'package:cadife_smart_travel/features/agency/lead_detail/lead_detail_provider.dart' as agency_detail;
-import 'package:cadife_smart_travel/features/agency/leads/leads_provider.dart' as agency_leads;
-import 'package:cadife_smart_travel/features/agency/proposals/proposals_provider.dart' as agency_proposals;
-import 'package:cadife_smart_travel/features/auth/auth_notifier.dart';
+import 'package:cadife_smart_travel/features/auth/presentation/widgets/app_lock_wrapper.dart';
 import 'package:cadife_smart_travel/features/auth/providers/auth_provider.dart';
 import 'package:cadife_smart_travel/features/client/documents/documents_provider.dart'
     as client_docs;
@@ -40,10 +37,15 @@ Future<void> main() async {
   // The callback is only invoked at 401 token expiry — always after runApp().
   late final ProviderContainer container;
 
-  await setupServiceLocator(
-    onTokenExpired: () => container.read(authProvider.notifier).logout(),
-  );
-  await initDependencies();
+  try {
+    await setupServiceLocator(
+      onTokenExpired: () => container.read(authProvider.notifier).logout(),
+    );
+    await initDependencies();
+  } catch (e, stack) {
+    debugPrint('Initialization Error: $e');
+    debugPrint(stack.toString());
+  }
 
   container = ProviderContainer(
     overrides: [
@@ -60,7 +62,7 @@ Future<void> main() async {
         sl<LeadPort>(),
       ),
       client_docs.documentsProvider.overrideWithValue(null),
-      client_profile.profileAuthProvider.overrideWithValue(sl<AuthPort>()),
+      client_profile.profilePortProvider.overrideWithValue(sl<ProfilePort>()),
     ],
   );
 
@@ -75,13 +77,21 @@ class CadifeApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
+    final themeMode = ref.watch(themeModeProvider);
 
     return MaterialApp.router(
       title: 'Cadife Smart Travel',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
+      themeMode: themeMode,
       themeMode: ThemeMode.system,
+      // AppLockWrapper fica dentro do MaterialApp para herdar Theme e MediaQuery.
+      // Observa lifecycle e sobrepõe AppLockScreen quando o timeout é atingido.
+      builder: (context, child) => AppLockWrapper(
+        key: const ValueKey('app-lock'),
+        child: child ?? const SizedBox.shrink(),
+      ),
       routerConfig: router,
     );
   }

@@ -17,6 +17,7 @@ class _ClientShellState extends State<ClientShell> {
     '/client/status',
     '/client/historico',
     '/client/documentos',
+    '/client/perfil',
   ];
 
   int _currentIndex = 0;
@@ -82,6 +83,11 @@ class _ClientShellState extends State<ClientShell> {
             icon: Icon(Icons.folder_outlined),
             activeIcon: Icon(Icons.folder),
             label: 'Documentos',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outlined),
+            activeIcon: Icon(Icons.person),
+            label: 'Perfil',
           ),
         ],
       ),

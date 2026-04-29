@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     FIREBASE_CREDENTIALS: str = "./firebase_credentials.json"
     CHROMA_PERSIST_DIR: str = "./chroma_db"
+    KNOWLEDGE_BASE_DIR: str = "./knowledge_base"
+    INGESTION_CACHE_PATH: str = "./chroma_db/ingestion_cache.json"
     LANGCHAIN_API_KEY: str = ""
     DEBUG: bool = False
 
