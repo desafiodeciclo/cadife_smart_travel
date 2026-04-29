@@ -9,6 +9,7 @@ import 'package:cadife_smart_travel/features/auth/presentation/screens/splash_sc
 import 'package:cadife_smart_travel/features/auth/providers/auth_provider.dart';
 import 'package:cadife_smart_travel/features/client/documentos/documentos_screen.dart';
 import 'package:cadife_smart_travel/features/client/historico/historico_screen.dart';
+import 'package:cadife_smart_travel/features/client/profile/profile.dart';
 import 'package:cadife_smart_travel/features/client/status/status_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -146,6 +147,13 @@ final routerProvider = Provider<GoRouter>((ref) {
             pageBuilder: (_, state) => NoTransitionPage(
               key: state.pageKey,
               child: const DocumentosScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/client/perfil',
+            pageBuilder: (_, state) => NoTransitionPage(
+              key: state.pageKey,
+              child: const ProfileScreen(),
             ),
           ),
         ],
