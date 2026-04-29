@@ -1,9 +1,10 @@
+import 'package:cadife_smart_travel/core/theme/app_colors.dart';
+import 'package:cadife_smart_travel/core/widgets/shimmer_loading.dart';
+import 'package:cadife_smart_travel/features/agency/leads/leads_notifier.dart';
+import 'package:cadife_smart_travel/features/agency/leads/leads_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/theme/app_colors.dart';
-import 'leads_notifier.dart';
-import 'leads_repository.dart';
 
 class LeadsScreen extends ConsumerWidget {
   const LeadsScreen({super.key});
@@ -23,14 +24,18 @@ class LeadsScreen extends ConsumerWidget {
         ],
       ),
       body: leadsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => ShimmerLoading(
+          isLoading: true,
+          child: AppSkeletons.listPage(),
+        ),
         error: (e, _) => Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text('Erro ao carregar leads.'),
               TextButton(
-                onPressed: () => ref.read(leadsNotifierProvider.notifier).refresh(),
+                onPressed: () =>
+                    ref.read(leadsNotifierProvider.notifier).refresh(),
                 child: const Text('Tentar novamente'),
               ),
             ],
@@ -39,7 +44,8 @@ class LeadsScreen extends ConsumerWidget {
         data: (leads) => leads.isEmpty
             ? const Center(child: Text('Nenhum lead encontrado.'))
             : RefreshIndicator(
-                onRefresh: () => ref.read(leadsNotifierProvider.notifier).refresh(),
+                onRefresh: () =>
+                    ref.read(leadsNotifierProvider.notifier).refresh(),
                 child: ListView.builder(
                   padding: const EdgeInsets.all(12),
                   itemCount: leads.length,
@@ -67,7 +73,10 @@ class _LeadCard extends StatelessWidget {
               : AppColors.textSecondary,
           child: Text(
             (lead.nome?.isNotEmpty == true ? lead.nome![0] : '?').toUpperCase(),
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
         title: Text(lead.nome ?? lead.telefone),
@@ -80,7 +89,10 @@ class _LeadCard extends StatelessWidget {
             if (lead.completudePct != null)
               Text(
                 '${lead.completudePct}% briefing',
-                style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: AppColors.textSecondary,
+                ),
               ),
           ],
         ),

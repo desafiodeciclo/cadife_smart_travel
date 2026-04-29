@@ -1,14 +1,16 @@
-import math
 import uuid
+from datetime import datetime, timezone
 from typing import Optional
 
 import structlog
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.domain.entities.enums import LeadScore, LeadStatus, TipoMensagem
 from app.models.briefing import Briefing, BriefingExtracted, calculate_completude
-from app.models.interacao import Interacao, TipoMensagem
-from app.models.lead import Lead, LeadCreate, LeadScore, LeadStatus
+from app.models.interacao import Interacao
+from app.models.lead import Lead
+from app.services.whatsapp_service import SendResult
 
 logger = structlog.get_logger()
 
@@ -63,12 +65,15 @@ async def list_leads(
     search: Optional[str] = None,
     page: int = 1,
     limit: int = 20,
+    consultor_id: Optional[uuid.UUID] = None,
 ) -> tuple[list[Lead], int]:
     query = select(Lead).where(Lead.is_archived == False)
     if status:
         query = query.where(Lead.status == status)
     if score:
         query = query.where(Lead.score == score)
+    if consultor_id:
+        query = query.where(Lead.consultor_id == consultor_id)
     if search:
         query = query.where(
             (Lead.nome.ilike(f"%{search}%")) | (Lead.telefone.ilike(f"%{search}%"))
@@ -80,7 +85,7 @@ async def list_leads(
 
     query = query.order_by(Lead.criado_em.desc()).offset((page - 1) * limit).limit(limit)
     result = await db.execute(query)
-    return result.scalars().all(), total
+    return list(result.scalars().all()), total
 
 
 async def update_lead_status(db: AsyncSession, lead: Lead, new_status: LeadStatus) -> Lead:
@@ -104,7 +109,7 @@ async def update_briefing_from_extraction(
     else:
         briefing = lead.briefing
 
-    for field, value in extracted.model_dump(exclude={"completude_pct"}).items():
+    for field, value in extracted.model_dump().items():
         if value not in (None, [], ""):
             setattr(briefing, field, value)
 
@@ -136,6 +141,18 @@ async def save_interacao(
     db.add(interacao)
     await db.commit()
     return interacao
+
+
+async def update_interacao_send_result(
+    db: AsyncSession,
+    interacao: Interacao,
+    result: SendResult,
+) -> None:
+    """Persist outbound WhatsApp send outcome — spec §9.1 / §12.1."""
+    interacao.enviado_em = datetime.now(timezone.utc) if result.success else None
+    interacao.status_envio = "sent" if result.success else "failed"
+    interacao.erro_envio = result.error if not result.success else None
+    await db.commit()
 
 
 async def get_user_by_id(db: AsyncSession, user_id: str):

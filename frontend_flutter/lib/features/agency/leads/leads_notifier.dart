@@ -1,5 +1,5 @@
+import 'package:cadife_smart_travel/features/agency/leads/leads_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'leads_repository.dart';
 
 class LeadsNotifier extends AsyncNotifier<List<Lead>> {
   @override
@@ -8,11 +8,9 @@ class LeadsNotifier extends AsyncNotifier<List<Lead>> {
   Future<void> refresh({String? status, String? score, String? search}) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(
-      () => ref.read(leadsRepositoryProvider).getLeads(
-            status: status,
-            score: score,
-            search: search,
-          ),
+      () => ref
+          .read(leadsRepositoryProvider)
+          .getLeads(status: status, score: score, search: search),
     );
   }
 }

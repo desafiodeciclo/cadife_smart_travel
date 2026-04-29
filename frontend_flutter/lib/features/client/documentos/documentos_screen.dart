@@ -1,5 +1,5 @@
+import 'package:cadife_smart_travel/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_colors.dart';
 
 class DocumentosScreen extends StatelessWidget {
   const DocumentosScreen({super.key});
@@ -14,7 +14,10 @@ class DocumentosScreen extends StatelessWidget {
           children: [
             Icon(Icons.folder_open, size: 64, color: AppColors.textSecondary),
             SizedBox(height: 16),
-            Text('Seus documentos aparecerão aqui', style: TextStyle(color: AppColors.textSecondary)),
+            Text(
+              'Seus documentos aparecerão aqui',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
             SizedBox(height: 8),
             Text(
               'Roteiros, vouchers e comprovantes enviados pela Cadife Tour',

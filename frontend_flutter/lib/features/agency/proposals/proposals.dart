@@ -1,0 +1,1 @@
+export 'proposals_provider.dart';

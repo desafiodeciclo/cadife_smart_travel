@@ -1,8 +1,8 @@
+import 'package:cadife_smart_travel/core/theme/app_colors.dart';
+import 'package:cadife_smart_travel/features/auth/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../auth/auth_notifier.dart';
 
 class StatusScreen extends ConsumerWidget {
   const StatusScreen({super.key});
@@ -36,14 +36,20 @@ class StatusScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Status da sua viagem', style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              'Status da sua viagem',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
             const SizedBox(height: 24),
-            ...List.generate(_steps.length, (i) => _StepItem(
-                  label: _steps[i],
-                  isCompleted: i < currentStep,
-                  isCurrent: i == currentStep,
-                  isLast: i == _steps.length - 1,
-                )),
+            ...List.generate(
+              _steps.length,
+              (i) => _StepItem(
+                label: _steps[i],
+                isCompleted: i < currentStep,
+                isCurrent: i == currentStep,
+                isLast: i == _steps.length - 1,
+              ),
+            ),
             const SizedBox(height: 24),
             Row(
               children: [
@@ -83,8 +89,8 @@ class _StepItem extends StatelessWidget {
     final color = isCompleted
         ? AppColors.success
         : isCurrent
-            ? AppColors.primary
-            : AppColors.textSecondary;
+        ? AppColors.primary
+        : AppColors.textSecondary;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -95,13 +101,21 @@ class _StepItem extends StatelessWidget {
               radius: 14,
               backgroundColor: color,
               child: Icon(
-                isCompleted ? Icons.check : (isCurrent ? Icons.circle : Icons.radio_button_unchecked),
+                isCompleted
+                    ? Icons.check
+                    : (isCurrent ? Icons.circle : Icons.radio_button_unchecked),
                 size: 16,
                 color: Colors.white,
               ),
             ),
             if (!isLast)
-              Container(width: 2, height: 32, color: isCompleted ? AppColors.success : AppColors.cardBackground),
+              Container(
+                width: 2,
+                height: 32,
+                color: isCompleted
+                    ? AppColors.success
+                    : AppColors.cardBackground,
+              ),
           ],
         ),
         const SizedBox(width: 12),
