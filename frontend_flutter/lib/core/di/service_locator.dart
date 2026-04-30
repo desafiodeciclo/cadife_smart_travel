@@ -17,7 +17,6 @@ import 'package:cadife_smart_travel/core/ports/proposal_port.dart';
 import 'package:cadife_smart_travel/core/security/secure_config.dart';
 import 'package:cadife_smart_travel/data/local/database_helper.dart';
 import 'package:cadife_smart_travel/data/repositories/agenda_repository_impl.dart';
-import 'package:cadife_smart_travel/data/repositories/lead_repository_impl.dart';
 import 'package:cadife_smart_travel/data/repositories/mock_auth_repository.dart';
 import 'package:cadife_smart_travel/data/repositories/mock_lead_repository.dart';
 import 'package:cadife_smart_travel/data/repositories/mock_profile_repository.dart';

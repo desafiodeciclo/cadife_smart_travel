@@ -1,12 +1,12 @@
 import 'package:cadife_smart_travel/core/theme/app_colors.dart';
 import 'package:cadife_smart_travel/features/auth/providers/auth_provider.dart';
 import 'package:cadife_smart_travel/features/client/home/providers/home_provider.dart';
+import 'package:cadife_smart_travel/features/client/home/providers/notification_provider.dart';
 import 'package:cadife_smart_travel/features/client/home/widgets/consultant_card.dart';
 import 'package:cadife_smart_travel/features/client/home/widgets/documents_section.dart';
 import 'package:cadife_smart_travel/features/client/home/widgets/ongoing_trip_card.dart';
 import 'package:cadife_smart_travel/features/client/home/widgets/status_stepper_widget.dart';
 import 'package:cadife_smart_travel/shared/models/models.dart';
-import 'package:cadife_smart_travel/features/client/home/providers/notification_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
