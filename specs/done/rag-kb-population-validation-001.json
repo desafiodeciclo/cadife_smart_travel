@@ -1,0 +1,40 @@
+{
+  "task_id": "RAG-KB-001",
+  "name": "RAG Knowledge Base — Document Creation, Ingestion and Semantic Validation",
+  "branch": "feat/rag-knowledge-base-population",
+  "status": "done",
+  "description": "Popular e validar a base de conhecimento RAG da Cadife Tour com os 7 documentos institucionais definidos na spec (seção 6.6). Executar pipeline de ingestão no ChromaDB e rodar 10 queries de validação semântica predefinidas pelo PO (critério de aceite MVP seção 14.1). Ajustar chunking/overlap até qualidade satisfatória.",
+  "responsible": "Frank Willian (AI) + PO Diego (Validação)",
+  "steps": [
+    {
+      "id": "step1",
+      "description": "Revisar e validar os 7 arquivos da base RAG: identidade_empresa.txt, fluxo_atendimento.txt, faq.txt, regras_negocio.txt, destinos.txt, objecoes.txt, argumentacao.txt. Garantir chunking 300-500 tokens sem redundância.",
+      "status": "done"
+    },
+    {
+      "id": "step2",
+      "description": "Configurar ambiente .env com OPENAI_API_KEY e caminhos ChromaDB/knowledge_base.",
+      "status": "done"
+    },
+    {
+      "id": "step3",
+      "description": "Executar pipeline de ingestão dos documentos no ChromaDB via ingestion_pipeline.py.",
+      "status": "done"
+    },
+    {
+      "id": "step4",
+      "description": "Criar e executar script de validação com 10 queries semânticas predefinidas. Medir relevância dos chunks recuperados.",
+      "status": "done"
+    },
+    {
+      "id": "step5",
+      "description": "Ajustar chunk_size/overlap se necessário e reindexar até qualidade satisfatória.",
+      "status": "done"
+    },
+    {
+      "id": "step6",
+      "description": "Escrever testes unitários cobrindo ingestão e validação semântica.",
+      "status": "done"
+    }
+  ]
+}
