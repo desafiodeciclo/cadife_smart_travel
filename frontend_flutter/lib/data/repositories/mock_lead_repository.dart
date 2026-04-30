@@ -7,43 +7,233 @@ class MockLeadRepository implements LeadPort {
   final List<LeadModel> _mockLeads = [
     LeadModel(
       id: '1',
-      name: 'João Silva',
-      phone: '11999999999',
-      status: LeadStatus.emAtendimento,
+      name: 'Mariana Souza',
+      phone: '+55 11 99999-0001',
+      email: 'mariana.souza@gmail.com',
+      status: LeadStatus.novo,
       score: LeadScore.quente,
-      completudePct: 85,
+      completudePct: 20,
       destino: 'Paris, França',
-      dataIda: DateTime.now().add(const Duration(days: 45)),
-      dataVolta: DateTime.now().add(const Duration(days: 55)),
       numPessoas: 2,
       perfil: 'Casal',
-      tipoViagem: 'Lazer',
-      consultorNome: 'Ricardo Silva',
-      consultorAvatar: 'https://i.pravatar.cc/150?u=ricardo',
-      createdAt: DateTime.now().subtract(const Duration(days: 10)),
+      tipoViagem: 'Lua de mel',
+      orcamentoFaixa: '30k - 50k',
+      passaporteValido: true,
+      experienciaInternacional: true,
+      consultorNome: 'Jakeline Lima',
+      createdAt: DateTime.now().subtract(const Duration(minutes: 8)),
     ),
     LeadModel(
       id: '2',
-      name: 'Maria Oliveira',
-      phone: '11888888888',
+      name: 'Ricardo Fernandes',
+      phone: '+55 11 98888-0002',
+      email: 'rfernandes@empresa.com',
+      status: LeadStatus.emAtendimento,
+      score: LeadScore.quente,
+      completudePct: 65,
+      destino: 'Nova York, EUA',
+      dataIda: DateTime(2025, 8, 10),
+      dataVolta: DateTime(2025, 8, 22),
+      numPessoas: 4,
+      perfil: 'Família',
+      tipoViagem: 'Lazer',
+      orcamentoFaixa: '50k - 80k',
+      passaporteValido: true,
+      experienciaInternacional: true,
+      preferencias: 'Hotel no centro, parques temáticos',
+      consultorNome: 'Jakeline Lima',
+      createdAt: DateTime.now().subtract(const Duration(hours: 3)),
+    ),
+    LeadModel(
+      id: '3',
+      name: 'Camila Rocha',
+      phone: '+55 21 97777-0003',
+      email: 'camila.r@hotmail.com',
+      status: LeadStatus.qualificado,
+      score: LeadScore.quente,
+      completudePct: 80,
+      destino: 'Tóquio, Japão',
+      dataIda: DateTime(2025, 10, 5),
+      dataVolta: DateTime(2025, 10, 18),
+      numPessoas: 2,
+      perfil: 'Casal',
+      tipoViagem: 'Cultura e Gastronomia',
+      orcamentoFaixa: '40k - 60k',
+      passaporteValido: true,
+      experienciaInternacional: false,
+      preferencias: 'Ryokan tradicional, tour de culinária',
+      consultorNome: 'Diego Costa',
+      createdAt: DateTime.now().subtract(const Duration(hours: 18)),
+    ),
+    LeadModel(
+      id: '4',
+      name: 'Bruno Almeida',
+      phone: '+55 31 96666-0004',
+      status: LeadStatus.agendado,
+      score: LeadScore.morno,
+      completudePct: 72,
+      destino: 'Lisboa + Porto, Portugal',
+      dataIda: DateTime(2025, 9, 15),
+      dataVolta: DateTime(2025, 9, 26),
+      numPessoas: 3,
+      perfil: 'Família',
+      tipoViagem: 'Lazer',
+      orcamentoFaixa: '20k - 35k',
+      passaporteValido: true,
+      experienciaInternacional: true,
+      preferencias: 'Apartamento, aluguel de carro',
+      consultorNome: 'Jakeline Lima',
+      createdAt: DateTime.now().subtract(const Duration(days: 2)),
+    ),
+    LeadModel(
+      id: '5',
+      name: 'Fernanda Castro',
+      phone: '+55 41 95555-0005',
+      email: 'fcastro@outlook.com',
+      status: LeadStatus.proposta,
+      score: LeadScore.quente,
+      completudePct: 95,
+      destino: 'Maldivas',
+      dataIda: DateTime(2025, 7, 20),
+      dataVolta: DateTime(2025, 7, 30),
+      numPessoas: 2,
+      perfil: 'Casal',
+      tipoViagem: 'Lua de mel',
+      orcamentoFaixa: '60k - 100k',
+      passaporteValido: true,
+      experienciaInternacional: true,
+      preferencias: 'Over water bungalow, all inclusive',
+      consultorNome: 'Diego Costa',
+      createdAt: DateTime.now().subtract(const Duration(days: 4)),
+    ),
+    LeadModel(
+      id: '6',
+      name: 'Thiago Mendes',
+      phone: '+55 62 94444-0006',
+      status: LeadStatus.fechado,
+      score: LeadScore.quente,
+      completudePct: 100,
+      destino: 'Roma + Amalfi, Itália',
+      dataIda: DateTime(2025, 6, 10),
+      dataVolta: DateTime(2025, 6, 24),
+      numPessoas: 2,
+      perfil: 'Casal',
+      tipoViagem: 'Lazer e Gastronomia',
+      orcamentoFaixa: '45k - 65k',
+      passaporteValido: true,
+      experienciaInternacional: true,
+      consultorNome: 'Diego Costa',
+      createdAt: DateTime.now().subtract(const Duration(days: 14)),
+    ),
+    LeadModel(
+      id: '7',
+      name: 'Larissa Pinto',
+      phone: '+55 85 93333-0007',
+      email: 'larissap@gmail.com',
+      status: LeadStatus.emAtendimento,
+      score: LeadScore.morno,
+      completudePct: 45,
+      destino: 'Buenos Aires, Argentina',
+      numPessoas: 1,
+      perfil: 'Solo',
+      tipoViagem: 'Cultural',
+      orcamentoFaixa: '8k - 15k',
+      passaporteValido: false,
+      experienciaInternacional: false,
+      consultorNome: 'Jakeline Lima',
+      createdAt: DateTime.now().subtract(const Duration(hours: 5)),
+    ),
+    LeadModel(
+      id: '8',
+      name: 'Henrique Barbosa',
+      phone: '+55 51 92222-0008',
+      status: LeadStatus.novo,
+      score: LeadScore.frio,
+      completudePct: 10,
+      consultorNome: 'Diego Costa',
+      createdAt: DateTime.now().subtract(const Duration(minutes: 45)),
+    ),
+    LeadModel(
+      id: '9',
+      name: 'Patrícia Nunes',
+      phone: '+55 71 91111-0009',
+      email: 'patricias@empresa.com.br',
+      status: LeadStatus.qualificado,
+      score: LeadScore.morno,
+      completudePct: 70,
+      destino: 'Cancún, México',
+      dataIda: DateTime(2025, 11, 1),
+      dataVolta: DateTime(2025, 11, 10),
+      numPessoas: 5,
+      perfil: 'Família',
+      tipoViagem: 'Praia e Lazer',
+      orcamentoFaixa: '35k - 50k',
+      passaporteValido: true,
+      experienciaInternacional: false,
+      consultorNome: 'Jakeline Lima',
+      createdAt: DateTime.now().subtract(const Duration(days: 1)),
+    ),
+    LeadModel(
+      id: '10',
+      name: 'Eduardo Gonçalves',
+      phone: '+55 11 90000-0010',
+      status: LeadStatus.perdido,
+      score: LeadScore.frio,
+      completudePct: 30,
+      destino: 'Barcelona, Espanha',
+      numPessoas: 2,
+      perfil: 'Casal',
+      tipoViagem: 'Lazer',
+      orcamentoFaixa: '15k - 25k',
+      passaporteValido: false,
+      consultorNome: 'Diego Costa',
+      createdAt: DateTime.now().subtract(const Duration(days: 35)),
+    ),
+    LeadModel(
+      id: '11',
+      name: 'Amanda Silveira',
+      phone: '+55 27 98877-0011',
+      email: 'amanda.s@gmail.com',
+      status: LeadStatus.agendado,
+      score: LeadScore.quente,
+      completudePct: 88,
+      destino: 'Dubai, Emirados',
+      dataIda: DateTime(2025, 12, 20),
+      dataVolta: DateTime(2026, 1, 2),
+      numPessoas: 2,
+      perfil: 'Casal',
+      tipoViagem: 'Réveillon',
+      orcamentoFaixa: '80k - 120k',
+      passaporteValido: true,
+      experienciaInternacional: true,
+      preferencias: 'Hotel de luxo, experiências VIP',
+      consultorNome: 'Diego Costa',
+      createdAt: DateTime.now().subtract(const Duration(days: 3)),
+    ),
+    LeadModel(
+      id: '12',
+      name: 'Gustavo Teixeira',
+      phone: '+55 34 97766-0012',
       status: LeadStatus.proposta,
       score: LeadScore.morno,
-      completudePct: 60,
-      destino: 'Roma, Itália',
-      dataIda: DateTime.now().add(const Duration(days: 60)),
-      dataVolta: DateTime.now().add(const Duration(days: 70)),
-      numPessoas: 1,
-      perfil: 'Individual',
-      tipoViagem: 'Cultura',
-      consultorNome: 'Ana Clara',
-      consultorAvatar: 'https://i.pravatar.cc/150?u=ana',
-      createdAt: DateTime.now().subtract(const Duration(days: 5)),
+      completudePct: 75,
+      destino: 'Amsterdã, Holanda',
+      dataIda: DateTime(2025, 9, 5),
+      dataVolta: DateTime(2025, 9, 14),
+      numPessoas: 3,
+      perfil: 'Amigos',
+      tipoViagem: 'Lazer',
+      orcamentoFaixa: '25k - 40k',
+      passaporteValido: true,
+      experienciaInternacional: true,
+      consultorNome: 'Jakeline Lima',
+      createdAt: DateTime.now().subtract(const Duration(days: 6)),
     ),
   ];
 
   @override
   Future<List<LeadModel>> getLeads({LeadStatus? status, LeadScore? score}) async {
-    await Future.delayed(const Duration(milliseconds: 500));
+    await Future.delayed(const Duration(milliseconds: 600));
     return _mockLeads.where((l) {
       if (status != null && l.status != status) return false;
       if (score != null && l.score != score) return false;
@@ -59,8 +249,7 @@ class MockLeadRepository implements LeadPort {
 
   @override
   Future<LeadModel?> getMyLead() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    // Retorna o primeiro lead como sendo o do usuário logado (mock)
+    await Future.delayed(const Duration(milliseconds: 400));
     return _mockLeads.first;
   }
 
@@ -68,43 +257,56 @@ class MockLeadRepository implements LeadPort {
   Future<LeadModel> updateLeadStatus(String id, LeadStatus newStatus) async {
     await Future.delayed(const Duration(milliseconds: 500));
     final index = _mockLeads.indexWhere((l) => l.id == id);
-    if (index != -1) {
-      final updated = LeadModel(
-        id: _mockLeads[index].id,
-        name: _mockLeads[index].name,
-        phone: _mockLeads[index].phone,
-        status: newStatus,
-        score: _mockLeads[index].score,
-        completudePct: _mockLeads[index].completudePct,
-        destino: _mockLeads[index].destino,
-        dataIda: _mockLeads[index].dataIda,
-        dataVolta: _mockLeads[index].dataVolta,
-        numPessoas: _mockLeads[index].numPessoas,
-        perfil: _mockLeads[index].perfil,
-        tipoViagem: _mockLeads[index].tipoViagem,
-        consultorNome: _mockLeads[index].consultorNome,
-        consultorAvatar: _mockLeads[index].consultorAvatar,
-        createdAt: _mockLeads[index].createdAt,
-      );
-      _mockLeads[index] = updated;
-      return updated;
-    }
-    throw Exception('Lead not found');
+    if (index == -1) throw Exception('Lead não encontrado: $id');
+    final old = _mockLeads[index];
+    final updated = LeadModel(
+      id: old.id,
+      name: old.name,
+      phone: old.phone,
+      email: old.email,
+      status: newStatus,
+      score: old.score,
+      completudePct: old.completudePct,
+      destino: old.destino,
+      dataIda: old.dataIda,
+      dataVolta: old.dataVolta,
+      numPessoas: old.numPessoas,
+      perfil: old.perfil,
+      tipoViagem: old.tipoViagem,
+      preferencias: old.preferencias,
+      orcamentoFaixa: old.orcamentoFaixa,
+      passaporteValido: old.passaporteValido,
+      experienciaInternacional: old.experienciaInternacional,
+      assignedTo: old.assignedTo,
+      consultorNome: old.consultorNome,
+      consultorAvatar: old.consultorAvatar,
+      createdAt: old.createdAt,
+      updatedAt: DateTime.now(),
+    );
+    _mockLeads[index] = updated;
+    return updated;
   }
 
   @override
   Future<BriefingModel> getBriefing(String leadId) async {
     await Future.delayed(const Duration(milliseconds: 300));
+    final lead = _mockLeads.firstWhere(
+      (l) => l.id == leadId,
+      orElse: () => _mockLeads.first,
+    );
     return BriefingModel(
       leadId: leadId,
-      completudePct: 85,
-      destino: 'Paris, França',
-      numPessoas: 2,
-      perfil: 'Casal',
-      tipoViagem: 'Lazer',
-      preferencias: 'Hotel 5 estrelas, passeios gastronômicos',
-      orcamentoFaixa: '20k - 50k',
-      resumoConversa: 'Cliente busca uma viagem romântica para comemorar aniversário de casamento.',
+      completudePct: lead.completudePct,
+      destino: lead.destino,
+      numPessoas: lead.numPessoas,
+      perfil: lead.perfil,
+      tipoViagem: lead.tipoViagem,
+      preferencias: lead.preferencias,
+      orcamentoFaixa: lead.orcamentoFaixa,
+      resumoConversa:
+          'Cliente interessado em ${lead.destino ?? "destino a confirmar"}. '
+          'Perfil: ${lead.perfil ?? "não identificado"}. '
+          'Aguardando curadoria do consultor.',
     );
   }
 
@@ -113,20 +315,41 @@ class MockLeadRepository implements LeadPort {
     await Future.delayed(const Duration(milliseconds: 300));
     return [
       InteractionModel(
-        id: 'i1',
+        id: 'i1_$leadId',
         leadId: leadId,
         channel: 'whatsapp',
         direction: 'inbound',
-        content: 'Olá, gostaria de saber mais sobre pacotes para Paris.',
-        timestamp: DateTime.now().subtract(const Duration(days: 2)),
+        content: 'Olá! Gostaria de saber mais sobre pacotes de viagem.',
+        timestamp: DateTime.now().subtract(const Duration(hours: 4)),
       ),
       InteractionModel(
-        id: 'i2',
+        id: 'i2_$leadId',
         leadId: leadId,
         channel: 'whatsapp',
         direction: 'outbound',
-        content: 'Com certeza! Temos opções incríveis. Qual a data pretendida?',
-        timestamp: DateTime.now().subtract(const Duration(days: 2, hours: 1)),
+        content:
+            'Olá! Que ótimo ter você aqui. Sou a AYA, assistente da Cadife Tour. '
+            'Para te ajudar melhor, pode me contar um pouco mais sobre a viagem que você sonha?',
+        timestamp: DateTime.now().subtract(const Duration(hours: 3, minutes: 55)),
+      ),
+      InteractionModel(
+        id: 'i3_$leadId',
+        leadId: leadId,
+        channel: 'whatsapp',
+        direction: 'inbound',
+        content:
+            'Quero viajar com minha família em julho. Somos 4 pessoas e queremos algo especial!',
+        timestamp: DateTime.now().subtract(const Duration(hours: 3, minutes: 50)),
+      ),
+      InteractionModel(
+        id: 'i4_$leadId',
+        leadId: leadId,
+        channel: 'whatsapp',
+        direction: 'outbound',
+        content:
+            'Que lindo! Família reunida numa viagem especial 😊 '
+            'Já tem algum destino em mente, ou prefere que nosso consultor te sugira opções?',
+        timestamp: DateTime.now().subtract(const Duration(hours: 3, minutes: 45)),
       ),
     ];
   }
@@ -145,7 +368,7 @@ class MockLeadRepository implements LeadPort {
       destino: request.destino,
       createdAt: DateTime.now(),
     );
-    _mockLeads.add(newLead);
+    _mockLeads.insert(0, newLead);
     return newLead;
   }
 }

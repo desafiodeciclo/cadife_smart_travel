@@ -66,29 +66,36 @@ class _QualificationRateCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            SizedBox(
-              width: 100,
-              height: 100,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  CircularProgressIndicator(
-                    value: taxa / 100,
-                    strokeWidth: 6,
-                    backgroundColor: const Color(0xFFE0E0E0),
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      taxa >= 70 ? AppColors.success : AppColors.warning,
-                    ),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final size = constraints.maxWidth * 0.7;
+                final strokeWidth = size * 0.08;
+                final fontSize = size * 0.22;
+                return SizedBox(
+                  width: size,
+                  height: size,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      CircularProgressIndicator(
+                        value: taxa / 100,
+                        strokeWidth: strokeWidth,
+                        backgroundColor: const Color(0xFFE0E0E0),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          taxa >= 70 ? AppColors.success : AppColors.warning,
+                        ),
+                      ),
+                      Text(
+                        '${taxa.toStringAsFixed(0)}%',
+                        style: TextStyle(
+                          fontSize: fontSize,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
-                  Text(
-                    '${taxa.toStringAsFixed(0)}%',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
+                );
+              },
             ),
           ],
         ),
