@@ -294,7 +294,7 @@ class _BriefingTab extends StatelessWidget {
           childAspectRatio: 2.2,
           children: [
             _GridItem(icon: Icons.flight_takeoff, title: 'Destino', value: lead.destino ?? 'Não informado'),
-            _GridItem(icon: Icons.calendar_month, title: 'Datas', value: '10 a 20 Fev 2026'),
+            const _GridItem(icon: Icons.calendar_month, title: 'Datas', value: '10 a 20 Fev 2026'),
             _GridItem(icon: Icons.people_outline, title: 'Pessoas', value: '${lead.numPessoas ?? 0} (Familia)'),
             _GridItem(icon: Icons.account_balance_wallet_outlined, title: 'Orçamento', value: lead.orcamentoFaixa ?? 'Médio'),
             _GridItem(icon: Icons.badge_outlined, title: 'Passaporte Válido', value: lead.passaporteValido == true ? 'Sim, todos' : 'Não informado'),
@@ -402,7 +402,7 @@ class _ChatTimelineTab extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
           ),
-          child: Column(
+          child: const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _TimelineItem(title: 'Qualificado', subtitle: 'Hoje, 10:15', isLast: false, isActive: true),

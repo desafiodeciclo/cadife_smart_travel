@@ -1,6 +1,5 @@
 import 'package:cadife_smart_travel/core/theme/app_colors.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/providers/schedule_appointment_provider.dart';
-import 'package:cadife_smart_travel/shared/models/agenda_model.dart';
 import 'package:cadife_smart_travel/shared/models/lead_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -78,7 +77,6 @@ class _ScheduleAppointmentModalState
     final days = _getDaysInMonth(_currentMonth);
     // Para facilitar, focar no dia de hoje se o mês atual for o mês de hoje
     final today = DateTime.now();
-    final isCurrentMonth = _currentMonth.year == today.year && _currentMonth.month == today.month;
 
     return Container(
       margin: const EdgeInsets.only(top: 60),
@@ -390,7 +388,7 @@ class _ScheduleAppointmentModalState
               onPressed: state.selectedSlot != null && !state.isLoading
                   ? () async {
                       final success = await notifier.confirmAppointment(widget.lead.id);
-                      if (success && mounted) {
+                      if (success && context.mounted) {
                         Navigator.of(context).pop(true);
                       }
                     }

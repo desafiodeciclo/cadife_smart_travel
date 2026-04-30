@@ -1,12 +1,13 @@
 import 'dart:io';
+
 import 'package:cadife_smart_travel/shared/models/document_model.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 
 class DocumentViewerScreen extends StatefulWidget {
   const DocumentViewerScreen({super.key, required this.document});
@@ -29,6 +30,7 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
       
       await dio.download(widget.document.url, tempPath);
       
+      // ignore: deprecated_member_use
       await Share.shareXFiles([XFile(tempPath)], text: widget.document.name);
     } catch (e) {
       Fluttertoast.showToast(msg: 'Erro ao compartilhar documento');

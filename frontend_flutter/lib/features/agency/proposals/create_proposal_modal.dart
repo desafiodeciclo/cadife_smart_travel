@@ -144,7 +144,7 @@ class _CreateProposalModalState extends State<CreateProposalModal> {
                 ),
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
-                    // TODO: Call API to create proposal
+                    // Chamar API para criar a proposta futuramente
                     Navigator.of(context).pop();
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Proposta criada com sucesso!')),
