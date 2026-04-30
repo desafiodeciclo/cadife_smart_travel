@@ -14,8 +14,8 @@ extension GetBriefingCacheCollection on Isar {
 }
 
 const BriefingCacheSchema = CollectionSchema(
-  name: r'BriefingCache',
-  id: 10000000000002,
+  name: r'br',
+  id: 1002,
   properties: {
     r'cachedAt': PropertySchema(
       id: 0,
@@ -94,9 +94,9 @@ const BriefingCacheSchema = CollectionSchema(
   deserializeProp: _briefingCacheDeserializeProp,
   idName: r'id',
   indexes: {
-    r'leadId': IndexSchema(
-      id: 20000000000002,
-      name: r'leadId',
+    r'l1': IndexSchema(
+      id: 2002,
+      name: r'l1',
       unique: true,
       replace: false,
       properties: [
@@ -265,56 +265,56 @@ void _briefingCacheAttach(
 
 extension BriefingCacheByIndex on IsarCollection<BriefingCache> {
   Future<BriefingCache?> getByLeadId(String leadId) {
-    return getByIndex(r'leadId', [leadId]);
+    return getByIndex(r'l1', [leadId]);
   }
 
   BriefingCache? getByLeadIdSync(String leadId) {
-    return getByIndexSync(r'leadId', [leadId]);
+    return getByIndexSync(r'l1', [leadId]);
   }
 
   Future<bool> deleteByLeadId(String leadId) {
-    return deleteByIndex(r'leadId', [leadId]);
+    return deleteByIndex(r'l1', [leadId]);
   }
 
   bool deleteByLeadIdSync(String leadId) {
-    return deleteByIndexSync(r'leadId', [leadId]);
+    return deleteByIndexSync(r'l1', [leadId]);
   }
 
   Future<List<BriefingCache?>> getAllByLeadId(List<String> leadIdValues) {
     final values = leadIdValues.map((e) => [e]).toList();
-    return getAllByIndex(r'leadId', values);
+    return getAllByIndex(r'l1', values);
   }
 
   List<BriefingCache?> getAllByLeadIdSync(List<String> leadIdValues) {
     final values = leadIdValues.map((e) => [e]).toList();
-    return getAllByIndexSync(r'leadId', values);
+    return getAllByIndexSync(r'l1', values);
   }
 
   Future<int> deleteAllByLeadId(List<String> leadIdValues) {
     final values = leadIdValues.map((e) => [e]).toList();
-    return deleteAllByIndex(r'leadId', values);
+    return deleteAllByIndex(r'l1', values);
   }
 
   int deleteAllByLeadIdSync(List<String> leadIdValues) {
     final values = leadIdValues.map((e) => [e]).toList();
-    return deleteAllByIndexSync(r'leadId', values);
+    return deleteAllByIndexSync(r'l1', values);
   }
 
   Future<Id> putByLeadId(BriefingCache object) {
-    return putByIndex(r'leadId', object);
+    return putByIndex(r'l1', object);
   }
 
   Id putByLeadIdSync(BriefingCache object, {bool saveLinks = true}) {
-    return putByIndexSync(r'leadId', object, saveLinks: saveLinks);
+    return putByIndexSync(r'l1', object, saveLinks: saveLinks);
   }
 
   Future<List<Id>> putAllByLeadId(List<BriefingCache> objects) {
-    return putAllByIndex(r'leadId', objects);
+    return putAllByIndex(r'l1', objects);
   }
 
   List<Id> putAllByLeadIdSync(List<BriefingCache> objects,
       {bool saveLinks = true}) {
-    return putAllByIndexSync(r'leadId', objects, saveLinks: saveLinks);
+    return putAllByIndexSync(r'l1', objects, saveLinks: saveLinks);
   }
 }
 
@@ -402,7 +402,7 @@ extension BriefingCacheQueryWhere
       String leadId) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(IndexWhereClause.equalTo(
-        indexName: r'leadId',
+        indexName: r'l1',
         value: [leadId],
       ));
     });
@@ -414,13 +414,13 @@ extension BriefingCacheQueryWhere
       if (query.whereSort == Sort.asc) {
         return query
             .addWhereClause(IndexWhereClause.between(
-              indexName: r'leadId',
+              indexName: r'l1',
               lower: [],
               upper: [leadId],
               includeUpper: false,
             ))
             .addWhereClause(IndexWhereClause.between(
-              indexName: r'leadId',
+              indexName: r'l1',
               lower: [leadId],
               includeLower: false,
               upper: [],
@@ -428,13 +428,13 @@ extension BriefingCacheQueryWhere
       } else {
         return query
             .addWhereClause(IndexWhereClause.between(
-              indexName: r'leadId',
+              indexName: r'l1',
               lower: [leadId],
               includeLower: false,
               upper: [],
             ))
             .addWhereClause(IndexWhereClause.between(
-              indexName: r'leadId',
+              indexName: r'l1',
               lower: [],
               upper: [leadId],
               includeUpper: false,

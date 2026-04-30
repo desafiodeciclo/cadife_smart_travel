@@ -432,7 +432,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       ),
     );
 
-    // TODO(backend): integrar com DELETE /users/me quando o endpoint existir.
+    // Backend integration pending: integrar com DELETE /users/me quando o endpoint existir.
     if (confirmed == true && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Funcionalidade em breve')),

@@ -2,6 +2,7 @@ import 'package:isar/isar.dart';
 
 part 'lead_cache.g.dart';
 
+@Name('le')
 @Collection()
 class LeadCache {
   LeadCache({
@@ -31,7 +32,7 @@ class LeadCache {
 
   Id? id;
 
-  @Index(unique: true)
+  @Index(name: 's2', unique: true)
   late String serverId;
 
   late String name;
