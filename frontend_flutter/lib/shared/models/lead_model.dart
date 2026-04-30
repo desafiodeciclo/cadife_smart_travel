@@ -22,6 +22,7 @@ class LeadModel extends Equatable {
     this.assignedTo,
     this.consultorNome,
     this.consultorAvatar,
+    this.imageUrl,
     this.createdAt,
     this.updatedAt,
   });
@@ -46,6 +47,7 @@ class LeadModel extends Equatable {
   final String? assignedTo;
   final String? consultorNome;
   final String? consultorAvatar;
+  final String? imageUrl;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -80,6 +82,7 @@ class LeadModel extends Equatable {
     assignedTo: json['assigned_to'] as String? ?? json['consultor_id'] as String?,
     consultorNome: json['consultor_nome'] as String?,
     consultorAvatar: json['consultor_avatar'] as String?,
+    imageUrl: json['image_url'] as String?,
     createdAt: json['created_at'] != null
         ? DateTime.parse(json['created_at'] as String)
         : null,
@@ -109,12 +112,24 @@ class LeadModel extends Equatable {
     'assigned_to': assignedTo,
     'consultor_nome': consultorNome,
     'consultor_avatar': consultorAvatar,
+    'image_url': imageUrl,
     'created_at': createdAt?.toIso8601String(),
     'updated_at': updatedAt?.toIso8601String(),
   };
 
   @override
-  List<Object?> get props => [id, name, phone, status, score, completudePct, assignedTo, consultorNome, consultorAvatar];
+  List<Object?> get props => [
+    id, 
+    name, 
+    phone, 
+    status, 
+    score, 
+    completudePct, 
+    assignedTo, 
+    consultorNome, 
+    consultorAvatar,
+    imageUrl,
+  ];
 }
 
 enum LeadStatus {

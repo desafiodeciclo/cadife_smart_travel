@@ -17,22 +17,6 @@ class TripSelectionCard extends StatelessWidget {
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
 
-  Color _scoreColor(LeadScore score) {
-    return switch (score) {
-      LeadScore.quente => AppColors.success,
-      LeadScore.morno => AppColors.warning,
-      LeadScore.frio => AppColors.textSecondary,
-    };
-  }
-
-  String _scoreLabel(LeadScore score) {
-    return switch (score) {
-      LeadScore.quente => 'Quente',
-      LeadScore.morno => 'Morno',
-      LeadScore.frio => 'Frio',
-    };
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -61,111 +45,116 @@ class TripSelectionCard extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(12),
           child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
+            padding: const EdgeInsets.all(12),
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Title and Score
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
+                // Trip Illustration Image
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    width: 80,
+                    height: 80,
+                    color: theme.dividerColor.withValues(alpha: 0.1),
+                    child: trip.imageUrl != null
+                        ? Image.network(
+                            trip.imageUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Icon(
+                              Icons.image_outlined,
+                              color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.3),
+                            ),
+                          )
+                        : Icon(
+                            Icons.image_outlined,
+                            color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.3),
+                          ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                // Trip Information
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Title
+                      Text(
                         trip.name,
                         style: TextStyle(
                           fontSize: 14,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w700,
                           color: theme.textTheme.titleMedium?.color,
                         ),
-                        maxLines: 2,
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _scoreColor(trip.score).withValues(alpha: 0.1),
-                        borderRadius: const BorderRadius.all(Radius.circular(6)),
-                      ),
-                      child: Text(
-                        _scoreLabel(trip.score),
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: _scoreColor(trip.score),
+                      const SizedBox(height: 6),
+                      // Destination
+                      if (trip.destino != null) ...[
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.location_on_outlined,
+                              size: 14,
+                              color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.6),
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                trip.destino!,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.6),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                // Destination
-                if (trip.destino != null) ...[
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.location_on,
-                        size: 16,
-                        color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.6),
-                      ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          trip.destino!,
-                          style: TextStyle(
-                            fontSize: 12,
+                        const SizedBox(height: 4),
+                      ],
+                      // Dates
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.calendar_today_outlined,
+                            size: 14,
                             color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.6),
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${_formatDate(trip.dataIda)} - ${_formatDate(trip.dataVolta)}',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.6),
+                            ),
+                          ),
+                        ],
                       ),
+                      if (trip.numPessoas != null) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.people_outline,
+                              size: 14,
+                              color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.6),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${trip.numPessoas} ${trip.numPessoas == 1 ? 'pessoa' : 'pessoas'}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.6),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ],
                   ),
-                  const SizedBox(height: 8),
-                ],
-                // Dates
-                Row(
-                  children: [
-                    Icon(
-                      Icons.calendar_today,
-                      size: 16,
-                      color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.6),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '${_formatDate(trip.dataIda)} - ${_formatDate(trip.dataVolta)}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.6),
-                      ),
-                    ),
-                  ],
                 ),
-                if (trip.numPessoas != null) ...[
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.people,
-                        size: 16,
-                        color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.6),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        '${trip.numPessoas} ${trip.numPessoas == 1 ? 'pessoa' : 'pessoas'}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.6),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
               ],
             ),
           ),

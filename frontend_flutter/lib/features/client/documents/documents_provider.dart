@@ -54,6 +54,7 @@ final _mockTripsWithDocuments = [
     dataIda: DateTime(2024, 7, 15),
     dataVolta: DateTime(2024, 7, 22),
     numPessoas: 2,
+    imageUrl: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&q=80&w=400',
   ),
   LeadModel(
     id: 'trip-2',
@@ -66,6 +67,7 @@ final _mockTripsWithDocuments = [
     dataIda: DateTime(2024, 8, 20),
     dataVolta: DateTime(2024, 8, 27),
     numPessoas: 4,
+    imageUrl: 'https://images.unsplash.com/photo-1514282401047-d79a71a590e8?auto=format&fit=crop&q=80&w=400',
   ),
 ];
 
