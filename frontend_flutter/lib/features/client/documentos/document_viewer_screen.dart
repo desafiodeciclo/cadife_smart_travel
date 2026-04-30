@@ -86,7 +86,7 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
       ),
       body: Center(
         child: widget.document.type == DocumentType.pdf
-            ? PdfViewer.network(widget.document.url)
+            ? PdfViewer.uri(Uri.parse(widget.document.url))
             : PhotoView(
                 imageProvider: NetworkImage(widget.document.url),
                 backgroundDecoration: BoxDecoration(
