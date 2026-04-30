@@ -1,18 +1,27 @@
 
+import 'package:cadife_smart_travel/core/theme/app_colors.dart';
 import 'package:cadife_smart_travel/core/widgets/cadife_app_bar.dart';
 import 'package:cadife_smart_travel/features/client/documentos/widgets/widgets.dart';
 import 'package:cadife_smart_travel/features/client/documents/documents_provider.dart';
+import 'package:cadife_smart_travel/shared/models/document_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-class DocumentosScreen extends ConsumerWidget {
+class DocumentosScreen extends ConsumerStatefulWidget {
   const DocumentosScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final globalDocs = ref.watch(globalDocumentsProvider);
-    final tripsWithDocs = ref.watch(tripsWithDocumentsProvider);
+  ConsumerState<DocumentosScreen> createState() => _DocumentosScreenState();
+}
+
+class _DocumentosScreenState extends ConsumerState<DocumentosScreen> {
+  String _selectedCategory = 'Todos';
+
+  @override
+  Widget build(BuildContext context) {
+    final globalDocsAsync = ref.watch(globalDocumentsProvider);
+    final tripsWithDocsAsync = ref.watch(tripsWithDocumentsProvider);
 
     return Scaffold(
       body: CustomScrollView(
@@ -25,21 +34,59 @@ class DocumentosScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Principais Documentos',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: Theme.of(context).textTheme.titleLarge?.color,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Principais Documentos',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: Theme.of(context).textTheme.titleLarge?.color,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  // Filter bar
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        'Todos',
+                        'Roteiro',
+                        'Voucher',
+                        'Seguro',
+                        'Passagens',
+                        'Geral',
+                      ].map((category) {
+                        final isSelected = _selectedCategory == category;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: FilterChip(
+                            label: Text(category),
+                            selected: isSelected,
+                            onSelected: (selected) {
+                              setState(() => _selectedCategory = category);
+                            },
+                            selectedColor: AppColors.primary.withValues(alpha: 0.2),
+                            checkmarkColor: AppColors.primary,
+                            labelStyle: TextStyle(
+                              color: isSelected ? AppColors.primary : null,
+                              fontWeight: isSelected ? FontWeight.bold : null,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          ),
+                        );
+                      }).toList(),
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  globalDocs.when(
-                    loading: () => const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(16),
-                        child: CircularProgressIndicator(),
-                      ),
+                  const SizedBox(height: 16),
+                  globalDocsAsync.when(
+                    loading: () => Column(
+                      children: List.generate(3, (index) => const DocumentCardSkeleton()),
                     ),
                     error: (e, st) => Center(
                       child: Padding(
@@ -52,41 +99,67 @@ class DocumentosScreen extends ConsumerWidget {
                         ),
                       ),
                     ),
-                    data: (docs) => docs.isEmpty
-                        ? Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Text(
-                                'Nenhum documento disponível',
-                                style: TextStyle(
-                                  color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                    data: (docs) {
+                      final filteredDocs = _selectedCategory == 'Todos'
+                          ? docs
+                          : docs.where((d) => d.category == _selectedCategory).toList();
+
+                      if (docs.isEmpty) {
+                        return Center(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+                            child: Column(
+                              children: [
+                                Icon(
+                                  Icons.folder_open,
+                                  size: 64,
+                                  color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.3),
                                 ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Nenhum documento disponível ainda. Seu consultor irá compartilhá-los em breve.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+
+                      if (filteredDocs.isEmpty) {
+                        return Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(32),
+                            child: Text(
+                              'Nenhum documento nesta categoria.',
+                              style: TextStyle(
+                                color: Theme.of(context).textTheme.bodySmall?.color,
                               ),
                             ),
-                          )
-                        : Column(
-                            children: docs
-                                .map(
-                                  (doc) => CadifeDocumentCard(
-                                    document: doc,
-                                    onView: () {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text('Abrindo ${doc.name}'),
-                                        ),
-                                      );
-                                    },
-                                    onDownload: () {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text('Baixando ${doc.name}'),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                )
-                                .toList(),
                           ),
+                        );
+                      }
+
+                      return Column(
+                        children: filteredDocs
+                            .map(
+                              (doc) => CadifeDocumentCard(
+                                document: doc,
+                                onView: () {
+                                  context.push('/client/documentos/viewer', extra: doc);
+                                },
+                                onDownload: () {
+                                  // Navigating to viewer also allows download
+                                  context.push('/client/documentos/viewer', extra: doc);
+                                },
+                              ),
+                            )
+                            .toList(),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -109,12 +182,9 @@ class DocumentosScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  tripsWithDocs.when(
-                    loading: () => const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(16),
-                        child: CircularProgressIndicator(),
-                      ),
+                  tripsWithDocsAsync.when(
+                    loading: () => Column(
+                      children: List.generate(2, (index) => const DocumentCardSkeleton()),
                     ),
                     error: (e, st) => Center(
                       child: Padding(

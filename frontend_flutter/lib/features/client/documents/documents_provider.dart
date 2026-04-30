@@ -12,6 +12,7 @@ final _mockGlobalDocuments = [
     url: 'https://example.com/roteiro.pdf',
     isGlobal: true,
     createdAt: DateTime.now().subtract(const Duration(days: 5)),
+    category: 'Roteiro',
   ),
   DocumentModel(
     id: 'doc-2',
@@ -21,6 +22,7 @@ final _mockGlobalDocuments = [
     url: 'https://example.com/voucher.pdf',
     isGlobal: true,
     createdAt: DateTime.now().subtract(const Duration(days: 3)),
+    category: 'Voucher',
   ),
   DocumentModel(
     id: 'doc-3',
@@ -30,6 +32,7 @@ final _mockGlobalDocuments = [
     url: 'https://example.com/seguro.pdf',
     isGlobal: true,
     createdAt: DateTime.now().subtract(const Duration(days: 1)),
+    category: 'Seguro',
   ),
   DocumentModel(
     id: 'doc-4',
@@ -39,6 +42,17 @@ final _mockGlobalDocuments = [
     url: 'https://example.com/passagens.pdf',
     isGlobal: true,
     createdAt: DateTime.now(),
+    category: 'Passagens',
+  ),
+  DocumentModel(
+    id: 'doc-5',
+    name: 'Foto do Passaporte',
+    type: DocumentType.image,
+    size: 500000,
+    url: 'https://images.unsplash.com/photo-1544027993-37dbfe43562a?auto=format&fit=crop&q=80&w=800',
+    isGlobal: true,
+    createdAt: DateTime.now(),
+    category: 'Geral',
   ),
 ];
 

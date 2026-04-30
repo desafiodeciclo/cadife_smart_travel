@@ -12,6 +12,7 @@ class DocumentModel extends Equatable {
     this.isGlobal = false,
     this.tripId,
     this.createdAt,
+    this.category,
   });
 
   final String id;
@@ -22,6 +23,7 @@ class DocumentModel extends Equatable {
   final bool isGlobal;
   final String? tripId;
   final DateTime? createdAt;
+  final String? category;
 
   String get sizeFormatted {
     if (size < 1024) return '$size B';
@@ -38,6 +40,7 @@ class DocumentModel extends Equatable {
     bool? isGlobal,
     String? tripId,
     DateTime? createdAt,
+    String? category,
   }) {
     return DocumentModel(
       id: id ?? this.id,
@@ -48,9 +51,10 @@ class DocumentModel extends Equatable {
       isGlobal: isGlobal ?? this.isGlobal,
       tripId: tripId ?? this.tripId,
       createdAt: createdAt ?? this.createdAt,
+      category: category ?? this.category,
     );
   }
 
   @override
-  List<Object?> get props => [id, name, type, size, url, isGlobal, tripId, createdAt];
+  List<Object?> get props => [id, name, type, size, url, isGlobal, tripId, createdAt, category];
 }
