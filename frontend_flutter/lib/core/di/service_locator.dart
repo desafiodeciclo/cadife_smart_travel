@@ -19,6 +19,7 @@ import 'package:cadife_smart_travel/data/local/database_helper.dart';
 import 'package:cadife_smart_travel/data/repositories/agenda_repository_impl.dart';
 import 'package:cadife_smart_travel/data/repositories/lead_repository_impl.dart';
 import 'package:cadife_smart_travel/data/repositories/mock_auth_repository.dart';
+import 'package:cadife_smart_travel/data/repositories/mock_lead_repository.dart';
 import 'package:cadife_smart_travel/data/repositories/mock_profile_repository.dart';
 import 'package:cadife_smart_travel/data/repositories/offline_event_repository_impl.dart';
 import 'package:cadife_smart_travel/data/repositories/proposal_repository_impl.dart';
@@ -146,12 +147,16 @@ void _registerAuthModule() {
 }
 
 void _registerLeadModule() {
-  sl.registerLazySingleton<LeadPort>(
-    () => LeadRepositoryImpl(
-      dio: sl<Dio>(),
-      offlineManager: sl<OfflineManager>(),
-    ),
-  );
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  // MOCK LEAD ATIVADO — COMENTE A LINHA ABAIXO E DESCOMENTE A SEGUINTE PARA PROD
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  sl.registerLazySingleton<LeadPort>(MockLeadRepository.new);
+  // sl.registerLazySingleton<LeadPort>(
+  //   () => LeadRepositoryImpl(
+  //     dio: sl<Dio>(),
+  //     offlineManager: sl<OfflineManager>(),
+  //   ),
+  // );
 }
 
 void _registerAgendaModule() {

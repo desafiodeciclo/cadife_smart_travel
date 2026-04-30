@@ -20,6 +20,8 @@ class LeadModel extends Equatable {
     this.passaporteValido,
     this.experienciaInternacional,
     this.assignedTo,
+    this.consultorNome,
+    this.consultorAvatar,
     this.createdAt,
     this.updatedAt,
   });
@@ -42,6 +44,8 @@ class LeadModel extends Equatable {
   final bool? passaporteValido;
   final bool? experienciaInternacional;
   final String? assignedTo;
+  final String? consultorNome;
+  final String? consultorAvatar;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -73,7 +77,9 @@ class LeadModel extends Equatable {
     orcamentoFaixa: json['orcamento_faixa'] as String?,
     passaporteValido: json['passaporte_valido'] as bool?,
     experienciaInternacional: json['experiencia_internacional'] as bool?,
-    assignedTo: json['assigned_to'] as String?,
+    assignedTo: json['assigned_to'] as String? ?? json['consultor_id'] as String?,
+    consultorNome: json['consultor_nome'] as String?,
+    consultorAvatar: json['consultor_avatar'] as String?,
     createdAt: json['created_at'] != null
         ? DateTime.parse(json['created_at'] as String)
         : null,
@@ -101,12 +107,14 @@ class LeadModel extends Equatable {
     'passaporte_valido': passaporteValido,
     'experiencia_internacional': experienciaInternacional,
     'assigned_to': assignedTo,
+    'consultor_nome': consultorNome,
+    'consultor_avatar': consultorAvatar,
     'created_at': createdAt?.toIso8601String(),
     'updated_at': updatedAt?.toIso8601String(),
   };
 
   @override
-  List<Object?> get props => [id, name, phone, status, score, completudePct];
+  List<Object?> get props => [id, name, phone, status, score, completudePct, assignedTo, consultorNome, consultorAvatar];
 }
 
 enum LeadStatus {

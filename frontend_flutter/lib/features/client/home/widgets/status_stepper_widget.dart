@@ -17,18 +17,20 @@ class StatusStepperWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'STATUS DA VIAGEM',
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
               letterSpacing: 1.5,
-              color: AppColors.textSecondary,
+              color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.6),
             ),
           ),
           const SizedBox(height: 16),
@@ -54,8 +56,8 @@ class StatusStepperWidget extends StatelessWidget {
                             child: Container(
                               height: 2,
                               color: i < currentStep
-                                  ? AppColors.primary
-                                  : AppColors.textSecondary.withValues(alpha: 0.2),
+                                  ? theme.colorScheme.primary
+                                  : theme.dividerColor,
                             ),
                           ),
                         ),
@@ -85,8 +87,8 @@ class StatusStepperWidget extends StatelessWidget {
                                       ? FontWeight.w700
                                       : FontWeight.w400,
                                   color: i <= currentStep
-                                      ? AppColors.textPrimary
-                                      : AppColors.textSecondary,
+                                      ? theme.colorScheme.onSurface
+                                      : theme.textTheme.bodySmall?.color?.withValues(alpha: 0.5),
                                 ),
                               ),
                             ],
@@ -113,16 +115,18 @@ class _StepCircle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     if (isCompleted) {
-      return const _Circle(
-        color: AppColors.primary,
-        child: Icon(Icons.check, color: Colors.white, size: 15),
+      return _Circle(
+        color: theme.colorScheme.primary,
+        child: const Icon(Icons.check, color: Colors.white, size: 15),
       );
     }
     if (isCurrent) {
-      return const _Circle(
-        color: AppColors.primary,
-        child: Icon(Icons.flight, color: Colors.white, size: 15),
+      return _Circle(
+        color: theme.colorScheme.primary,
+        child: const Icon(Icons.flight, color: Colors.white, size: 15),
       );
     }
     return _Circle(

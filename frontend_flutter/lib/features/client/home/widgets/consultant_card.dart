@@ -28,32 +28,36 @@ class ConsultantCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'SEU CONSULTOR',
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
               letterSpacing: 1.5,
-              color: AppColors.textSecondary,
+              color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.6),
             ),
           ),
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.cardBackground,
+              color: theme.cardColor,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.06),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
+                if (!isDark)
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
               ],
             ),
             child: Column(
@@ -68,18 +72,18 @@ class ConsultantCard extends StatelessWidget {
                         children: [
                           Text(
                             consultantName,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
+                              color: theme.colorScheme.onSurface,
                             ),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             consultantTitle,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.textSecondary,
+                              color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
                             ),
                           ),
                         ],
@@ -104,6 +108,8 @@ class _ConsultantAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     if (avatarUrl != null && avatarUrl!.isNotEmpty) {
       return CircleAvatar(
         radius: 26,
@@ -112,8 +118,8 @@ class _ConsultantAvatar extends StatelessWidget {
     }
     return CircleAvatar(
       radius: 26,
-      backgroundColor: AppColors.primary.withValues(alpha: 0.12),
-      child: const Icon(Icons.person, color: AppColors.primary, size: 28),
+      backgroundColor: theme.primaryColor.withValues(alpha: 0.12),
+      child: Icon(Icons.person, color: theme.primaryColor, size: 28),
     );
   }
 }

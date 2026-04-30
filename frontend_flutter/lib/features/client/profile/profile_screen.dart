@@ -103,11 +103,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final userAsync = ref.watch(userProfileProvider);
+    final theme = Theme.of(context);
     final themeMode = ref.watch(themeModeProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkSurface : AppColors.scaffold,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: userAsync.when(
           loading: () =>

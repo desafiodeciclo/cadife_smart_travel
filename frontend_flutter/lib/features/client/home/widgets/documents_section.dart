@@ -7,15 +7,11 @@ class DocumentsSection extends StatelessWidget {
 
   final List<DocumentItem> documents;
 
-  static const _placeholder = [
-    DocumentItem(name: 'Roteiro da Viagem', sizeMb: '2.4 MB'),
-    DocumentItem(name: 'Orçamento Detalhado', sizeMb: '1.1 MB'),
-  ];
 
   @override
   Widget build(BuildContext context) {
-    final docs = documents.isEmpty ? _placeholder : documents;
-
+    final theme = Theme.of(context);
+    
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
@@ -24,38 +20,60 @@ class DocumentsSection extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'DOCUMENTOS',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1.5,
-                  color: AppColors.textSecondary,
+                  color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.6),
                 ),
               ),
               GestureDetector(
                 onTap: () => context.go('/client/documentos'),
-                child: const Text(
+                child: Text(
                   'Ver todos',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.primary,
+                    color: theme.colorScheme.primary,
                   ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          SizedBox(
-            height: 96,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: docs.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 12),
-              itemBuilder: (_, i) => _DocumentCard(item: docs[i]),
+          if (documents.isEmpty)
+            Container(
+              height: 96,
+              width: double.infinity,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: theme.cardColor.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: theme.dividerColor,
+                ),
+              ),
+              child: Text(
+                'Sem documentos anexados',
+                style: TextStyle(
+                  color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
+                  fontSize: 13,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            )
+          else
+            SizedBox(
+              height: 96,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: documents.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 12),
+                itemBuilder: (_, i) => _DocumentCard(item: documents[i]),
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -76,18 +94,22 @@ class _DocumentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Container(
       width: 148,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
+          if (!isDark)
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
         ],
       ),
       child: Column(
@@ -97,12 +119,12 @@ class _DocumentCard extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.1),
+              color: theme.colorScheme.primary.withValues(alpha: isDark ? 0.2 : 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.picture_as_pdf_outlined,
-              color: AppColors.primary,
+              color: theme.colorScheme.primary,
               size: 20,
             ),
           ),
@@ -111,18 +133,18 @@ class _DocumentCard extends StatelessWidget {
             item.name,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
+              color: theme.colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 2),
           Text(
             'PDF • ${item.sizeMb}',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 10,
-              color: AppColors.textSecondary,
+              color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
             ),
           ),
         ],

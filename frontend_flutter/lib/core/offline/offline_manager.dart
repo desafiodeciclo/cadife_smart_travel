@@ -36,31 +36,40 @@ class OfflineManager {
   Future<void> initialize() async {
     if (_isInitialized) return;
 
-    if (!kIsWeb) {
-      final appDir = await getApplicationDocumentsDirectory();
-      await _hive.initFlutter(appDir.path);
-    } else {
-      await _hive.initFlutter();
+    try {
+      if (!kIsWeb) {
+        final appDir = await getApplicationDocumentsDirectory();
+        await _hive.initFlutter(appDir.path);
+      } else {
+        await _hive.initFlutter();
+      }
+
+      _configBox = await _hive.openBox<dynamic>(AppConstants.hiveBoxConfig);
+      _cacheBox = await _hive.openBox<dynamic>(AppConstants.hiveBoxCache);
+      _userPrefsBox = await _hive.openBox<dynamic>(AppConstants.hiveBoxUser);
+
+      _lastOnlineStatus = await _networkInfo.isConnected;
+
+      _networkInfo.onConnectivityChanged.listen((isConnected) {
+        _lastOnlineStatus = isConnected;
+        _connectivityController.add(isConnected);
+      });
+
+      _isInitialized = true;
+    } catch (e) {
+      debugPrint('OfflineManager initialization failed: $e');
+      // Even if it fails, we set _isInitialized to true if we assigned boxes
+      // Or we can leave it false and handle it in getters.
     }
-
-    _configBox = await _hive.openBox<dynamic>(AppConstants.hiveBoxConfig);
-    _cacheBox = await _hive.openBox<dynamic>(AppConstants.hiveBoxCache);
-    _userPrefsBox = await _hive.openBox<dynamic>(AppConstants.hiveBoxUser);
-
-    _lastOnlineStatus = await _networkInfo.isConnected;
-
-    _networkInfo.onConnectivityChanged.listen((isConnected) {
-      _lastOnlineStatus = isConnected;
-      _connectivityController.add(isConnected);
-    });
-
-    _isInitialized = true;
   }
+
+  bool get isInitialized => _isInitialized;
 
   // ── Cache CRUD ─────────────────────────────────────────
 
   /// Salva dado no cache com timestamp.
   Future<void> saveToCache(String key, dynamic value) async {
+    if (!_isInitialized) return;
     final entry = {
       'data': value,
       'timestamp': DateTime.now().millisecondsSinceEpoch,
@@ -70,6 +79,7 @@ class OfflineManager {
 
   /// Lê do cache. Retorna `null` se não existir ou expirou.
   dynamic getFromCache(String key, {int? expiryMinutes}) {
+    if (!_isInitialized) return null;
     final entry = _cacheBox.get(key);
     if (entry == null) return null;
 
@@ -84,6 +94,7 @@ class OfflineManager {
 
   /// Lê do cache mesmo se expirado (fallback offline).
   dynamic getFromCacheOffline(String key) {
+    if (!_isInitialized) return null;
     final entry = _cacheBox.get(key);
     return entry?['data'];
   }
@@ -118,16 +129,18 @@ class OfflineManager {
   // ── Config / User Prefs ────────────────────────────────
 
   Future<void> saveConfig(String key, dynamic value) async {
+    if (!_isInitialized) return;
     await _configBox.put(key, value);
   }
 
-  dynamic getConfig(String key) => _configBox.get(key);
+  dynamic getConfig(String key) => _isInitialized ? _configBox.get(key) : null;
 
   Future<void> saveUserPref(String key, dynamic value) async {
+    if (!_isInitialized) return;
     await _userPrefsBox.put(key, value);
   }
 
-  dynamic getUserPref(String key) => _userPrefsBox.get(key);
+  dynamic getUserPref(String key) => _isInitialized ? _userPrefsBox.get(key) : null;
 
   /// Limpa dados do usuário (logout).
   Future<void> clearUserData() async {
