@@ -21,6 +21,7 @@ langchain-openai
 langchain-text-splitters
 openai
 chromadb
+langchain-chroma
 firebase-admin
 python-dotenv
 structlog

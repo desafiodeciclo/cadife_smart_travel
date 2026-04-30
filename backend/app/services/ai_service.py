@@ -1,18 +1,20 @@
 from typing import Optional
 
 import structlog
-from langchain.memory import ConversationBufferWindowMemory
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.chat_history import InMemoryChatMessageHistory
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_openai import ChatOpenAI
 from pydantic import SecretStr
 
 from app.core.config import get_settings
 from app.models.briefing import BriefingExtracted, calculate_completude
 from app.services import rag_service
-from app.services.metadata_tagger import DESTINO_KEYWORDS, PERFIL_KEYWORDS
+from app.services.metadata_tagger import DESTINO_KEYWORDS
 
 logger = structlog.get_logger()
 settings = get_settings()
+
+_MEMORY_WINDOW_K = 20  # number of exchanges (pairs) to keep
 
 # System prompt imutável — conforme .claude/rules/ai_langchain.md
 AYA_SYSTEM_PROMPT = """Você é AYA, assistente virtual da Cadife Tour — agência especializada em curadoria personalizada de viagens.
@@ -42,7 +44,7 @@ NÃO infira dados que não foram ditos.
 Conversa:
 {conversation}"""
 
-_memories: dict[str, ConversationBufferWindowMemory] = {}
+_memories: dict[str, InMemoryChatMessageHistory] = {}
 _llm: Optional[ChatOpenAI] = None
 
 
@@ -59,14 +61,14 @@ def get_llm() -> ChatOpenAI:
     return _llm
 
 
-def get_memory(phone: str) -> ConversationBufferWindowMemory:
+def get_memory(phone: str) -> InMemoryChatMessageHistory:
     if phone not in _memories:
-        _memories[phone] = ConversationBufferWindowMemory(
-            k=20,
-            memory_key=f"chat_history_{phone}",
-            return_messages=True,
-        )
+        _memories[phone] = InMemoryChatMessageHistory()
     return _memories[phone]
+
+
+def _get_windowed_messages(history: InMemoryChatMessageHistory) -> list:
+    return history.messages[-(2 * _MEMORY_WINDOW_K):]
 
 
 def preload_memory_from_db(
@@ -87,11 +89,13 @@ def preload_memory_from_db(
         return  # already loaded in this session
 
     memory = get_memory(phone)
-    for row in interacoes[-20:]:  # honour k=20 window
+    for row in interacoes[-_MEMORY_WINDOW_K:]:
         cliente = row.get("mensagem_cliente") or ""
         ia = row.get("mensagem_ia") or ""
-        if cliente or ia:
-            memory.save_context({"input": cliente}, {"output": ia})
+        if cliente:
+            memory.add_user_message(cliente)
+        if ia:
+            memory.add_ai_message(ia)
 
     logger.info("memory_preloaded_from_db", phone=phone, rows=len(interacoes))
 
@@ -154,10 +158,12 @@ def _retrieve_context(
         return ""
 
 
-FALLBACK_REPLY = (
-    "Olá! Recebemos sua mensagem. "
-    "Em breve um consultor da Cadife Tour irá te atender. 😊"
-)
+def _fallback_reply(message: str) -> str:
+    return (
+        f'Olá! Recebemos sua mensagem 😊\n\n'
+        f'"{message}"\n\n'
+        f'Em breve um consultor da Cadife Tour irá te atender pessoalmente.'
+    )
 
 async def process_message(
     phone: str,
@@ -210,20 +216,20 @@ Você DEVE:
         ])
 
         chain = prompt | llm
-        history = memory.load_memory_variables({})
         response = await chain.ainvoke({
             "context": context,
-            "chat_history": history.get(f"chat_history_{phone}", []),
+            "chat_history": _get_windowed_messages(memory),
             "input": message,
         })
 
-        memory.save_context({"input": message}, {"output": str(response.content)})
+        memory.add_user_message(message)
+        memory.add_ai_message(str(response.content))
         logger.info("ai_message_processed", phone=phone)
         return str(response.content)
 
     except Exception as exc:
         logger.error("ai_chain_error", phone=phone, error=str(exc))
-        return "Desculpe, estou com uma instabilidade momentânea. Nossa equipe entrará em contato em breve!"
+        return _fallback_reply(message)
 
 
 async def extract_briefing(conversation: list[dict]) -> BriefingExtracted:

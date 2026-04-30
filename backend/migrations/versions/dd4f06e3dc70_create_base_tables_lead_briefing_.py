@@ -217,3 +217,4 @@ def downgrade() -> None:
         'lead_origem_enum', 'lead_score_enum', 'lead_status_enum',
     ]:
         op.execute(f"DROP TYPE IF EXISTS {enum_name}")
+        
