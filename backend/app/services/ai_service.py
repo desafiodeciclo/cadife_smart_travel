@@ -3,7 +3,6 @@ from typing import Optional
 import structlog
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_openai import ChatOpenAI
 from pydantic import SecretStr
 
 from app.core.config import get_settings
@@ -59,14 +58,13 @@ class SimpleWindowMemory:
 
 
 _memories: dict[str, SimpleWindowMemory] = {}
-_llm: Optional[ChatOpenAI | ChatGoogleGenerativeAI] = None
+_llm: Optional[ChatGoogleGenerativeAI] = None
 
 
-def get_llm() -> ChatOpenAI | ChatGoogleGenerativeAI:
-    """Return LLM instance — Gemini primary, OpenAI fallback."""
+def get_llm() -> ChatGoogleGenerativeAI:
+    """Return LLM instance — Gemini exclusivo."""
     global _llm
     if _llm is None:
-        # Primary: Gemini (free tier, no quota issues)
         if settings.GEMINI_API_KEY:
             _llm = ChatGoogleGenerativeAI(
                 model="gemini-2.0-flash",
@@ -76,18 +74,8 @@ def get_llm() -> ChatOpenAI | ChatGoogleGenerativeAI:
                 google_api_key=SecretStr(settings.GEMINI_API_KEY),
             )
             logger.info("llm_initialized", provider="google", model="gemini-2.0-flash")
-        # Fallback: OpenAI
-        elif settings.OPENAI_API_KEY:
-            _llm = ChatOpenAI(
-                model="gpt-4o-mini",
-                temperature=0.3,
-                timeout=25,
-                max_retries=2,
-                api_key=SecretStr(settings.OPENAI_API_KEY),
-            )
-            logger.info("llm_initialized", provider="openai", model="gpt-4o-mini")
         else:
-            raise RuntimeError("Nenhuma API key configurada. Defina GEMINI_API_KEY ou OPENAI_API_KEY no .env")
+            raise RuntimeError("Nenhuma GEMINI_API_KEY configurada. Defina GEMINI_API_KEY no .env")
     return _llm
 
 
@@ -342,16 +330,16 @@ async def extract_briefing(conversation: list[dict]) -> BriefingExtracted:
         )
 
     # -----------------------------------------------------------------------
-    # TENTATIVA 2 — Fallback: autocorreção com prompt explícito
+    # TENTATIVA 2 — Fallback: autocorreção com prompt explícito (Gemini)
     # -----------------------------------------------------------------------
     try:
-        # Usa temperatura 0 para máxima determinismo na correção
-        fallback_llm = ChatOpenAI(
-            model="gpt-4o-mini",
+        # Usa Gemini com temperatura 0 para máxima determinismo na correção
+        fallback_llm = ChatGoogleGenerativeAI(
+            model="gemini-2.0-flash",
             temperature=0.0,
             timeout=15,
             max_retries=1,
-            api_key=SecretStr(settings.OPENAI_API_KEY) if settings.OPENAI_API_KEY else None,
+            google_api_key=SecretStr(settings.GEMINI_API_KEY) if settings.GEMINI_API_KEY else None,
         )
 
         autocorrect_prompt = ChatPromptTemplate.from_messages([

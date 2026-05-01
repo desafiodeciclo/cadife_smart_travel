@@ -46,9 +46,8 @@ class Settings(BaseSettings):
     )
     META_APP_SECRET: str = Field(default="", description="Meta App Secret for X-Hub-Signature-256 validation")
 
-    # ── OpenAI / LangChain (spec.md §15) ──────────────────────────────────
-    OPENAI_API_KEY: str = Field(default="", description="OpenAI API key for GPT + embeddings")
-    GEMINI_API_KEY: str = Field(default="", description="Gemini API Key (reserved for future use)")
+    # ── Google Gemini (exclusivo — não usa OpenAI) ─────────────────────────
+    GEMINI_API_KEY: str = Field(default="", description="Gemini API key para LLM + embeddings")
     LANGCHAIN_API_KEY: str = Field(default="", description="LangSmith observability key (optional)")
 
     # ── Langfuse Observability ────────────────────────────────────────────

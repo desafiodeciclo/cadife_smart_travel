@@ -15,7 +15,7 @@ import structlog
 from langchain_core.documents import Document
 from langchain_chroma import Chroma
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
-from langchain_openai import OpenAIEmbeddings
+
 from pydantic import SecretStr
 
 from app.core.config import get_settings
@@ -38,16 +38,13 @@ _VECTOR_CANDIDATES_MULTIPLIER = 3  # How many candidates to fetch for reranking
 
 
 def _get_embeddings():
-    """Return embeddings — Gemini primary, OpenAI fallback."""
+    """Return embeddings — Gemini exclusivo."""
     if settings.GEMINI_API_KEY:
         return GoogleGenerativeAIEmbeddings(
             model="models/gemini-embedding-001",
             google_api_key=SecretStr(settings.GEMINI_API_KEY),
         )
-    return OpenAIEmbeddings(
-        model="text-embedding-3-small",
-        api_key=SecretStr(settings.OPENAI_API_KEY),
-    )
+    raise RuntimeError("Nenhuma GEMINI_API_KEY configurada. Defina GEMINI_API_KEY no .env")
 
 
 def get_vectorstore() -> Chroma:

@@ -17,10 +17,8 @@ pytest-asyncio
 langchain
 langchain-community
 langchain-classic
-langchain-openai
 langchain-google-genai
 langchain-text-splitters
-openai
 google-generativeai
 chromadb
 firebase-admin

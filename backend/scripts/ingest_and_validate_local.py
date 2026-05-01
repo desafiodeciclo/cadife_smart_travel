@@ -11,7 +11,7 @@ Uso:
     python scripts/ingest_and_validate_local.py
 
 Nota: Este script é para desenvolvimento/validação. Em produção, use
-      OpenAIEmbeddings via o pipeline padrão (ingestion_pipeline.py).
+      GoogleGenerativeAIEmbeddings via o pipeline padrão (ingestion_pipeline.py).
 """
 import asyncio
 import json
