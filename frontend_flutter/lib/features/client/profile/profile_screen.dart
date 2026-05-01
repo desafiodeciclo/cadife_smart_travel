@@ -103,11 +103,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final userAsync = ref.watch(userProfileProvider);
+    final theme = Theme.of(context);
     final themeMode = ref.watch(themeModeProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkSurface : AppColors.scaffold,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: userAsync.when(
           loading: () =>
@@ -432,7 +433,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       ),
     );
 
-    // TODO(backend): integrar com DELETE /users/me quando o endpoint existir.
+    // Backend integration pending: integrar com DELETE /users/me quando o endpoint existir.
     if (confirmed == true && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Funcionalidade em breve')),

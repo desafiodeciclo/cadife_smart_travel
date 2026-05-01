@@ -5,6 +5,7 @@ import 'package:cadife_smart_travel/shared/models/lead_model.dart';
 abstract class LeadPort {
   Future<List<LeadModel>> getLeads({LeadStatus? status, LeadScore? score});
   Future<LeadModel> getLeadById(String id);
+  Future<LeadModel?> getMyLead();
   Future<LeadModel> updateLeadStatus(String id, LeadStatus newStatus);
   Future<BriefingModel> getBriefing(String leadId);
   Future<List<InteractionModel>> getInteractions(String leadId);

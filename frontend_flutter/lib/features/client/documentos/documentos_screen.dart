@@ -15,7 +15,7 @@ class DocumentosScreen extends StatelessWidget {
             Icon(Icons.folder_open, size: 64, color: AppColors.textSecondary),
             SizedBox(height: 16),
             Text(
-              'Seus documentos aparecerão aqui',
+              'Sem documentos anexados',
               style: TextStyle(color: AppColors.textSecondary),
             ),
             SizedBox(height: 8),

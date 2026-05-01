@@ -31,9 +31,11 @@ import 'package:cadife_smart_travel/features/client/trip_status/trip_status_prov
     as client_trip;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('pt_BR', null);
 
   // late final allows the closure below to capture container by reference safely.
   // The callback is only invoked at 401 token expiry — always after runApp().

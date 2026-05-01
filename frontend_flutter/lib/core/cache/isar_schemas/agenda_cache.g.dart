@@ -14,8 +14,8 @@ extension GetAgendaCacheCollection on Isar {
 }
 
 const AgendaCacheSchema = CollectionSchema(
-  name: r'AgendaCache',
-  id: 10000000000001,
+  name: r'ag',
+  id: 1001,
   properties: {
     r'cachedAt': PropertySchema(
       id: 0,
@@ -74,9 +74,9 @@ const AgendaCacheSchema = CollectionSchema(
   deserializeProp: _agendaCacheDeserializeProp,
   idName: r'id',
   indexes: {
-    r'serverId': IndexSchema(
-      id: 20000000000001,
-      name: r'serverId',
+    r's1': IndexSchema(
+      id: 2001,
+      name: r's1',
       unique: true,
       replace: false,
       properties: [
@@ -202,56 +202,56 @@ void _agendaCacheAttach(
 
 extension AgendaCacheByIndex on IsarCollection<AgendaCache> {
   Future<AgendaCache?> getByServerId(String serverId) {
-    return getByIndex(r'serverId', [serverId]);
+    return getByIndex(r's1', [serverId]);
   }
 
   AgendaCache? getByServerIdSync(String serverId) {
-    return getByIndexSync(r'serverId', [serverId]);
+    return getByIndexSync(r's1', [serverId]);
   }
 
   Future<bool> deleteByServerId(String serverId) {
-    return deleteByIndex(r'serverId', [serverId]);
+    return deleteByIndex(r's1', [serverId]);
   }
 
   bool deleteByServerIdSync(String serverId) {
-    return deleteByIndexSync(r'serverId', [serverId]);
+    return deleteByIndexSync(r's1', [serverId]);
   }
 
   Future<List<AgendaCache?>> getAllByServerId(List<String> serverIdValues) {
     final values = serverIdValues.map((e) => [e]).toList();
-    return getAllByIndex(r'serverId', values);
+    return getAllByIndex(r's1', values);
   }
 
   List<AgendaCache?> getAllByServerIdSync(List<String> serverIdValues) {
     final values = serverIdValues.map((e) => [e]).toList();
-    return getAllByIndexSync(r'serverId', values);
+    return getAllByIndexSync(r's1', values);
   }
 
   Future<int> deleteAllByServerId(List<String> serverIdValues) {
     final values = serverIdValues.map((e) => [e]).toList();
-    return deleteAllByIndex(r'serverId', values);
+    return deleteAllByIndex(r's1', values);
   }
 
   int deleteAllByServerIdSync(List<String> serverIdValues) {
     final values = serverIdValues.map((e) => [e]).toList();
-    return deleteAllByIndexSync(r'serverId', values);
+    return deleteAllByIndexSync(r's1', values);
   }
 
   Future<Id> putByServerId(AgendaCache object) {
-    return putByIndex(r'serverId', object);
+    return putByIndex(r's1', object);
   }
 
   Id putByServerIdSync(AgendaCache object, {bool saveLinks = true}) {
-    return putByIndexSync(r'serverId', object, saveLinks: saveLinks);
+    return putByIndexSync(r's1', object, saveLinks: saveLinks);
   }
 
   Future<List<Id>> putAllByServerId(List<AgendaCache> objects) {
-    return putAllByIndex(r'serverId', objects);
+    return putAllByIndex(r's1', objects);
   }
 
   List<Id> putAllByServerIdSync(List<AgendaCache> objects,
       {bool saveLinks = true}) {
-    return putAllByIndexSync(r'serverId', objects, saveLinks: saveLinks);
+    return putAllByIndexSync(r's1', objects, saveLinks: saveLinks);
   }
 }
 
@@ -336,7 +336,7 @@ extension AgendaCacheQueryWhere
       String serverId) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(IndexWhereClause.equalTo(
-        indexName: r'serverId',
+        indexName: r's1',
         value: [serverId],
       ));
     });
@@ -348,13 +348,13 @@ extension AgendaCacheQueryWhere
       if (query.whereSort == Sort.asc) {
         return query
             .addWhereClause(IndexWhereClause.between(
-              indexName: r'serverId',
+              indexName: r's1',
               lower: [],
               upper: [serverId],
               includeUpper: false,
             ))
             .addWhereClause(IndexWhereClause.between(
-              indexName: r'serverId',
+              indexName: r's1',
               lower: [serverId],
               includeLower: false,
               upper: [],
@@ -362,13 +362,13 @@ extension AgendaCacheQueryWhere
       } else {
         return query
             .addWhereClause(IndexWhereClause.between(
-              indexName: r'serverId',
+              indexName: r's1',
               lower: [serverId],
               includeLower: false,
               upper: [],
             ))
             .addWhereClause(IndexWhereClause.between(
-              indexName: r'serverId',
+              indexName: r's1',
               lower: [],
               upper: [serverId],
               includeUpper: false,

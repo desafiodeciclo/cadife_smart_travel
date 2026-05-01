@@ -2,42 +2,43 @@ import 'package:isar/isar.dart';
 
 part 'briefing_cache.g.dart';
 
+@Name('br')
 @Collection()
 class BriefingCache {
   BriefingCache({
     this.id,
     required this.leadId,
+    required this.destino,
+    required this.dataIda,
+    required this.dataVolta,
+    required this.numPessoas,
+    required this.perfil,
+    required this.tipoViagem,
+    required this.preferencias,
+    required this.orcamentoFaixa,
+    required this.passaporteValido,
+    required this.experienciaInternacional,
+    required this.resumoConversa,
     required this.completudePct,
-    this.destino,
-    this.dataIda,
-    this.dataVolta,
-    this.numPessoas,
-    this.perfil,
-    this.tipoViagem,
-    this.preferencias,
-    this.orcamentoFaixa,
-    this.passaporteValido,
-    this.experienciaInternacional,
-    this.resumoConversa,
     this.cachedAt,
   });
 
   Id? id;
 
-  @Index(unique: true)
+  @Index(name: 'l1', unique: true)
   late String leadId;
 
   late int completudePct;
-  String? destino;
   DateTime? dataIda;
   DateTime? dataVolta;
+  String? destino;
+  bool? experienciaInternacional;
   int? numPessoas;
-  String? perfil;
-  String? tipoViagem;
-  String? preferencias;
   String? orcamentoFaixa;
   bool? passaporteValido;
-  bool? experienciaInternacional;
+  String? perfil;
+  String? preferencias;
   String? resumoConversa;
+  String? tipoViagem;
   DateTime? cachedAt;
 }
