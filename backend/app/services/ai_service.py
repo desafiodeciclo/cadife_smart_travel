@@ -2,6 +2,7 @@ from typing import Optional
 
 import structlog
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
 from pydantic import SecretStr
 
@@ -72,19 +73,35 @@ class SimpleWindowMemory:
 
 
 _memories: dict[str, SimpleWindowMemory] = {}
-_llm: Optional[ChatOpenAI] = None
+_llm: Optional[ChatOpenAI | ChatGoogleGenerativeAI] = None
 
 
-def get_llm() -> ChatOpenAI:
+def get_llm() -> ChatOpenAI | ChatGoogleGenerativeAI:
+    """Return LLM instance — Gemini primary, OpenAI fallback."""
     global _llm
     if _llm is None:
-        _llm = ChatOpenAI(
-            model="gpt-4o-mini",
-            temperature=0.3,
-            timeout=25,
-            max_retries=2,
-            api_key=SecretStr(settings.OPENAI_API_KEY),
-        )
+        # Primary: Gemini (free tier, no quota issues)
+        if settings.GEMINI_API_KEY:
+            _llm = ChatGoogleGenerativeAI(
+                model="gemini-2.0-flash",
+                temperature=0.3,
+                timeout=25,
+                max_retries=2,
+                google_api_key=SecretStr(settings.GEMINI_API_KEY),
+            )
+            logger.info("llm_initialized", provider="google", model="gemini-2.0-flash")
+        # Fallback: OpenAI
+        elif settings.OPENAI_API_KEY:
+            _llm = ChatOpenAI(
+                model="gpt-4o-mini",
+                temperature=0.3,
+                timeout=25,
+                max_retries=2,
+                api_key=SecretStr(settings.OPENAI_API_KEY),
+            )
+            logger.info("llm_initialized", provider="openai", model="gpt-4o-mini")
+        else:
+            raise RuntimeError("Nenhuma API key configurada. Defina GEMINI_API_KEY ou OPENAI_API_KEY no .env")
     return _llm
 
 
@@ -256,7 +273,7 @@ Você DEVE:
 
 
 async def extract_briefing(conversation: list[dict]) -> BriefingExtracted:
-    if not settings.OPENAI_API_KEY:
+    if not settings.GEMINI_API_KEY and not settings.OPENAI_API_KEY:
         return BriefingExtracted()
 
     try:

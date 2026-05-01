@@ -13,6 +13,7 @@ import structlog
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_openai import OpenAIEmbeddings
 from pydantic import SecretStr
 
@@ -25,6 +26,19 @@ settings = get_settings()
 _vectorstore: Optional[Chroma] = None
 
 
+def _get_embeddings():
+    """Return embeddings — Gemini primary, OpenAI fallback."""
+    if settings.GEMINI_API_KEY:
+        return GoogleGenerativeAIEmbeddings(
+            model="models/gemini-embedding-001",
+            google_api_key=SecretStr(settings.GEMINI_API_KEY),
+        )
+    return OpenAIEmbeddings(
+        model="text-embedding-3-small",
+        api_key=SecretStr(settings.OPENAI_API_KEY),
+    )
+
+
 def get_vectorstore() -> Chroma:
     """
     Return (or lazily create) the shared ChromaDB vectorstore.
@@ -35,10 +49,7 @@ def get_vectorstore() -> Chroma:
     """
     global _vectorstore
     if _vectorstore is None:
-        embeddings = OpenAIEmbeddings(
-            model="text-embedding-3-small",
-            api_key=SecretStr(settings.OPENAI_API_KEY),
-        )
+        embeddings = _get_embeddings()
         persist_dir = settings.CHROMA_PERSIST_DIR
         _vectorstore = Chroma(
             persist_directory=persist_dir,
