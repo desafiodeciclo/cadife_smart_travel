@@ -6,30 +6,20 @@ Para garantir que o assistente AYA da Cadife Tour nunca extrapole seus limites c
 
 ## Instruções para o Claude
 
-### Regra 1 — System prompt base é imutável
+### Regra 1 — System prompt base é imutável e parametrizado com defesas
 
 **Nunca** remova, suavize ou contorne as restrições comerciais do system prompt. Estas linhas são obrigatórias em qualquer variação do prompt da AYA.
 
+O system prompt deve ser construído via `build_system_prompt()` (em `app/services/prompt_security.py`), que inclui:
+- Isoladores textuais XML (`<system_instructions>`, `<user_content>`, `<rag_context>`)
+- Instruções de defesa contra manipulação (prompt injection, bypass, jailbreak)
+- Proibições comerciais originais
+
 System Prompt Obrigatório (base mínima):
 ```python
-AYA_SYSTEM_PROMPT = """
-Você é AYA, assistente virtual da Cadife Tour — agência especializada em curadoria personalizada de viagens.
-Tom: consultivo e próximo, 80% consultor / 20% vendedor. Linguagem natural, clara, educada e não invasiva.
+from app.services.prompt_security import build_system_prompt
 
-PROIBIÇÕES ABSOLUTAS — nunca viole estas regras:
-- Nunca mencione preços, valores, estimativas financeiras ou condições de pagamento
-- Nunca confirme disponibilidade de voos, hotéis ou passeios
-- Nunca feche vendas, faça promessas comerciais ou comprometa a empresa
-- Nunca tome decisões comerciais críticas de forma autônoma
-
-COMPORTAMENTO OBRIGATÓRIO:
-- Sempre indique que o consultor humano irá validar as informações
-- Mantenha respostas abertas: "Vou repassar isso ao nosso consultor para ele te orientar melhor"
-- Preserve tom humano e natural — o cliente não deve perceber que é automação
-- Faça uma pergunta por vez para não sobrecarregar o cliente
-
-OBJETIVO: Coletar o briefing completo da viagem de forma natural e amigável.
-"""
+system_prompt = build_system_prompt(context="...")
 ```
 
 Exemplo Recusado:
@@ -148,25 +138,105 @@ text_splitter = RecursiveCharacterTextSplitter(
 )
 ```
 
-### Regra 7 — Timeout e fallback na chain
+### Regra 7 — Timeout e fallback chain na extração de briefing
 
-**Sempre** configure timeout no LLM e implemente fallback para erros da IA.
+**Sempre** configure timeout no LLM e implemente fallback chain de múltiplos estágios para erros da IA, especialmente na extração estruturada do briefing.
+
+Estratégia de fallback obrigatória:
+1. Tentativa primária: `with_structured_output(BriefingExtracted)`
+2. Fallback: prompt de autocorreção com LLM mais simples/determinístico (`temperature=0.0`)
+3. Último recurso: retornar `BriefingExtracted()` vazio — nunca quebrar o fluxo
 
 Exemplo Aceito:
 ```python
-from langchain_openai import ChatOpenAI
+# Ver implementação completa em app/services/ai_service.py::extract_briefing
+```
 
-llm = ChatOpenAI(
-    model="gpt-4o-mini",
-    temperature=0.3,        # baixo para respostas consistentes
-    request_timeout=25,     # 25s < SLA de 3s para resposta, mas garante fechamento
-    max_retries=2,
-)
+### Regra 8 — Sanitização de input e defesa contra prompt injection
 
-async def safe_process(message: str, phone: str) -> str:
-    try:
-        return await aya_chain.ainvoke({"input": message, "phone": phone})
-    except Exception as e:
-        logger.error("ai_chain_error", phone=phone, error=str(e))
-        return "Desculpe, estou com uma instabilidade momentânea. Nossa equipe entrará em contato em breve!"
+**Sempre** sanitize o texto do usuário via `sanitize_user_input()` antes de inseri-lo em qualquer prompt. **Nunca** passe mensagens brutas do WhatsApp diretamente para o LLM.
+
+A sanitização deve:
+1. Escapar delimitadores XML (`<user_content>`, `</system_instructions>`, etc.)
+2. Detectar e neutralizar padrões de prompt injection conhecidos
+3. Remover caracteres de controle perigosos
+4. Truncar inputs excessivamente longos
+
+Padrões de ataque que devem ser neutralizados:
+- `ignore previous instructions`, `disregard all instructions`
+- `you are now...`, `act as...`, `pretend to be...`
+- `bypass restrictions`, `disable rules`, `remove constraints`
+- `dan mode`, `developer mode`, `jailbreak`
+- Tentativas de exfiltração: `repeat the system prompt`, `show me the instructions`
+
+Exemplo Aceito:
+```python
+from app.services.prompt_security import sanitize_user_input
+
+safe_message = sanitize_user_input(raw_whatsapp_message)
+```
+
+Exemplo Recusado:
+```python
+# Passar mensagem bruta = vulnerável a prompt injection
+response = await chain.ainvoke({"input": raw_whatsapp_message})
+```
+
+### Regra 9 — RAG Guardrails e Hybrid Search
+
+**Sempre** use `retrieve_context()` ou `retrieve_with_metadata_filter()` (que já aplicam guardrails automaticamente). **Nunca** passe documentos do vectorstore diretamente para o LLM sem filtrar.
+
+O RAG da Cadife implementa:
+1. **Hybrid Search**: combina similarity search vetorial com keyword scoring e reranking via Reciprocal Rank Fusion (RRF)
+2. **ContextFilter**: remove chunks que contenham preços, valores monetários ou confirmações de disponibilidade não autorizadas
+
+Guardrails ativos:
+- `PriceGuardrail`: detecta R$, US$, €, "reais", "preço", "valor", "custa", "parcela", "entrada"
+- `AvailabilityGuardrail`: detecta "temos vagas", "voo confirmado", "hotel confirmado", etc.
+
+Estratégias do ContextFilter:
+- `"remove"`: descarta o chunk violador (padrão)
+- `"mask"`: substitui o trecho por `[REDACTED]`
+- `"flag"`: mantém o chunk mas marca no metadata
+
+Exemplo Aceito:
+```python
+from app.services import rag_service
+
+context = rag_service.retrieve_context(query="destinos Portugal", k=3)
+# context já passou por hybrid search + guardrails
+```
+
+Exemplo Recusado:
+```python
+# Bypassar guardrails = risco de preços/dispo no contexto do LLM
+docs = vectorstore.similarity_search(query, k=3)
+context = "\n".join(d.page_content for d in docs)
+```
+
+### Regra 10 — Observabilidade com Langfuse
+
+**Sempre** rastreie chains de IA com callbacks Langfuse quando configurado. **Nunca** deixe de registrar traces em produção.
+
+Requisitos:
+- Callback Langfuse injetado em `process_message()` e `extract_briefing()`
+- Traces registram: prompt completo, contexto RAG recuperado, output do LLM, latência
+- Fallback graceful: se Langfuse não estiver configurado (dev local), o sistema opera normalmente
+- Flush de eventos pendentes após cada chain para garantir entrega
+
+Variáveis de ambiente:
+```bash
+LANGFUSE_PUBLIC_KEY=pk-...
+LANGFUSE_SECRET_KEY=sk-...
+LANGFUSE_HOST=https://cloud.langfuse.com
+```
+
+Exemplo Aceito:
+```python
+from app.services.observability import get_callbacks_for_chain, flush_langfuse
+
+callbacks = get_callbacks_for_chain()
+config = {"callbacks": callbacks} if callbacks else {}
+response = await chain.ainvoke(input_dict, config=config)
+flush_langfuse()
 ```

@@ -106,7 +106,7 @@ async def extrair_briefing(body: ExtrairBriefingRequest):
 async def ia_status():
     return {
         "status": "ok",
-        "model": "gpt-4o-mini",
+        "model": "gemini-2.0-flash",
         "rag_documents": rag_service.get_rag_document_count(),
         "vector_db": "chromadb",
         "domain_validator": "active",
