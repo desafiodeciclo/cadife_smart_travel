@@ -1,6 +1,5 @@
 import uuid
 from datetime import datetime
-from enum import Enum
 from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
@@ -8,7 +7,7 @@ if TYPE_CHECKING:
     from app.models.interacao import Interacao
     from app.models.agendamento import Agendamento
     from app.models.proposta import Proposta
-from typing import TYPE_CHECKING, Optional
+    from app.models.user import User
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, String, func
 from sqlalchemy.dialects.postgresql import UUID

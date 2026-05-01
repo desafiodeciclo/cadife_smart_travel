@@ -19,8 +19,8 @@ class ShimmerLoading extends StatelessWidget {
 
     // Cores baseadas no background conforme feedback do usuário
     return Shimmer.fromColors(
-      baseColor: AppColors.background.withValues(alpha: 0.1),
-      highlightColor: AppColors.background.withValues(alpha: 0.05),
+      baseColor: AppColors.deepGraphite.withValues(alpha: 0.1),
+      highlightColor: AppColors.deepGraphite.withValues(alpha: 0.05),
       period: const Duration(milliseconds: 1500),
       child: child,
     );
