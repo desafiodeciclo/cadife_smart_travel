@@ -1,8 +1,8 @@
 from typing import Optional
 
 import structlog
-from langchain.memory import ConversationBufferWindowMemory
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
 from pydantic import SecretStr
 
@@ -42,26 +42,72 @@ NÃO infira dados que não foram ditos.
 Conversa:
 {conversation}"""
 
-_memories: dict[str, ConversationBufferWindowMemory] = {}
-_llm: Optional[ChatOpenAI] = None
+
+# ---------------------------------------------------------------------------
+# SimpleWindowMemory — drop-in replacement for ConversationBufferWindowMemory
+# (removed in langchain 1.x)
+# ---------------------------------------------------------------------------
+
+class SimpleWindowMemory:
+    """Stores the last k message pairs per conversation key."""
+
+    def __init__(self, k: int = 20, memory_key: str = "chat_history", return_messages: bool = True) -> None:
+        self.k = k
+        self.memory_key = memory_key
+        self.return_messages = return_messages
+        self._buffer: list[tuple[str, str]] = []
+
+    def save_context(self, inputs: dict, outputs: dict) -> None:
+        user_msg = inputs.get("input", "")
+        ai_msg = outputs.get("output", "")
+        self._buffer.append((user_msg, ai_msg))
+        if len(self._buffer) > self.k:
+            self._buffer.pop(0)
+
+    def load_memory_variables(self, _inputs: dict) -> dict:
+        messages = []
+        for user_msg, ai_msg in self._buffer:
+            messages.append({"role": "user", "content": user_msg})
+            messages.append({"role": "assistant", "content": ai_msg})
+        return {self.memory_key: messages}
 
 
-def get_llm() -> ChatOpenAI:
+_memories: dict[str, SimpleWindowMemory] = {}
+_llm: Optional[ChatOpenAI | ChatGoogleGenerativeAI] = None
+
+
+def get_llm() -> ChatOpenAI | ChatGoogleGenerativeAI:
+    """Return LLM instance — Gemini primary, OpenAI fallback."""
     global _llm
     if _llm is None:
-        _llm = ChatOpenAI(
-            model="gpt-4o-mini",
-            temperature=0.3,
-            timeout=25,
-            max_retries=2,
-            api_key=SecretStr(settings.OPENAI_API_KEY),
-        )
+        # Primary: Gemini (free tier, no quota issues)
+        if settings.GEMINI_API_KEY:
+            _llm = ChatGoogleGenerativeAI(
+                model="gemini-2.0-flash",
+                temperature=0.3,
+                timeout=25,
+                max_retries=2,
+                google_api_key=SecretStr(settings.GEMINI_API_KEY),
+            )
+            logger.info("llm_initialized", provider="google", model="gemini-2.0-flash")
+        # Fallback: OpenAI
+        elif settings.OPENAI_API_KEY:
+            _llm = ChatOpenAI(
+                model="gpt-4o-mini",
+                temperature=0.3,
+                timeout=25,
+                max_retries=2,
+                api_key=SecretStr(settings.OPENAI_API_KEY),
+            )
+            logger.info("llm_initialized", provider="openai", model="gpt-4o-mini")
+        else:
+            raise RuntimeError("Nenhuma API key configurada. Defina GEMINI_API_KEY ou OPENAI_API_KEY no .env")
     return _llm
 
 
-def get_memory(phone: str) -> ConversationBufferWindowMemory:
+def get_memory(phone: str) -> SimpleWindowMemory:
     if phone not in _memories:
-        _memories[phone] = ConversationBufferWindowMemory(
+        _memories[phone] = SimpleWindowMemory(
             k=20,
             memory_key=f"chat_history_{phone}",
             return_messages=True,
@@ -73,7 +119,7 @@ def preload_memory_from_db(
     phone: str,
     interacoes: list[dict],
 ) -> None:
-    """Populate LangChain memory from persisted interacoes rows.
+    """Populate conversation memory from persisted interacoes rows.
 
     Call this at the start of a conversation when _memories[phone] is
     absent (e.g. after a server restart) to restore the AI's context.
@@ -227,7 +273,7 @@ Você DEVE:
 
 
 async def extract_briefing(conversation: list[dict]) -> BriefingExtracted:
-    if not settings.OPENAI_API_KEY:
+    if not settings.GEMINI_API_KEY and not settings.OPENAI_API_KEY:
         return BriefingExtracted()
 
     try:
