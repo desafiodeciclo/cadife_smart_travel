@@ -1,7 +1,8 @@
-import 'package:cadife_smart_travel/core/theme/app_colors.dart';
+
+import 'package:cadife_smart_travel/core/widgets/cadife_app_bar.dart';
 import 'package:cadife_smart_travel/features/auth/providers/auth_provider.dart';
 import 'package:cadife_smart_travel/features/client/home/providers/home_provider.dart';
-import 'package:cadife_smart_travel/features/client/home/providers/notification_provider.dart';
+
 import 'package:cadife_smart_travel/features/client/home/widgets/consultant_card.dart';
 import 'package:cadife_smart_travel/features/client/home/widgets/documents_section.dart';
 import 'package:cadife_smart_travel/features/client/home/widgets/ongoing_trip_card.dart';
@@ -9,7 +10,7 @@ import 'package:cadife_smart_travel/features/client/home/widgets/status_stepper_
 import 'package:cadife_smart_travel/shared/models/models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+
 import 'package:intl/intl.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -45,7 +46,7 @@ class HomeScreen extends ConsumerWidget {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          const _CadifeAppBar(),
+          const CadifeAppBar(title: 'Cadife Tour'),
           SliverToBoxAdapter(
             child: activeLeadAsync.when(
               loading: () => const _HomeLoadingState(),
@@ -102,76 +103,7 @@ class _HomeLoadingState extends StatelessWidget {
     );
   }
 }
-class _CadifeAppBar extends ConsumerWidget {
-  const _CadifeAppBar();
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final notifications = ref.watch(notificationProvider);
-    return SliverAppBar(
-      pinned: true,
-      backgroundColor: AppColors.primary,
-      centerTitle: true,
-      leading: Padding(
-        padding: const EdgeInsets.all(10),
-        child: GestureDetector(
-          onTap: () => context.go('/client/perfil'),
-          child: CircleAvatar(
-            backgroundColor: Colors.white.withValues(alpha: 0.25),
-            child: const Icon(Icons.person, color: Colors.white, size: 20),
-          ),
-        ),
-      ),
-      title: const Text(
-        'CADIFE TOUR',
-        style: TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w800,
-          fontSize: 17,
-          letterSpacing: 2.5,
-        ),
-      ),
-      actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 8.0),
-          child: Badge(
-            isLabelVisible: notifications.isNotEmpty,
-            backgroundColor: Colors.red,
-            smallSize: 10,
-            child: PopupMenuButton<String>(
-              tooltip: '',
-              icon: const Icon(Icons.notifications_outlined, color: Colors.white),
-              offset: const Offset(0, 45),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              itemBuilder: (context) {
-                if (notifications.isEmpty) {
-                  return [
-                    const PopupMenuItem<String>(
-                      enabled: false,
-                      child: Text(
-                        'Sem notificações',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ];
-                }
-                return notifications.map((n) {
-                  return PopupMenuItem<String>(
-                    value: n.id,
-                    child: Text(n.title),
-                  );
-                }).toList();
-              },
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
 
 class _GreetingSection extends StatelessWidget {
   const _GreetingSection({required this.userName});

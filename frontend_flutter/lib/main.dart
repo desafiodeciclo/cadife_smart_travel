@@ -21,8 +21,6 @@ import 'package:cadife_smart_travel/features/agency/proposals/proposals_provider
     as agency_proposals;
 import 'package:cadife_smart_travel/features/auth/presentation/widgets/app_lock_wrapper.dart';
 import 'package:cadife_smart_travel/features/auth/providers/auth_provider.dart';
-import 'package:cadife_smart_travel/features/client/documents/documents_provider.dart'
-    as client_docs;
 import 'package:cadife_smart_travel/features/client/interactions/interactions_provider.dart'
     as client_interactions;
 import 'package:cadife_smart_travel/features/client/profile/profile_provider.dart'
@@ -64,7 +62,6 @@ Future<void> main() async {
       client_interactions.interactionsPortProvider.overrideWithValue(
         sl<LeadPort>(),
       ),
-      client_docs.documentsProvider.overrideWithValue(null),
       client_profile.profilePortProvider.overrideWithValue(sl<ProfilePort>()),
     ],
   );
