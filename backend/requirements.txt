@@ -24,6 +24,8 @@ openai
 google-generativeai
 chromadb
 firebase-admin
+langfuse
+rank-bm25
 python-dotenv
 structlog
 slowapi
