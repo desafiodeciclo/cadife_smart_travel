@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from enum import Enum
+from decimal import Decimal
 from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
@@ -8,7 +8,6 @@ if TYPE_CHECKING:
     from app.models.interacao import Interacao
     from app.models.agendamento import Agendamento
     from app.models.proposta import Proposta
-from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, String, func
 from sqlalchemy.dialects.postgresql import UUID
@@ -17,8 +16,6 @@ from pydantic import BaseModel
 
 from app.core.database import Base
 from app.infrastructure.security.pii_encryption import EncryptedString
-from decimal import Decimal
-
 from app.domain.entities.enums import LeadOrigem, LeadStatus, LeadScore, PropostaStatus
 
 
@@ -31,7 +28,7 @@ class Lead(Base):
     # PII: campos criptografados at-rest via Fernet (AES-128)
     nome: Mapped[Optional[str]] = mapped_column(EncryptedString(512))
     telefone: Mapped[str] = mapped_column(EncryptedString(512), nullable=False)
-    telefone_hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, index=True)
+    telefone_hash: Mapped[Optional[str]] = mapped_column(String(64), unique=True, nullable=True, index=True)
     origem: Mapped[LeadOrigem] = mapped_column(String(20), nullable=False, default=LeadOrigem.whatsapp)
     status: Mapped[LeadStatus] = mapped_column(String(30), nullable=False, default=LeadStatus.novo)
     score: Mapped[Optional[LeadScore]] = mapped_column(String(10))
