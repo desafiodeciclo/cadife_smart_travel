@@ -273,7 +273,7 @@ async def extract_briefing(conversation: list[dict]) -> BriefingExtracted:
     Returns:
         Instância de BriefingExtracted, possivelmente vazia.
     """
-    if not settings.GEMINI_API_KEY and not settings.OPENAI_API_KEY:
+    if not settings.GEMINI_API_KEY:
         return BriefingExtracted()
 
     # Sanitizar conversa antes de enviar à extração
