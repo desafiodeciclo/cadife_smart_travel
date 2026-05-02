@@ -1,0 +1,82 @@
+{
+  "id": "ai-hybrid-search-rag-guardrails-langfuse-002",
+  "title": "Hybrid Search, RAG Guardrails e Observabilidade Langfuse",
+  "description": "Implementar busca híbrida (vetorial + keyword) com re-ranking RRF no RAG, criar guardrails de contexto que filtram menções a preços não autorizados, e integrar callbacks Langfuse para rastreamento de prompt input/output e medição contínua da qualidade.",
+  "status": "done",
+  "assignee": "Frank Willian",
+  "created_at": "2026-05-01",
+  "completed_at": "2026-05-01",
+  "priority": "high",
+  "epic": "Backend — IA / LangChain",
+  "source": "user-request + ai_langchain.md Regra 3/7",
+  "acceptance_criteria": [
+    "retrieve_hybrid combina similarity_search vetorial com keyword search simples via RRF",
+    "ContextFilter remove chunks que contenham preços, valores monetários ou menções não autorizadas a custos",
+    "Guardrails aplicados em retrieve_context e retrieve_with_metadata_filter antes de retornar ao LLM",
+    "Langfuse callback integrado nos chains de process_message e extract_briefing (quando LANGFUSE keys configuradas)",
+    "Traces no Langfuse registram: prompt input completo, retrieved context, LLM output, latency",
+    "Fallback graceful quando Langfuse não configurado (dev local sem keys)",
+    "Testes pytest cobrem: hybrid search scoring, guardrail de preços, callback handler condicional"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "title": "Implementar Hybrid Search com RRF no rag_service.py",
+      "description": "Adicionar retrieve_hybrid que combina similarity_search + keyword search com scoring RRF; manter retrieve_context e retrieve_with_metadata_filter como wrappers com guardrails",
+      "status": "done",
+      "files": [
+        "backend/app/services/rag_service.py"
+      ]
+    },
+    {
+      "step": 2,
+      "title": "Criar context_guardrails.py — filtros de contexto",
+      "description": "PriceGuardrail com regex de valores monetários; AvailabilityGuardrail para confirmações de disponibilidade; ContextFilter que aplica guardrails em lista de Document e remove/replace/flag chunks violadores",
+      "status": "done",
+      "files": [
+        "backend/app/services/context_guardrails.py"
+      ]
+    },
+    {
+      "step": 3,
+      "title": "Criar observability.py — integração Langfuse",
+      "description": "Configuração condicional do Langfuse client, função get_langfuse_callback() que retorna CallbackHandler ou None se não configurado; flush_langfuse para garantir entrega de traces",
+      "status": "done",
+      "files": [
+        "backend/app/services/observability.py"
+      ]
+    },
+    {
+      "step": 4,
+      "title": "Atualizar ai_service.py com guardrails e callbacks",
+      "description": "Aplicar ContextFilter no contexto recuperado (via rag_service); injetar Langfuse callback nos chains de process_message e extract_briefing via config={\"callbacks\": [...]}; logar métricas",
+      "status": "done",
+      "files": [
+        "backend/app/services/ai_service.py"
+      ]
+    },
+    {
+      "step": 5,
+      "title": "Atualizar configurações e dependências",
+      "description": "Adicionar langfuse e rank-bm25 ao requirements.txt; adicionar LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY, LANGFUSE_HOST ao settings.py e .env.example",
+      "status": "done",
+      "files": [
+        "backend/requirements.txt",
+        "backend/app/infrastructure/config/settings.py",
+        ".env.example",
+        "backend/.env.example"
+      ]
+    },
+    {
+      "step": 6,
+      "title": "Escrever testes",
+      "description": "50 testes novos: hybrid search RRF (15), guardrail de preços/disponibilidade (21), observabilidade condicional (14)",
+      "status": "done",
+      "files": [
+        "backend/tests/test_services/test_hybrid_search.py",
+        "backend/tests/test_services/test_context_guardrails.py",
+        "backend/tests/test_services/test_observability.py"
+      ]
+    }
+  ]
+}

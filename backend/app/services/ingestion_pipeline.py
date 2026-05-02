@@ -19,9 +19,10 @@ from typing import Optional
 
 import structlog
 from langchain_core.documents import Document
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
-from langchain_openai import OpenAIEmbeddings
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
+
 from pydantic import SecretStr
 
 from app.core.config import get_settings
@@ -170,15 +171,19 @@ class IngestionPipeline:
         knowledge_base_dir: str,
         chroma_persist_dir: str,
         cache_path: str,
-        openai_api_key: str,
+        gemini_api_key: str = "",
     ) -> None:
         self._kb_dir = Path(knowledge_base_dir)
         self._persist_dir = chroma_persist_dir
         self._cache = IngestionCache(cache_path)
-        self._embeddings = OpenAIEmbeddings(
-            model="text-embedding-3-small",
-            api_key=SecretStr(openai_api_key),
-        )
+        # Gemini embeddings exclusivo
+        if gemini_api_key:
+            self._embeddings = GoogleGenerativeAIEmbeddings(
+                model="models/gemini-embedding-001",
+                google_api_key=SecretStr(gemini_api_key),
+            )
+        else:
+            raise RuntimeError("Nenhuma GEMINI_API_KEY configurada para ingestão.")
         self._vectorstore: Optional[Chroma] = None
 
     # ------------------------------------------------------------------
@@ -338,6 +343,6 @@ def get_ingestion_pipeline() -> IngestionPipeline:
             knowledge_base_dir=settings.KNOWLEDGE_BASE_DIR,
             chroma_persist_dir=settings.CHROMA_PERSIST_DIR,
             cache_path=settings.INGESTION_CACHE_PATH,
-            openai_api_key=settings.OPENAI_API_KEY,
+            gemini_api_key=settings.GEMINI_API_KEY,
         )
     return _pipeline

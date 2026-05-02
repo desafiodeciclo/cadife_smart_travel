@@ -313,6 +313,7 @@ class MockLeadRepository implements LeadPort {
   @override
   Future<List<InteractionModel>> getInteractions(String leadId) async {
     await Future.delayed(const Duration(milliseconds: 300));
+    final now = DateTime.now();
     return [
       InteractionModel(
         id: 'i1_$leadId',
@@ -346,10 +347,72 @@ class MockLeadRepository implements LeadPort {
         leadId: leadId,
         channel: 'whatsapp',
         direction: 'outbound',
-        content:
-            'Que lindo! Família reunida numa viagem especial 😊 '
-            'Já tem algum destino em mente, ou prefere que nosso consultor te sugira opções?',
-        timestamp: DateTime.now().subtract(const Duration(hours: 3, minutes: 45)),
+        content: 'Que lindo! Parabéns pelo aniversário de casamento! 🎉 Paris é um destino perfeito para esse momento especial. Para te ajudar melhor, qual seria o período de viagem pretendido?',
+        timestamp: now.subtract(const Duration(days: 3, hours: 1, minutes: 55)),
+      ),
+      InteractionModel(
+        id: 'i3',
+        leadId: leadId,
+        channel: 'whatsapp',
+        direction: 'inbound',
+        content: 'Pensamos em ir em julho, por uns 10 dias.',
+        timestamp: now.subtract(const Duration(days: 3, hours: 1, minutes: 30)),
+      ),
+      InteractionModel(
+        id: 'i4',
+        leadId: leadId,
+        channel: 'whatsapp',
+        direction: 'outbound',
+        content: 'Julho em Paris é maravilhoso! Dias longos e o clima perfeito para passear pelos bairros. Vocês têm alguma preferência de hospedagem? Hotel boutique, hotel de luxo ou apartamento?',
+        timestamp: now.subtract(const Duration(days: 3, hours: 1, minutes: 20)),
+      ),
+      InteractionModel(
+        id: 'i5',
+        leadId: leadId,
+        channel: 'whatsapp',
+        direction: 'inbound',
+        content: 'Prefiro hotel mesmo, algo próximo ao centro ou à Torre Eiffel.',
+        timestamp: now.subtract(const Duration(days: 2, hours: 10)),
+      ),
+      InteractionModel(
+        id: 'i6',
+        leadId: leadId,
+        channel: 'whatsapp',
+        direction: 'outbound',
+        content: 'Ótima escolha! Temos opções incríveis no 7º arrondissement, bem pertinho da Torre Eiffel. Nosso consultor vai montar uma curadoria especial para vocês. Tem alguma restrição alimentar ou preferência de passeio?',
+        timestamp: now.subtract(const Duration(days: 2, hours: 9, minutes: 50)),
+      ),
+      InteractionModel(
+        id: 'i7',
+        leadId: leadId,
+        channel: 'consultor',
+        direction: 'outbound',
+        content: 'Olá! Sou o Ricardo, consultor da Cadife Tour. Acabei de analisar seu perfil e já tenho algumas sugestões maravilhosas para sua lua de mel em Paris. Posso entrar em contato por aqui para alinhar os detalhes?',
+        timestamp: now.subtract(const Duration(days: 1, hours: 14)),
+      ),
+      InteractionModel(
+        id: 'i8',
+        leadId: leadId,
+        channel: 'whatsapp',
+        direction: 'inbound',
+        content: 'Claro! Adoraria ouvir as sugestões.',
+        timestamp: now.subtract(const Duration(days: 1, hours: 13, minutes: 45)),
+      ),
+      InteractionModel(
+        id: 'i9',
+        leadId: leadId,
+        channel: 'consultor',
+        direction: 'outbound',
+        content: 'Perfeito! Vou preparar uma proposta completa com roteiro, hospedagem e experiências gastronômicas exclusivas. Você recebe ainda hoje.',
+        timestamp: now.subtract(const Duration(days: 1, hours: 13, minutes: 30)),
+      ),
+      InteractionModel(
+        id: 'i10',
+        leadId: leadId,
+        channel: 'whatsapp',
+        direction: 'outbound',
+        content: 'Seu briefing está completo! 🎯 Nosso consultor Ricardo já está preparando uma proposta personalizada para a sua viagem a Paris. Em breve você receberá todos os detalhes.',
+        timestamp: now.subtract(const Duration(hours: 3)),
       ),
     ];
   }

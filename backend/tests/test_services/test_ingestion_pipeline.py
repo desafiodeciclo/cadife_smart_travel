@@ -71,12 +71,12 @@ def _make_pipeline(tmp_path: Path) -> IngestionPipeline:
     chroma_dir = str(tmp_path / "chroma")
     cache_path = str(tmp_path / "cache.json")
 
-    with patch("app.services.ingestion_pipeline.OpenAIEmbeddings"):
+    with patch("app.services.ingestion_pipeline.GoogleGenerativeAIEmbeddings"):
         pipeline = IngestionPipeline(
             knowledge_base_dir=str(kb_dir),
             chroma_persist_dir=chroma_dir,
             cache_path=cache_path,
-            openai_api_key="test-key",
+            gemini_api_key="test-key",
         )
     return pipeline, kb_dir
 
@@ -90,12 +90,12 @@ def pipeline_with_kb(tmp_path):
 class TestIngestionPipeline:
     @pytest.mark.asyncio
     async def test_ingest_all_missing_dir_returns_error(self, tmp_path):
-        with patch("app.services.ingestion_pipeline.OpenAIEmbeddings"):
+        with patch("app.services.ingestion_pipeline.GoogleGenerativeAIEmbeddings"):
             pipeline = IngestionPipeline(
                 knowledge_base_dir=str(tmp_path / "nonexistent"),
                 chroma_persist_dir=str(tmp_path / "chroma"),
                 cache_path=str(tmp_path / "cache.json"),
-                openai_api_key="test-key",
+                gemini_api_key="test-key",
             )
         result = await pipeline.ingest_all()
         assert result["status"] == "error"

@@ -1,0 +1,58 @@
+{
+  "id": "ai-prompt-injection-defense-fallback-001",
+  "title": "Defesa contra Prompt Injections e Fallback Chains",
+  "description": "Parametrizar system prompt com isoladores textuais, instruir recusa de abordagens de bypass de role behavior, e montar fallback chains iterativas para autocorreção de JSON quando a extração estruturada falhar.",
+  "status": "done",
+  "assignee": "Frank Willian",
+  "created_at": "2026-05-01",
+  "completed_at": "2026-05-01",
+  "priority": "high",
+  "epic": "Backend — IA / LangChain",
+  "source": "user-request + ai_langchain.md Regra 7",
+  "acceptance_criteria": [
+    "AYA_SYSTEM_PROMPT contém isoladores textuais (delimitadores XML/JSON) para separar instruções de conteúdo externo",
+    "Prompt inclui instruções explícitas de recusa a tentativas de reprogramação, bypass de role behavior e ignore previous instructions",
+    "extract_briefing implementa fallback chain: structured output → autocorreção com LLM simpler → retorno seguro de BriefingExtracted vazio",
+    "Todas as mensagens do usuário passam por sanitize_user_input antes de entrar na chain",
+    "Testes pytest cobrem: (a) injeção de ignore previous instructions, (b) fallback em JSON malformado, (c) retorno seguro após falha total"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "title": "Criar prompt_security.py — isoladores e sanitização",
+      "description": "Módulo com isoladores textuais (XML tags), função de sanitização de input do usuário e system prompt parametrizado com defesas anti-injection",
+      "status": "done",
+      "files": [
+        "backend/app/services/prompt_security.py"
+      ]
+    },
+    {
+      "step": 2,
+      "title": "Atualizar ai_service.py com novo system prompt e sanitização",
+      "description": "Substituir AYA_SYSTEM_PROMPT pela versão parametrizada com isoladores e instruções anti-bypass; aplicar sanitize_user_input em process_message",
+      "status": "done",
+      "files": [
+        "backend/app/services/ai_service.py"
+      ]
+    },
+    {
+      "step": 3,
+      "title": "Implementar fallback chain em extract_briefing",
+      "description": "Se with_structured_output falhar, tentar extrair com prompt de autocorreção usando modelo mais simples/robusto; logar cada estágio do fallback",
+      "status": "done",
+      "files": [
+        "backend/app/services/ai_service.py"
+      ]
+    },
+    {
+      "step": 4,
+      "title": "Escrever testes",
+      "description": "Testes unitários para prompt_security, testes de integração para fallback chain e testes de resistência a prompt injection",
+      "status": "done",
+      "files": [
+        "backend/tests/test_services/test_prompt_security.py",
+        "backend/tests/test_services/test_ai_fallback.py"
+      ]
+    }
+  ]
+}
