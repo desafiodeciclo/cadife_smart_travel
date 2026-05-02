@@ -1,9 +1,9 @@
 import 'dart:developer' as developer;
 
-import 'package:get_it/get_it.dart';
 import 'package:cadife_smart_travel/core/notifications/local_notification_manager.dart';
 import 'package:cadife_smart_travel/core/ports/auth_port.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:get_it/get_it.dart';
 
 class FCMManager {
   static final FirebaseMessaging _messaging = FirebaseMessaging.instance;
