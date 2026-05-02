@@ -288,7 +288,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                       color: Colors.white,
                                     ),
                                   )
-                                : const Text(
+                                : Text(
                                     'ENTRAR',
                                     style: TextStyle(
                                       fontFamily: AppTextStyles.fontFamily,

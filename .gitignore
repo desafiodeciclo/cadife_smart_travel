@@ -146,3 +146,11 @@ claude_local.md
 **/macos/Flutter/GeneratedPluginRegistrant.swift
 **/macos/Flutter/flutter_export_environment.sh
 **/macos/Runner/GeneratedPluginRegistrant.swift
+
+# ========================
+# CHROMADB / RAG (Artefatos Gerados)
+# ========================
+backend/chroma_db/
+backend/chroma_db_local/
+backend/chroma_db_gemini/
+backend/validation_report*.json

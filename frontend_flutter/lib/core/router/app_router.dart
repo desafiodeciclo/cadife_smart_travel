@@ -11,10 +11,13 @@ import 'package:cadife_smart_travel/features/auth/presentation/screens/login_scr
 import 'package:cadife_smart_travel/features/auth/presentation/screens/register_screen.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/screens/splash_screen.dart';
 import 'package:cadife_smart_travel/features/auth/providers/auth_provider.dart';
+import 'package:cadife_smart_travel/features/client/documentos/document_viewer_screen.dart';
 import 'package:cadife_smart_travel/features/client/documentos/documentos_screen.dart';
+import 'package:cadife_smart_travel/features/client/documentos/trip_documents_screen.dart';
+import 'package:cadife_smart_travel/shared/models/document_model.dart';
 import 'package:cadife_smart_travel/features/client/historico/historico_screen.dart';
+import 'package:cadife_smart_travel/features/client/home/home_screen.dart';
 import 'package:cadife_smart_travel/features/client/profile/profile.dart';
-import 'package:cadife_smart_travel/features/client/status/status_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -174,7 +177,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/client/status',
             pageBuilder: (_, state) => NoTransitionPage(
               key: state.pageKey,
-              child: const StatusScreen(),
+              child: const HomeScreen(),
             ),
           ),
           GoRoute(
@@ -190,6 +193,26 @@ final routerProvider = Provider<GoRouter>((ref) {
               key: state.pageKey,
               child: const DocumentosScreen(),
             ),
+            routes: [
+              GoRoute(
+                path: 'viewer',
+                pageBuilder: (context, state) => MaterialPage(
+                  key: state.pageKey,
+                  child: DocumentViewerScreen(
+                    document: state.extra as DocumentModel,
+                  ),
+                ),
+              ),
+              GoRoute(
+                path: ':tripId',
+                pageBuilder: (_, state) => NoTransitionPage(
+                  key: state.pageKey,
+                  child: TripDocumentsScreen(
+                    tripId: state.pathParameters['tripId']!,
+                  ),
+                ),
+              ),
+            ],
           ),
           GoRoute(
             path: '/client/perfil',

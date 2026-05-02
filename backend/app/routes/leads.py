@@ -18,11 +18,10 @@ logger = structlog.get_logger()
 router = APIRouter(
     prefix="/leads",
     tags=["Leads"],
-    dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))]
 )
 
 
-@router.get("", response_model=LeadListResponse)
+@router.get("", response_model=LeadListResponse, dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))])
 async def list_leads(
     status: Optional[str] = Query(None),
     score: Optional[str] = Query(None),
@@ -59,7 +58,48 @@ async def list_leads(
     return LeadListResponse(items=items, total=total, page=page, limit=limit, pages=pages)
 
 
-@router.post("", response_model=LeadResponse, status_code=status.HTTP_201_CREATED)
+@router.get("/my-active", response_model=LeadResponse)
+async def get_my_active_lead(
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """
+    Retorna o lead associado ao usuário logado (cliente).
+    Se não existir, cria um novo lead baseado no telefone do usuário.
+    """
+    if not current_user.telefone:
+         raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail="Usuário não possui telefone cadastrado para vincular a uma viagem"
+        )
+    
+    from sqlalchemy import select
+    from sqlalchemy.orm import selectinload
+    from app.models.lead import Lead
+    from app.infrastructure.security.pii_encryption import hmac_hash
+
+    phone_hash = hmac_hash(current_user.telefone)
+    result = await db.execute(
+        select(Lead)
+        .where(Lead.telefone_hash == phone_hash)
+        .options(selectinload(Lead.consultor))
+    )
+    lead = result.scalar_one_or_none()
+    
+    if not lead:
+        lead = await lead_service.get_or_create_by_phone(db, current_user.telefone, current_user.nome)
+        # Refresh to ensure relationships are handled correctly if needed, 
+        # but get_or_create doesn't load consultor since it's new.
+
+    response = LeadResponse.model_validate(lead)
+    if lead.consultor:
+        response.consultor_nome = lead.consultor.nome
+        response.consultor_avatar = lead.consultor.avatar_url
+        
+    return response
+
+
+@router.post("", response_model=LeadResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))])
 async def create_lead(
     lead_in: LeadCreate,
     db: AsyncSession = Depends(get_db),
@@ -75,7 +115,7 @@ async def create_lead(
     return LeadResponse.model_validate(lead)
 
 
-@router.get("/{lead_id}", response_model=LeadResponse)
+@router.get("/{lead_id}", response_model=LeadResponse, dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))])
 async def get_lead(
     lead_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -92,7 +132,7 @@ async def get_lead(
     return LeadResponse.model_validate(lead)
 
 
-@router.put("/{lead_id}", response_model=LeadResponse)
+@router.put("/{lead_id}", response_model=LeadResponse, dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))])
 async def update_lead(
     lead_id: uuid.UUID,
     lead_in: LeadUpdate,
@@ -134,7 +174,7 @@ async def update_lead(
     return LeadResponse.model_validate(lead)
 
 
-@router.delete("/{lead_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{lead_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))])
 async def archive_lead(
     lead_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -146,7 +186,7 @@ async def archive_lead(
     await lead_service.soft_delete(db, lead)
 
 
-@router.get("/{lead_id}/interacoes", response_model=InteracaoListResponse)
+@router.get("/{lead_id}/interacoes", response_model=InteracaoListResponse, dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))])
 async def get_interacoes(
     lead_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -160,7 +200,7 @@ async def get_interacoes(
     return InteracaoListResponse(items=items, total=len(items))
 
 
-@router.get("/{lead_id}/briefing", response_model=BriefingResponse)
+@router.get("/{lead_id}/briefing", response_model=BriefingResponse, dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))])
 async def get_briefing(
     lead_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -172,7 +212,7 @@ async def get_briefing(
     return BriefingResponse.model_validate(lead.briefing)
 
 
-@router.put("/{lead_id}/briefing", response_model=BriefingResponse)
+@router.put("/{lead_id}/briefing", response_model=BriefingResponse, dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))])
 async def update_briefing(
     lead_id: uuid.UUID,
     briefing_in: BriefingUpdate,
@@ -190,3 +230,4 @@ async def update_briefing(
     await db.commit()
     await db.refresh(briefing)
     return BriefingResponse.model_validate(briefing)
+

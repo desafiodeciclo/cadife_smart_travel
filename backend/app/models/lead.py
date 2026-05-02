@@ -1,6 +1,5 @@
 import uuid
 from datetime import datetime
-from enum import Enum
 from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
@@ -8,7 +7,7 @@ if TYPE_CHECKING:
     from app.models.interacao import Interacao
     from app.models.agendamento import Agendamento
     from app.models.proposta import Proposta
-from typing import TYPE_CHECKING, Optional
+    from app.models.user import User
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, String, func
 from sqlalchemy.dialects.postgresql import UUID
@@ -44,6 +43,7 @@ class Lead(Base):
     interacoes: Mapped[list["Interacao"]] = relationship("Interacao", back_populates="lead")
     agendamentos: Mapped[list["Agendamento"]] = relationship("Agendamento", back_populates="lead")
     propostas: Mapped[list["Proposta"]] = relationship("Proposta", back_populates="lead")
+    consultor: Mapped[Optional["User"]] = relationship("User", foreign_keys=[consultor_id], primaryjoin="Lead.consultor_id == User.id", overlaps="consultor")
 
 
 # Pydantic schemas
@@ -79,6 +79,8 @@ class LeadResponse(BaseModel):
     status: LeadStatus
     score: Optional[LeadScore]
     consultor_id: Optional[uuid.UUID]
+    consultor_nome: Optional[str] = None
+    consultor_avatar: Optional[str] = None
     is_archived: bool
     criado_em: datetime
     atualizado_em: datetime

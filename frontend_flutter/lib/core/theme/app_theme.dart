@@ -1,6 +1,7 @@
 import 'package:cadife_smart_travel/core/theme/app_colors.dart';
 import 'package:cadife_smart_travel/core/theme/cadife_theme_extension.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   AppTheme._();
@@ -15,155 +16,122 @@ class AppTheme {
     final colorScheme = ColorScheme.fromSeed(
       seedColor: AppColors.primary,
       brightness: brightness,
-      primary: ext.primary,
+      primary: AppColors.primary,
       onPrimary: Colors.white,
-      surface: isDark ? const Color(0xFF121212) : AppColors.scaffold,
-      onSurface: ext.textPrimary,
-      error: ext.primary,
+      surface: isDark ? AppColors.deepGraphite : AppColors.scaffold,
+      onSurface: isDark ? Colors.white : AppColors.textPrimary,
+      error: AppColors.primary,
     );
-
-    final textTheme = _buildTextTheme(ext.textPrimary, ext.textSecondary);
 
     return ThemeData(
       useMaterial3: true,
       brightness: brightness,
-      fontFamily: 'Roboto',
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: isDark
-          ? const Color(0xFF121212)
-          : AppColors.scaffold,
+      scaffoldBackgroundColor: isDark ? AppColors.deepGraphite : AppColors.scaffold,
       extensions: [ext],
-      textTheme: textTheme,
+      
+      // Typography
+      textTheme: _buildTextTheme(brightness),
+      
+      // Page Transitions (Slide from right)
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: ZoomPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
+          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+        },
+      ),
+
       appBarTheme: AppBarTheme(
-        backgroundColor: ext.darkBackground,
+        backgroundColor: AppColors.deepGraphite,
         foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: false,
-        titleTextStyle: textTheme.titleLarge?.copyWith(color: Colors.white),
+        titleTextStyle: GoogleFonts.baiJamjuree(
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          color: Colors.white,
+        ),
       ),
+
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: ext.primary,
+          backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
-          minimumSize: const Size.fromHeight(48),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          minimumSize: const Size.fromHeight(56), // Premium height
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          textStyle: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600),
+          elevation: 2,
         ),
       ),
+
       cardTheme: CardThemeData(
-        color: ext.cardBackground,
-        elevation: isDark ? 2 : 1,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        color: isDark ? AppColors.darkCard : Colors.white,
+        elevation: 2,
+        shadowColor: Colors.black.withValues(alpha: 0.1),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
+
       inputDecorationTheme: InputDecorationTheme(
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 12,
+        filled: true,
+        fillColor: isDark ? AppColors.deepGraphite.withValues(alpha: 0.5) : Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300),
         ),
-        labelStyle: TextStyle(color: ext.textSecondary),
-        filled: isDark,
-        fillColor: isDark ? const Color(0xFF2C2C2C) : null,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.primary),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        labelStyle: GoogleFonts.inter(color: AppColors.textSecondary),
+        hintStyle: GoogleFonts.inter(color: AppColors.textSecondary.withValues(alpha: 0.5)),
       ),
+
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: ext.darkBackground,
-        selectedItemColor: ext.primary,
-        unselectedItemColor: ext.textSecondary,
+        backgroundColor: AppColors.deepGraphite,
+        selectedItemColor: AppColors.primary,
+        unselectedItemColor: Colors.white.withValues(alpha: 0.6),
         type: BottomNavigationBarType.fixed,
-        selectedLabelStyle: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-        ),
-        unselectedLabelStyle: const TextStyle(fontSize: 12),
+        selectedLabelStyle: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600),
+        unselectedLabelStyle: GoogleFonts.inter(fontSize: 12),
       ),
+
       dividerTheme: DividerThemeData(
-        color: isDark ? Colors.white12 : Colors.black12,
+        color: isDark ? Colors.white10 : Colors.black12,
         thickness: 1,
       ),
     );
   }
 
-  // H1→displaySmall  H2→headlineLarge  H3→headlineMedium  H4→headlineSmall
-  // H5→titleLarge    H6→titleMedium
-  static TextTheme _buildTextTheme(Color textPrimary, Color textSecondary) {
+  static TextTheme _buildTextTheme(Brightness brightness) {
+    final color = brightness == Brightness.dark ? Colors.white : AppColors.textPrimary;
+    
     return TextTheme(
-      displaySmall: TextStyle(
-        fontSize: 36,
-        fontWeight: FontWeight.w700,
-        color: textPrimary,
-        letterSpacing: -0.5,
-        height: 1.2,
-      ),
-      headlineLarge: TextStyle(
-        fontSize: 32,
-        fontWeight: FontWeight.w700,
-        color: textPrimary,
-        letterSpacing: -0.5,
-        height: 1.25,
-      ),
-      headlineMedium: TextStyle(
-        fontSize: 24,
-        fontWeight: FontWeight.w600,
-        color: textPrimary,
-        height: 1.3,
-      ),
-      headlineSmall: TextStyle(
-        fontSize: 20,
-        fontWeight: FontWeight.w600,
-        color: textPrimary,
-        height: 1.35,
-      ),
-      titleLarge: TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.w600,
-        color: textPrimary,
-        height: 1.4,
-      ),
-      titleMedium: TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w500,
-        color: textPrimary,
-        height: 1.5,
-      ),
-      titleSmall: TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-        color: textSecondary,
-        height: 1.5,
-      ),
-      bodyLarge: TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w400,
-        color: textPrimary,
-        height: 1.5,
-      ),
-      bodyMedium: TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w400,
-        color: textSecondary,
-        height: 1.5,
-      ),
-      bodySmall: TextStyle(
-        fontSize: 12,
-        fontWeight: FontWeight.w400,
-        color: textSecondary,
-        height: 1.5,
-      ),
-      labelLarge: TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-        color: textPrimary,
-      ),
-      labelMedium: TextStyle(
-        fontSize: 12,
-        fontWeight: FontWeight.w500,
-        color: textSecondary,
-      ),
-      labelSmall: TextStyle(
-        fontSize: 11,
-        fontWeight: FontWeight.w500,
-        color: textSecondary,
-      ),
+      displayLarge: GoogleFonts.baiJamjuree(fontSize: 32, fontWeight: FontWeight.bold, color: color),
+      displayMedium: GoogleFonts.baiJamjuree(fontSize: 28, fontWeight: FontWeight.bold, color: color),
+      displaySmall: GoogleFonts.baiJamjuree(fontSize: 24, fontWeight: FontWeight.bold, color: color),
+      headlineLarge: GoogleFonts.baiJamjuree(fontSize: 20, fontWeight: FontWeight.w700, color: color),
+      headlineMedium: GoogleFonts.baiJamjuree(fontSize: 18, fontWeight: FontWeight.w700, color: color),
+      headlineSmall: GoogleFonts.baiJamjuree(fontSize: 16, fontWeight: FontWeight.w700, color: color),
+      titleLarge: GoogleFonts.baiJamjuree(fontSize: 18, fontWeight: FontWeight.w600, color: color),
+      titleMedium: GoogleFonts.baiJamjuree(fontSize: 16, fontWeight: FontWeight.w600, color: color),
+      titleSmall: GoogleFonts.baiJamjuree(fontSize: 14, fontWeight: FontWeight.w600, color: color),
+      bodyLarge: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.normal, color: color),
+      bodyMedium: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.normal, color: color),
+      bodySmall: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.normal, color: color),
+      labelLarge: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: color),
+      labelMedium: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: color),
+      labelSmall: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: color),
     );
   }
 }

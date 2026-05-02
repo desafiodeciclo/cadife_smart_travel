@@ -13,16 +13,16 @@ class RegisterScreen extends StatelessWidget {
         leading: BackButton(onPressed: () => context.pop()),
         title: const Text('Criar conta'),
       ),
-      body: const Center(
+      body: Center(
         child: Padding(
-          padding: EdgeInsets.all(32),
+          padding: const EdgeInsets.all(32),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.person_add, size: 64, color: AppColors.primary),
-              SizedBox(height: 24),
+              const Icon(Icons.person_add, size: 64, color: AppColors.primary),
+              const SizedBox(height: 24),
               Text('Cadastro de cliente', style: AppTextStyles.h3),
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
               Text(
                 'Essa funcionalidade estará disponível em breve.',
                 style: AppTextStyles.bodyMedium,

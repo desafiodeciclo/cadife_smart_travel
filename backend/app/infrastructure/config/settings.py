@@ -47,10 +47,17 @@ class Settings(BaseSettings):
     META_APP_SECRET: str = Field(default="", description="Meta App Secret for X-Hub-Signature-256 validation")
     META_APP_ID: str = Field(default="", description="Meta App ID — required for token exchange")
 
-    # ── OpenAI / LangChain (spec.md §15) ──────────────────────────────────
-    OPENAI_API_KEY: str = Field(default="", description="OpenAI API key for GPT + embeddings")
-    GEMINI_API_KEY: str = Field(default="", description="Gemini API Key (reserved for future use)")
+    # ── Google Gemini (exclusivo — não usa OpenAI) ─────────────────────────
+    GEMINI_API_KEY: str = Field(default="", description="Gemini API key para LLM + embeddings")
     LANGCHAIN_API_KEY: str = Field(default="", description="LangSmith observability key (optional)")
+
+    # ── Langfuse Observability ────────────────────────────────────────────
+    LANGFUSE_PUBLIC_KEY: str = Field(default="", description="Langfuse public key for tracing")
+    LANGFUSE_SECRET_KEY: str = Field(default="", description="Langfuse secret key for tracing")
+    LANGFUSE_HOST: str = Field(
+        default="https://cloud.langfuse.com",
+        description="Langfuse API host (self-hosted or cloud)",
+    )
 
     # ── Database (spec.md §3.3 — PostgreSQL preferred) ────────────────────
     DATABASE_URL: str = Field(

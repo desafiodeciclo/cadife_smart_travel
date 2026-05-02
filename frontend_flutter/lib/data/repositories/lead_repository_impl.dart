@@ -142,4 +142,28 @@ class LeadRepositoryImpl implements LeadPort {
     await _offlineManager.invalidateByPrefix('$_cacheKeyPrefix:list:');
     return lead;
   }
+
+  @override
+  Future<LeadModel?> getMyLead() async {
+    try {
+      final response = await _dio.get('${ApiConstants.leads}/my-active');
+      final lead = LeadModel.fromJson(response.data as Map<String, dynamic>);
+
+      await _offlineManager.saveToCache(
+        '$_cacheKeyPrefix:my-active',
+        response.data,
+      );
+      return lead;
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return null;
+
+      final cached = _offlineManager.getFromCacheOffline(
+        '$_cacheKeyPrefix:my-active',
+      );
+      if (cached != null) {
+        return LeadModel.fromJson(cached as Map<String, dynamic>);
+      }
+      rethrow;
+    }
+  }
 }

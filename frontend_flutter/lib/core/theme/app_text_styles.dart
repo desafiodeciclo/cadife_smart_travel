@@ -1,109 +1,97 @@
 import 'package:cadife_smart_travel/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// Estilos de texto padronizados — nunca declare TextStyle inline.
 class AppTextStyles {
   AppTextStyles._();
+  
+  static String? get fontFamily => GoogleFonts.inter().fontFamily;
 
-  static const String fontFamily = 'roboto';
+  // ── Headings (Bai Jamjuree) ──────────────────────────
+  static TextStyle get h1 => GoogleFonts.baiJamjuree(
+        fontSize: 32,
+        fontWeight: FontWeight.w700,
+        color: AppColors.textPrimary,
+        letterSpacing: -0.5,
+      );
 
-  // ── Headings ───────────────────────────────────────────
-  static const TextStyle h1 = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 28,
-    fontWeight: FontWeight.w700,
-    color: AppColors.textPrimary,
-    letterSpacing: -0.5,
-  );
+  static TextStyle get h2 => GoogleFonts.baiJamjuree(
+        fontSize: 24,
+        fontWeight: FontWeight.w700,
+        color: AppColors.textPrimary,
+        letterSpacing: -0.3,
+      );
 
-  static const TextStyle h2 = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 24,
-    fontWeight: FontWeight.w700,
-    color: AppColors.textPrimary,
-    letterSpacing: -0.3,
-  );
+  static TextStyle get h3 => GoogleFonts.baiJamjuree(
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textPrimary,
+      );
 
-  static const TextStyle h3 = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 20,
-    fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
-  );
+  static TextStyle get h4 => GoogleFonts.baiJamjuree(
+        fontSize: 18,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textPrimary,
+      );
 
-  static const TextStyle h4 = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 18,
-    fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
-  );
+  // ── Body (Inter) ───────────────────────────────────
+  static TextStyle get bodyLarge => GoogleFonts.inter(
+        fontSize: 16,
+        fontWeight: FontWeight.w400,
+        color: AppColors.textPrimary,
+      );
 
-  // ── Body ───────────────────────────────────────────────
-  static const TextStyle bodyLarge = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 16,
-    fontWeight: FontWeight.w400,
-    color: AppColors.textPrimary,
-  );
+  static TextStyle get bodyMedium => GoogleFonts.inter(
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        color: AppColors.textPrimary,
+      );
 
-  static const TextStyle bodyMedium = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 14,
-    fontWeight: FontWeight.w400,
-    color: AppColors.textPrimary,
-  );
+  static TextStyle get bodySmall => GoogleFonts.inter(
+        fontSize: 12,
+        fontWeight: FontWeight.w400,
+        color: AppColors.textSecondary,
+      );
 
-  static const TextStyle bodySmall = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 12,
-    fontWeight: FontWeight.w400,
-    color: AppColors.textSecondary,
-  );
+  // ── Labels (Inter) ─────────────────────────────────
+  static TextStyle get labelLarge => GoogleFonts.inter(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textPrimary,
+      );
 
-  // ── Labels ─────────────────────────────────────────────
-  static const TextStyle labelLarge = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 14,
-    fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
-  );
+  static TextStyle get labelMedium => GoogleFonts.inter(
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textSecondary,
+      );
 
-  static const TextStyle labelMedium = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 12,
-    fontWeight: FontWeight.w600,
-    color: AppColors.textSecondary,
-  );
+  static TextStyle get labelSmall => GoogleFonts.inter(
+        fontSize: 10,
+        fontWeight: FontWeight.w500,
+        color: AppColors.textSecondary,
+        letterSpacing: 0.5,
+      );
 
-  static const TextStyle labelSmall = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 10,
-    fontWeight: FontWeight.w500,
-    color: AppColors.textSecondary,
-    letterSpacing: 0.5,
-  );
+  // ── Button (Inter) ─────────────────────────────────
+  static TextStyle get button => GoogleFonts.inter(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.3,
+      );
 
-  // ── Button ─────────────────────────────────────────────
-  static const TextStyle button = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 14,
-    fontWeight: FontWeight.w600,
-    letterSpacing: 0.3,
-  );
+  // ── Caption / Overline (Inter) ──────────────────────
+  static TextStyle get caption => GoogleFonts.inter(
+        fontSize: 11,
+        fontWeight: FontWeight.w400,
+        color: AppColors.textSecondary,
+      );
 
-  // ── Caption / Overline ─────────────────────────────────
-  static const TextStyle caption = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 11,
-    fontWeight: FontWeight.w400,
-    color: AppColors.textSecondary,
-  );
-
-  static const TextStyle overline = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 10,
-    fontWeight: FontWeight.w500,
-    color: AppColors.textSecondary,
-    letterSpacing: 1.5,
-  );
+  static TextStyle get overline => GoogleFonts.inter(
+        fontSize: 10,
+        fontWeight: FontWeight.w500,
+        color: AppColors.textSecondary,
+        letterSpacing: 1.5,
+      );
 }
