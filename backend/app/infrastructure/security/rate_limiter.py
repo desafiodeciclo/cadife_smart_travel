@@ -31,6 +31,7 @@ try:
         default_limits=[settings.RATE_LIMIT_DEFAULT],
         headers_enabled=True,
         swallow_errors=False,
+        key_prefix=settings.REDIS_PREFIX if settings.REDIS_PREFIX else "LIMITER",
     )
     logger.info("rate_limiter_ready", storage=settings.REDIS_URL)
 except Exception as exc:
