@@ -20,28 +20,28 @@ class StagingFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'YOUR-STAGING-API-KEY',
-    appId: 'YOUR-STAGING-APP-ID',
-    messagingSenderId: 'YOUR-STAGING-SENDER-ID',
+    apiKey: 'AIzaSyDk850eqZIuPJYHFdg6Ylj2IwXjc2xITZE',
+    appId: '1:260275090433:web:your-web-id', // Placeholder se precisar de web
+    messagingSenderId: '260275090433',
     projectId: 'cadife-smart-travel-staging',
     authDomain: 'cadife-smart-travel-staging.firebaseapp.com',
-    storageBucket: 'cadife-smart-travel-staging.appspot.com',
+    storageBucket: 'cadife-smart-travel-staging.firebasestorage.app',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'YOUR-STAGING-API-KEY',
-    appId: 'YOUR-STAGING-APP-ID-ANDROID',
-    messagingSenderId: 'YOUR-STAGING-SENDER-ID',
+    apiKey: 'AIzaSyDk850eqZIuPJYHFdg6Ylj2IwXjc2xITZE',
+    appId: '1:260275090433:android:9baf2e65d15390ef3cfc00',
+    messagingSenderId: '260275090433',
     projectId: 'cadife-smart-travel-staging',
-    storageBucket: 'cadife-smart-travel-staging.appspot.com',
+    storageBucket: 'cadife-smart-travel-staging.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'YOUR-STAGING-API-KEY',
+    apiKey: 'AIzaSyDk850eqZIuPJYHFdg6Ylj2IwXjc2xITZE',
     appId: 'YOUR-STAGING-APP-ID-IOS',
-    messagingSenderId: 'YOUR-STAGING-SENDER-ID',
+    messagingSenderId: '260275090433',
     projectId: 'cadife-smart-travel-staging',
-    storageBucket: 'cadife-smart-travel-staging.appspot.com',
+    storageBucket: 'cadife-smart-travel-staging.firebasestorage.app',
     iosBundleId: 'com.cadife.cadife_smart_travel.stg',
   );
 }
