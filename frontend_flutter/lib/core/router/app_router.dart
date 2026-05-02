@@ -14,10 +14,10 @@ import 'package:cadife_smart_travel/features/auth/providers/auth_provider.dart';
 import 'package:cadife_smart_travel/features/client/documentos/document_viewer_screen.dart';
 import 'package:cadife_smart_travel/features/client/documentos/documentos_screen.dart';
 import 'package:cadife_smart_travel/features/client/documentos/trip_documents_screen.dart';
-import 'package:cadife_smart_travel/shared/models/document_model.dart';
 import 'package:cadife_smart_travel/features/client/historico/historico_screen.dart';
 import 'package:cadife_smart_travel/features/client/home/home_screen.dart';
 import 'package:cadife_smart_travel/features/client/profile/profile.dart';
+import 'package:cadife_smart_travel/shared/models/document_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -25,7 +25,10 @@ import 'package:go_router/go_router.dart';
 // Bridges Riverpod auth state to GoRouter's refreshListenable
 class _RouterNotifier extends ChangeNotifier {
   _RouterNotifier(Ref ref) {
-    ref.listen<AsyncValue<AuthState>>(authProvider, (_, _) => notifyListeners());
+    ref.listen<AsyncValue<AuthState>>(
+      authProvider,
+      (_, _) => notifyListeners(),
+    );
   }
 }
 
@@ -94,10 +97,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/auth/register',
-        pageBuilder: (_, state) => MaterialPage(
-          key: state.pageKey,
-          child: const RegisterScreen(),
-        ),
+        pageBuilder: (_, state) =>
+            MaterialPage(key: state.pageKey, child: const RegisterScreen()),
       ),
 
       // Agency shell — persistent BottomNavBar with SharedAxis tab transitions
@@ -175,10 +176,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(
             path: '/client/status',
-            pageBuilder: (_, state) => NoTransitionPage(
-              key: state.pageKey,
-              child: const HomeScreen(),
-            ),
+            pageBuilder: (_, state) =>
+                NoTransitionPage(key: state.pageKey, child: const HomeScreen()),
           ),
           GoRoute(
             path: '/client/historico',

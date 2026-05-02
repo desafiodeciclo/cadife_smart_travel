@@ -1,3 +1,4 @@
+import 'package:cadife_smart_travel/core/config/env_config.dart';
 import 'package:cadife_smart_travel/core/cache/isar_cache_manager.dart';
 import 'package:cadife_smart_travel/core/network/connectivity_service.dart';
 import 'package:cadife_smart_travel/core/network/dio_client.dart';
@@ -41,10 +42,14 @@ final sl = GetIt.instance;
 /// Tipicamente chama `authProvider.notifier.logout()` para disparar o redirect do GoRouter.
 /// Chamado uma vez no `main()` antes de `runApp()`.
 Future<void> setupServiceLocator({
+  EnvConfig? config,
   List<String>? pinnedCertificates,
   List<String>? backupCertificates,
   VoidCallback? onTokenExpired,
 }) async {
+  // Registrar o EnvConfig no Service Locator para uso global
+  final env = config ?? EnvConfig.dev;
+  sl.registerSingleton<EnvConfig>(env);
   // ── 1. Infra Layer (singletons — performance-critical) ──
 
   sl.registerLazySingleton<NetworkInfo>(NetworkInfo.new);
