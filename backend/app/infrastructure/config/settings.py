@@ -12,7 +12,7 @@ by overriding `_load_external_secrets()`.
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -91,6 +91,11 @@ class Settings(BaseSettings):
     )
 
     # ── Rate Limiting (spec.md §12.3) ─────────────────────────────────────
+    REDIS_HOST: str = Field(default="localhost")
+    REDIS_PORT: int = Field(default=6379)
+    REDIS_PASSWORD: str = Field(default="")
+    REDIS_DB: int = Field(default=0)
+    REDIS_PREFIX: str = Field(default="", description="Prefix for redis keys (e.g. STG_)")
     REDIS_URL: str = Field(default="redis://localhost:6379/0")
     RATE_LIMIT_WEBHOOK: str = Field(default="100/minute")
     RATE_LIMIT_IA: str = Field(default="30/minute")
@@ -124,6 +129,14 @@ class Settings(BaseSettings):
                 "Generate one with: python -c \"import secrets; print(secrets.token_hex(32))\""
             )
         return v
+
+    @model_validator(mode="after")
+    def compute_redis_url(self) -> "Settings":
+        """Compute REDIS_URL if individual connection params are provided."""
+        if self.REDIS_PASSWORD or self.REDIS_HOST != "localhost":
+            pwd = f":{self.REDIS_PASSWORD}@" if self.REDIS_PASSWORD else ""
+            self.REDIS_URL = f"redis://{pwd}{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
+        return self
 
     @field_validator("DATABASE_URL")
     @classmethod
