@@ -1,4 +1,6 @@
 import 'package:cadife_smart_travel/core/config/env_config.dart';
+import 'package:cadife_smart_travel/core/config/firebase_options_stg.dart';
+import 'package:cadife_smart_travel/core/config/firebase_options_prod.dart';
 import 'package:cadife_smart_travel/core/cache/isar_cache_manager.dart';
 import 'package:cadife_smart_travel/core/network/connectivity_service.dart';
 import 'package:cadife_smart_travel/core/network/dio_client.dart';
@@ -196,7 +198,17 @@ void _registerProfileModule() {
 
 /// Inicializa infra offline (Hive + Isar + SyncQueue).
 Future<void> initDependencies() async {
-  await Firebase.initializeApp();
+  final env = sl<EnvConfig>().environment;
+  
+  FirebaseOptions? options;
+  if (env == AppEnvironment.staging) {
+    options = StagingFirebaseOptions.currentPlatform;
+  } else if (env == AppEnvironment.prod) {
+    options = ProdFirebaseOptions.currentPlatform;
+  }
+  // No dev, se options for null, ele tenta carregar os arquivos nativos padrão
+
+  await Firebase.initializeApp(options: options);
   await sl<OfflineManager>().initialize();
   await sl<IsarCacheManager>().initialize();
   await sl<OfflineSyncQueue>().initialize();
