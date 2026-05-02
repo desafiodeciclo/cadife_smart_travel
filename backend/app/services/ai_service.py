@@ -21,12 +21,7 @@ from app.services.prompt_security import (
 logger = structlog.get_logger()
 settings = get_settings()
 
-# System prompt parametrizado com isoladores textuais e defesas anti-injection
-# Ver app/services/prompt_security.py para detalhes da parametrização
-
-# EXTRACTION_SYSTEM_PROMPT substituído por EXTRACTION_SYSTEM_PROMPT_SECURE
-# importado de prompt_security.py
-
+_MEMORY_WINDOW_K = 20  # number of exchanges (pairs) to keep
 
 # ---------------------------------------------------------------------------
 # SimpleWindowMemory — drop-in replacement for ConversationBufferWindowMemory
@@ -82,7 +77,7 @@ def get_llm() -> ChatGoogleGenerativeAI:
 def get_memory(phone: str) -> SimpleWindowMemory:
     if phone not in _memories:
         _memories[phone] = SimpleWindowMemory(
-            k=20,
+            k=_MEMORY_WINDOW_K,
             memory_key=f"chat_history_{phone}",
             return_messages=True,
         )
@@ -107,7 +102,7 @@ def preload_memory_from_db(
         return  # already loaded in this session
 
     memory = get_memory(phone)
-    for row in interacoes[-20:]:  # honour k=20 window
+    for row in interacoes[-_MEMORY_WINDOW_K:]:
         cliente = row.get("mensagem_cliente") or ""
         ia = row.get("mensagem_ia") or ""
         if cliente or ia:
@@ -174,10 +169,12 @@ def _retrieve_context(
         return ""
 
 
-FALLBACK_REPLY = (
-    "Olá! Recebemos sua mensagem. "
-    "Em breve um consultor da Cadife Tour irá te atender. 😊"
-)
+def _fallback_reply(message: str) -> str:
+    return (
+        f'Olá! Recebemos sua mensagem 😊\n\n'
+        f'"{message}"\n\n'
+        f'Em breve um consultor da Cadife Tour irá te atender pessoalmente.'
+    )
 
 async def process_message(
     phone: str,
@@ -258,7 +255,7 @@ Você DEVE:
 
     except Exception as exc:
         logger.error("ai_chain_error", phone=phone, error=str(exc))
-        return "Desculpe, estou com uma instabilidade momentânea. Nossa equipe entrará em contato em breve!"
+        return _fallback_reply(message)
 
 
 async def extract_briefing(conversation: list[dict]) -> BriefingExtracted:
@@ -276,7 +273,7 @@ async def extract_briefing(conversation: list[dict]) -> BriefingExtracted:
     Returns:
         Instância de BriefingExtracted, possivelmente vazia.
     """
-    if not settings.GEMINI_API_KEY and not settings.OPENAI_API_KEY:
+    if not settings.GEMINI_API_KEY:
         return BriefingExtracted()
 
     # Sanitizar conversa antes de enviar à extração

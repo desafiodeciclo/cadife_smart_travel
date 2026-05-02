@@ -26,7 +26,8 @@ from app.core.config import get_settings
 logger = structlog.get_logger()
 settings = get_settings()
 
-WHATSAPP_API_URL = "https://graph.facebook.com/v19.0"
+WHATSAPP_API_URL = "https://graph.facebook.com/v25.0"
+
 
 _TRANSIENT_STATUS_CODES = frozenset({429, 500, 502, 503, 504})
 _MAX_RETRIES = 3

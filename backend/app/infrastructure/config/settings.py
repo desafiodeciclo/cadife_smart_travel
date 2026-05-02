@@ -45,6 +45,7 @@ class Settings(BaseSettings):
         description="Secret token for Meta webhook verification",
     )
     META_APP_SECRET: str = Field(default="", description="Meta App Secret for X-Hub-Signature-256 validation")
+    META_APP_ID: str = Field(default="", description="Meta App ID — required for token exchange")
 
     # ── Google Gemini (exclusivo — não usa OpenAI) ─────────────────────────
     GEMINI_API_KEY: str = Field(default="", description="Gemini API key para LLM + embeddings")

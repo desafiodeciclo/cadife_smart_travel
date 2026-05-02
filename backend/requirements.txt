@@ -21,6 +21,7 @@ langchain-google-genai
 langchain-text-splitters
 google-generativeai
 chromadb
+langchain-chroma
 firebase-admin
 langfuse
 rank-bm25
