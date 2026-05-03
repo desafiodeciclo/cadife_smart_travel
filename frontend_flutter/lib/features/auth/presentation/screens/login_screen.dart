@@ -27,7 +27,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _passwordController = TextEditingController();
 
   bool _obscurePassword = true;
-  // Local state — independent of the AsyncNotifier's initial loading
   bool _isLoggingIn = false;
   _EmailState _emailState = _EmailState.idle;
   Timer? _emailDebounce;
@@ -64,9 +63,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     setState(() => _isLoggingIn = true);
     try {
-      await ref
-          .read(authProvider.notifier)
-          .login(_emailController.text.trim(), _passwordController.text);
+      await ref.read(authProvider.notifier).login(
+            _emailController.text.trim(),
+            _passwordController.text,
+          );
     } finally {
       if (mounted) setState(() => _isLoggingIn = false);
     }

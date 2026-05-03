@@ -647,7 +647,7 @@ class _MeetingCard extends StatelessWidget {
         meeting.dateTime.add(Duration(minutes: meeting.durationMinutes));
     final timeRange =
         '${DateFormat('HH:mm').format(meeting.dateTime)} – ${DateFormat('HH:mm').format(endTime)}';
-    final displayName = meeting.leadName ?? 'Reunião de Curadoria';
+    final displayName = meeting.notes?.isNotEmpty == true ? meeting.notes! : 'Reunião de Curadoria';
 
     return Material(
       color: AppColors.primaryLight,

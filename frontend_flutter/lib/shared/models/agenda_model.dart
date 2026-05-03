@@ -8,7 +8,6 @@ class AgendaModel extends Equatable {
     required this.dateTime,
     required this.durationMinutes,
     required this.status,
-    this.leadName,
     this.notes,
     this.createdAt,
     this.updatedAt,
@@ -20,7 +19,6 @@ class AgendaModel extends Equatable {
   final DateTime dateTime;
   final int durationMinutes;
   final String status;
-  final String? leadName;
   final String? notes;
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -32,7 +30,6 @@ class AgendaModel extends Equatable {
     dateTime: DateTime.parse(json['date_time'] as String),
     durationMinutes: json['duration_minutes'] as int,
     status: json['status'] as String,
-    leadName: json['lead_name'] as String?,
     notes: json['notes'] as String?,
     createdAt: json['created_at'] != null
         ? DateTime.parse(json['created_at'] as String)
@@ -63,29 +60,26 @@ class TimeSlotModel extends Equatable {
 
 class CreateAgendaRequest extends Equatable {
   const CreateAgendaRequest({
-    this.leadId,
+    required this.leadId,
     required this.dateTime,
     required this.durationMinutes,
     this.notes,
-    this.status = 'agendado',
   });
 
-  final String? leadId;
+  final String leadId;
   final DateTime dateTime;
   final int durationMinutes;
   final String? notes;
-  final String status;
 
   Map<String, dynamic> toJson() => {
-    if (leadId != null) 'lead_id': leadId,
+    'lead_id': leadId,
     'date_time': dateTime.toIso8601String(),
     'duration_minutes': durationMinutes,
-    if (notes != null) 'notes': notes,
-    'status': status,
+    'notes': notes,
   };
 
   @override
-  List<Object?> get props => [leadId, dateTime, durationMinutes, status];
+  List<Object?> get props => [leadId, dateTime, durationMinutes];
 }
 
 class UpdateAgendaRequest extends Equatable {

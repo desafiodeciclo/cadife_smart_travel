@@ -47,10 +47,10 @@ class AgendaNotifier extends AsyncNotifier<List<AgendaModel>> {
       final agendaPort = ref.read(agendaPortProvider);
       await agendaPort.createAgenda(
         CreateAgendaRequest(
+          leadId: 'blocked',
           dateTime: slotDateTime,
           durationMinutes: 60,
           notes: notes,
-          status: 'bloqueado',
         ),
       );
       return agendaPort.getAgenda();

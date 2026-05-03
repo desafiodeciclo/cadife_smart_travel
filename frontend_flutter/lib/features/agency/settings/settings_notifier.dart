@@ -1,98 +1,81 @@
-import 'package:cadife_smart_travel/features/agency/settings/settings_repository.dart';
-import 'package:flutter/material.dart';
+import 'package:cadife_smart_travel/core/ports/agency_settings_port.dart';
+import 'package:cadife_smart_travel/features/agency/settings/settings_models.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-final settingsProvider =
-    AsyncNotifierProvider<SettingsNotifier, AgencySettings>(
-  SettingsNotifier.new,
+final agencySettingsPortProvider = Provider<AgencySettingsPort>((ref) {
+  throw UnimplementedError('Override em ProviderScope');
+});
+
+final agencySettingsProvider =
+    AsyncNotifierProvider<AgencySettingsNotifier, AgencySettings>(
+  AgencySettingsNotifier.new,
 );
 
-class SettingsNotifier extends AsyncNotifier<AgencySettings> {
+class AgencySettingsNotifier extends AsyncNotifier<AgencySettings> {
   @override
   Future<AgencySettings> build() =>
-      ref.read(settingsRepositoryProvider).getSettings();
+      ref.watch(agencySettingsPortProvider).getSettings();
 
-  Future<void> refresh() async {
-    state = const AsyncLoading();
-    state = await AsyncValue.guard(
-      () => ref.read(settingsRepositoryProvider).getSettings(),
-    );
-  }
-
-  Future<void> updateOfficeHours(OfficeHours hours) async {
-    final current = state.valueOrNull;
-    if (current == null) return;
-    final updated = current.copyWith(officeHours: hours);
+  Future<void> _save(AgencySettings updated) async {
+    final previous = state.valueOrNull;
     state = AsyncData(updated);
-    await _persist(updated);
-  }
-
-  Future<void> updateNotificationPrefs(NotificationPrefs prefs) async {
-    final current = state.valueOrNull;
-    if (current == null) return;
-    final updated = current.copyWith(notificationPrefs: prefs);
-    state = AsyncData(updated);
-    await _persist(updated);
-  }
-
-  Future<void> addTemplate(String name, String content) async {
-    final current = state.valueOrNull;
-    if (current == null) return;
-    final template =
-        await ref.read(settingsRepositoryProvider).addTemplate(name, content);
-    final updated = current.copyWith(
-      messageTemplates: [...current.messageTemplates, template],
-    );
-    state = AsyncData(updated);
-  }
-
-  Future<void> deleteTemplate(String id) async {
-    final current = state.valueOrNull;
-    if (current == null) return;
-    await ref.read(settingsRepositoryProvider).deleteTemplate(id);
-    final updated = current.copyWith(
-      messageTemplates:
-          current.messageTemplates.where((t) => t.id != id).toList(),
-    );
-    state = AsyncData(updated);
-  }
-
-  void toggleDay(int dayIndex) {
-    final current = state.valueOrNull;
-    if (current == null) return;
-    final days = List<bool>.from(current.officeHours.activeDays);
-    days[dayIndex] = !days[dayIndex];
-    final updated = current.copyWith(
-      officeHours: current.officeHours.copyWith(activeDays: days),
-    );
-    state = AsyncData(updated);
-  }
-
-  Future<void> updateStartTime(TimeOfDay time) async {
-    final current = state.valueOrNull;
-    if (current == null) return;
-    final updated = current.copyWith(
-      officeHours: current.officeHours.copyWith(startTime: time),
-    );
-    state = AsyncData(updated);
-    await _persist(updated);
-  }
-
-  Future<void> updateEndTime(TimeOfDay time) async {
-    final current = state.valueOrNull;
-    if (current == null) return;
-    final updated = current.copyWith(
-      officeHours: current.officeHours.copyWith(endTime: time),
-    );
-    state = AsyncData(updated);
-    await _persist(updated);
-  }
-
-  Future<void> _persist(AgencySettings settings) async {
     try {
-      await ref.read(settingsRepositoryProvider).saveSettings(settings);
-    } catch (_) {
-      // Optimistic update already applied — backend sync failure is non-blocking
+      final saved =
+          await ref.read(agencySettingsPortProvider).updateSettings(updated);
+      state = AsyncData(saved);
+    } catch (e, st) {
+      if (previous != null) state = AsyncData(previous);
+      state = AsyncError(e, st);
     }
+  }
+
+  Future<void> toggleDay(int weekday, {required bool isOpen}) async {
+    final current = state.valueOrNull;
+    if (current == null) return;
+    final hours = current.officeHours
+        .map((h) => h.weekday == weekday ? h.copyWith(isOpen: isOpen) : h)
+        .toList();
+    await _save(current.copyWith(officeHours: hours));
+  }
+
+  Future<void> updateHours(
+      int weekday, String openTime, String closeTime) async {
+    final current = state.valueOrNull;
+    if (current == null) return;
+    final hours = current.officeHours
+        .map((h) => h.weekday == weekday
+            ? h.copyWith(openTime: openTime, closeTime: closeTime)
+            : h)
+        .toList();
+    await _save(current.copyWith(officeHours: hours));
+  }
+
+  Future<void> toggleNotification(
+      {required bool newLeads, required bool qualifiedLeads}) async {
+    final current = state.valueOrNull;
+    if (current == null) return;
+    await _save(current.copyWith(
+      notifications: NotificationPrefs(
+          newLeads: newLeads, qualifiedLeads: qualifiedLeads),
+    ));
+  }
+
+  Future<void> addTemplate(String title, String body) async {
+    final current = state.valueOrNull;
+    if (current == null) return;
+    final id = 'tpl-${DateTime.now().millisecondsSinceEpoch}';
+    final templates = [
+      ...current.templates,
+      MessageTemplate(id: id, title: title, body: body),
+    ];
+    await _save(current.copyWith(templates: templates));
+  }
+
+  Future<void> removeTemplate(String id) async {
+    final current = state.valueOrNull;
+    if (current == null) return;
+    final templates =
+        current.templates.where((t) => t.id != id).toList();
+    await _save(current.copyWith(templates: templates));
   }
 }

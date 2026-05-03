@@ -1,32 +1,51 @@
-import 'package:cadife_smart_travel/features/agency/profile/profile_repository.dart';
+import 'package:cadife_smart_travel/core/ports/consultor_port.dart';
+import 'package:cadife_smart_travel/features/agency/profile/consultor_profile_models.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-final profileProvider =
-    AsyncNotifierProvider<ProfileNotifier, ConsultorProfile>(
-  ProfileNotifier.new,
+final consultorPortProvider = Provider<ConsultorPort>((ref) {
+  throw UnimplementedError('Override em ProviderScope');
+});
+
+// ── Profile ──────────────────────────────────────────────────────────────────
+
+final consultorProfileProvider =
+    AsyncNotifierProvider<ConsultorProfileNotifier, ConsultorProfile>(
+  ConsultorProfileNotifier.new,
 );
 
-class ProfileNotifier extends AsyncNotifier<ConsultorProfile> {
+class ConsultorProfileNotifier
+    extends AsyncNotifier<ConsultorProfile> {
   @override
   Future<ConsultorProfile> build() =>
-      ref.read(profileRepositoryProvider).getProfile();
-
-  Future<void> refresh() async {
-    state = const AsyncLoading();
-    state = await AsyncValue.guard(
-      () => ref.read(profileRepositoryProvider).getProfile(),
-    );
-  }
+      ref.watch(consultorPortProvider).getProfile();
 
   Future<void> updateBio(String bio) async {
-    final previous = state;
-    state = previous.whenData((p) => p.copyWith(bio: bio));
+    final previous = state.valueOrNull;
+    if (previous == null) return;
+
+    // Optimistic update
+    state = AsyncData(previous.copyWith(bio: bio));
+
     try {
-      final updated = await ref.read(profileRepositoryProvider).updateBio(bio);
+      final updated =
+          await ref.read(consultorPortProvider).updateBio(bio);
       state = AsyncData(updated);
     } catch (e, st) {
-      state = previous;
-      Error.throwWithStackTrace(e, st);
+      state = AsyncData(previous);
+      state = AsyncError(e, st);
     }
   }
+}
+
+// ── Goals ─────────────────────────────────────────────────────────────────────
+
+final saleGoalsProvider =
+    AsyncNotifierProvider<SaleGoalsNotifier, List<SaleGoal>>(
+  SaleGoalsNotifier.new,
+);
+
+class SaleGoalsNotifier extends AsyncNotifier<List<SaleGoal>> {
+  @override
+  Future<List<SaleGoal>> build() =>
+      ref.watch(consultorPortProvider).getGoals();
 }
