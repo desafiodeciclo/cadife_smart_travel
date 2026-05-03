@@ -31,7 +31,8 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
       final tempPath = '${tempDir.path}/${widget.document.id}.$extension';
 
       await dio.download(widget.document.url, tempPath);
-
+      
+      // ignore: deprecated_member_use
       await Share.shareXFiles([XFile(tempPath)], text: widget.document.name);
     } catch (e) {
       Fluttertoast.showToast(msg: 'Erro ao compartilhar documento');
