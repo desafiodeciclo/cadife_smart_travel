@@ -1,5 +1,6 @@
 import 'package:cadife_smart_travel/core/theme/app_colors.dart';
 import 'package:cadife_smart_travel/core/theme/app_text_styles.dart';
+import 'package:cadife_smart_travel/features/auth/presentation/screens/onboarding_screen.dart';
 import 'package:cadife_smart_travel/features/auth/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -49,12 +50,21 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     }
   }
 
-  void _tryNavigate() {
+  Future<void> _tryNavigate() async {
     if (!_animationDone || !_validationDone) return;
     if (!mounted) return;
 
-    // GoRouter redirect intercepta e envia para a rota correta conforme AuthState
-    context.go('/auth/login');
+    final authValue = ref.read(authProvider);
+    final isLoggedIn = authValue.valueOrNull?.isAuthenticated ?? false;
+
+    if (!isLoggedIn) {
+      final seen = await hasSeenOnboarding();
+      if (!mounted) return;
+      context.go(seen ? '/auth/login' : '/onboarding');
+    } else {
+      // GoRouter redirect encaminha para a rota correta conforme o perfil
+      context.go('/auth/login');
+    }
   }
 
   @override
