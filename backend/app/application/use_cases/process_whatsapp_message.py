@@ -87,7 +87,7 @@ async def execute(payload: dict, db: AsyncSession) -> None:
             logger.error("briefing_update_error", lead_id=str(lead.id), error=str(exc))
 
     # ── Step 6: Persist interaction record (sempre executado) ─────────────
-    await lead_service.save_interacao(
+    interacao = await lead_service.save_interacao(
         db, lead.id,
         msg_cliente=text,
         msg_ia=reply if msg_type == "text" else None,

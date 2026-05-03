@@ -12,7 +12,7 @@ by overriding `_load_external_secrets()`.
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -45,11 +45,19 @@ class Settings(BaseSettings):
         description="Secret token for Meta webhook verification",
     )
     META_APP_SECRET: str = Field(default="", description="Meta App Secret for X-Hub-Signature-256 validation")
+    META_APP_ID: str = Field(default="", description="Meta App ID — required for token exchange")
 
-    # ── OpenAI / LangChain (spec.md §15) ──────────────────────────────────
-    OPENAI_API_KEY: str = Field(default="", description="OpenAI API key for GPT + embeddings")
-    GEMINI_API_KEY: str = Field(default="", description="Gemini API Key (reserved for future use)")
+    # ── Google Gemini (exclusivo — não usa OpenAI) ─────────────────────────
+    GEMINI_API_KEY: str = Field(default="", description="Gemini API key para LLM + embeddings")
     LANGCHAIN_API_KEY: str = Field(default="", description="LangSmith observability key (optional)")
+
+    # ── Langfuse Observability ────────────────────────────────────────────
+    LANGFUSE_PUBLIC_KEY: str = Field(default="", description="Langfuse public key for tracing")
+    LANGFUSE_SECRET_KEY: str = Field(default="", description="Langfuse secret key for tracing")
+    LANGFUSE_HOST: str = Field(
+        default="https://cloud.langfuse.com",
+        description="Langfuse API host (self-hosted or cloud)",
+    )
 
     # ── Database (spec.md §3.3 — PostgreSQL preferred) ────────────────────
     DATABASE_URL: str = Field(
@@ -84,6 +92,11 @@ class Settings(BaseSettings):
     )
 
     # ── Rate Limiting (spec.md §12.3) ─────────────────────────────────────
+    REDIS_HOST: str = Field(default="localhost")
+    REDIS_PORT: int = Field(default=6379)
+    REDIS_PASSWORD: str = Field(default="")
+    REDIS_DB: int = Field(default=0)
+    REDIS_PREFIX: str = Field(default="", description="Prefix for redis keys (e.g. STG_)")
     REDIS_URL: str = Field(default="redis://localhost:6379/0")
     RATE_LIMIT_WEBHOOK: str = Field(default="100/minute")
     RATE_LIMIT_IA: str = Field(default="30/minute")
@@ -117,6 +130,14 @@ class Settings(BaseSettings):
                 "Generate one with: python -c \"import secrets; print(secrets.token_hex(32))\""
             )
         return v
+
+    @model_validator(mode="after")
+    def compute_redis_url(self) -> "Settings":
+        """Compute REDIS_URL if individual connection params are provided."""
+        if self.REDIS_PASSWORD or self.REDIS_HOST != "localhost":
+            pwd = f":{self.REDIS_PASSWORD}@" if self.REDIS_PASSWORD else ""
+            self.REDIS_URL = f"redis://{pwd}{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
+        return self
 
     @field_validator("DATABASE_URL")
     @classmethod

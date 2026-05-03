@@ -32,7 +32,7 @@ for _mod in [
     "langchain.text_splitter",
     "langchain.chains",
     "langchain.chat_models",
-    "langchain_openai",
+    "langchain_google_genai",
     "langchain_community",
     "langchain_community.vectorstores",
     "langchain_core",

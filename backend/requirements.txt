@@ -17,13 +17,14 @@ pytest-asyncio
 langchain
 langchain-community
 langchain-classic
-langchain-openai
 langchain-google-genai
 langchain-text-splitters
-openai
 google-generativeai
 chromadb
+langchain-chroma
 firebase-admin
+langfuse
+rank-bm25
 python-dotenv
 structlog
 slowapi

@@ -1,0 +1,80 @@
+{
+  "task_id": "MVP-F3-DASH-001",
+  "name": "Refatoração do Dashboard da Agência: CustomScrollView + Performance + Funil",
+  "status": "done",
+  "description": "Refatorar e expandir o Dashboard de gestão da Agência (consultores) utilizando CustomScrollView com Slivers, integrando nova seção de Performance (Taxa de Qualificação + Conversão) e Funil de Leads (barras de progresso por status). Inclui notificação hot-lead, design system Cadife via CadifeAppBar e modularização em widgets reutilizáveis.",
+  "dependencies": [
+    "MVP-F3-000"
+  ],
+  "responsible": "Nikolas Tesch / Jakeline",
+  "estimated_hours": "8h",
+  "mockup_reference": "Imagem anexada no plano — Dashboard com: Notificação, Resumo do Dia, Performance, Funil",
+  "steps": [
+    {
+      "id": "step1",
+      "description": "Expandir DashboardStats no provider: adicionar campos taxa_qualificacao (%), taxa_conversao (%), leads_por_status (map)",
+      "status": "done"
+    },
+    {
+      "id": "step2",
+      "description": "Criar widget NotificationCard para exibir 'Novo lead recebido' com ícone, nome e tempo decorrido",
+      "status": "done"
+    },
+    {
+      "id": "step3",
+      "description": "Criar widget SummarySection com 3 cards: Total de Leads, Novos Hoje (com variação %), Agendamentos Pendentes",
+      "status": "done"
+    },
+    {
+      "id": "step4",
+      "description": "Criar widget PerformanceSection com: CircularProgressIndicator para Taxa de Qualificação e card simples para Taxa de Conversão",
+      "status": "done"
+    },
+    {
+      "id": "step5",
+      "description": "Criar widget FunnelSection com barras de progresso lineares para cada status (Novo, Qualificado, Proposta, Fechado)",
+      "status": "done"
+    },
+    {
+      "id": "step6",
+      "description": "Refatorar DashboardScreen: substituir SingleChildScrollView por CustomScrollView com SliverToBoxAdapter",
+      "status": "done"
+    },
+    {
+      "id": "step7",
+      "description": "Integrar CadifeAppBar ao DashboardScreen (se ainda não estiver sendo usado)",
+      "status": "done"
+    },
+    {
+      "id": "step8",
+      "description": "Organizar widgets em pasta lib/features/agency/dashboard/widgets/ com arquivo separado para cada componente",
+      "status": "done"
+    },
+    {
+      "id": "step9",
+      "description": "Testar visual em Light/Dark mode, responsividade em diferentes tamanhos de tela",
+      "status": "in-progress"
+    },
+    {
+      "id": "step10",
+      "description": "Validação manual com Flutter run, screenshots do visual final, aprovação do time",
+      "status": "in-progress"
+    }
+  ],
+  "acceptance_criteria": [
+    "Dashboard renderiza sem erros de tipo ou linting",
+    "Todos os widgets modularizados em arquivos separados em widgets/",
+    "Estatísticas (taxa_qualificacao, taxa_conversao) calculadas corretamente a partir da lista de leads",
+    "Visual corresponde ao mockup em light mode (dark mode também validado)",
+    "Notificação de hot-lead exibe corretamente com ícone, nome e tempo",
+    "RefreshIndicator funciona e recarrega dados corretamente",
+    "Navegação para '/agency/leads' ou filtro de leads novo ao interagir com notificação",
+    "Performance: tela carrega em < 1s com dataset mock (10-50 leads)"
+  ],
+  "notes": [
+    "Usar AppColors do design system (primary=#dd0b0e, background=#393532, success=#1E8449, warning=#D35400)",
+    "Usar Inter ou Roboto como fonte (já configurada no projeto)",
+    "Validar que todas as métricas derivam de leads reais do mock_lead_repository",
+    "Se houver desvio no escopo visual, documentar em docs/decisions/ antes de proceder"
+  ]
+}
