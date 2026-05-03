@@ -51,6 +51,13 @@ _INJECTION_PATTERNS = [
     r"d[aá]n\s+mode",  # jailbreak famoso
     r"developer\s+mode",
     r"jailbreak",
+    # Variações em Português
+    r"ignore\s+(todas\s+as\s+)?instruç[õo]es",
+    r"esqueça\s+(as\s+)?regras",
+    r"você\s+agora\s+é",
+    r"aja\s+como",
+    r"pode\s+fazer\s+tudo",
+    r"sem\s+restriç[õo]es",
     # Delimitadores maliciosos tentando escapar contexto
     r"</\s*user_content\s*>",
     r"</\s*system_instructions\s*>",
