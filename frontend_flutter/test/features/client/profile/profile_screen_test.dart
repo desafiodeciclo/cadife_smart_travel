@@ -38,7 +38,7 @@ class _FakeAuthPort implements AuthPort {
   _FakeAuthPort({UserModel? user}) : _user = user;
 
   @override
-  Future<UserModel> login(String email, String password) async => _user!;
+  Future<UserModel> login(String email, String password, {UserRole? profileHint}) async => _user!;
 
   @override
   Future<UserModel> register(String name, String email, String password) async => _user!;
@@ -58,6 +58,9 @@ class _FakeAuthPort implements AuthPort {
 
   @override
   Future<void> saveFcmToken(String token) async {}
+
+  @override
+  Future<void> forgotPassword(String email) async {}
 }
 
 Widget _buildTestableWidget({

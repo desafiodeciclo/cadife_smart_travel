@@ -5,8 +5,8 @@ import 'package:cadife_smart_travel/features/agency/settings/settings_notifier.d
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class AgencySettingsScreen extends ConsumerWidget {
-  const AgencySettingsScreen({super.key});
+class SettingsScreen extends ConsumerWidget {
+  const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
