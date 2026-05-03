@@ -23,29 +23,81 @@ settings = get_settings()
 
 _MEMORY_WINDOW_K = 20  # number of exchanges (pairs) to keep
 
+_SUMMARY_SYSTEM_PROMPT = """Você é um assistente de sumarização para uma agência de viagens.
+Sua tarefa é condensar o trecho de conversa abaixo em um parágrafo curto,
+preservando APENAS dados estratégicos: destino, datas, quantidade de pessoas,
+perfil, tipo de viagem, preferências, orçamento, passaporte, observações.
+NÃO inclua saudações, despedidas ou mensagens irrelevantes.
+NÃO invente informações. Se não houver dados estratégicos, retorne vazio."""
+
 # ---------------------------------------------------------------------------
 # SimpleWindowMemory — drop-in replacement for ConversationBufferWindowMemory
 # (removed in langchain 1.x)
 # ---------------------------------------------------------------------------
 
 class SimpleWindowMemory:
-    """Stores the last k message pairs per conversation key."""
+    """Stores the last k message pairs per conversation key.
+
+    When the buffer overflows, removed pairs are queued for LLM summarisation
+    so that older context is compressed instead of being lost entirely.
+    """
 
     def __init__(self, k: int = 20, memory_key: str = "chat_history", return_messages: bool = True) -> None:
         self.k = k
         self.memory_key = memory_key
         self.return_messages = return_messages
         self._buffer: list[tuple[str, str]] = []
+        self._summary: str = ""
+        self._pending_for_summary: list[tuple[str, str]] = []
 
     def save_context(self, inputs: dict, outputs: dict) -> None:
         user_msg = inputs.get("input", "")
         ai_msg = outputs.get("output", "")
         self._buffer.append((user_msg, ai_msg))
         if len(self._buffer) > self.k:
-            self._buffer.pop(0)
+            removed = self._buffer.pop(0)
+            self._pending_for_summary.append(removed)
+
+    def has_pending_summary(self) -> bool:
+        return len(self._pending_for_summary) > 0
+
+    async def compress_pending(self, llm: ChatGoogleGenerativeAI) -> None:
+        """Summarise overflowed messages and merge into the running summary."""
+        if not self._pending_for_summary:
+            return
+
+        conversation_text = "\n".join(
+            f"Cliente: {u}\nAYA: {a}" for u, a in self._pending_for_summary
+        )
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", _SUMMARY_SYSTEM_PROMPT),
+            ("human", conversation_text),
+        ])
+        chain = prompt | llm
+        callbacks = get_callbacks_for_chain()
+        config = {"callbacks": callbacks} if callbacks else {}
+
+        try:
+            response = await chain.ainvoke({}, config=config)
+            summary_chunk = str(response.content).strip()
+            if summary_chunk:
+                if self._summary:
+                    self._summary += f"\n{summary_chunk}"
+                else:
+                    self._summary = summary_chunk
+                logger.info("memory_summary_generated", chars=len(summary_chunk))
+        except Exception as exc:
+            logger.warning("memory_summary_failed", error=str(exc))
+
+        self._pending_for_summary = []
 
     def load_memory_variables(self, _inputs: dict) -> dict:
         messages = []
+        if self._summary:
+            messages.append({
+                "role": "system",
+                "content": f"Resumo da conversa anterior: {self._summary}",
+            })
         for user_msg, ai_msg in self._buffer:
             messages.append({"role": "user", "content": user_msg})
             messages.append({"role": "assistant", "content": ai_msg})
@@ -195,6 +247,10 @@ async def process_message(
     try:
         llm = get_llm()
         memory = get_memory(phone)
+
+        # 0.5. Compressão lazy: sumarizar mensagens que saíram da janela
+        if memory.has_pending_summary():
+            await memory.compress_pending(llm)
 
         # 1. Sanitizar entrada do usuário contra prompt injection
         safe_message = sanitize_user_input(message)

@@ -36,8 +36,12 @@ for _mod in [
     "langchain_community",
     "langchain_community.vectorstores",
     "langchain_core",
+    "langchain_core.documents",
+    "langchain_core.embeddings",
     "langchain_core.messages",
     "langchain_core.prompts",
+    "langchain_chroma",
+    "langchain_chroma.vectorstores",
     "langgraph",
     "langgraph.graph",
     # firebase_admin used by fcm_service
