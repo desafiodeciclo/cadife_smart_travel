@@ -7,6 +7,7 @@ import 'package:cadife_smart_travel/core/theme/cadife_theme_extension.dart';
 import 'package:cadife_smart_travel/core/theme/theme_mode_provider.dart';
 import 'package:cadife_smart_travel/features/auth/providers/auth_provider.dart';
 import 'package:cadife_smart_travel/shared/extensions/string_extensions.dart';
+import 'package:cadife_smart_travel/shared/models/user_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -27,10 +28,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _passwordController = TextEditingController();
 
   bool _obscurePassword = true;
-  // Local state — independent of the AsyncNotifier's initial loading
   bool _isLoggingIn = false;
   _EmailState _emailState = _EmailState.idle;
   Timer? _emailDebounce;
+  UserRole _selectedProfile = UserRole.cliente;
 
   @override
   void dispose() {
@@ -64,9 +65,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     setState(() => _isLoggingIn = true);
     try {
-      await ref
-          .read(authProvider.notifier)
-          .login(_emailController.text.trim(), _passwordController.text);
+      await ref.read(authProvider.notifier).login(
+            _emailController.text.trim(),
+            _passwordController.text,
+            profileHint: _selectedProfile,
+          );
     } finally {
       if (mounted) setState(() => _isLoggingIn = false);
     }
@@ -155,7 +158,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           style: AppTextStyles.bodyMedium
                               .copyWith(color: textSecondary),
                         ),
-                        const SizedBox(height: 32),
+                        const SizedBox(height: 28),
+
+                        // ── Profile selector ──────────────────────────────
+                        _ProfileSelector(
+                          selected: _selectedProfile,
+                          isDark: isDark,
+                          onChanged: (role) =>
+                              setState(() => _selectedProfile = role),
+                        ),
+                        const SizedBox(height: 28),
 
                         // ── E-mail label ──────────────────────────────────
                         Text('E-MAIL', style: labelStyle),
@@ -426,6 +438,118 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 }
 
 // ── Sub-widgets ──────────────────────────────────────────────────────────────
+
+class _ProfileSelector extends StatelessWidget {
+  const _ProfileSelector({
+    required this.selected,
+    required this.isDark,
+    required this.onChanged,
+  });
+
+  final UserRole selected;
+  final bool isDark;
+  final ValueChanged<UserRole> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final borderColor = isDark ? Colors.white24 : AppColors.border;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'ENTRAR COMO',
+          style: AppTextStyles.labelSmall.copyWith(
+            letterSpacing: 1.2,
+            color: isDark ? Colors.white60 : AppColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: _ProfileChip(
+                label: 'Viajante',
+                icon: Icons.luggage_outlined,
+                isSelected: selected == UserRole.cliente,
+                isDark: isDark,
+                borderColor: borderColor,
+                onTap: () => onChanged(UserRole.cliente),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _ProfileChip(
+                label: 'Consultor',
+                icon: Icons.support_agent_outlined,
+                isSelected: selected == UserRole.consultor,
+                isDark: isDark,
+                borderColor: borderColor,
+                onTap: () => onChanged(UserRole.consultor),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _ProfileChip extends StatelessWidget {
+  const _ProfileChip({
+    required this.label,
+    required this.icon,
+    required this.isSelected,
+    required this.isDark,
+    required this.borderColor,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool isSelected;
+  final bool isDark;
+  final Color borderColor;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    const activeColor = AppColors.primary;
+    final bg = isSelected
+        ? activeColor.withValues(alpha: isDark ? 0.18 : 0.08)
+        : Colors.transparent;
+    final border = isSelected ? activeColor : borderColor;
+    final contentColor =
+        isSelected ? activeColor : (isDark ? Colors.white70 : AppColors.textSecondary);
+
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: border, width: isSelected ? 1.5 : 1.0),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 18, color: contentColor),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: AppTextStyles.labelLarge.copyWith(
+                color: contentColor,
+                fontWeight:
+                    isSelected ? FontWeight.w700 : FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _ThemeToggle extends ConsumerWidget {
   const _ThemeToggle({required this.isDark});
