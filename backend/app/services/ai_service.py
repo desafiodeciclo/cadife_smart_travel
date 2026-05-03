@@ -2,7 +2,9 @@ from typing import Optional
 
 import structlog
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_openai import ChatOpenAI
+from langchain_classic.memory import ConversationBufferWindowMemory
+from langchain_community.chat_message_histories import RedisChatMessageHistory
 from pydantic import SecretStr
 
 from app.core.config import get_settings
@@ -21,67 +23,40 @@ from app.services.prompt_security import (
 logger = structlog.get_logger()
 settings = get_settings()
 
-_MEMORY_WINDOW_K = 20  # number of exchanges (pairs) to keep
-
-# ---------------------------------------------------------------------------
-# SimpleWindowMemory — drop-in replacement for ConversationBufferWindowMemory
-# (removed in langchain 1.x)
-# ---------------------------------------------------------------------------
-
-class SimpleWindowMemory:
-    """Stores the last k message pairs per conversation key."""
-
-    def __init__(self, k: int = 20, memory_key: str = "chat_history", return_messages: bool = True) -> None:
-        self.k = k
-        self.memory_key = memory_key
-        self.return_messages = return_messages
-        self._buffer: list[tuple[str, str]] = []
-
-    def save_context(self, inputs: dict, outputs: dict) -> None:
-        user_msg = inputs.get("input", "")
-        ai_msg = outputs.get("output", "")
-        self._buffer.append((user_msg, ai_msg))
-        if len(self._buffer) > self.k:
-            self._buffer.pop(0)
-
-    def load_memory_variables(self, _inputs: dict) -> dict:
-        messages = []
-        for user_msg, ai_msg in self._buffer:
-            messages.append({"role": "user", "content": user_msg})
-            messages.append({"role": "assistant", "content": ai_msg})
-        return {self.memory_key: messages}
+_llm: Optional[ChatOpenAI] = None
+_MEMORY_WINDOW_K = 10  # Mantém as últimas 10 interações como contexto
 
 
-_memories: dict[str, SimpleWindowMemory] = {}
-_llm: Optional[ChatGoogleGenerativeAI] = None
-
-
-def get_llm() -> ChatGoogleGenerativeAI:
-    """Return LLM instance — Gemini exclusivo."""
+def get_llm() -> ChatOpenAI:
+    """Return LLM instance — OpenAI."""
     global _llm
     if _llm is None:
-        if settings.GEMINI_API_KEY:
-            _llm = ChatGoogleGenerativeAI(
-                model="gemini-2.0-flash",
+        if settings.OPENAI_API_KEY:
+            _llm = ChatOpenAI(
+                model="gpt-4o",
                 temperature=0.3,
                 timeout=25,
                 max_retries=2,
-                google_api_key=SecretStr(settings.GEMINI_API_KEY),
+                api_key=SecretStr(settings.OPENAI_API_KEY),
             )
-            logger.info("llm_initialized", provider="google", model="gemini-2.0-flash")
+            logger.info("llm_initialized", provider="openai", model="gpt-4o")
         else:
-            raise RuntimeError("Nenhuma GEMINI_API_KEY configurada. Defina GEMINI_API_KEY no .env")
+            raise RuntimeError("Nenhuma OPENAI_API_KEY configurada no .env")
     return _llm
 
 
-def get_memory(phone: str) -> SimpleWindowMemory:
-    if phone not in _memories:
-        _memories[phone] = SimpleWindowMemory(
-            k=_MEMORY_WINDOW_K,
-            memory_key=f"chat_history_{phone}",
-            return_messages=True,
-        )
-    return _memories[phone]
+def get_memory(phone: str) -> ConversationBufferWindowMemory:
+    message_history = RedisChatMessageHistory(
+        url=settings.REDIS_URL,
+        ttl=86400, # 24 hours
+        session_id=f"chat_history_{phone}"
+    )
+    return ConversationBufferWindowMemory(
+        chat_memory=message_history,
+        k=_MEMORY_WINDOW_K,
+        memory_key="chat_history",
+        return_messages=True
+    )
 
 
 def preload_memory_from_db(
@@ -90,18 +65,21 @@ def preload_memory_from_db(
 ) -> None:
     """Populate conversation memory from persisted interacoes rows.
 
-    Call this at the start of a conversation when _memories[phone] is
-    absent (e.g. after a server restart) to restore the AI's context.
+    Call this at the start of a conversation when memory is
+    empty (e.g. after a server restart/cache clear) to restore the AI's context.
 
     Args:
         phone: Customer phone number (used as memory key).
         interacoes: List of dicts with keys 'mensagem_cliente' and
                     'mensagem_ia', ordered oldest-first.
     """
-    if phone in _memories:
-        return  # already loaded in this session
-
     memory = get_memory(phone)
+    history = memory.load_memory_variables({})
+    
+    # If the history already has messages, we don't need to preload
+    if history.get("chat_history"):
+        return
+
     for row in interacoes[-_MEMORY_WINDOW_K:]:
         cliente = row.get("mensagem_cliente") or ""
         ia = row.get("mensagem_ia") or ""
@@ -241,7 +219,7 @@ Você DEVE:
         config = {"callbacks": callbacks} if callbacks else {}
 
         response = await chain.ainvoke({
-            "chat_history": history.get(f"chat_history_{phone}", []),
+            "chat_history": history.get("chat_history", []),
             "input": safe_message,
         }, config=config)
 
@@ -273,7 +251,7 @@ async def extract_briefing(conversation: list[dict]) -> BriefingExtracted:
     Returns:
         Instância de BriefingExtracted, possivelmente vazia.
     """
-    if not settings.GEMINI_API_KEY:
+    if not settings.OPENAI_API_KEY:
         return BriefingExtracted()
 
     # Sanitizar conversa antes de enviar à extração
@@ -330,13 +308,13 @@ async def extract_briefing(conversation: list[dict]) -> BriefingExtracted:
     # TENTATIVA 2 — Fallback: autocorreção com prompt explícito (Gemini)
     # -----------------------------------------------------------------------
     try:
-        # Usa Gemini com temperatura 0 para máxima determinismo na correção
-        fallback_llm = ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash",
+        # Usa OpenAI com temperatura 0 para máxima determinismo na correção
+        fallback_llm = ChatOpenAI(
+            model="gpt-4o",
             temperature=0.0,
             timeout=15,
             max_retries=1,
-            google_api_key=SecretStr(settings.GEMINI_API_KEY) if settings.GEMINI_API_KEY else None,
+            api_key=SecretStr(settings.OPENAI_API_KEY) if settings.OPENAI_API_KEY else None,
         )
 
         autocorrect_prompt = ChatPromptTemplate.from_messages([
