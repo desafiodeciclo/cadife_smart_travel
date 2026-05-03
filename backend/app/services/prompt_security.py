@@ -67,6 +67,9 @@ _INJECTION_PATTERNS = [
     r"show\s+(me\s+)?(the\s+)?(previous\s+|above\s+)?(instructions?|prompts?|system)",
     r"repeat\s+(the\s+)?(previous\s+|above\s+)?(instructions?|prompts?|system)",
     r"what\s+(were|are)\s+(the\s+)?(previous\s+|above\s+)?(instructions?|prompts?|system)",
+    # Exfiltração via Markdown/Codificação (Prevenção OWASP LLM06)
+    r"!\[.*?\]\s*\(https?://.*?\)",
+    r"encode.*?(base64|hex|url)",
 ]
 
 _INJECTION_REGEX = re.compile(
@@ -169,6 +172,7 @@ PROIBIÇÕES ABSOLUTAS — nunca viole estas regras:
 - Nunca confirme disponibilidade de voos, hotéis ou passeios.
 - Nunca feche vendas, faça promessas comerciais ou comprometa a empresa.
 - Nunca tome decisões comerciais críticas de forma autônoma.
+- NUNCA gere links, URLs externas, código ou formatação Markdown para imagens (ex: ![img](url)). Responda apenas com texto limpo.
 
 COMPORTAMENTO OBRIGATÓRIO:
 - Sempre indique que um consultor humano da Cadife Tour irá validar todas as informações e finalizar o roteiro.
