@@ -1,19 +1,19 @@
-import 'package:cadife_smart_travel/core/theme/app_colors.dart';
+import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 /// Tela de edição de lead — Fase 4.2
 /// Permite atualizar nome, status e score de um lead existente.
-class LeadEditScreen extends ConsumerStatefulWidget {
+class LeadEditPage extends ConsumerStatefulWidget {
   final String leadId;
-  const LeadEditScreen({super.key, required this.leadId});
+  const LeadEditPage({super.key, required this.leadId});
 
   @override
-  ConsumerState<LeadEditScreen> createState() => _LeadEditScreenState();
+  ConsumerState<LeadEditPage> createState() => _LeadEditPageState();
 }
 
-class _LeadEditScreenState extends ConsumerState<LeadEditScreen>
+class _LeadEditPageState extends ConsumerState<LeadEditPage>
     with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nomeController;

@@ -1,20 +1,19 @@
-﻿import 'package:cadife_smart_travel/core/theme/app_colors.dart';
-import 'package:cadife_smart_travel/core/utils/extensions/date_extensions.dart';
-import 'package:cadife_smart_travel/core/utils/extensions/string_extensions.dart';
+import 'package:cadife_smart_travel/core/utils/extensions/extensions.dart';
+import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
-import 'package:cadife_smart_travel/features/agency/leads/leads_provider.dart';
+import 'package:cadife_smart_travel/features/agency/leads/presentation/providers/leads_notifier.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-// Ã¢â€â‚¬Ã¢â€â‚¬ File-private providers para estado de filtro local da tela Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ─── File-private providers para estado de filtro local da tela ─────────────────────────────
 
 final _searchQueryProvider = StateProvider<String>((ref) => '');
 final _statusFilterProvider = StateProvider<LeadStatus?>((ref) => null);
 final _scoreFilterProvider = StateProvider<LeadScore?>((ref) => null);
 
 final _filteredLeadsProvider = Provider<AsyncValue<List<Lead>>>((ref) {
-  final leadsAsync = ref.watch(leadsProvider);
+  final leadsAsync = ref.watch(leadsNotifierProvider);
   final query = ref.watch(_searchQueryProvider).toLowerCase().trim();
   final status = ref.watch(_statusFilterProvider);
   final score = ref.watch(_scoreFilterProvider);
@@ -31,16 +30,16 @@ final _filteredLeadsProvider = Provider<AsyncValue<List<Lead>>>((ref) {
       }).toList());
 });
 
-// Ã¢â€â‚¬Ã¢â€â‚¬ Screen Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ─── Page ────────────────────────────────────────────────────────────────────────────────
 
-class LeadsScreen extends ConsumerStatefulWidget {
-  const LeadsScreen({super.key});
+class LeadsPage extends ConsumerStatefulWidget {
+  const LeadsPage({super.key});
 
   @override
-  ConsumerState<LeadsScreen> createState() => _LeadsScreenState();
+  ConsumerState<LeadsPage> createState() => _LeadsPageState();
 }
 
-class _LeadsScreenState extends ConsumerState<LeadsScreen> {
+class _LeadsPageState extends ConsumerState<LeadsPage> {
   late final TextEditingController _searchController;
 
   @override
@@ -65,7 +64,7 @@ class _LeadsScreenState extends ConsumerState<LeadsScreen> {
   @override
   Widget build(BuildContext context) {
     final filteredAsync = ref.watch(_filteredLeadsProvider);
-    final totalAsync = ref.watch(leadsProvider);
+    final totalAsync = ref.watch(leadsNotifierProvider);
     final activeStatus = ref.watch(_statusFilterProvider);
     final activeScore = ref.watch(_scoreFilterProvider);
 
@@ -123,13 +122,13 @@ class _LeadsScreenState extends ConsumerState<LeadsScreen> {
               loading: () =>
                   const Center(child: CircularProgressIndicator(color: AppColors.primary)),
               error: (e, _) => _ErrorView(
-                onRetry: () => ref.read(leadsProvider.notifier).refresh(),
+                onRetry: () => ref.read(leadsNotifierProvider.notifier).refresh(),
               ),
               data: (leads) => leads.isEmpty
                   ? const _EmptyView()
                   : RefreshIndicator(
                       color: AppColors.primary,
-                      onRefresh: () => ref.read(leadsProvider.notifier).refresh(),
+                      onRefresh: () => ref.read(leadsNotifierProvider.notifier).refresh(),
                       child: ListView.builder(
                         padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
                         itemCount: leads.length,
@@ -144,7 +143,7 @@ class _LeadsScreenState extends ConsumerState<LeadsScreen> {
   }
 }
 
-// Ã¢â€â‚¬Ã¢â€â‚¬ Search bar Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ─── Search bar ────────────────────────────────────────────────────────────────────────────────
 
 class _SearchBar extends StatelessWidget {
   const _SearchBar({
@@ -201,7 +200,7 @@ class _SearchBar extends StatelessWidget {
   }
 }
 
-// Ã¢â€â‚¬Ã¢â€â‚¬ Stats row Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ─── Stats row ────────────────────────────────────────────────────────────────────────────────
 
 class _StatsRow extends StatelessWidget {
   const _StatsRow({
@@ -239,7 +238,7 @@ class _StatsRow extends StatelessWidget {
             GestureDetector(
               onTap: onClear,
               child: const Text(
-                'Ã‚Â· Limpar filtros',
+                '· Limpar filtros',
                 style: TextStyle(
                   color: AppColors.primary,
                   fontSize: 12,
@@ -254,7 +253,7 @@ class _StatsRow extends StatelessWidget {
   }
 }
 
-// Ã¢â€â‚¬Ã¢â€â‚¬ Combined filter strip (status + score em um ÃƒÂºnico scroll horizontal) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ─── Combined filter strip (status + score em um único scroll horizontal) ──────────────────────
 
 class _FilterStrip extends ConsumerWidget {
   const _FilterStrip({required this.activeStatus, required this.activeScore});
@@ -410,7 +409,7 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
-// Ã¢â€â‚¬Ã¢â€â‚¬ Lead Card Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ─── Lead Card ────────────────────────────────────────────────────────────────────────────────
 
 class _LeadCard extends StatelessWidget {
   const _LeadCard({required this.lead});
@@ -641,7 +640,7 @@ class _StatusBadge extends StatelessWidget {
   }
 }
 
-// Ã¢â€â‚¬Ã¢â€â‚¬ Estados auxiliares Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ─── Estados auxiliares ────────────────────────────────────────────────────────────────────────────────
 
 class _ErrorView extends StatelessWidget {
   const _ErrorView({required this.onRetry});
@@ -706,6 +705,3 @@ class _EmptyView extends StatelessWidget {
     );
   }
 }
-
-
-

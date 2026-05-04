@@ -1,26 +1,26 @@
 import 'package:cadife_smart_travel/core/constants/api_constants.dart';
 import 'package:cadife_smart_travel/core/offline/offline_manager.dart';
+import 'package:cadife_smart_travel/features/agency/leads/data/datasources/i_leads_datasource.dart';
+import 'package:cadife_smart_travel/features/agency/leads/data/models/lead_api_model.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/briefing.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
-import 'package:cadife_smart_travel/features/agency/leads/domain/repositories/lead_port.dart';
 import 'package:cadife_smart_travel/features/client/historico/domain/entities/interacao.dart';
 import 'package:dio/dio.dart';
 
-class LeadRepositoryImpl implements LeadPort {
-  LeadRepositoryImpl({required Dio dio, required OfflineManager offlineManager})
-    : _dio = dio,
-      _offlineManager = offlineManager;
-
+class LeadsRemoteApiDatasource implements ILeadsDatasource {
   final Dio _dio;
   final OfflineManager _offlineManager;
+
+  LeadsRemoteApiDatasource({
+    required Dio dio,
+    required OfflineManager offlineManager,
+  })  : _dio = dio,
+        _offlineManager = offlineManager;
 
   static const _cacheKeyPrefix = 'leads';
 
   @override
-  Future<List<Lead>> getLeads({
-    LeadStatus? status,
-    LeadScore? score,
-  }) async {
+  Future<List<LeadApiModel>> getLeads({LeadStatus? status, LeadScore? score}) async {
     try {
       final response = await _dio.get(
         ApiConstants.leads,
@@ -30,7 +30,7 @@ class LeadRepositoryImpl implements LeadPort {
         },
       );
       final leads = (response.data as List)
-          .map((e) => Lead.fromJson(e as Map<String, dynamic>))
+          .map((e) => LeadApiModel.fromJson(e as Map<String, dynamic>))
           .toList();
 
       await _offlineManager.saveToCache(
@@ -44,7 +44,7 @@ class LeadRepositoryImpl implements LeadPort {
       );
       if (cached != null) {
         return (cached as List)
-            .map((e) => Lead.fromJson(e as Map<String, dynamic>))
+            .map((e) => LeadApiModel.fromJson(e as Map<String, dynamic>))
             .toList();
       }
       rethrow;
@@ -52,10 +52,10 @@ class LeadRepositoryImpl implements LeadPort {
   }
 
   @override
-  Future<Lead> getLeadById(String id) async {
+  Future<LeadApiModel> getLeadById(String id) async {
     try {
       final response = await _dio.get(ApiConstants.leadById(id));
-      final lead = Lead.fromJson(response.data as Map<String, dynamic>);
+      final lead = LeadApiModel.fromJson(response.data as Map<String, dynamic>);
 
       await _offlineManager.saveToCache(
         '$_cacheKeyPrefix:detail:$id',
@@ -67,19 +67,19 @@ class LeadRepositoryImpl implements LeadPort {
         '$_cacheKeyPrefix:detail:$id',
       );
       if (cached != null) {
-        return Lead.fromJson(cached as Map<String, dynamic>);
+        return LeadApiModel.fromJson(cached as Map<String, dynamic>);
       }
       rethrow;
     }
   }
 
   @override
-  Future<Lead> updateLeadStatus(String id, LeadStatus newStatus) async {
+  Future<LeadApiModel> updateLeadStatus(String id, LeadStatus newStatus) async {
     final response = await _dio.patch(
       ApiConstants.leadById(id),
       data: {'status': newStatus.name},
     );
-    final lead = Lead.fromJson(response.data as Map<String, dynamic>);
+    final lead = LeadApiModel.fromJson(response.data as Map<String, dynamic>);
 
     await _offlineManager.saveToCache(
       '$_cacheKeyPrefix:detail:$id',
@@ -134,22 +134,22 @@ class LeadRepositoryImpl implements LeadPort {
   }
 
   @override
-  Future<Lead> createLead(CreateLeadRequest request) async {
+  Future<LeadApiModel> createLead(CreateLeadRequest request) async {
     final response = await _dio.post(
       ApiConstants.leads,
       data: request.toJson(),
     );
-    final lead = Lead.fromJson(response.data as Map<String, dynamic>);
+    final lead = LeadApiModel.fromJson(response.data as Map<String, dynamic>);
 
     await _offlineManager.invalidateByPrefix('$_cacheKeyPrefix:list:');
     return lead;
   }
 
   @override
-  Future<Lead?> getMyLead() async {
+  Future<LeadApiModel?> getMyLead() async {
     try {
       final response = await _dio.get('${ApiConstants.leads}/my-active');
-      final lead = Lead.fromJson(response.data as Map<String, dynamic>);
+      final lead = LeadApiModel.fromJson(response.data as Map<String, dynamic>);
 
       await _offlineManager.saveToCache(
         '$_cacheKeyPrefix:my-active',
@@ -163,13 +163,9 @@ class LeadRepositoryImpl implements LeadPort {
         '$_cacheKeyPrefix:my-active',
       );
       if (cached != null) {
-        return Lead.fromJson(cached as Map<String, dynamic>);
+        return LeadApiModel.fromJson(cached as Map<String, dynamic>);
       }
       rethrow;
     }
   }
 }
-
-
-
-

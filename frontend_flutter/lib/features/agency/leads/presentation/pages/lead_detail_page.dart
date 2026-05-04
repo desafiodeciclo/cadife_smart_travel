@@ -1,20 +1,20 @@
-﻿import 'package:cadife_smart_travel/core/theme/app_colors.dart';
-import 'package:cadife_smart_travel/features/agency/agenda/widgets/schedule_appointment_modal.dart';
-import 'package:cadife_smart_travel/features/agency/lead_detail/lead_detail_provider.dart';
+import 'package:cadife_smart_travel/design_system/design_system.dart';
+import 'package:cadife_smart_travel/features/agency/agenda/presentation/widgets/schedule_appointment_modal.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
-import 'package:cadife_smart_travel/features/agency/proposals/create_proposal_modal.dart';
+import 'package:cadife_smart_travel/features/agency/leads/presentation/providers/lead_detail_provider.dart';
+import 'package:cadife_smart_travel/features/agency/proposals/presentation/widgets/create_proposal_modal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class LeadDetailScreen extends ConsumerStatefulWidget {
+class LeadDetailPage extends ConsumerStatefulWidget {
   final String leadId;
-  const LeadDetailScreen({super.key, required this.leadId});
+  const LeadDetailPage({super.key, required this.leadId});
 
   @override
-  ConsumerState<LeadDetailScreen> createState() => _LeadDetailScreenState();
+  ConsumerState<LeadDetailPage> createState() => _LeadDetailPageState();
 }
 
-class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> with SingleTickerProviderStateMixin {
+class _LeadDetailPageState extends ConsumerState<LeadDetailPage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -59,7 +59,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> with Single
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Erro: $e')),
         data: (lead) => lead == null
-            ? const Center(child: Text('Lead nÃƒÂ£o encontrado.'))
+            ? const Center(child: Text('Lead não encontrado.'))
             : Column(
                 children: [
                   Padding(
@@ -293,16 +293,16 @@ class _BriefingTab extends StatelessWidget {
           crossAxisSpacing: 12,
           childAspectRatio: 2.2,
           children: [
-            _GridItem(icon: Icons.flight_takeoff, title: 'Destino', value: lead.destino ?? 'NÃƒÂ£o informado'),
+            _GridItem(icon: Icons.flight_takeoff, title: 'Destino', value: lead.destino ?? 'Não informado'),
             const _GridItem(icon: Icons.calendar_month, title: 'Datas', value: '10 a 20 Fev 2026'),
             _GridItem(icon: Icons.people_outline, title: 'Pessoas', value: '${lead.numPessoas ?? 0} (Familia)'),
-            _GridItem(icon: Icons.account_balance_wallet_outlined, title: 'OrÃƒÂ§amento', value: lead.orcamentoFaixa ?? 'MÃƒÂ©dio'),
-            _GridItem(icon: Icons.badge_outlined, title: 'Passaporte VÃƒÂ¡lido', value: lead.passaporteValido == true ? 'Sim, todos' : 'NÃƒÂ£o informado'),
+            _GridItem(icon: Icons.account_balance_wallet_outlined, title: 'Orçamento', value: lead.orcamentoFaixa ?? 'Médio'),
+            _GridItem(icon: Icons.badge_outlined, title: 'Passaporte Válido', value: lead.passaporteValido == true ? 'Sim, todos' : 'Não informado'),
           ],
         ),
         const SizedBox(height: 24),
         const Text(
-          'ObservaÃƒÂ§ÃƒÂµes',
+          'Observações',
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
         ),
         const SizedBox(height: 12),
@@ -514,6 +514,3 @@ class _Chip extends StatelessWidget {
     );
   }
 }
-
-
-

@@ -13,14 +13,15 @@ import 'package:cadife_smart_travel/core/security/secure_config.dart';
 import 'package:cadife_smart_travel/data/local/database_helper.dart';
 import 'package:cadife_smart_travel/data/repositories/mock_agenda_repository.dart';
 import 'package:cadife_smart_travel/data/repositories/mock_auth_repository.dart';
-import 'package:cadife_smart_travel/data/repositories/mock_lead_repository.dart';
 import 'package:cadife_smart_travel/data/repositories/mock_profile_repository.dart';
 import 'package:cadife_smart_travel/data/repositories/offline_event_repository_impl.dart';
 import 'package:cadife_smart_travel/data/repositories/proposal_repository_impl.dart';
 import 'package:cadife_smart_travel/domain/repositories/i_offline_event_repository.dart';
 import 'package:cadife_smart_travel/domain/usecases/process_offline_queue_usecase.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/domain/repositories/agenda_port.dart';
-import 'package:cadife_smart_travel/features/agency/leads/domain/repositories/lead_port.dart';
+import 'package:cadife_smart_travel/features/agency/leads/data/datasources/leads_remote_mock_datasource.dart';
+import 'package:cadife_smart_travel/features/agency/leads/data/repositories/leads_repository_impl.dart';
+import 'package:cadife_smart_travel/features/agency/leads/domain/repositories/i_leads_repository.dart';
 import 'package:cadife_smart_travel/features/agency/proposals/domain/repositories/proposal_port.dart';
 import 'package:cadife_smart_travel/features/auth/domain/repositories/auth_port.dart';
 import 'package:cadife_smart_travel/features/client/profile/domain/repositories/profile_port.dart';
@@ -146,16 +147,11 @@ void _registerAuthModule() {
 }
 
 void _registerLeadModule() {
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  // MOCK LEAD ATIVADO â€” COMENTE A LINHA ABAIXO E DESCOMENTE A SEGUINTE PARA PROD
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  sl.registerLazySingleton<LeadPort>(MockLeadRepository.new);
-  // sl.registerLazySingleton<LeadPort>(
-  //   () => LeadRepositoryImpl(
-  //     dio: sl<Dio>(),
-  //     offlineManager: sl<OfflineManager>(),
-  //   ),
-  // );
+  sl.registerLazySingleton<ILeadsRepository>(
+    () => LeadsRepositoryImpl(
+      remoteDatasource: LeadsRemoteMockDatasource(),
+    ),
+  );
 }
 
 void _registerAgendaModule() {

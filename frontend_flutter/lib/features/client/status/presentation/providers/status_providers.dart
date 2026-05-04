@@ -1,11 +1,11 @@
+import 'package:cadife_smart_travel/features/agency/leads/data/providers/leads_data_providers.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/client/documentos/domain/entities/documento.dart';
-import 'package:cadife_smart_travel/features/client/status/presentation/providers/status_notifier.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Provider que busca o lead ativo do cliente logado.
 final activeLeadProvider = FutureProvider<Lead?>((ref) async {
-  final repository = ref.watch(statusRepositoryProvider);
+  final repository = ref.watch(leadsRepositoryProvider);
   return repository.getMyLead();
 });
 

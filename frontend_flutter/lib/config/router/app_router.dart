@@ -2,9 +2,9 @@ import 'package:cadife_smart_travel/config/router/agency_shell.dart';
 import 'package:cadife_smart_travel/config/router/client_shell.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/agenda_screen.dart';
 import 'package:cadife_smart_travel/features/agency/dashboard/dashboard_screen.dart';
-import 'package:cadife_smart_travel/features/agency/leads/lead_detail_screen.dart';
-import 'package:cadife_smart_travel/features/agency/leads/lead_edit_screen.dart';
-import 'package:cadife_smart_travel/features/agency/leads/leads_screen.dart';
+import 'package:cadife_smart_travel/features/agency/leads/presentation/pages/lead_detail_page.dart';
+import 'package:cadife_smart_travel/features/agency/leads/presentation/pages/lead_edit_page.dart';
+import 'package:cadife_smart_travel/features/agency/leads/presentation/pages/leads_page.dart';
 import 'package:cadife_smart_travel/features/agency/profile/profile_screen.dart';
 import 'package:cadife_smart_travel/features/agency/proposals/proposal_create_screen.dart';
 import 'package:cadife_smart_travel/features/agency/settings/settings_screen.dart';
@@ -121,7 +121,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/agency/leads',
             pageBuilder: (_, state) => NoTransitionPage(
               key: state.pageKey,
-              child: const LeadsScreen(),
+              child: const LeadsPage(),
             ),
           ),
           GoRoute(
@@ -155,7 +155,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/agency/leads/:id',
         pageBuilder: (_, state) => MaterialPage(
           key: state.pageKey,
-          child: LeadDetailScreen(leadId: state.pathParameters['id']!),
+          child: LeadDetailPage(leadId: state.pathParameters['id']!),
         ),
       ),
 
@@ -164,7 +164,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/agency/leads/:id/edit',
         pageBuilder: (_, state) => MaterialPage(
           key: state.pageKey,
-          child: LeadEditScreen(leadId: state.pathParameters['id']!),
+          child: LeadEditPage(leadId: state.pathParameters['id']!),
         ),
       ),
 
