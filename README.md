@@ -2,6 +2,12 @@
 
 Assistente inteligente de atendimento turístico via WhatsApp e App Mobile, integrando IA (RAG) para propostas personalizadas.
 
+> ⚠️ **STATUS ATUAL DO PROJETO:** O projeto encontra-se em fase de desenvolvimento e refatoração. Atualmente, existem **bloqueadores críticos** (erros de compilação, pacotes faltando, conflitos de nomenclatura) que impedem a execução direta tanto do Backend quanto do Frontend.
+> 
+> **ANTES DE QUALQUER ALTERAÇÃO OU TENTATIVA DE EXECUÇÃO:** Leia o documento obrigatório **[docs/STATUS_E_ROADMAP.md](./docs/STATUS_E_ROADMAP.md)**. Ele mapeia detalhadamente o estado atual (o que está quebrado) e a ordem de execução das sprints para estabilizar o sistema.
+
+---
+
 ## 🏗️ Arquitetura
 - **Backend**: FastAPI (Python 3.11) + SQLAlchemy/Alembic.
 - **Frontend**: Flutter.
@@ -12,7 +18,9 @@ Assistente inteligente de atendimento turístico via WhatsApp e App Mobile, inte
 
 ---
 
-## 🚀 Como Executar o Projeto
+## 🚀 Como Executar o Projeto (Comportamento Esperado)
+
+> **Nota:** As instruções abaixo refletem como o projeto *deveria* ser executado. Devido ao status atual (veja o aviso acima), esses passos podem falhar até que os bloqueadores sejam resolvidos conforme o roadmap.
 
 ### 1. Pré-requisitos
 - [Docker](https://www.docker.com/) & Docker Compose.
@@ -31,7 +39,7 @@ O backend é totalmente containerizado, incluindo o banco de dados e serviços a
     cp backend/.env.example backend/.env
     ```
     > [!IMPORTANT]
-    > Edite o arquivo `backend/.env` e insira sua `OPENAI_API_KEY`.
+    > Edite o arquivo `backend/.env` e insira sua `OPENAI_API_KEY`, juntamente com outras chaves obrigatórias descritas no `.env.example`.
 
 2.  **Subir os Serviços**:
     Na raiz do projeto, execute:
@@ -73,5 +81,7 @@ O backend é totalmente containerizado, incluindo o banco de dados e serviços a
 
 ---
 
-## 📄 Especificações
-Para mais detalhes sobre a lógica de negócio e requisitos técnicos, consulte o arquivo [spec.md](./spec.md).
+## 📄 Especificações & Documentação
+- **Status & Roadmap (Leitura Obrigatória):** [docs/STATUS_E_ROADMAP.md](./docs/STATUS_E_ROADMAP.md)
+- **Especificações de Negócio:** [specs/spec.md](./specs/spec.md)
+- **Arquitetura Frontend:** [frontarquiteture.md](./frontarquiteture.md)

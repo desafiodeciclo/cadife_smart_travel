@@ -3,7 +3,7 @@
   "title": "Refactor: Reestruturação da lib/ Flutter — Clean Architecture",
   "description": "Migração da estrutura atual da lib/ (híbrida/flat) para Clean Architecture completa conforme frontarquiteture.md. Sete etapas sequenciais e independentes. Sem perda de funcionalidade.",
   "created_at": "2026-05-04",
-  "status": "pending",
+  "status": "in-progress",
   "owner": "Nikolas Tesch",
   "branch": "feat/front-refactor",
   "estimated_effort": "3–5 sessões",
@@ -20,7 +20,7 @@
       "id": "E1",
       "titulo": "Dependências e Bootstrap",
       "descricao": "Adicionar pacotes ausentes ao pubspec.yaml e separar o ponto de entrada da aplicação em main.dart + app.dart.",
-      "status": "pending",
+      "status": "done",
       "arquivos_afetados": [
         "frontend_flutter/pubspec.yaml",
         "frontend_flutter/lib/main.dart",
@@ -79,7 +79,7 @@
       "id": "E2",
       "titulo": "Design System",
       "descricao": "Extrair tokens visuais, tema e componentes globais de core/theme/ e core/widgets/ para uma pasta design_system/ dedicada com barrel file único.",
-      "status": "pending",
+      "status": "done",
       "arquivos_afetados": [
         "frontend_flutter/lib/design_system/ (criar)",
         "frontend_flutter/lib/core/theme/ (dissolver)",
@@ -162,7 +162,7 @@
       "id": "E3",
       "titulo": "Config, Router e Core Cleanup",
       "descricao": "Mover o router para config/router/, absorver services/ no core/, e remover shared/models/ migrando modelos para as features corretas.",
-      "status": "pending",
+      "status": "in-progress",
       "arquivos_afetados": [
         "frontend_flutter/lib/config/ (criar)",
         "frontend_flutter/lib/core/router/ (mover)",
