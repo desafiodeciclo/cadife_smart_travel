@@ -100,7 +100,7 @@ class _LeadsPageState extends ConsumerState<LeadsPage> {
             onClear: _clearFilters,
           ),
           _FilterStrip(activeStatus: activeStatus, activeScore: activeScore),
-          const Divider(height: 1, thickness: 1, color: AppColors.border),
+          Divider(height: 1, thickness: 1, color: context.cadife.cardBorder),
           Expanded(
             child: filteredAsync.when(
               loading: () =>
@@ -142,6 +142,8 @@ class _SearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Container(
       color: Theme.of(context).scaffoldBackgroundColor,
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
@@ -153,15 +155,26 @@ class _SearchBar extends StatelessWidget {
         ),
         decoration: InputDecoration(
           hintText: 'Buscar por nome, telefone ou destino...',
-          hintStyle: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
-          prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary, size: 20),
+          hintStyle: TextStyle(
+            color: isDark ? Colors.white60 : context.cadife.textSecondary, 
+            fontSize: 14
+          ),
+          prefixIcon: Icon(
+            Icons.search, 
+            color: isDark ? Colors.white60 : context.cadife.textSecondary, 
+            size: 20
+          ),
           suffixIcon: controller.text.isNotEmpty
               ? IconButton(
-                  icon: const Icon(Icons.close, color: AppColors.textSecondary, size: 18),
+                  icon: Icon(
+                    Icons.close, 
+                    color: isDark ? Colors.white60 : context.cadife.textSecondary, 
+                    size: 18
+                  ),
                   onPressed: onClear,
                 )
               : null,
-          fillColor: AppColors.surface,
+          fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade100,
           filled: true,
           isDense: true,
           contentPadding: const EdgeInsets.symmetric(vertical: 11),
@@ -171,7 +184,9 @@ class _SearchBar extends StatelessWidget {
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.border),
+            borderSide: BorderSide(
+              color: isDark ? Colors.white10 : context.cadife.cardBorder,
+            ),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
@@ -211,8 +226,8 @@ class _StatsRow extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
+            style: TextStyle(
+              color: context.cadife.textSecondary,
               fontSize: 12,
               fontWeight: FontWeight.w500,
             ),
@@ -263,7 +278,7 @@ class _FilterStrip extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scores = <(LeadScore?, String, IconData, Color)>[
-      (null, 'Todos', Icons.filter_list, AppColors.textSecondary),
+      (null, 'Todos', Icons.filter_list, context.cadife.textSecondary),
       (LeadScore.quente, 'Quente', Icons.local_fire_department, AppColors.scoreQuente),
       (LeadScore.morno, 'Morno', Icons.thermostat, AppColors.scoreMorno),
       (LeadScore.frio, 'Frio', Icons.ac_unit, AppColors.scoreFrio),
@@ -302,14 +317,14 @@ class _FilterStrip extends ConsumerWidget {
                 );
               }),
               // Separador visual entre status e score
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 6),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
                 child: SizedBox(
                   height: 22,
                   child: VerticalDivider(
                     width: 1,
                     thickness: 1,
-                    color: AppColors.border,
+                    color: context.cadife.cardBorder,
                   ),
                 ),
               ),
@@ -363,7 +378,7 @@ class _FilterChip extends StatelessWidget {
           color: isActive ? activeColor.withValues(alpha: 0.12) : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isActive ? activeColor : AppColors.border,
+            color: isActive ? activeColor : context.cadife.cardBorder,
             width: isActive ? 1.5 : 1,
           ),
         ),
@@ -374,7 +389,7 @@ class _FilterChip extends StatelessWidget {
               Icon(
                 icon,
                 size: 13,
-                color: isActive ? activeColor : AppColors.textSecondary,
+                color: isActive ? activeColor : context.cadife.textSecondary,
               ),
               const SizedBox(width: 4),
             ],
@@ -383,7 +398,7 @@ class _FilterChip extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                color: isActive ? activeColor : AppColors.textSecondary,
+                color: isActive ? activeColor : context.cadife.textSecondary,
               ),
             ),
           ],
@@ -402,21 +417,25 @@ class _LeadCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final statusColor = AppColors.statusColor(lead.status.name);
     final scoreColor = AppColors.scoreColor(lead.score.name);
+    final borderColor = isDark ? Colors.white10 : context.cadife.cardBorder;
+    final dividerColor = isDark ? Colors.white10 : context.cadife.cardBorder;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: borderColor),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
+          if (!isDark)
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
         ],
       ),
       child: Material(
@@ -469,45 +488,45 @@ class _LeadCard extends StatelessWidget {
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        const Icon(Icons.phone_outlined,
-                            size: 13, color: AppColors.textSecondary),
+                        Icon(Icons.phone_outlined,
+                            size: 13, color: context.cadife.textSecondary),
                         const SizedBox(width: 5),
                         Text(
                           lead.phone,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: AppColors.textSecondary,
+                            color: context.cadife.textSecondary,
                           ),
                         ),
                         if (lead.perfil != null) ...[
                           const SizedBox(width: 10),
-                          const Icon(Icons.people_outline,
-                              size: 13, color: AppColors.textSecondary),
+                          Icon(Icons.people_outline,
+                              size: 13, color: context.cadife.textSecondary),
                           const SizedBox(width: 4),
                           Text(
                             lead.perfil!,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.textSecondary,
+                              color: context.cadife.textSecondary,
                             ),
                           ),
                         ],
                       ],
                     ),
                     const SizedBox(height: 10),
-                    const Divider(height: 1, color: AppColors.border),
+                    Divider(height: 1, color: dividerColor),
                     const SizedBox(height: 10),
                     Row(
                       children: [
-                        const Icon(Icons.flight_takeoff,
-                            size: 13, color: AppColors.textSecondary),
+                        Icon(Icons.flight_takeoff,
+                            size: 13, color: context.cadife.textSecondary),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
                             lead.destino ?? 'Destino a definir',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.textSecondary,
+                              color: context.cadife.textSecondary,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -515,14 +534,14 @@ class _LeadCard extends StatelessWidget {
                         ),
                         if (lead.dataIda != null) ...[
                           const SizedBox(width: 8),
-                          const Icon(Icons.calendar_today_outlined,
-                              size: 12, color: AppColors.textSecondary),
+                          Icon(Icons.calendar_today_outlined,
+                              size: 12, color: context.cadife.textSecondary),
                           const SizedBox(width: 3),
                           Text(
                             lead.dataIda!.toDateString(),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 11,
-                              color: AppColors.textSecondary,
+                              color: context.cadife.textSecondary,
                             ),
                           ),
                         ],
@@ -557,13 +576,13 @@ class _LeadCard extends StatelessWidget {
                             child: LinearProgressIndicator(
                               value: lead.completudePct / 100,
                               minHeight: 4,
-                              backgroundColor: AppColors.border,
+                              backgroundColor: context.cadife.cardBorder,
                               valueColor: AlwaysStoppedAnimation<Color>(
                                 lead.completudePct >= 80
                                     ? AppColors.success
                                     : lead.completudePct >= 50
                                         ? AppColors.warning
-                                        : AppColors.textSecondary,
+                                        : context.cadife.textSecondary,
                               ),
                             ),
                           ),
@@ -571,9 +590,9 @@ class _LeadCard extends StatelessWidget {
                         const SizedBox(width: 8),
                         Text(
                           '${lead.completudePct}%',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11,
-                            color: AppColors.textSecondary,
+                            color: context.cadife.textSecondary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -637,11 +656,11 @@ class _ErrorView extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.wifi_off_rounded, size: 48, color: AppColors.textSecondary),
+          Icon(Icons.wifi_off_rounded, size: 48, color: context.cadife.textSecondary),
           const SizedBox(height: 12),
-          const Text(
+          Text(
             'Erro ao carregar leads',
-            style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+            style: TextStyle(color: context.cadife.textSecondary, fontSize: 14),
           ),
           const SizedBox(height: 12),
           CadifeButton(
@@ -665,20 +684,20 @@ class _EmptyView extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(Icons.search_off_rounded,
-              size: 56, color: AppColors.textSecondary.withValues(alpha: 0.4)),
+              size: 56, color: context.cadife.textSecondary.withValues(alpha: 0.4)),
           const SizedBox(height: 12),
-          const Text(
+          Text(
             'Nenhum lead encontrado',
             style: TextStyle(
-              color: AppColors.textSecondary,
+              color: context.cadife.textSecondary,
               fontSize: 15,
               fontWeight: FontWeight.w500,
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Tente ajustar os filtros ou a busca',
-            style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+            style: TextStyle(color: context.cadife.textSecondary, fontSize: 12),
           ),
         ],
       ),

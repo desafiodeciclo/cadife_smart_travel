@@ -1,66 +1,87 @@
+import 'package:cadife_smart_travel/design_system/tokens/app_colors.dart';
 import 'package:flutter/material.dart';
 
 @immutable
 class CadifeThemeExtension extends ThemeExtension<CadifeThemeExtension> {
   const CadifeThemeExtension({
     required this.primary,
-    required this.darkBackground,
-    required this.success,
-    required this.warning,
+    required this.background,
+    required this.surface,
+    required this.cardBackground,
+    required this.cardBorder,
+    required this.divider,
     required this.textPrimary,
     required this.textSecondary,
-    required this.cardBackground,
+    required this.muted,
+    required this.success,
+    required this.warning,
     required this.shimmerBase,
     required this.shimmerHighlight,
   });
 
   final Color primary;
-  final Color darkBackground;
-  final Color success;
-  final Color warning;
+  final Color background;
+  final Color surface;
+  final Color cardBackground;
+  final Color cardBorder;
+  final Color divider;
   final Color textPrimary;
   final Color textSecondary;
-  final Color cardBackground;
+  final Color muted;
+  final Color success;
+  final Color warning;
   final Color shimmerBase;
   final Color shimmerHighlight;
 
   static const light = CadifeThemeExtension(
-    primary:         Color(0xFFdd0b0e),
-    darkBackground:  Color(0xFF393532),
-    success:         Color(0xFF1E8449),
-    warning:         Color(0xFFD35400),
-    textPrimary:     Color(0xFF1A1A1A),
-    textSecondary:   Color(0xFF5D6D7E),
-    cardBackground:  Color(0xFFF8F9FA),
-    shimmerBase:     Color(0xFFE0E0E0),
-    shimmerHighlight: Color(0xFFF5F5F5),
+    primary:          AppColors.primary,
+    background:       AppColors.scaffoldLight,
+    surface:          AppColors.white,
+    cardBackground:   AppColors.white,
+    cardBorder:       AppColors.zinc200,
+    divider:          AppColors.zinc200,
+    textPrimary:      AppColors.textPrimaryLight,
+    textSecondary:    AppColors.textSecondaryLight,
+    muted:            AppColors.zinc100,
+    success:          AppColors.success,
+    warning:          AppColors.warning,
+    shimmerBase:      AppColors.zinc200,
+    shimmerHighlight: AppColors.zinc100,
   );
 
   static const dark = CadifeThemeExtension(
-    primary:         Color(0xFFFF4447),
-    darkBackground:  Color(0xFF1E1B19),
-    success:         Color(0xFF27AE60),
-    warning:         Color(0xFFE67E22),
-    textPrimary:     Color(0xFFF5F5F5),
-    textSecondary:   Color(0xFFB0BEC5),
-    cardBackground:  Color(0xFF2C2C2C),
-    shimmerBase:     Color(0xFF2C2C2C),
-    shimmerHighlight: Color(0xFF3D3D3D),
+    primary:          AppColors.primary,
+    background:       AppColors.backgroundDark,
+    surface:          AppColors.zinc900,
+    cardBackground:   AppColors.zinc900,
+    cardBorder:       AppColors.zinc800,
+    divider:          AppColors.zinc800,
+    textPrimary:      AppColors.textPrimaryDark,
+    textSecondary:    AppColors.textSecondaryDark,
+    muted:            AppColors.zinc800,
+    success:          AppColors.success,
+    warning:          AppColors.warning,
+    shimmerBase:      AppColors.zinc900,
+    shimmerHighlight: AppColors.zinc800,
   );
 
   @override
   CadifeThemeExtension copyWith({
-    Color? primary, Color? darkBackground, Color? success, Color? warning,
-    Color? textPrimary, Color? textSecondary, Color? cardBackground,
-    Color? shimmerBase, Color? shimmerHighlight,
+    Color? primary, Color? background, Color? surface, Color? cardBackground,
+    Color? cardBorder, Color? divider, Color? textPrimary, Color? textSecondary,
+    Color? muted, Color? success, Color? warning, Color? shimmerBase, Color? shimmerHighlight,
   }) => CadifeThemeExtension(
     primary:          primary ?? this.primary,
-    darkBackground:   darkBackground ?? this.darkBackground,
-    success:          success ?? this.success,
-    warning:          warning ?? this.warning,
+    background:       background ?? this.background,
+    surface:          surface ?? this.surface,
+    cardBackground:   cardBackground ?? this.cardBackground,
+    cardBorder:       cardBorder ?? this.cardBorder,
+    divider:          divider ?? this.divider,
     textPrimary:      textPrimary ?? this.textPrimary,
     textSecondary:    textSecondary ?? this.textSecondary,
-    cardBackground:   cardBackground ?? this.cardBackground,
+    muted:            muted ?? this.muted,
+    success:          success ?? this.success,
+    warning:          warning ?? this.warning,
     shimmerBase:      shimmerBase ?? this.shimmerBase,
     shimmerHighlight: shimmerHighlight ?? this.shimmerHighlight,
   );
@@ -70,12 +91,16 @@ class CadifeThemeExtension extends ThemeExtension<CadifeThemeExtension> {
     if (other == null) return this;
     return CadifeThemeExtension(
       primary:          Color.lerp(primary, other.primary, t)!,
-      darkBackground:   Color.lerp(darkBackground, other.darkBackground, t)!,
-      success:          Color.lerp(success, other.success, t)!,
-      warning:          Color.lerp(warning, other.warning, t)!,
+      background:       Color.lerp(background, other.background, t)!,
+      surface:          Color.lerp(surface, other.surface, t)!,
+      cardBackground:   Color.lerp(cardBackground, other.cardBackground, t)!,
+      cardBorder:       Color.lerp(cardBorder, other.cardBorder, t)!,
+      divider:          Color.lerp(divider, other.divider, t)!,
       textPrimary:      Color.lerp(textPrimary, other.textPrimary, t)!,
       textSecondary:    Color.lerp(textSecondary, other.textSecondary, t)!,
-      cardBackground:   Color.lerp(cardBackground, other.cardBackground, t)!,
+      muted:            Color.lerp(muted, other.muted, t)!,
+      success:          Color.lerp(success, other.success, t)!,
+      warning:          Color.lerp(warning, other.warning, t)!,
       shimmerBase:      Color.lerp(shimmerBase, other.shimmerBase, t)!,
       shimmerHighlight: Color.lerp(shimmerHighlight, other.shimmerHighlight, t)!,
     );
@@ -85,4 +110,6 @@ class CadifeThemeExtension extends ThemeExtension<CadifeThemeExtension> {
 extension CadifeTheme on BuildContext {
   CadifeThemeExtension get cadife =>
       Theme.of(this).extension<CadifeThemeExtension>()!;
+      
+  bool get isDark => Theme.of(this).brightness == Brightness.dark;
 }

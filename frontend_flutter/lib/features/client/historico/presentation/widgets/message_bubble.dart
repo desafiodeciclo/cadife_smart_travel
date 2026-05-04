@@ -13,16 +13,18 @@ class MessageBubble extends StatelessWidget {
       interaction.direction == 'outbound' &&
       (interaction.channel == 'whatsapp' || interaction.channel == 'aya');
 
-  Color get _bubbleColor {
-    if (_isClient) return AppColors.surface;
-    if (_isAya) return AppColors.primaryLight;
-    return AppColors.bubbleConsultantLight;
+  Color _getBubbleColor(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    if (_isClient) return isDark ? Colors.white.withValues(alpha: 0.08) : Colors.grey.shade100;
+    if (_isAya) return isDark ? AppColors.primary.withValues(alpha: 0.15) : AppColors.primaryLight;
+    return isDark ? AppColors.bubbleConsultantDark : AppColors.bubbleConsultantLight;
   }
 
-  Color get _textColor {
-    if (_isClient) return AppColors.textPrimary;
-    if (_isAya) return AppColors.primaryDark;
-    return AppColors.bubbleConsultantDark;
+  Color _getTextColor(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    if (_isClient) return isDark ? Colors.white : context.cadife.textPrimary;
+    if (_isAya) return isDark ? AppColors.primary : AppColors.primaryDark;
+    return isDark ? Colors.white : AppColors.bubbleConsultantDark;
   }
 
   Color get _senderColor => _isAya ? AppColors.primary : AppColors.info;
@@ -81,21 +83,21 @@ class MessageBubble extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: _bubbleColor,
+              color: _getBubbleColor(context),
               borderRadius: _bubbleRadius,
             ),
             child: Text(
               interaction.content,
-              style: TextStyle(fontSize: 14.5, height: 1.45, color: _textColor),
+              style: TextStyle(fontSize: 14.5, height: 1.45, color: _getTextColor(context)),
             ),
           ),
           Padding(
             padding: const EdgeInsets.only(top: 3, left: 4, right: 4),
             child: Text(
               _formatTimestamp(interaction.timestamp),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 10,
-                color: AppColors.textSecondary,
+                color: context.cadife.textSecondary,
               ),
             ),
           ),

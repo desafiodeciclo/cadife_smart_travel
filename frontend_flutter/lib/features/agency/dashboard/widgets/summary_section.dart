@@ -97,9 +97,9 @@ class _SummaryCard extends StatelessWidget {
             Text(
               label,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
-                color: AppColors.textSecondary,
+                color: context.cadife.textSecondary,
               ),
             ),
             if (variation != null) ...[

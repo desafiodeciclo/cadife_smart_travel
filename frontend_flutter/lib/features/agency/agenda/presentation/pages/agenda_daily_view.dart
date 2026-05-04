@@ -22,7 +22,7 @@ class _DailyView extends ConsumerWidget {
     return Column(
       children: [
         _DayNavBar(selectedDate: selectedDate),
-        const Divider(height: 1, color: AppColors.divider),
+        const Divider(height: 1),
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
@@ -67,7 +67,7 @@ class _DayNavBar extends ConsumerWidget {
         children: [
           IconButton(
             icon: const Icon(Icons.chevron_left),
-            color: AppColors.textPrimary,
+            color: context.cadife.textPrimary,
             onPressed: () {
               final d = ref.read(selectedAgendaDateProvider);
               ref.read(selectedAgendaDateProvider.notifier).state =
@@ -78,16 +78,16 @@ class _DayNavBar extends ConsumerWidget {
             child: Text(
               dayLabel,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+                color: context.cadife.textPrimary,
               ),
             ),
           ),
           IconButton(
             icon: const Icon(Icons.chevron_right),
-            color: AppColors.textPrimary,
+            color: context.cadife.textPrimary,
             onPressed: () {
               final d = ref.read(selectedAgendaDateProvider);
               ref.read(selectedAgendaDateProvider.notifier).state =
@@ -125,17 +125,17 @@ class _TimeSlotRow extends StatelessWidget {
               children: [
                 Text(
                   '${hour.toString().padLeft(2, '0')}:00',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.textSecondary,
+                    color: context.cadife.textSecondary,
                   ),
                 ),
                 Expanded(
                   child: Center(
                     child: Container(
                       width: 1,
-                      color: AppColors.divider,
+                      color: context.cadife.divider,
                     ),
                   ),
                 ),
@@ -182,7 +182,7 @@ class _MeetingCard extends StatelessWidget {
         : 'Reunião de Curadoria';
 
     return Material(
-      color: AppColors.primaryLight,
+      color: context.cadife.primary.withValues(alpha: 0.1),
       borderRadius: BorderRadius.circular(10),
       child: InkWell(
         borderRadius: BorderRadius.circular(10),
@@ -193,8 +193,8 @@ class _MeetingCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10),
-            border: const Border(
-              left: BorderSide(color: AppColors.primary, width: 3),
+            border: Border(
+              left: BorderSide(color: context.cadife.primary, width: 3),
             ),
           ),
           child: Row(
@@ -205,9 +205,9 @@ class _MeetingCard extends StatelessWidget {
                   children: [
                     Text(
                       displayName,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
+                        color: context.cadife.textPrimary,
                         fontSize: 14,
                       ),
                       maxLines: 1,
@@ -216,8 +216,8 @@ class _MeetingCard extends StatelessWidget {
                     const SizedBox(height: 3),
                     Text(
                       timeRange,
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
+                      style: TextStyle(
+                        color: context.cadife.textSecondary,
                         fontSize: 12,
                       ),
                     ),
@@ -228,10 +228,10 @@ class _MeetingCard extends StatelessWidget {
               _StatusChip(status: meeting.status),
               if (meeting.leadId.isNotEmpty) ...[
                 const SizedBox(width: 4),
-                const Icon(
+                Icon(
                   Icons.chevron_right,
                   size: 16,
-                  color: AppColors.textSecondary,
+                  color: context.cadife.textSecondary,
                 ),
               ],
             ],
@@ -249,10 +249,10 @@ class _StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (label, color) = switch (status.toLowerCase()) {
-      'agendado' => ('Agendado', AppColors.info),
-      'realizado' => ('Realizado', AppColors.success),
-      'cancelado' => ('Cancelado', AppColors.textSecondary),
-      _ => (status, AppColors.textSecondary),
+      'agendado' => ('Agendado', Colors.blue),
+      'realizado' => ('Realizado', context.cadife.success),
+      'cancelado' => ('Cancelado', context.cadife.textSecondary),
+      _ => (status, context.cadife.textSecondary),
     };
 
     return Container(
@@ -287,27 +287,27 @@ class _BlockedSlotCard extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.cadife.surface,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.cadife.cardBorder),
       ),
       child: Row(
         children: [
           const Icon(Icons.lock_outline,
-              size: 16, color: AppColors.textSecondary),
+              size: 16, color: Colors.grey),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               label,
-              style: const TextStyle(
-                color: AppColors.textSecondary,
+              style: TextStyle(
+                color: context.cadife.textSecondary,
                 fontSize: 13,
               ),
             ),
           ),
           IconButton(
             icon: const Icon(Icons.lock_open, size: 18),
-            color: AppColors.warning,
+            color: context.cadife.warning,
             tooltip: 'Desbloquear',
             visualDensity: VisualDensity.compact,
             padding: EdgeInsets.zero,
@@ -365,15 +365,15 @@ class _EmptySlotCard extends ConsumerWidget {
       child: Container(
         height: 56,
         decoration: BoxDecoration(
-          color: AppColors.scaffold,
+          color: context.cadife.background,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: context.cadife.cardBorder),
         ),
-        child: const Center(
+        child: Center(
           child: Text(
             'Disponível  ·  Toque para agendar ou bloquear',
             style: TextStyle(
-              color: AppColors.textSecondary,
+              color: context.cadife.textSecondary,
               fontSize: 12,
             ),
           ),
@@ -460,7 +460,7 @@ class _SlotOptionsSheetState extends State<_SlotOptionsSheet> {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.border,
+                color: context.cadife.cardBorder,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -468,24 +468,24 @@ class _SlotOptionsSheetState extends State<_SlotOptionsSheet> {
           const SizedBox(height: 16),
           Text(
             'Horário $timeStr',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              color: context.cadife.textPrimary,
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'O que deseja fazer com este horário?',
-            style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+            style: TextStyle(fontSize: 13, color: context.cadife.textSecondary),
           ),
           const SizedBox(height: 16),
           ListTile(
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            tileColor: AppColors.primaryLight,
+            tileColor: context.cadife.primary.withValues(alpha: 0.1),
             leading:
-                const Icon(Icons.event_available, color: AppColors.primary),
+                const Icon(Icons.event_available, color: Colors.blue),
             title: const Text(
               'Agendar Reunião',
               style: TextStyle(fontWeight: FontWeight.w600),
@@ -497,9 +497,9 @@ class _SlotOptionsSheetState extends State<_SlotOptionsSheet> {
           ListTile(
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            tileColor: AppColors.surface,
+            tileColor: context.cadife.surface,
             leading: const Icon(Icons.do_not_disturb_on,
-                color: AppColors.warning),
+                color: Colors.orange),
             title: const Text(
               'Bloquear Horário',
               style: TextStyle(fontWeight: FontWeight.w600),
@@ -507,8 +507,8 @@ class _SlotOptionsSheetState extends State<_SlotOptionsSheet> {
             subtitle: const Text('Pausa ou reunião interna'),
             trailing: _showNotesField
                 ? null
-                : const Icon(Icons.expand_more,
-                    color: AppColors.textSecondary),
+                : Icon(Icons.expand_more,
+                    color: context.cadife.textSecondary),
             onTap: () => setState(() => _showNotesField = true),
           ),
           if (_showNotesField) ...[

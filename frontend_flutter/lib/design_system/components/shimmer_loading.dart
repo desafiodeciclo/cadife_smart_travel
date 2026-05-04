@@ -1,4 +1,4 @@
-import 'package:cadife_smart_travel/design_system/tokens/app_colors.dart';
+import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -17,8 +17,8 @@ class ShimmerLoading extends StatelessWidget {
     if (!isLoading) return child;
 
     return Shimmer.fromColors(
-      baseColor: AppColors.deepGraphite.withValues(alpha: 0.1),
-      highlightColor: AppColors.deepGraphite.withValues(alpha: 0.05),
+      baseColor: context.cadife.shimmerBase,
+      highlightColor: context.cadife.shimmerHighlight,
       period: const Duration(milliseconds: 1500),
       child: child,
     );
@@ -130,8 +130,8 @@ class LoadingOverlay extends StatelessWidget {
                     const SizedBox(height: 16),
                     Text(
                       message,
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
+                      style: TextStyle(
+                        color: context.cadife.textPrimary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),

@@ -132,7 +132,7 @@ class _StepCircle extends StatelessWidget {
     return _Circle(
       color: Colors.transparent,
       border: Border.all(
-        color: AppColors.textSecondary.withValues(alpha: 0.35),
+        color: context.cadife.textSecondary.withValues(alpha: 0.35),
         width: 2,
       ),
     );

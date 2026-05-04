@@ -89,23 +89,23 @@ class HistoricoEmptyState extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-            const Text(
+            Text(
               'Sua conversa com a AYA aparecerá aqui',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+                color: context.cadife.textPrimary,
                 height: 1.4,
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Inicie um atendimento pelo WhatsApp para ver o histórico.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13,
-                color: AppColors.textSecondary,
+                color: context.cadife.textSecondary,
                 height: 1.5,
               ),
             ),
@@ -128,17 +128,17 @@ class HistoricoErrorState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.error_outline_rounded,
               size: 56,
-              color: AppColors.textSecondary,
+              color: context.cadife.textSecondary,
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Não foi possível carregar o histórico.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: AppColors.textPrimary,
+                color: context.cadife.textPrimary,
                 fontSize: 15,
                 height: 1.4,
               ),

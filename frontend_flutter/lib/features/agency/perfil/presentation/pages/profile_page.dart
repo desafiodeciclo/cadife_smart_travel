@@ -117,12 +117,12 @@ class _ProfileHeader extends StatelessWidget {
               const SizedBox(height: 2),
               Text(profile.email,
                   style: AppTextStyles.bodySmall
-                      .copyWith(color: AppColors.textSecondary)),
+                      .copyWith(color: context.cadife.textSecondary)),
               if (profile.phone != null) ...[
                 const SizedBox(height: 2),
                 Text(profile.phone!,
                     style: AppTextStyles.bodySmall
-                        .copyWith(color: AppColors.textSecondary)),
+                        .copyWith(color: context.cadife.textSecondary)),
               ],
             ],
           ),
@@ -206,7 +206,7 @@ class _StatCard extends StatelessWidget {
           const SizedBox(height: 2),
           Text(label,
               style: AppTextStyles.bodySmall
-                  .copyWith(color: AppColors.textSecondary),
+                  .copyWith(color: context.cadife.textSecondary),
               textAlign: TextAlign.center),
         ],
       ),
@@ -309,8 +309,8 @@ class _BioSectionState extends ConsumerState<_BioSection> {
                 : widget.profile.bio,
             style: AppTextStyles.bodyMedium.copyWith(
               color: widget.profile.bio.isEmpty
-                  ? AppColors.textSecondary
-                  : AppColors.textPrimary,
+                  ? context.cadife.textSecondary
+                  : context.cadife.textPrimary,
               height: 1.5,
             ),
           ),
@@ -330,7 +330,7 @@ class _GoalsList extends StatelessWidget {
     if (goals.isEmpty) {
       return Text('Nenhuma meta registrada.',
           style:
-              AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary));
+              AppTextStyles.bodyMedium.copyWith(color: context.cadife.textSecondary));
     }
     return Column(
       children: goals
@@ -356,9 +356,9 @@ class _GoalItem extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: context.cadife.cardBackground,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.cadife.cardBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -419,7 +419,7 @@ class _GoalsSkeleton extends StatelessWidget {
           child: Container(
             height: 72,
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: context.cadife.surface,
               borderRadius: BorderRadius.circular(12),
             ),
           ),

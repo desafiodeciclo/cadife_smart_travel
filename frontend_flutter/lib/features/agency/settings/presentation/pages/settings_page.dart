@@ -65,7 +65,7 @@ class _SectionHeader extends StatelessWidget {
         title.toUpperCase(),
         style: AppTextStyles.labelSmall.copyWith(
           letterSpacing: 1.2,
-          color: AppColors.textSecondary,
+          color: context.cadife.textSecondary,
         ),
       ),
     );
@@ -85,7 +85,7 @@ class _OfficeHoursSection extends ConsumerWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: AppColors.border),
+        side: BorderSide(color: context.cadife.cardBorder),
       ),
       child: Column(
         children: hours.asMap().entries.map((e) {
@@ -162,9 +162,9 @@ class _DayRow extends ConsumerWidget {
               onTap: () => _pickTime(context, ref, true),
               child: _TimeChip(time: hours.openTime),
             ),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 6),
-              child: Text('–', style: TextStyle(color: AppColors.textSecondary)),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              child: Text('–', style: TextStyle(color: context.cadife.textSecondary)),
             ),
             GestureDetector(
               onTap: () => _pickTime(context, ref, false),
@@ -174,7 +174,7 @@ class _DayRow extends ConsumerWidget {
             const Spacer(),
             Text('Fechado',
                 style: AppTextStyles.bodySmall
-                    .copyWith(color: AppColors.textSecondary)),
+                    .copyWith(color: context.cadife.textSecondary)),
           ],
         ],
       ),
@@ -191,9 +191,9 @@ class _TimeChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.cadife.surface,
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.cadife.cardBorder),
       ),
       child: Text(time, style: AppTextStyles.bodySmall),
     );
@@ -214,7 +214,7 @@ class _NotificationsSection extends ConsumerWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: AppColors.border),
+        side: BorderSide(color: context.cadife.cardBorder),
       ),
       child: Column(
         children: [
@@ -222,7 +222,7 @@ class _NotificationsSection extends ConsumerWidget {
             title: Text('Novos leads', style: AppTextStyles.bodyMedium),
             subtitle: Text('Notificar quando um lead for criado',
                 style:
-                    AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary)),
+                    AppTextStyles.bodySmall.copyWith(color: context.cadife.textSecondary)),
             value: prefs.newLeads,
             activeThumbColor: AppColors.primary,
             onChanged: (v) => notifier.toggleNotification(
@@ -233,7 +233,7 @@ class _NotificationsSection extends ConsumerWidget {
             title: Text('Leads qualificados', style: AppTextStyles.bodyMedium),
             subtitle: Text('Notificar quando score ≥ 60%',
                 style:
-                    AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary)),
+                    AppTextStyles.bodySmall.copyWith(color: context.cadife.textSecondary)),
             value: prefs.qualifiedLeads,
             activeThumbColor: AppColors.primary,
             onChanged: (v) => notifier.toggleNotification(
@@ -313,14 +313,14 @@ class _TemplatesSection extends ConsumerWidget {
               elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
-                side: const BorderSide(color: AppColors.border),
+                side: BorderSide(color: context.cadife.cardBorder),
               ),
               child: ListTile(
                 title: Text(t.title, style: AppTextStyles.labelLarge),
                 subtitle: Text(
                   t.body,
                   style: AppTextStyles.bodySmall
-                      .copyWith(color: AppColors.textSecondary),
+                      .copyWith(color: context.cadife.textSecondary),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),

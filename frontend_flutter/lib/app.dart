@@ -6,6 +6,8 @@ import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_bl
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
+
 
 class CadifeApp extends ConsumerWidget {
   const CadifeApp({super.key});
@@ -21,14 +23,18 @@ class CadifeApp extends ConsumerWidget {
           value: authBloc..add(const AuthEvent.authCheckRequested()),
         ),
       ],
-      child: MaterialApp.router(
+      child: ShadApp.router(
         title: 'Cadife Smart Travel',
         debugShowCheckedModeBanner: false,
-        theme: AppTheme.light,
-        darkTheme: AppTheme.dark,
+        theme: AppTheme.shadTheme(context, Brightness.light),
+        darkTheme: AppTheme.shadTheme(context, Brightness.dark),
         themeMode: themeMode,
         routerConfig: ref.watch(routerProvider),
+        materialThemeBuilder: (context, theme) => 
+            theme.brightness == Brightness.light ? AppTheme.light : AppTheme.dark,
       ),
+
+
     );
   }
 }

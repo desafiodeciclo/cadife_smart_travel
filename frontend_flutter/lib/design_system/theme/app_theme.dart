@@ -2,6 +2,7 @@ import 'package:cadife_smart_travel/design_system/theme/cadife_theme_extension.d
 import 'package:cadife_smart_travel/design_system/tokens/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
 
 class AppTheme {
   AppTheme._();
@@ -9,27 +10,44 @@ class AppTheme {
   static ThemeData get light => _build(Brightness.light);
   static ThemeData get dark  => _build(Brightness.dark);
 
-  static ThemeData _build(Brightness brightness) {
+  static ShadThemeData shadTheme(BuildContext context, Brightness brightness) {
     final isDark = brightness == Brightness.dark;
-    final ext = isDark ? CadifeThemeExtension.dark : CadifeThemeExtension.light;
+    return ShadThemeData(
+      brightness: brightness,
+      colorScheme: isDark 
+        ? const ShadZincColorScheme.dark(
+            background: AppColors.backgroundDark,
+            primary: AppColors.primary,
+          )
+        : const ShadZincColorScheme.light(
+            primary: AppColors.primary,
+          ),
+      textTheme: ShadTextTheme.fromGoogleFont(GoogleFonts.inter),
+
+    );
+  }
+
+  static ThemeData _build(Brightness brightness) {
+    final ext = brightness == Brightness.dark ? CadifeThemeExtension.dark : CadifeThemeExtension.light;
 
     final colorScheme = ColorScheme.fromSeed(
       seedColor: AppColors.primary,
       brightness: brightness,
-      primary:   AppColors.primary,
-      onPrimary: Colors.white,
-      surface:   isDark ? AppColors.deepGraphite : AppColors.scaffold,
-      onSurface: isDark ? Colors.white : AppColors.textPrimary,
+      primary:   ext.primary,
+      onPrimary: AppColors.white,
+      surface:   ext.background,
+      onSurface: ext.textPrimary,
       error:     AppColors.primary,
+      outline:   ext.cardBorder,
     );
 
     return ThemeData(
       useMaterial3: true,
       brightness: brightness,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: isDark ? AppColors.deepGraphite : AppColors.scaffold,
+      scaffoldBackgroundColor: ext.background,
       extensions: [ext],
-      textTheme: _buildTextTheme(brightness),
+      textTheme: _buildTextTheme(brightness, ext),
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
           TargetPlatform.android: ZoomPageTransitionsBuilder(),
@@ -39,66 +57,77 @@ class AppTheme {
         },
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: AppColors.deepGraphite,
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
+        foregroundColor: ext.textPrimary,
         elevation: 0,
-        centerTitle: false,
-        titleTextStyle: GoogleFonts.baiJamjuree(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.white),
+        centerTitle: true,
+        titleTextStyle: GoogleFonts.inter(
+          fontSize: 18, 
+          fontWeight: FontWeight.w900, 
+          color: ext.textPrimary,
+          letterSpacing: -0.5,
+        ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
+          backgroundColor: ext.primary,
+          foregroundColor: AppColors.white,
           minimumSize: const Size.fromHeight(56),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           textStyle: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600),
-          elevation: 2,
+          elevation: 0,
         ),
       ),
       cardTheme: CardThemeData(
-        color: isDark ? AppColors.darkCard : Colors.white,
-        elevation: 2,
-        shadowColor: Colors.black.withValues(alpha: 0.1),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        color: ext.cardBackground,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(
+            color: ext.cardBorder,
+            width: 1,
+          ),
+        ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: isDark ? AppColors.deepGraphite.withValues(alpha: 0.5) : Colors.white,
-        border:        OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primary, width: 2)),
-        errorBorder:   OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primary)),
+        fillColor: ext.muted.withValues(alpha: 0.5),
+        border:        OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: ext.primary, width: 1)),
+        errorBorder:   OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: ext.primary)),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        labelStyle: GoogleFonts.inter(color: AppColors.textSecondary),
-        hintStyle:  GoogleFonts.inter(color: AppColors.textSecondary.withValues(alpha: 0.5)),
+        labelStyle: GoogleFonts.inter(color: ext.textSecondary),
+        hintStyle:  GoogleFonts.inter(color: ext.textSecondary.withValues(alpha: 0.5)),
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: AppColors.deepGraphite,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: Colors.white.withValues(alpha: 0.6),
+        backgroundColor: ext.background,
+        selectedItemColor: ext.primary,
+        unselectedItemColor: ext.textSecondary,
         type: BottomNavigationBarType.fixed,
+        elevation: 0,
         selectedLabelStyle:   GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600),
         unselectedLabelStyle: GoogleFonts.inter(fontSize: 12),
       ),
       dividerTheme: DividerThemeData(
-        color: isDark ? Colors.white10 : Colors.black12,
+        color: ext.divider,
         thickness: 1,
       ),
     );
   }
 
-  static TextTheme _buildTextTheme(Brightness brightness) {
-    final color = brightness == Brightness.dark ? Colors.white : AppColors.textPrimary;
+  static TextTheme _buildTextTheme(Brightness brightness, CadifeThemeExtension ext) {
+    final color = ext.textPrimary;
     return TextTheme(
-      displayLarge:   GoogleFonts.baiJamjuree(fontSize: 32, fontWeight: FontWeight.bold,   color: color),
-      displayMedium:  GoogleFonts.baiJamjuree(fontSize: 28, fontWeight: FontWeight.bold,   color: color),
-      displaySmall:   GoogleFonts.baiJamjuree(fontSize: 24, fontWeight: FontWeight.bold,   color: color),
-      headlineLarge:  GoogleFonts.baiJamjuree(fontSize: 20, fontWeight: FontWeight.w700,   color: color),
-      headlineMedium: GoogleFonts.baiJamjuree(fontSize: 18, fontWeight: FontWeight.w700,   color: color),
-      headlineSmall:  GoogleFonts.baiJamjuree(fontSize: 16, fontWeight: FontWeight.w700,   color: color),
-      titleLarge:     GoogleFonts.baiJamjuree(fontSize: 18, fontWeight: FontWeight.w600,   color: color),
-      titleMedium:    GoogleFonts.baiJamjuree(fontSize: 16, fontWeight: FontWeight.w600,   color: color),
-      titleSmall:     GoogleFonts.baiJamjuree(fontSize: 14, fontWeight: FontWeight.w600,   color: color),
+      displayLarge:   GoogleFonts.inter(fontSize: 32, fontWeight: FontWeight.w900,   color: color, letterSpacing: -1),
+      displayMedium:  GoogleFonts.inter(fontSize: 28, fontWeight: FontWeight.w800,   color: color, letterSpacing: -1),
+      displaySmall:   GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.w800,   color: color, letterSpacing: -0.5),
+      headlineLarge:  GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w700,   color: color),
+      headlineMedium: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w700,   color: color),
+      headlineSmall:  GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700,   color: color),
+      titleLarge:     GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600,   color: color),
+      titleMedium:    GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600,   color: color),
+      titleSmall:     GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600,   color: color),
       bodyLarge:      GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.normal, color: color),
       bodyMedium:     GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.normal, color: color),
       bodySmall:      GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.normal, color: color),

@@ -43,7 +43,7 @@ class _MonthNavBar extends ConsumerWidget {
       children: [
         IconButton(
           icon: const Icon(Icons.chevron_left),
-          color: AppColors.textPrimary,
+          color: context.cadife.textPrimary,
           onPressed: () {
             final d = ref.read(selectedAgendaDateProvider);
             ref.read(selectedAgendaDateProvider.notifier).state =
@@ -54,16 +54,16 @@ class _MonthNavBar extends ConsumerWidget {
           child: Text(
             _monthLabel(currentMonth),
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              color: context.cadife.textPrimary,
             ),
           ),
         ),
         IconButton(
           icon: const Icon(Icons.chevron_right),
-          color: AppColors.textPrimary,
+          color: context.cadife.textPrimary,
           onPressed: () {
             final d = ref.read(selectedAgendaDateProvider);
             ref.read(selectedAgendaDateProvider.notifier).state =
@@ -85,10 +85,10 @@ class _WeekdayHeader extends StatelessWidget {
               child: Text(
                 d,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
+                  color: context.cadife.textSecondary,
                 ),
               ),
             ),
@@ -200,7 +200,7 @@ class _DayCell extends ConsumerWidget {
         ? Colors.white
         : isToday
             ? AppColors.primary
-            : AppColors.textPrimary;
+            : context.cadife.textPrimary;
 
     return GestureDetector(
       onTap: () {
@@ -278,7 +278,7 @@ class _LegendItem extends StatelessWidget {
         const SizedBox(width: 4),
         Text(label,
             style:
-                const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                TextStyle(fontSize: 11, color: context.cadife.textSecondary)),
       ],
     );
   }

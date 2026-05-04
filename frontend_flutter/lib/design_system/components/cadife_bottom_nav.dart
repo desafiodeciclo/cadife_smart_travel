@@ -1,4 +1,5 @@
-import 'package:cadife_smart_travel/design_system/tokens/app_colors.dart';
+import 'dart:ui';
+import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -26,31 +27,43 @@ class CadifeBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = context.cadife;
+    final backgroundColor = theme.background;
+    final blurColor = theme.background.withValues(alpha: 0.8);
+
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.deepGraphite,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
+        color: backgroundColor,
+        border: Border(
+          top: BorderSide(
+            color: theme.divider,
+            width: 1,
           ),
-        ],
+        ),
       ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: List.generate(items.length, (index) {
-              final item = items[index];
-              return _NavItem(
-                icon: item.icon,
-                label: item.label,
-                isActive: currentIndex == index,
-                onTap: () => onTap(index),
-              );
-            }),
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            color: blurColor,
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).padding.bottom + 8,
+              top: 12,
+              left: 16,
+              right: 16,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: List.generate(items.length, (index) {
+                final item = items[index];
+                return _NavItem(
+                  icon: item.icon,
+                  label: item.label,
+                  isActive: currentIndex == index,
+                  onTap: () => onTap(index),
+                );
+              }),
+            ),
           ),
         ),
       ),
@@ -73,35 +86,42 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = context.cadife;
+    final activeColor = theme.primary;
+    final inactiveColor = theme.textSecondary;
+
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isActive ? AppColors.primary.withValues(alpha: 0.1) : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            decoration: BoxDecoration(
+              color: isActive 
+                  ? theme.primary.withValues(alpha: 0.1) 
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Icon(
               icon,
-              color: isActive ? AppColors.primary : Colors.white.withValues(alpha: 0.6),
+              color: isActive ? activeColor : inactiveColor,
               size: 24,
             ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: GoogleFonts.inter(
-                fontSize: 10,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-                color: isActive ? AppColors.primary : Colors.white.withValues(alpha: 0.6),
-              ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 10,
+              fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+              color: isActive ? activeColor : inactiveColor,
+              letterSpacing: 0.2,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

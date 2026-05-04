@@ -62,7 +62,7 @@ class _QualificationRateCard extends StatelessWidget {
             Text(
               'Taxa de Qualificação',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: AppColors.textSecondary,
+                    color: context.cadife.textSecondary,
               ),
             ),
             const SizedBox(height: 12),
@@ -80,7 +80,7 @@ class _QualificationRateCard extends StatelessWidget {
                       CircularProgressIndicator(
                         value: taxa / 100,
                         strokeWidth: strokeWidth,
-                        backgroundColor: AppColors.progressBackground,
+                        backgroundColor: context.cadife.muted,
                         valueColor: AlwaysStoppedAnimation<Color>(
                           taxa >= 70 ? AppColors.success : AppColors.warning,
                         ),
@@ -121,7 +121,7 @@ class _ConversionRateCard extends StatelessWidget {
             Text(
               'Taxa de Conversão',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: AppColors.textSecondary,
+                    color: context.cadife.textSecondary,
               ),
             ),
             const SizedBox(height: 12),

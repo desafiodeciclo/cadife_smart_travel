@@ -4,6 +4,7 @@ import 'package:cadife_smart_travel/features/client/documentos/presentation/widg
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class DocumentosPage extends ConsumerStatefulWidget {
   const DocumentosPage({super.key});
@@ -19,12 +20,14 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
   Widget build(BuildContext context) {
     final globalDocsAsync = ref.watch(globalDocumentsProvider);
     final tripsWithDocsAsync = ref.watch(tripsWithDocumentsProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return PageScaffold(
       title: 'Documentos',
       body: SingleChildScrollView(
         child: Column(
           children: [
+            const SizedBox(height: 100),
             // Principais Documentos Section
             Padding(
               padding: const EdgeInsets.all(16),
@@ -66,15 +69,25 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
                             onSelected: (selected) {
                               setState(() => _selectedCategory = category);
                             },
-                            selectedColor: AppColors.primary.withValues(alpha: 0.2),
-                            checkmarkColor: AppColors.primary,
+                            selectedColor: isDark ? Colors.white : Colors.black,
+                            checkmarkColor: isDark ? Colors.black : Colors.white,
                             labelStyle: TextStyle(
-                              color: isSelected ? AppColors.primary : null,
-                              fontWeight: isSelected ? FontWeight.bold : null,
+                              color: isSelected 
+                                  ? (isDark ? Colors.black : Colors.white) 
+                                  : (isDark ? Colors.white70 : Colors.black87),
+                              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
+                              fontSize: 13,
                             ),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
+                              borderRadius: BorderRadius.circular(12),
+                              side: BorderSide(
+                                color: isSelected 
+                                    ? (isDark ? Colors.white : Colors.black)
+                                    : (isDark ? Colors.white24 : Colors.black12),
+                              ),
                             ),
+                            showCheckmark: false,
                           ),
                         );
                       }).toList(),
@@ -104,20 +117,31 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
                       if (docs.isEmpty) {
                         return Center(
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+                            padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 24),
                             child: Column(
                               children: [
                                 Icon(
-                                  Icons.folder_open,
+                                  LucideIcons.folderSearch,
                                   size: 64,
-                                  color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.3),
+                                  color: isDark ? Colors.white12 : Colors.black12,
                                 ),
-                                const SizedBox(height: 16),
+                                const SizedBox(height: 24),
                                 Text(
-                                  'Nenhum documento disponível ainda. Seu consultor irá compartilhá-los em breve.',
+                                  'Nenhum documento disponível ainda.',
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
-                                    color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: isDark ? Colors.white70 : Colors.black87,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Seu consultor irá compartilhá-los em breve.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: isDark ? Colors.white38 : Colors.black38,
                                   ),
                                 ),
                               ],

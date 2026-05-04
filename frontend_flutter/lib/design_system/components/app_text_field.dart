@@ -1,4 +1,4 @@
-import 'package:cadife_smart_travel/design_system/tokens/app_colors.dart';
+import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
@@ -81,7 +81,7 @@ class _AppTextFieldState extends State<AppTextField> {
               if (widget.isNumeric && !widget.isPhone && !widget.isCpf)
                 FilteringTextInputFormatter.digitsOnly,
             ],
-            style: const TextStyle(color: AppColors.textPrimary, fontSize: 16),
+            style: TextStyle(color: context.cadife.textPrimary, fontSize: 16),
             decoration: InputDecoration(
               labelText: widget.label,
               hintText: widget.hint,
@@ -90,14 +90,14 @@ class _AppTextFieldState extends State<AppTextField> {
                   ? Icon(
                       widget.prefixIcon,
                       size: 20,
-                      color: _errorText != null ? AppColors.error : AppColors.primary,
+                      color: _errorText != null ? context.cadife.primary : context.cadife.primary,
                     )
                   : null,
               suffixIcon: widget.isPassword
                   ? IconButton(
                       icon: Icon(
                         _obscureText ? Icons.visibility : Icons.visibility_off,
-                        color: AppColors.textSecondary,
+                        color: context.cadife.textSecondary,
                         size: 20,
                       ),
                       onPressed: () => setState(() => _obscureText = !_obscureText),

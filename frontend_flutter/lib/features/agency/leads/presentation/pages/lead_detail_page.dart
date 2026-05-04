@@ -63,7 +63,7 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> with SingleTick
                   TabBar(
                     controller: _tabController,
                     labelColor: AppColors.primary,
-                    unselectedLabelColor: AppColors.textSecondary,
+                    unselectedLabelColor: context.cadife.textSecondary,
                     indicatorColor: AppColors.primary,
                     tabs: const [
                       Tab(text: 'Briefing'),
@@ -98,7 +98,7 @@ class _InfoCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+        border: Border.all(color: context.cadife.cardBorder.withValues(alpha: 0.5)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -140,13 +140,13 @@ class _InfoCard extends StatelessWidget {
                       const SizedBox(height: 6),
                       Row(
                         children: [
-                          const Icon(Icons.phone_outlined, size: 14, color: AppColors.textSecondary),
+                          Icon(Icons.phone_outlined, size: 14, color: context.cadife.textSecondary),
                           const SizedBox(width: 4),
                           Text(
                             lead.phone,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 13,
-                              color: AppColors.textSecondary,
+                              color: context.cadife.textSecondary,
                             ),
                           ),
                         ],
@@ -244,9 +244,9 @@ class _BriefingTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        const Text(
+        Text(
           'Briefing Estruturado',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: context.cadife.textSecondary),
         ),
         const SizedBox(height: 12),
         GridView.count(
@@ -265,9 +265,9 @@ class _BriefingTab extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 24),
-        const Text(
+        Text(
           'Observações',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: context.cadife.textSecondary),
         ),
         const SizedBox(height: 12),
         TextField(
@@ -276,11 +276,11 @@ class _BriefingTab extends StatelessWidget {
             hintText: 'Adicione notas sobre o atendimento...',
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.border),
+              borderSide: BorderSide(color: context.cadife.cardBorder),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.border),
+              borderSide: BorderSide(color: context.cadife.cardBorder),
             ),
             filled: true,
             fillColor: Theme.of(context).cardColor,
@@ -311,9 +311,9 @@ class _GridItem extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.background,
+        color: context.cadife.background,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.3)),
+        border: Border.all(color: context.cadife.cardBorder.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -326,7 +326,7 @@ class _GridItem extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  style: TextStyle(fontSize: 12, color: context.cadife.textSecondary),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -354,9 +354,9 @@ class _ChatTimelineTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        const Text(
+        Text(
           'Timeline de Status',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: context.cadife.textSecondary),
         ),
         const SizedBox(height: 16),
         Container(
@@ -364,7 +364,7 @@ class _ChatTimelineTab extends StatelessWidget {
           decoration: BoxDecoration(
             color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+            border: Border.all(color: context.cadife.cardBorder.withValues(alpha: 0.5)),
           ),
           child: const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -425,13 +425,13 @@ class _TimelineItem extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-                      color: isActive ? AppColors.textPrimary : AppColors.textSecondary,
+                      color: isActive ? context.cadife.textPrimary : context.cadife.textSecondary,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     subtitle,
-                    style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                    style: TextStyle(fontSize: 12, color: context.cadife.textSecondary),
                   ),
                 ],
               ),

@@ -11,7 +11,7 @@ class AppLockScreen extends ConsumerWidget {
     final lock = ref.watch(appLockProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.cadife.background,
       body: SafeArea(
         child: Center(
           child: Padding(

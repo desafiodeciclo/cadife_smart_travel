@@ -67,10 +67,8 @@ class _HistoricoPageState extends ConsumerState<HistoricoPage> {
       }
     });
 
-    return Scaffold(
-      appBar: const CadifeAppBar(
-        title: 'Histórico',
-      ),
+    return PageScaffold(
+      title: 'Histórico',
       floatingActionButton: const WhatsAppFab(),
       body: interactionsAsync.when(
         loading: () => const HistoricoShimmer(),
@@ -84,7 +82,7 @@ class _HistoricoPageState extends ConsumerState<HistoricoPage> {
             onRefresh: () => ref.read(historicoProvider.notifier).refresh(),
             child: ListView(
               controller: _scrollController,
-              padding: const EdgeInsets.only(top: 8, bottom: 96),
+              padding: const EdgeInsets.only(top: 100, bottom: 96, left: 16, right: 16),
               children: _buildTimelineItems(interactions),
             ),
           );

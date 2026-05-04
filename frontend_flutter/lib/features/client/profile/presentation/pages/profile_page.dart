@@ -102,25 +102,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final userAsync = ref.watch(userProfileProvider);
-    final theme = Theme.of(context);
     final themeMode = ref.watch(themeModeProvider);
-    final isDark = theme.brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      body: SafeArea(
-        child: userAsync.when(
-          loading: () =>
-              const AppLoadingWidget(message: 'Carregando perfil...'),
-          error: (e, _) => AppErrorWidget(
-            message: 'Erro ao carregar perfil. Tente novamente.',
-            onRetry: () => ref.invalidate(userProfileProvider),
-          ),
-          data: (user) {
-            if (!_isEditing) _syncFromUser(user);
-            return _buildContent(context, user, themeMode, isDark);
-          },
+    return PageScaffold(
+      title: 'MEU PERFIL',
+      showProfile: false,
+      body: userAsync.when(
+        loading: () =>
+            const AppLoadingWidget(message: 'Carregando perfil...'),
+        error: (e, _) => AppErrorWidget(
+          message: 'Erro ao carregar perfil. Tente novamente.',
+          onRetry: () => ref.invalidate(userProfileProvider),
         ),
+        data: (user) {
+          if (!_isEditing) _syncFromUser(user);
+          return _buildContent(context, user, themeMode);
+        },
       ),
     );
   }
@@ -129,39 +126,35 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     BuildContext context,
     AuthUser? user,
     ThemeMode themeMode,
-    bool isDark,
   ) {
     return CustomScrollView(
       slivers: [
-        // Ã¢â€â‚¬Ã¢â€â‚¬ Header com avatar e nome Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+        const SliverToBoxAdapter(child: SizedBox(height: 100)),
+        // ── Header com avatar e nome ──────────────────────────────
         SliverToBoxAdapter(
           child: ProfileHeader(
             user: user,
-            isDark: isDark,
             isEditing: _isEditing,
             nameController: _nameController,
             onToggleEdit: () => setState(() => _isEditing = !_isEditing),
           ),
         ),
 
-        // Ã¢â€â‚¬Ã¢â€â‚¬ Dados Pessoais Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+        // ── Dados Pessoais ────────────────────────────────────────
         SliverToBoxAdapter(
           child: ProfileSectionCard(
             title: 'Dados Pessoais',
-            isDark: isDark,
             children: [
               ProfileInfoRow(
                 icon: Icons.email_outlined,
                 label: 'E-mail',
-                value: user?.email ?? 'Ã¢â‚¬â€',
-                isDark: isDark,
+                value: user?.email ?? '—',
               ),
               const SizedBox(height: 16),
               ProfileInfoRow(
                 icon: Icons.phone_outlined,
                 label: 'Telefone',
-                value: user?.phone ?? 'NÃƒÂ£o informado',
-                isDark: isDark,
+                value: user?.phone ?? 'Não informado',
                 readOnly: true,
               ),
               const SizedBox(height: 16),
@@ -170,24 +163,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 label: 'Membro desde',
                 value: user?.createdAt != null
                     ? DateFormat('dd/MM/yyyy').format(user!.createdAt!)
-                    : 'Ã¢â‚¬â€',
-                isDark: isDark,
+                    : '—',
               ),
             ],
           ),
         ),
 
-        // Ã¢â€â‚¬Ã¢â€â‚¬ PreferÃƒÂªncias de Viagem Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+        // ── Preferências de Viagem ────────────────────────────────
         SliverToBoxAdapter(
           child: ProfileSectionCard(
-            title: 'PreferÃƒÂªncias de Viagem',
-            isDark: isDark,
+            title: 'Preferências de Viagem',
             children: [
               ProfileChipGroup(
                 label: 'Tipo de viagem',
                 options: _tipoViagemOptions,
                 selected: _tipoViagemSelected,
-                isDark: isDark,
                 onTap: _isEditing
                     ? (val) => setState(() {
                           if (_tipoViagemSelected.contains(val)) {
@@ -200,10 +190,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
               const SizedBox(height: 20),
               ProfileChipGroup(
-                label: 'PreferÃƒÂªncias',
+                label: 'Preferências',
                 options: _preferenciasOptions,
                 selected: _preferenciasSelected,
-                isDark: isDark,
                 onTap: _isEditing
                     ? (val) => setState(() {
                           if (_preferenciasSelected.contains(val)) {
@@ -218,11 +207,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
         ),
 
-        // Ã¢â€â‚¬Ã¢â€â‚¬ Passaporte Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+        // ── Passaporte ───────────────────────────────────────────
         SliverToBoxAdapter(
           child: ProfilePassaporteCard(
             value: _temPassaporte,
-            isDark: isDark,
             onToggle: _isEditing
                 ? () => setState(
                     () => _temPassaporte = !(_temPassaporte ?? false))
@@ -230,11 +218,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
         ),
 
-        // Ã¢â€â‚¬Ã¢â€â‚¬ AparÃƒÂªncia (tema) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+        // ── Aparência (tema) ──────────────────────────────────────
         SliverToBoxAdapter(
           child: ProfileSectionCard(
-            title: 'AparÃƒÂªncia',
-            isDark: isDark,
+            title: 'Aparência',
             children: [
               ProfileThemeSelector(
                 themeMode: themeMode,
@@ -249,13 +236,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       notifier.setDark();
                   }
                 },
-                isDark: isDark,
               ),
             ],
           ),
         ),
 
-        // Ã¢â€â‚¬Ã¢â€â‚¬ AÃƒÂ§ÃƒÂµes (salvar / logout / apagar conta) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+        // ── Ações (salvar / logout / apagar conta) ──────────────────
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -343,12 +329,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'VocÃƒÂª estÃƒÂ¡ prestes a apagar permanentemente sua conta e todos os dados associados.',
+              'Você está prestes a apagar permanentemente sua conta e todos os dados associados.',
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 12),
             Text(
-              'Esta aÃƒÂ§ÃƒÂ£o nÃƒÂ£o pode ser desfeita.',
+              'Esta ação não pode ser desfeita.',
               style: TextStyle(
                   fontWeight: FontWeight.w600, color: AppColors.error),
               textAlign: TextAlign.center,

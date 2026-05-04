@@ -1,6 +1,7 @@
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/client/documentos/domain/entities/trip_summary.dart';
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class TripSelectionCard extends StatelessWidget {
   const TripSelectionCard({
@@ -21,20 +22,22 @@ class TripSelectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final primaryColor = isDark ? Colors.white : Colors.black;
+    final secondaryColor = isDark ? Colors.white.withValues(alpha: 0.6) : Colors.black.withValues(alpha: 0.5);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: theme.cardTheme.color ?? (isDark ? AppColors.darkCard : Colors.white),
-        borderRadius: BorderRadius.circular(12),
+        color: theme.cardTheme.color ?? (isDark ? context.cadife.cardBackground : Colors.white),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: theme.dividerColor.withValues(alpha: 0.1),
+          color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+            blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
@@ -43,31 +46,33 @@ class TripSelectionCard extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           child: Padding(
             padding: const EdgeInsets.all(12),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 // Trip Illustration Image
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(12),
                   child: Container(
-                    width: 80,
-                    height: 80,
-                    color: theme.dividerColor.withValues(alpha: 0.1),
+                    width: 84,
+                    height: 84,
+                    color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
                     child: trip.imageUrl != null
                         ? Image.network(
                             trip.imageUrl!,
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) => Icon(
-                              Icons.image_outlined,
-                              color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.3),
+                              LucideIcons.image,
+                              color: secondaryColor,
+                              size: 24,
                             ),
                           )
                         : Icon(
-                            Icons.image_outlined,
-                            color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.3),
+                            LucideIcons.image,
+                            color: secondaryColor,
+                            size: 24,
                           ),
                   ),
                 ),
@@ -81,85 +86,90 @@ class TripSelectionCard extends StatelessWidget {
                       Text(
                         trip.name,
                         style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: theme.textTheme.titleMedium?.color,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: primaryColor,
+                          letterSpacing: -0.3,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 8),
                       // Destination
                       if (trip.destino != null) ...[
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.location_on_outlined,
-                              size: 14,
-                              color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.6),
-                            ),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                trip.destino!,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.6),
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
+                        _InfoRow(
+                          icon: LucideIcons.mapPin,
+                          label: trip.destino!,
+                          color: secondaryColor,
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 6),
                       ],
                       // Dates
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.calendar_today_outlined,
-                            size: 14,
-                            color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.6),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${_formatDate(trip.dataIda)} - ${_formatDate(trip.dataVolta)}',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.6),
-                            ),
-                          ),
-                        ],
+                      _InfoRow(
+                        icon: LucideIcons.calendar,
+                        label: '${_formatDate(trip.dataIda)} - ${_formatDate(trip.dataVolta)}',
+                        color: secondaryColor,
                       ),
                       if (trip.numPessoas != null) ...[
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.people_outline,
-                              size: 14,
-                              color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.6),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${trip.numPessoas} ${trip.numPessoas == 1 ? 'pessoa' : 'pessoas'}',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.6),
-                              ),
-                            ),
-                          ],
+                        const SizedBox(height: 6),
+                        _InfoRow(
+                          icon: LucideIcons.users,
+                          label: '${trip.numPessoas} ${trip.numPessoas == 1 ? 'pessoa' : 'pessoas'}',
+                          color: secondaryColor,
                         ),
                       ],
                     ],
                   ),
                 ),
+                Icon(
+                  LucideIcons.chevronRight,
+                  size: 20,
+                  color: secondaryColor.withValues(alpha: 0.5),
+                ),
+                const SizedBox(width: 4),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  const _InfoRow({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 14,
+          color: color,
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: color,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
     );
   }
 }

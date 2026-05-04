@@ -114,7 +114,7 @@ class _ScheduleAppointmentModalState
               ],
             ),
             const SizedBox(height: 16),
-            const Divider(color: AppColors.border, height: 1),
+            Divider(color: context.cadife.cardBorder, height: 1),
             const SizedBox(height: 24),
 
             // Lead Info Card
@@ -137,31 +137,31 @@ class _ScheduleAppointmentModalState
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Lead',
                           style: TextStyle(
                             fontSize: 12,
-                            color: AppColors.textSecondary,
+                            color: context.cadife.textSecondary,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                         Text(
                           widget.lead.name,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
+                            color: context.cadife.textPrimary,
                           ),
                         ),
                         Row(
                           children: [
-                            const Icon(Icons.location_on_outlined, size: 14, color: AppColors.textSecondary),
+                            Icon(Icons.location_on_outlined, size: 14, color: context.cadife.textSecondary),
                             const SizedBox(width: 4),
                             Text(
                               widget.lead.destino ?? 'Destino não informado',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 13,
-                                color: AppColors.textSecondary,
+                                color: context.cadife.textSecondary,
                               ),
                             ),
                           ],
@@ -178,12 +178,12 @@ class _ScheduleAppointmentModalState
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'Select Date',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+                    color: context.cadife.textPrimary,
                   ),
                 ),
                 Row(
@@ -238,7 +238,7 @@ class _ScheduleAppointmentModalState
                         border: Border.all(
                           color: isSelected 
                               ? AppColors.primary 
-                              : (isPast ? AppColors.border.withValues(alpha: 0.5) : AppColors.border),
+                              : (isPast ? context.cadife.cardBorder.withValues(alpha: 0.5) : context.cadife.cardBorder),
                           width: isSelected ? 2 : 1,
                         ),
                       ),
@@ -251,7 +251,7 @@ class _ScheduleAppointmentModalState
                               fontSize: 12,
                               color: isSelected 
                                   ? AppColors.primary 
-                                  : (isPast ? AppColors.textSecondary.withValues(alpha: 0.5) : AppColors.textSecondary),
+                                  : (isPast ? context.cadife.textSecondary.withValues(alpha: 0.5) : context.cadife.textSecondary),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -263,7 +263,7 @@ class _ScheduleAppointmentModalState
                               fontWeight: FontWeight.bold,
                               color: isSelected 
                                   ? AppColors.primary 
-                                  : (isPast ? AppColors.textPrimary.withValues(alpha: 0.3) : AppColors.textPrimary),
+                                  : (isPast ? context.cadife.textPrimary.withValues(alpha: 0.3) : context.cadife.textPrimary),
                             ),
                           ),
                         ],
@@ -278,14 +278,14 @@ class _ScheduleAppointmentModalState
             // Available Times Header
             Row(
               children: [
-                const Icon(Icons.access_time, size: 16, color: AppColors.textSecondary),
+                Icon(Icons.access_time, size: 16, color: context.cadife.textSecondary),
                 const SizedBox(width: 8),
-                const Text(
+                Text(
                   'Available Times',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+                    color: context.cadife.textPrimary,
                   ),
                 ),
                 if (state.isLoading) ...[
@@ -329,12 +329,12 @@ class _ScheduleAppointmentModalState
                       decoration: BoxDecoration(
                         color: isSelected 
                             ? AppColors.primary 
-                            : (slot.available ? Colors.transparent : AppColors.border.withValues(alpha: 0.3)),
+                            : (slot.available ? Colors.transparent : context.cadife.cardBorder.withValues(alpha: 0.3)),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
                           color: isSelected 
                               ? AppColors.primary 
-                              : (slot.available ? AppColors.border : AppColors.border.withValues(alpha: 0.3)),
+                              : (slot.available ? context.cadife.cardBorder : context.cadife.cardBorder.withValues(alpha: 0.3)),
                         ),
                         boxShadow: isSelected
                             ? [
@@ -354,7 +354,7 @@ class _ScheduleAppointmentModalState
                           fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
                           color: isSelected 
                               ? Colors.white 
-                              : (slot.available ? AppColors.textPrimary : AppColors.textSecondary.withValues(alpha: 0.5)),
+                              : (slot.available ? context.cadife.textPrimary : context.cadife.textSecondary.withValues(alpha: 0.5)),
                         ),
                       ),
                     ),

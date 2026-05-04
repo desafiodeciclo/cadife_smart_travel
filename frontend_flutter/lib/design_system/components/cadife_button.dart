@@ -1,8 +1,8 @@
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
 
-class CadifeButton extends StatefulWidget {
+class CadifeButton extends StatelessWidget {
   final String text;
   final VoidCallback? onPressed;
   final bool isLoading;
@@ -19,101 +19,43 @@ class CadifeButton extends StatefulWidget {
   });
 
   @override
-  State<CadifeButton> createState() => _CadifeButtonState();
-}
-
-class _CadifeButtonState extends State<CadifeButton>
-    with SingleTickerProviderStateMixin {
-  double _scale = 1.0;
-
-  void _onTapDown(TapDownDetails _) {
-    if (widget.onPressed != null) setState(() => _scale = 0.95);
-  }
-
-  void _onTapUp(TapUpDetails _) {
-    if (widget.onPressed != null) setState(() => _scale = 1.0);
-  }
-
-  void _onTapCancel() {
-    if (widget.onPressed != null) setState(() => _scale = 1.0);
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final cadife = context.cadife;
-    final primaryColor = cadife.primary;
-    const textOnPrimary = Colors.white;
+    final theme = context.cadife;
+    
+    final child = Text(text);
+    final leading = isLoading 
+        ? SizedBox.square(
+            dimension: 16,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: isOutline ? theme.primary : Colors.white,
+            ),
+          )
+        : (icon != null ? Icon(icon, size: 18) : null);
 
-    return GestureDetector(
-      onTapDown: _onTapDown,
-      onTapUp: _onTapUp,
-      onTapCancel: _onTapCancel,
-      onTap: widget.isLoading ? null : widget.onPressed,
-      child: AnimatedScale(
-        scale: _scale,
-        duration: const Duration(milliseconds: 100),
-        child: Container(
-          height: 56,
-          decoration: BoxDecoration(
-            color: widget.onPressed == null
-                ? (widget.isOutline ? Colors.transparent : AppColors.textDisabled)
-                : (widget.isOutline ? Colors.transparent : primaryColor),
-            borderRadius: BorderRadius.circular(12),
-            border: widget.isOutline
-                ? Border.all(
-                    color: widget.onPressed == null
-                        ? AppColors.textDisabled
-                        : primaryColor,
-                    width: 2)
-                : null,
-            boxShadow: widget.isOutline || widget.onPressed == null
-                ? null
-                : [
-                    BoxShadow(
-                      color: primaryColor.withValues(alpha: 0.2),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-          ),
-          child: Center(
-            child: widget.isLoading
-                ? SizedBox(
-                    height: 24,
-                    width: 24,
-                    child: CircularProgressIndicator(
-                      color: widget.isOutline ? primaryColor : textOnPrimary,
-                      strokeWidth: 2,
-                    ),
-                  )
-                : Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      if (widget.icon != null) ...[
-                        Icon(
-                          widget.icon,
-                          color: widget.isOutline
-                              ? primaryColor
-                              : textOnPrimary,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                      ],
-                      Text(
-                        widget.text,
-                        style: GoogleFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: widget.isOutline
-                              ? primaryColor
-                              : textOnPrimary,
-                        ),
-                      ),
-                    ],
-                  ),
-          ),
+    if (isOutline) {
+      return SizedBox(
+        width: double.infinity,
+        height: 56,
+        child: ShadButton.outline(
+          onPressed: onPressed,
+          leading: leading,
+          child: child,
         ),
+      );
+    }
+
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: ShadButton(
+        onPressed: onPressed,
+        leading: leading,
+        backgroundColor: theme.primary,
+        child: child,
       ),
     );
   }
 }
+
+

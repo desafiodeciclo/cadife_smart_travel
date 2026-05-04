@@ -1,4 +1,4 @@
-import 'package:cadife_smart_travel/design_system/tokens/app_colors.dart';
+import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:flutter/material.dart';
 
 class CadifeCard extends StatelessWidget {
@@ -8,6 +8,8 @@ class CadifeCard extends StatelessWidget {
   final double? height;
   final Color? color;
   final VoidCallback? onTap;
+  final double borderRadius;
+  final bool showBorder;
 
   const CadifeCard({
     super.key,
@@ -17,27 +19,37 @@ class CadifeCard extends StatelessWidget {
     this.height,
     this.color,
     this.onTap,
+    this.borderRadius = 24,
+    this.showBorder = true,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = context.cadife;
+    final isDark = context.isDark;
 
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: width,
         height: height,
-        padding: padding ?? const EdgeInsets.all(16),
+        padding: padding ?? const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: color ?? (isDark ? AppColors.darkCard : Colors.white),
-          borderRadius: BorderRadius.circular(20),
+          color: color ?? theme.cardBackground,
+          borderRadius: BorderRadius.circular(borderRadius),
+          border: showBorder 
+            ? Border.all(
+                color: theme.cardBorder,
+                width: 1.5,
+              )
+            : null,
           boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 15,
-              offset: const Offset(0, 4),
-            ),
+            if (!isDark)
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
           ],
         ),
         child: child,

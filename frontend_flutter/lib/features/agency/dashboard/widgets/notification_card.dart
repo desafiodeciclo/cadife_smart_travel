@@ -46,9 +46,9 @@ class NotificationCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     '$leadName • $timeAgo',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
-                      color: AppColors.textSecondary,
+                      color: context.cadife.textSecondary,
                     ),
                   ),
                 ],
@@ -56,7 +56,7 @@ class NotificationCard extends StatelessWidget {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.close, size: 20, color: AppColors.textSecondary),
+            icon: Icon(Icons.close, size: 20, color: context.cadife.textSecondary),
             onPressed: onClose,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),

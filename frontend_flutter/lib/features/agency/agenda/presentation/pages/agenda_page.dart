@@ -30,7 +30,7 @@ class AgendaScreen extends ConsumerWidget {
     final allAsync = ref.watch(agendaProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.scaffold,
+      backgroundColor: context.cadife.background,
       appBar: CadifeAppBar(
         title: 'Agenda',
         actions: [
@@ -43,7 +43,7 @@ class AgendaScreen extends ConsumerWidget {
       body: Column(
         children: [
           _ViewToggleBar(viewMode: viewMode),
-          const Divider(height: 1, color: AppColors.divider),
+          const Divider(height: 1),
           Expanded(
             child: allAsync.when(
               loading: () => ShimmerLoading(
@@ -54,10 +54,10 @@ class AgendaScreen extends ConsumerWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.error_outline,
                       size: 48,
-                      color: AppColors.textSecondary,
+                      color: context.cadife.textSecondary,
                     ),
                     const SizedBox(height: 12),
                     Text('Erro: $e'),
@@ -79,7 +79,7 @@ class AgendaScreen extends ConsumerWidget {
       ),
       floatingActionButton: viewMode == 1
           ? FloatingActionButton.extended(
-              backgroundColor: AppColors.primary,
+              backgroundColor: context.cadife.primary,
               onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text(
@@ -151,7 +151,7 @@ class _ToggleChip extends StatelessWidget {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
         decoration: BoxDecoration(
-          color: selected ? AppColors.primary : AppColors.surface,
+          color: selected ? context.cadife.primary : context.cadife.surface,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
@@ -160,13 +160,13 @@ class _ToggleChip extends StatelessWidget {
             Icon(
               icon,
               size: 16,
-              color: selected ? Colors.white : AppColors.textSecondary,
+              color: selected ? Colors.white : context.cadife.textSecondary,
             ),
             const SizedBox(width: 6),
             Text(
               label,
               style: TextStyle(
-                color: selected ? Colors.white : AppColors.textSecondary,
+                color: selected ? Colors.white : context.cadife.textSecondary,
                 fontWeight:
                     selected ? FontWeight.w600 : FontWeight.normal,
                 fontSize: 13,

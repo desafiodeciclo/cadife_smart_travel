@@ -1,6 +1,8 @@
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/client/documentos/domain/entities/documento.dart';
+import 'package:cadife_smart_travel/features/client/documentos/presentation/widgets/document_icon.dart';
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class CadifeDocumentCard extends StatelessWidget {
   const CadifeDocumentCard({
@@ -14,37 +16,30 @@ class CadifeDocumentCard extends StatelessWidget {
   final VoidCallback? onView;
   final VoidCallback? onDownload;
 
-  IconData _getDocumentIcon(DocumentType type) {
-    return switch (type) {
-      DocumentType.pdf => Icons.picture_as_pdf,
-      DocumentType.image => Icons.image,
-      DocumentType.video => Icons.videocam,
-      DocumentType.audio => Icons.audiotrack,
-      DocumentType.other => Icons.insert_drive_file,
-    };
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final primaryColor = isDark ? Colors.white : Colors.black;
+    final secondaryColor = isDark ? Colors.white.withValues(alpha: 0.7) : Colors.black.withValues(alpha: 0.6);
+    final surfaceColor = isDark ? context.cadife.cardBackground : Colors.white;
 
     return InkWell(
       onTap: onView,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
+        margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
-          color: theme.cardTheme.color ?? (isDark ? AppColors.darkCard : Colors.white),
-          borderRadius: BorderRadius.circular(12),
+          color: surfaceColor,
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: theme.dividerColor.withValues(alpha: 0.1),
+            color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
+              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+              blurRadius: 12,
               offset: const Offset(0, 4),
             ),
           ],
@@ -52,23 +47,12 @@ class CadifeDocumentCard extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Document Icon
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  _getDocumentIcon(document.type),
-                  color: AppColors.primary,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
+              // Document Icon Componentized
+              DocumentIcon(type: document.type, size: 22),
+              const SizedBox(width: 16),
+              
               // Document Info
               Expanded(
                 child: Column(
@@ -76,28 +60,30 @@ class CadifeDocumentCard extends StatelessWidget {
                   children: [
                     if (document.category != null) ...[
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(4),
+                          color: primaryColor,
+                          borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
                           document.category!.toUpperCase(),
-                          style: const TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primary,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: isDark ? Colors.black : Colors.white,
+                            letterSpacing: 0.5,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 6),
                     ],
                     Text(
                       document.name,
                       style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: theme.textTheme.titleMedium?.color,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: primaryColor,
+                        height: 1.2,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -107,75 +93,112 @@ class CadifeDocumentCard extends StatelessWidget {
                       document.sizeFormatted,
                       style: TextStyle(
                         fontSize: 12,
-                        color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
+                        fontWeight: FontWeight.w500,
+                        color: secondaryColor,
                       ),
                     ),
                   ],
                 ),
               ),
               const SizedBox(width: 12),
+              
               // Action Buttons
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  SizedBox(
-                    height: 32,
-                    child: OutlinedButton(
-                      onPressed: onView,
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        side: const BorderSide(
-                          color: AppColors.primary,
-                          width: 1.5,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                      ),
-                      child: const Text(
-                        'VER',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ),
+                  _ActionButton(
+                    label: 'VER',
+                    onPressed: onView,
+                    isPrimary: true,
                   ),
                   const SizedBox(height: 8),
-                  SizedBox(
-                    height: 32,
-                    child: OutlinedButton.icon(
-                      onPressed: onDownload,
-                      icon: const Icon(
-                        Icons.download,
-                        size: 14,
-                        color: AppColors.primary,
-                      ),
-                      label: const Text(
-                        'BAIXAR',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        side: const BorderSide(
-                          color: AppColors.primary,
-                          width: 1.5,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                      ),
-                    ),
+                  _ActionButton(
+                    label: 'BAIXAR',
+                    icon: LucideIcons.download,
+                    onPressed: onDownload,
+                    isPrimary: false,
                   ),
                 ],
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  final String label;
+  final IconData? icon;
+  final VoidCallback? onPressed;
+  final bool isPrimary;
+
+  const _ActionButton({
+    required this.label,
+    this.icon,
+    this.onPressed,
+    required this.isPrimary,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final color = isDark ? Colors.white : Colors.black;
+
+    if (isPrimary) {
+      return SizedBox(
+        height: 32,
+        width: 80,
+        child: TextButton(
+          onPressed: onPressed,
+          style: TextButton.styleFrom(
+            backgroundColor: color,
+            foregroundColor: isDark ? Colors.black : Colors.white,
+            padding: EdgeInsets.zero,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return SizedBox(
+      height: 32,
+      width: 80,
+      child: OutlinedButton(
+        onPressed: onPressed,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: color,
+          side: BorderSide(color: color.withValues(alpha: 0.3), width: 1),
+          padding: EdgeInsets.zero,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: 12),
+              const SizedBox(width: 4),
+            ],
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
         ),
       ),
     );

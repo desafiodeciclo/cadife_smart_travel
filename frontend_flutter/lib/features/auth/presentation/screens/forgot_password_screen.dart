@@ -227,14 +227,14 @@ class _ConfirmationStep extends StatelessWidget {
                 RichText(
                   text: TextSpan(
                     style: AppTextStyles.bodyMedium
-                        .copyWith(color: AppColors.textSecondary),
+                        .copyWith(color: context.cadife.textSecondary),
                     children: [
                       const TextSpan(
                           text: 'Enviamos um link de recuperação para '),
                       TextSpan(
                         text: email,
                         style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.textPrimary,
+                          color: context.cadife.textPrimary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -248,8 +248,8 @@ class _ConfirmationStep extends StatelessWidget {
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Theme.of(context).brightness == Brightness.dark 
-                        ? AppColors.darkCard 
-                        : AppColors.surface,
+                        ? context.cadife.cardBackground 
+                        : context.cadife.surface,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(
@@ -258,13 +258,13 @@ class _ConfirmationStep extends StatelessWidget {
                       Text(
                         'Não recebeu o e-mail?',
                         style: AppTextStyles.labelLarge
-                            .copyWith(color: AppColors.textPrimary),
+                            .copyWith(color: context.cadife.textPrimary),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'Aguarde alguns minutos e verifique a caixa de spam antes de reenviar.',
                         style: AppTextStyles.bodySmall
-                            .copyWith(color: AppColors.textSecondary),
+                            .copyWith(color: context.cadife.textSecondary),
                       ),
                       const SizedBox(height: 12),
                       GestureDetector(
@@ -273,7 +273,7 @@ class _ConfirmationStep extends StatelessWidget {
                           isResending ? 'Reenviando…' : 'Reenviar link',
                           style: AppTextStyles.labelLarge.copyWith(
                             color: isResending
-                                ? AppColors.textSecondary
+                                ? context.cadife.textSecondary
                                 : AppColors.primary,
                             decoration:
                                 isResending ? null : TextDecoration.underline,
@@ -326,7 +326,7 @@ class _SuccessStep extends StatelessWidget {
                 Text(
                   'Sua senha foi alterada com sucesso. Faça login com a nova senha.',
                   style: AppTextStyles.bodyMedium
-                      .copyWith(color: AppColors.textSecondary),
+                      .copyWith(color: context.cadife.textSecondary),
                   textAlign: TextAlign.center,
                 ),
                 const Spacer(),

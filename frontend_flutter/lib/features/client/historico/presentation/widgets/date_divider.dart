@@ -28,10 +28,10 @@ class DateDivider extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Text(
               _label(),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textSecondary,
+                color: context.cadife.textSecondary,
                 letterSpacing: 0.5,
               ),
             ),

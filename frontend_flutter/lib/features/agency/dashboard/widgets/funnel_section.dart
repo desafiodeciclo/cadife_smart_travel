@@ -41,7 +41,7 @@ class FunnelSection extends StatelessWidget {
                     label: 'Novo',
                     value: novo,
                     maxValue: maxValue,
-                    color: AppColors.textSecondary,
+                    color: context.cadife.textSecondary,
                   ),
                   const SizedBox(height: 12),
                   _FunnelBar(

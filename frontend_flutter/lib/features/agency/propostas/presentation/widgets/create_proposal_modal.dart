@@ -54,7 +54,7 @@ class _CreateProposalModalState extends State<CreateProposalModal> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppColors.border,
+                    color: context.cadife.cardBorder,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),

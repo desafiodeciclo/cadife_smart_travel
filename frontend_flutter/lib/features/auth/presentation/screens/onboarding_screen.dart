@@ -86,7 +86,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).brightness == Brightness.dark 
           ? AppColors.darkSurface 
-          : AppColors.scaffold,
+          : context.cadife.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -100,7 +100,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   child: Text(
                     'Pular',
                     style: AppTextStyles.bodyMedium
-                        .copyWith(color: AppColors.textSecondary),
+                        .copyWith(color: context.cadife.textSecondary),
                   ),
                 ),
               ),
@@ -129,7 +129,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   decoration: BoxDecoration(
                     color: i == _currentPage
                         ? AppColors.primary
-                        : AppColors.border,
+                        : context.cadife.cardBorder,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -200,7 +200,7 @@ class _SlideView extends StatelessWidget {
           Text(
             slide.subtitle,
             style: AppTextStyles.bodyMedium
-                .copyWith(color: AppColors.textSecondary, height: 1.6),
+                .copyWith(color: context.cadife.textSecondary, height: 1.6),
             textAlign: TextAlign.center,
           ),
         ],

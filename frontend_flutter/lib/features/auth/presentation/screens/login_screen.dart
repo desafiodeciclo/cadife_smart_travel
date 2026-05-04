@@ -97,8 +97,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           final isLoggingIn = state is AuthLoading;
           final hasLoginError = state is AuthFailure;
 
-          final textSecondary = isDark ? Colors.white60 : AppColors.textSecondary;
-          final dividerColor = isDark ? Colors.white12 : AppColors.border;
+          final textSecondary = isDark ? Colors.white60 : context.cadife.textSecondary;
+          final dividerColor = isDark ? Colors.white12 : context.cadife.cardBorder;
 
     // ── FIX: Column layout instead of Stack — avoids unbounded constraints
     //         and hit-testing issues that blocked all interactions.
@@ -278,7 +278,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   size: 22,
                                   color: isDark
                                       ? Colors.white
-                                      : AppColors.textPrimary,
+                                      : context.cadife.textPrimary,
                                 ),
                                 isDark: isDark,
                                 onTap: () => ScaffoldMessenger.of(context)
@@ -354,10 +354,10 @@ class _ThemeToggle extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: isDark ? Colors.white12 : AppColors.surface,
+          color: isDark ? Colors.white12 : context.cadife.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isDark ? Colors.white24 : AppColors.border,
+            color: isDark ? Colors.white24 : context.cadife.cardBorder,
           ),
         ),
         child: Row(
@@ -372,7 +372,7 @@ class _ThemeToggle extends ConsumerWidget {
             Icon(
               Icons.nightlight_round,
               size: 16,
-              color: isDark ? Colors.white : AppColors.textSecondary,
+              color: isDark ? Colors.white : context.cadife.textSecondary,
             ),
           ],
         ),
@@ -420,12 +420,12 @@ class _SocialButton extends StatelessWidget {
       style: OutlinedButton.styleFrom(
         padding: const EdgeInsets.symmetric(vertical: 13),
         side: BorderSide(
-          color: isDark ? Colors.white24 : AppColors.border,
+          color: isDark ? Colors.white24 : context.cadife.cardBorder,
         ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),
-        foregroundColor: isDark ? Colors.white : AppColors.textPrimary,
+        foregroundColor: isDark ? Colors.white : context.cadife.textPrimary,
         backgroundColor: Colors.transparent,
       ),
       child: Row(
@@ -437,7 +437,7 @@ class _SocialButton extends StatelessWidget {
           Text(
             label,
             style: AppTextStyles.labelLarge.copyWith(
-              color: isDark ? Colors.white : AppColors.textPrimary,
+              color: isDark ? Colors.white : context.cadife.textPrimary,
             ),
           ),
         ],
