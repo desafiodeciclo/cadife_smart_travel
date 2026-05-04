@@ -1,8 +1,8 @@
-import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/client/documentos/domain/entities/documento.dart';
+import 'package:cadife_smart_travel/features/client/documentos/domain/entities/trip_summary.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// Mock data Ã¢â‚¬â€ serÃƒÂ¡ substituÃƒÂ­do por API real
+// Mock data — será substituído por API real
 final _mockGlobalDocuments = [
   Documento(
     id: 'doc-1',
@@ -36,7 +36,7 @@ final _mockGlobalDocuments = [
   ),
   Documento(
     id: 'doc-4',
-    name: 'Passagens AÃƒÂ©reas',
+    name: 'Passagens Aéreas',
     type: DocumentType.pdf,
     size: 3200000,
     url: 'https://example.com/passagens.pdf',
@@ -57,26 +57,18 @@ final _mockGlobalDocuments = [
 ];
 
 final _mockTripsWithDocuments = [
-  Lead(
+  TripSummary(
     id: 'trip-1',
     name: 'Paris & Londres 2024',
-    phone: '+5511999999999',
-    status: LeadStatus.agendado,
-    score: LeadScore.quente,
-    completudePct: 100,
-    destino: 'Paris, FranÃƒÂ§a e Londres, Reino Unido',
+    destino: 'Paris, França e Londres, Reino Unido',
     dataIda: DateTime(2024, 7, 15),
     dataVolta: DateTime(2024, 7, 22),
     numPessoas: 2,
     imageUrl: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&q=80&w=400',
   ),
-  Lead(
+  TripSummary(
     id: 'trip-2',
     name: 'Maldivas 2024',
-    phone: '+5511999999999',
-    status: LeadStatus.proposta,
-    score: LeadScore.quente,
-    completudePct: 95,
     destino: 'Maldivas',
     dataIda: DateTime(2024, 8, 20),
     dataVolta: DateTime(2024, 8, 27),
@@ -116,7 +108,7 @@ final _mockTripDocuments = {
     ),
     Documento(
       id: 'trip1-doc-4',
-      name: 'Passagens AÃƒÂ©reas',
+      name: 'Passagens Aéreas',
       type: DocumentType.pdf,
       size: 3200000,
       url: 'https://example.com/paris-passagens.pdf',
@@ -152,17 +144,16 @@ final globalDocumentsProvider = FutureProvider<List<Documento>>((ref) async {
   return _mockGlobalDocuments;
 });
 
-/// Provedor para lista de trips/viagens que possuem documentos
-final tripsWithDocumentsProvider = FutureProvider<List<Lead>>((ref) async {
+/// Provedor para lista de viagens que possuem documentos
+final tripsWithDocumentsProvider =
+    FutureProvider<List<TripSummary>>((ref) async {
   await Future.delayed(const Duration(milliseconds: 300));
   return _mockTripsWithDocuments;
 });
 
-/// Provedor para documentos de uma trip especÃƒÂ­fica
-final tripDocumentsProvider = FutureProvider.family<List<Documento>, String>((ref, tripId) async {
+/// Provedor para documentos de uma viagem específica
+final tripDocumentsProvider =
+    FutureProvider.family<List<Documento>, String>((ref, tripId) async {
   await Future.delayed(const Duration(milliseconds: 300));
   return _mockTripDocuments[tripId] ?? [];
 });
-
-
-

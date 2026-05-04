@@ -1,5 +1,5 @@
 import 'dart:developer' as developer;
-import 'package:cadife_smart_travel/domain/repositories/i_offline_event_repository.dart';
+import 'package:cadife_smart_travel/core/offline/i_offline_event_repository.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 class ProcessOfflineQueueUseCase {

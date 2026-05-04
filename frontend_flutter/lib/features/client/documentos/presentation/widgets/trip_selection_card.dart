@@ -1,5 +1,5 @@
 import 'package:cadife_smart_travel/design_system/design_system.dart';
-import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
+import 'package:cadife_smart_travel/features/client/documentos/domain/entities/trip_summary.dart';
 import 'package:flutter/material.dart';
 
 class TripSelectionCard extends StatelessWidget {
@@ -9,7 +9,7 @@ class TripSelectionCard extends StatelessWidget {
     this.onTap,
   });
 
-  final Lead trip;
+  final TripSummary trip;
   final VoidCallback? onTap;
 
   String _formatDate(DateTime? date) {

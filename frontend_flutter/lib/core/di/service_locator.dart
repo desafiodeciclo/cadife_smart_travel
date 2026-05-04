@@ -1,3 +1,4 @@
+import 'package:cadife_smart_travel/core/cache/database_helper.dart';
 import 'package:cadife_smart_travel/core/cache/isar_cache_manager.dart';
 import 'package:cadife_smart_travel/core/network/connectivity_service.dart';
 import 'package:cadife_smart_travel/core/network/dio_client.dart';
@@ -6,25 +7,23 @@ import 'package:cadife_smart_travel/core/network/interceptors/error_interceptor.
 import 'package:cadife_smart_travel/core/network/network_info.dart';
 import 'package:cadife_smart_travel/core/notifications/fcm_manager.dart';
 import 'package:cadife_smart_travel/core/notifications/local_notification_manager.dart';
+import 'package:cadife_smart_travel/core/offline/i_offline_event_repository.dart';
+import 'package:cadife_smart_travel/core/offline/offline_event_repository_impl.dart';
 import 'package:cadife_smart_travel/core/offline/offline_interceptor.dart';
 import 'package:cadife_smart_travel/core/offline/offline_manager.dart';
 import 'package:cadife_smart_travel/core/offline/offline_sync_queue.dart';
+import 'package:cadife_smart_travel/core/offline/process_offline_queue_usecase.dart';
 import 'package:cadife_smart_travel/core/security/secure_config.dart';
-import 'package:cadife_smart_travel/data/local/database_helper.dart';
-import 'package:cadife_smart_travel/data/repositories/mock_agency_settings_repository.dart';
-import 'package:cadife_smart_travel/data/repositories/mock_agenda_repository.dart';
-import 'package:cadife_smart_travel/data/repositories/mock_consultor_repository.dart';
-import 'package:cadife_smart_travel/data/repositories/mock_profile_repository.dart';
-import 'package:cadife_smart_travel/data/repositories/offline_event_repository_impl.dart';
-import 'package:cadife_smart_travel/domain/repositories/i_offline_event_repository.dart';
-import 'package:cadife_smart_travel/domain/usecases/process_offline_queue_usecase.dart';
+import 'package:cadife_smart_travel/features/agency/agenda/data/datasources/mock_agenda_repository.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/domain/repositories/i_agenda_repository.dart';
 import 'package:cadife_smart_travel/features/agency/leads/data/datasources/leads_remote_mock_datasource.dart';
 import 'package:cadife_smart_travel/features/agency/leads/data/repositories/leads_repository_impl.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/repositories/i_leads_repository.dart';
+import 'package:cadife_smart_travel/features/agency/perfil/data/datasources/mock_consultor_repository.dart';
 import 'package:cadife_smart_travel/features/agency/perfil/domain/repositories/i_consultor_repository.dart';
 import 'package:cadife_smart_travel/features/agency/propostas/data/repositories/proposal_repository_impl.dart';
 import 'package:cadife_smart_travel/features/agency/propostas/domain/repositories/i_proposals_repository.dart';
+import 'package:cadife_smart_travel/features/agency/settings/data/datasources/mock_agency_settings_repository.dart';
 import 'package:cadife_smart_travel/features/agency/settings/domain/repositories/i_agency_settings_repository.dart';
 import 'package:cadife_smart_travel/features/auth/data/datasources/auth_remote_mock_datasource.dart';
 import 'package:cadife_smart_travel/features/auth/data/datasources/i_auth_datasource.dart';
@@ -32,7 +31,11 @@ import 'package:cadife_smart_travel/features/auth/data/repositories/auth_reposit
 import 'package:cadife_smart_travel/features/auth/domain/repositories/i_auth_repository.dart';
 import 'package:cadife_smart_travel/features/client/notifications/data/repositories/notifications_repository_impl.dart';
 import 'package:cadife_smart_travel/features/client/notifications/domain/repositories/i_notifications_repository.dart';
+import 'package:cadife_smart_travel/features/client/profile/data/datasources/mock_profile_repository.dart';
 import 'package:cadife_smart_travel/features/client/profile/domain/repositories/i_profile_repository.dart';
+import 'package:cadife_smart_travel/features/client/status/data/datasources/status_datasource.dart';
+import 'package:cadife_smart_travel/features/client/status/data/repositories/status_repository_impl.dart';
+import 'package:cadife_smart_travel/features/client/status/domain/repositories/i_status_repository.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
@@ -128,6 +131,14 @@ Future<void> setupServiceLocator({
   _registerProfileModule();
   _registerNotificationsModule();
   _registerSettingsModule();
+  _registerStatusModule();
+}
+
+void _registerStatusModule() {
+  sl.registerLazySingleton<IStatusDatasource>(StatusMockDatasource.new);
+  sl.registerLazySingleton<IStatusRepository>(
+    () => StatusRepositoryImpl(sl<IStatusDatasource>()),
+  );
 }
 
 void _registerAuthModule() {

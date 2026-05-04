@@ -1,5 +1,5 @@
 import 'package:cadife_smart_travel/core/error/failures.dart';
-import 'package:cadife_smart_travel/domain/entities/offline_event.dart';
+import 'package:cadife_smart_travel/core/offline/offline_event.dart';
 import 'package:fpdart/fpdart.dart';
 
 abstract class IOfflineEventRepository {
