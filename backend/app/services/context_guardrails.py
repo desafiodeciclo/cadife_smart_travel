@@ -30,8 +30,8 @@ _PRICE_PATTERNS = [
     r"\b[\d.]+\s*(?:mil(?:h[õo]es)?\s*)?(?:reais|dinheiro)\b",
     # parcela de R$... | entrada de R$...
     r"(?:parcela|entrada|taxa|custa)\s+(?:de\s+)?R?\$?\s*[\d.]+",
-    # preço: ... | valor: ... | custo: ... seguido de número
-    r"(?:pre[çc]o|valor|custo|investimento)\s*:?\s*(?:de\s+)?(?:aproximadamente\s+)?(?:R?\$?\s*)?[\d.]+",
+    # preço: ... | valor: ... | custo: ... seguido de número (deve começar com dígito)
+    r"(?:pre[çc]o|valor|custo|investimento)\s*:?\s*(?:de\s+)?(?:aproximadamente\s+)?(?:R?\$?\s*)?\d[\d.,]*",
     # número seguido de "por pessoa" com contexto monetário
     r"(?:R?\$?\s*)?[\d.]+(?:,\d{2})?\s+(?:por\s+pessoa|por\s+casal|por\s+noite)",
 ]
@@ -115,7 +115,7 @@ class PriceGuardrail:
                 start = max(0, keyword_match.start() - 30)
                 end = min(len(text), keyword_match.end() + 30)
                 surrounding = text[start:end]
-                if re.search(r"\d", surrounding):
+                if re.search(r"\d{3,}|[R$€]\s*\d+", surrounding):
                     return True, f"Keyword de preço próxima a número: '...{surrounding}...'"
 
         return False, None
