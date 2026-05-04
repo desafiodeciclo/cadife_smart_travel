@@ -5,7 +5,9 @@ import 'package:cadife_smart_travel/features/agency/dashboard/dashboard_screen.d
 import 'package:cadife_smart_travel/features/agency/leads/lead_detail_screen.dart';
 import 'package:cadife_smart_travel/features/agency/leads/lead_edit_screen.dart';
 import 'package:cadife_smart_travel/features/agency/leads/leads_screen.dart';
+import 'package:cadife_smart_travel/features/agency/profile/profile_screen.dart';
 import 'package:cadife_smart_travel/features/agency/proposals/proposal_create_screen.dart';
+import 'package:cadife_smart_travel/features/agency/settings/settings_screen.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/screens/forgot_password_screen.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/screens/login_screen.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/screens/register_screen.dart';
@@ -129,7 +131,23 @@ final routerProvider = Provider<GoRouter>((ref) {
               child: const AgendaScreen(),
             ),
           ),
+          GoRoute(
+            path: '/agency/profile',
+            pageBuilder: (_, state) => NoTransitionPage(
+              key: state.pageKey,
+              child: const ConsultorProfileScreen(),
+            ),
+          ),
         ],
+      ),
+
+      // Settings — full-screen push, no BottomNavBar
+      GoRoute(
+        path: '/agency/settings',
+        pageBuilder: (_, state) => MaterialPage(
+          key: state.pageKey,
+          child: const SettingsScreen(),
+        ),
       ),
 
       // Lead detail — full-screen push without BottomNavBar

@@ -2,6 +2,7 @@ import 'package:cadife_smart_travel/core/notifications/fcm_manager.dart';
 import 'package:cadife_smart_travel/core/ports/auth_port.dart';
 import 'package:cadife_smart_travel/services/notification_service.dart';
 import 'package:cadife_smart_travel/shared/models/models.dart';
+import 'package:cadife_smart_travel/shared/models/user_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final authPortProvider = Provider<AuthPort>((ref) {
@@ -25,11 +26,11 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
         ? AuthState.authenticated(user) 
         : const AuthState.unauthenticated();
   }
-  Future<void> login(String email, String password) async {
+  Future<void> login(String email, String password, {UserRole? profileHint}) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       final authPort = ref.read(authPortProvider);
-      final user = await authPort.login(email, password);
+      final user = await authPort.login(email, password, profileHint: profileHint);
       
       // Centralizado e aguardado para evitar race conditions
       await _syncFcmToken(authPort);
@@ -49,6 +50,11 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     } catch (e) {
       // Logar erro, mas não travar o login
     }
+  }
+
+  Future<void> forgotPassword(String email) async {
+    final authPort = ref.read(authPortProvider);
+    await authPort.forgotPassword(email);
   }
 
   Future<void> logout() async {

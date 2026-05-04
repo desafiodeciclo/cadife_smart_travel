@@ -17,11 +17,11 @@ class MockAuthRepository implements AuthPort {
   UserModel? _currentUser;
 
   @override
-  Future<UserModel> login(String email, String password) async {
+  Future<UserModel> login(String email, String password, {UserRole? profileHint}) async {
     await Future.delayed(const Duration(milliseconds: 800));
 
-    final role =
-        email.contains('agencia') ? UserRole.consultor : UserRole.cliente;
+    final role = profileHint ??
+        (email.contains('agencia') ? UserRole.consultor : UserRole.cliente);
 
     _currentUser = UserModel(
       id: 'mock-id-123',
@@ -84,6 +84,12 @@ class MockAuthRepository implements AuthPort {
 
   @override
   Future<void> saveFcmToken(String token) async {}
+
+  @override
+  Future<void> forgotPassword(String email) async {
+    await Future.delayed(const Duration(milliseconds: 1000));
+    // Mock: simula envio de e-mail sem erro
+  }
 
   /// Constrói um JWT com payload base64url válido (sem verificação de assinatura).
   /// Necessário para que JwtValidator.isTokenValid() funcione corretamente em dev.

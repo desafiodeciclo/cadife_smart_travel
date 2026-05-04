@@ -1,9 +1,12 @@
 {
   "task_id": "MVP-F3-CLT-001",
   "name": "Flutter Cliente — Tela de Histórico de Interações (Timeline de Chat)",
-  "status": "in-progress",
+  "status": "done",
   "description": "Gap identificado (spec seção 7.2): implementar a tela 'Histórico de Interações' do perfil cliente com timeline cronológica das conversas com AYA (IA) e com o consultor. Inclui bolhas de chat com distinção visual por remetente, timestamps em pt-BR, shimmer de carregamento, empty state amigável, pull-to-refresh, auto-scroll e FAB 'Continuar no WhatsApp'.",
-  "dependencies": ["flutter-arch-refactor-001", "flutter-network-http-layer-001"],
+  "dependencies": [
+    "flutter-arch-refactor-001",
+    "flutter-network-http-layer-001"
+  ],
   "responsible": "Otávio Grotto",
   "estimated_hours": "4h",
   "steps": [
@@ -30,7 +33,7 @@
     {
       "id": "step5",
       "description": "flutter analyze — zero erros críticos",
-      "status": "pending"
+      "status": "done"
     }
   ]
 }
