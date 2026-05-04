@@ -48,16 +48,3 @@ dependencies {
 flutter {
     source = "../.."
 }
-
-// Remove macOS resource fork (._*) files before clean tasks — project lives on external volume
-tasks.withType<Delete>().configureEach {
-    doFirst {
-        val buildRoot = layout.buildDirectory.get().asFile
-        if (buildRoot.exists()) {
-            exec {
-                commandLine("find", buildRoot.absolutePath, "-name", "._*", "-delete")
-                isIgnoreExitValue = true
-            }
-        }
-    }
-}
