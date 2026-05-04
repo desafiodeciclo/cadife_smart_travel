@@ -9,6 +9,8 @@ Coverage targets:
   - Media message: fallback reply used, send_message called, result persisted
   - Empty payload (no message extracted): early return, no DB writes
   - Send failure: status_envio = 'failed', worker does not raise
+  - Memory preload: conversation history hydrated before AI reply
+  - Curation offer: triggered when lead freshly qualified (≥60%) without appointment
 """
 import uuid
 from datetime import datetime, timezone
@@ -237,6 +239,162 @@ async def test_send_failure_persisted_without_raising():
     persisted_result: SendResult = call_args[2]
     assert persisted_result.success is False
     assert persisted_result.error is not None
+
+
+@pytest.mark.asyncio
+async def test_lead_qualified_receives_curadoria_offer():
+    """Lead freshly qualified (≥60%) without appointment receives curation offer."""
+    db = AsyncMock()
+    lead = _fake_lead()
+    lead.status = LeadStatus.em_atendimento
+    interacao = _fake_interacao()
+    send_result = SendResult(success=True, wamid="wamid.ok", retries_used=0, latency_ms=120)
+
+    with (
+        patch("app.application.use_cases.process_whatsapp_message.lead_service") as mock_ls,
+        patch("app.application.use_cases.process_whatsapp_message.ai_service") as mock_ai,
+        patch("app.application.use_cases.process_whatsapp_message.whatsapp_service") as mock_ws,
+        patch("app.application.use_cases.process_whatsapp_message.fcm_service"),
+        patch("app.application.use_cases.process_whatsapp_message.curadoria_service") as mock_cs,
+        patch("app.application.use_cases.process_whatsapp_message._notify_consultants", new=AsyncMock()),
+    ):
+        mock_ls.get_or_create_by_phone = AsyncMock(return_value=lead)
+        mock_ls.update_lead_status = AsyncMock(return_value=lead)
+        mock_ls.get_recent_interacoes = AsyncMock(return_value=[])
+
+        # Simulate qualification happening during briefing update
+        briefing_mock = MagicMock(completude_pct=70, destino="Paris")
+
+        async def _qualify_lead(db, lead, extracted):
+            lead.status = LeadStatus.qualificado
+            return briefing_mock
+
+        mock_ls.update_briefing_from_extraction = _qualify_lead
+        mock_ls.save_interacao = AsyncMock(return_value=interacao)
+        mock_ls.update_interacao_send_result = AsyncMock()
+
+        mock_ai.process_message = AsyncMock(return_value="Resposta normal da IA")
+        mock_ai.extract_briefing = AsyncMock(return_value=MagicMock())
+
+        mock_ws.extract_message_from_payload = MagicMock(return_value={
+            "phone": "5584999990001",
+            "text": "Quero ir a Paris com minha família em julho",
+            "type": "text",
+            "name": "Maria",
+            "message_id": "wamid.test",
+        })
+        mock_ws.send_message = AsyncMock(return_value=send_result)
+
+        # Curadoria mocks
+        mock_cs.deve_oferecer_curadoria = MagicMock(return_value=True)
+        mock_cs.lead_tem_agendamento_ativo = AsyncMock(return_value=False)
+        mock_cs.get_proximos_slots_disponiveis = AsyncMock(return_value=[
+            {"data": __import__("datetime").date(2026, 5, 5), "hora": "10:00"},
+            {"data": __import__("datetime").date(2026, 5, 6), "hora": "14:00"},
+        ])
+        mock_cs.gerar_mensagem_oferta_curadoria = MagicMock(
+            return_value="Mensagem de oferta de curadoria!"
+        )
+
+        await process_whatsapp_message.execute(_text_payload(), db)
+
+    # The reply sent should be the curation offer, not the normal AI response
+    mock_ws.send_message.assert_awaited_once_with("5584999990001", "Mensagem de oferta de curadoria!")
+    mock_cs.deve_oferecer_curadoria.assert_called_once_with(
+        LeadStatus.em_atendimento, LeadStatus.qualificado, 70
+    )
+
+
+@pytest.mark.asyncio
+async def test_lead_already_scheduled_no_curadoria_offer():
+    """Lead freshly qualified but already has appointment — no repeated offer."""
+    db = AsyncMock()
+    lead = _fake_lead()
+    lead.status = LeadStatus.em_atendimento
+    interacao = _fake_interacao()
+    send_result = SendResult(success=True, wamid="wamid.ok", retries_used=0, latency_ms=120)
+
+    with (
+        patch("app.application.use_cases.process_whatsapp_message.lead_service") as mock_ls,
+        patch("app.application.use_cases.process_whatsapp_message.ai_service") as mock_ai,
+        patch("app.application.use_cases.process_whatsapp_message.whatsapp_service") as mock_ws,
+        patch("app.application.use_cases.process_whatsapp_message.fcm_service"),
+        patch("app.application.use_cases.process_whatsapp_message.curadoria_service") as mock_cs,
+    ):
+        mock_ls.get_or_create_by_phone = AsyncMock(return_value=lead)
+        mock_ls.update_lead_status = AsyncMock(return_value=lead)
+        mock_ls.update_briefing_from_extraction = AsyncMock(
+            return_value=MagicMock(completude_pct=75, destino="Paris")
+        )
+        mock_ls.save_interacao = AsyncMock(return_value=interacao)
+        mock_ls.update_interacao_send_result = AsyncMock()
+        mock_ls.get_recent_interacoes = AsyncMock(return_value=[])
+
+        mock_ai.process_message = AsyncMock(return_value="Resposta normal da IA")
+        mock_ai.extract_briefing = AsyncMock(return_value=MagicMock())
+
+        mock_ws.extract_message_from_payload = MagicMock(return_value={
+            "phone": "5584999990001",
+            "text": "Quero ir a Paris",
+            "type": "text",
+            "name": "Maria",
+            "message_id": "wamid.test",
+        })
+        mock_ws.send_message = AsyncMock(return_value=send_result)
+
+        mock_cs.deve_oferecer_curadoria = MagicMock(return_value=True)
+        mock_cs.lead_tem_agendamento_ativo = AsyncMock(return_value=True)
+
+        await process_whatsapp_message.execute(_text_payload(), db)
+
+    # Normal AI reply should be sent, not curation offer
+    mock_ws.send_message.assert_awaited_once_with("5584999990001", "Resposta normal da IA")
+    mock_cs.gerar_mensagem_oferta_curadoria.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_lead_below_60_no_curadoria_offer():
+    """Lead not yet qualified (<60%) — no curation offer."""
+    db = AsyncMock()
+    lead = _fake_lead()
+    lead.status = LeadStatus.em_atendimento
+    interacao = _fake_interacao()
+    send_result = SendResult(success=True, wamid="wamid.ok", retries_used=0, latency_ms=120)
+
+    with (
+        patch("app.application.use_cases.process_whatsapp_message.lead_service") as mock_ls,
+        patch("app.application.use_cases.process_whatsapp_message.ai_service") as mock_ai,
+        patch("app.application.use_cases.process_whatsapp_message.whatsapp_service") as mock_ws,
+        patch("app.application.use_cases.process_whatsapp_message.fcm_service"),
+        patch("app.application.use_cases.process_whatsapp_message.curadoria_service") as mock_cs,
+    ):
+        mock_ls.get_or_create_by_phone = AsyncMock(return_value=lead)
+        mock_ls.update_lead_status = AsyncMock(return_value=lead)
+        mock_ls.update_briefing_from_extraction = AsyncMock(
+            return_value=MagicMock(completude_pct=40, destino=None)
+        )
+        mock_ls.save_interacao = AsyncMock(return_value=interacao)
+        mock_ls.update_interacao_send_result = AsyncMock()
+        mock_ls.get_recent_interacoes = AsyncMock(return_value=[])
+
+        mock_ai.process_message = AsyncMock(return_value="Resposta normal da IA")
+        mock_ai.extract_briefing = AsyncMock(return_value=MagicMock())
+
+        mock_ws.extract_message_from_payload = MagicMock(return_value={
+            "phone": "5584999990001",
+            "text": "Oi",
+            "type": "text",
+            "name": "Maria",
+            "message_id": "wamid.test",
+        })
+        mock_ws.send_message = AsyncMock(return_value=send_result)
+
+        mock_cs.deve_oferecer_curadoria = MagicMock(return_value=False)
+
+        await process_whatsapp_message.execute(_text_payload(), db)
+
+    mock_ws.send_message.assert_awaited_once_with("5584999990001", "Resposta normal da IA")
+    mock_cs.lead_tem_agendamento_ativo.assert_not_called()
 
 
 @pytest.mark.asyncio
