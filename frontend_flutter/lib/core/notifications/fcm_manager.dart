@@ -15,11 +15,17 @@ class FCMManager {
       badge: true,
       sound: true,
     );
-    developer.log('User granted permission: ${settings.authorizationStatus}', name: 'FCMManager');
+    developer.log(
+      'User granted permission: ${settings.authorizationStatus}',
+      name: 'FCMManager',
+    );
 
     // Configurar listener para foreground
     FirebaseMessaging.onMessage.listen((message) {
-      developer.log('Recebido mensagem FCM Foreground: ${message.messageId}', name: 'FCMManager');
+      developer.log(
+        'Recebido mensagem FCM Foreground: ${message.messageId}',
+        name: 'FCMManager',
+      );
       if (message.notification != null) {
         // Usa messageId (quando disponÃ­vel) para evitar colisÃµes de hashCode.
         final id = message.messageId?.hashCode ?? message.hashCode;
@@ -47,7 +53,12 @@ class FCMManager {
         await _sendTokenIfAuthenticated(token);
       }
     } catch (e, stackTrace) {
-      developer.log('Erro ao recuperar FCM token', error: e, stackTrace: stackTrace, name: 'FCMManager');
+      developer.log(
+        'Erro ao recuperar FCM token',
+        error: e,
+        stackTrace: stackTrace,
+        name: 'FCMManager',
+      );
     }
   }
 
@@ -57,13 +68,21 @@ class FCMManager {
       final isLoggedInResult = await authRepository.isLoggedIn();
       final isLoggedIn = isLoggedInResult.getOrElse((_) => false);
       if (!isLoggedIn) {
-        developer.log('Usuário não autenticado — token FCM não enviado.', name: 'FCMManager');
+        developer.log(
+          'Usuário não autenticado — token FCM não enviado.',
+          name: 'FCMManager',
+        );
         return;
       }
       await authRepository.saveFcmToken(token);
       developer.log('FCM Token registrado no backend.', name: 'FCMManager');
     } catch (e, stackTrace) {
-      developer.log('Erro ao registrar FCM token', error: e, stackTrace: stackTrace, name: 'FCMManager');
+      developer.log(
+        'Erro ao registrar FCM token',
+        error: e,
+        stackTrace: stackTrace,
+        name: 'FCMManager',
+      );
     }
   }
 }

@@ -1,4 +1,5 @@
 import 'dart:developer' as dev;
+import 'package:cadife_smart_travel/core/config/env_config.dart';
 
 import 'package:cadife_smart_travel/app.dart';
 import 'package:cadife_smart_travel/core/di/provider_overrides.dart';
@@ -9,7 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
-Future<void> main() async {
+Future<void> main({EnvConfig? config}) async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('pt_BR', null);
 

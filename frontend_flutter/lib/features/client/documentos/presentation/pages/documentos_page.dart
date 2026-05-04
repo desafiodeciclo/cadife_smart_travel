@@ -99,7 +99,10 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
                   const SizedBox(height: 16),
                   globalDocsAsync.when(
                     loading: () => Column(
-                      children: List.generate(3, (index) => const DocumentCardSkeleton()),
+                      children: List.generate(
+                        3,
+                        (index) => const DocumentCardSkeleton(),
+                      ),
                     ),
                     error: (e, st) => Center(
                       child: Padding(
@@ -107,7 +110,8 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
                         child: Text(
                           'Erro ao carregar documentos',
                           style: TextStyle(
-                            color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                            color: Theme.of(context).textTheme.bodyMedium?.color
+                                ?.withValues(alpha: 0.7),
                           ),
                         ),
                       ),
@@ -115,7 +119,9 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
                     data: (docs) {
                       final filteredDocs = _selectedCategory == 'Todos'
                           ? docs
-                          : docs.where((d) => d.category == _selectedCategory).toList();
+                          : docs
+                                .where((d) => d.category == _selectedCategory)
+                                .toList();
 
                       if (docs.isEmpty) {
                         return Center(
@@ -160,7 +166,9 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
                             child: Text(
                               'Nenhum documento nesta categoria.',
                               style: TextStyle(
-                                color: Theme.of(context).textTheme.bodySmall?.color,
+                                color: Theme.of(
+                                  context,
+                                ).textTheme.bodySmall?.color,
                               ),
                             ),
                           ),
@@ -173,11 +181,17 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
                               (doc) => CadifeDocumentCard(
                                 document: doc,
                                 onView: () {
-                                  context.push('/client/documentos/viewer', extra: doc);
+                                  context.push(
+                                    '/client/documentos/viewer',
+                                    extra: doc,
+                                  );
                                 },
                                 onDownload: () {
                                   // Navigating to viewer also allows download
-                                  context.push('/client/documentos/viewer', extra: doc);
+                                  context.push(
+                                    '/client/documentos/viewer',
+                                    extra: doc,
+                                  );
                                 },
                               ),
                             )
@@ -206,7 +220,10 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
                   const SizedBox(height: 12),
                   tripsWithDocsAsync.when(
                     loading: () => Column(
-                      children: List.generate(2, (index) => const DocumentCardSkeleton()),
+                      children: List.generate(
+                        2,
+                        (index) => const DocumentCardSkeleton(),
+                      ),
                     ),
                     error: (e, st) => Center(
                       child: Padding(
@@ -214,7 +231,8 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
                         child: Text(
                           'Erro ao carregar viagens',
                           style: TextStyle(
-                            color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                            color: Theme.of(context).textTheme.bodyMedium?.color
+                                ?.withValues(alpha: 0.7),
                           ),
                         ),
                       ),
@@ -226,7 +244,11 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
                               child: Text(
                                 'Nenhuma viagem com documentos',
                                 style: TextStyle(
-                                  color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                                  color: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.color
+                                      ?.withValues(alpha: 0.7),
                                 ),
                                ),
                             ),
@@ -237,7 +259,9 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
                                   (trip) => TripSelectionCard(
                                     trip: trip,
                                     onTap: () {
-                                      context.push('/client/documentos/${trip.id}');
+                                      context.push(
+                                        '/client/documentos/${trip.id}',
+                                      );
                                     },
                                   ),
                                 )
