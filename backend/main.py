@@ -24,6 +24,7 @@ from app.infrastructure.config.settings import get_settings
 from app.infrastructure.persistence.database import create_tables
 from app.infrastructure.adapters.firebase import init_firebase
 from app.infrastructure.security.rate_limiter import limiter
+from app.services.ingestion_pipeline import get_ingestion_pipeline
 
 # Routers
 from app.routes import agenda, auth, ia, leads, propostas, webhook
@@ -61,6 +62,14 @@ async def lifespan(app: FastAPI):
     # Firebase
     init_firebase()
     logger.info("firebase_ready")
+
+    # RAG Knowledge Base — incremental re-index on startup (skips unchanged files)
+    try:
+        pipeline = get_ingestion_pipeline()
+        indexing_result = await pipeline.ingest_all(force=False)
+        logger.info("rag_knowledge_base_indexed", **indexing_result)
+    except Exception as exc:
+        logger.warning("rag_indexing_failed_on_startup", error=str(exc))
 
     logger.info("startup_complete", version="1.0.0")
 
