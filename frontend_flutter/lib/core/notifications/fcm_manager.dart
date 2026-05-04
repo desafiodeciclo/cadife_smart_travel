@@ -53,13 +53,14 @@ class FCMManager {
 
   static Future<void> _sendTokenIfAuthenticated(String token) async {
     try {
-      final IAuthRepository = GetIt.instance<IAuthRepository>();
-      final isLoggedIn = await IAuthRepository.isLoggedIn();
+      final authRepository = GetIt.instance<IAuthRepository>();
+      final isLoggedInResult = await authRepository.isLoggedIn();
+      final isLoggedIn = isLoggedInResult.getOrElse((_) => false);
       if (!isLoggedIn) {
-        developer.log('UsuÃ¡rio nÃ£o autenticado â€” token FCM nÃ£o enviado.', name: 'FCMManager');
+        developer.log('Usuário não autenticado — token FCM não enviado.', name: 'FCMManager');
         return;
       }
-      await IAuthRepository.saveFcmToken(token);
+      await authRepository.saveFcmToken(token);
       developer.log('FCM Token registrado no backend.', name: 'FCMManager');
     } catch (e, stackTrace) {
       developer.log('Erro ao registrar FCM token', error: e, stackTrace: stackTrace, name: 'FCMManager');

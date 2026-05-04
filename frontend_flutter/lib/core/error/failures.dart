@@ -9,30 +9,25 @@ abstract class Failure extends Equatable {
 }
 
 class ServerFailure extends Failure {
-  const ServerFailure([String message = 'Erro no servidor. Tente novamente mais tarde.'])
-      : super(message);
+  const ServerFailure([super.message = 'Erro no servidor. Tente novamente mais tarde.']);
 }
 
 class NetworkFailure extends Failure {
-  const NetworkFailure([String message = 'Sem conexão com a internet.'])
-      : super(message);
+  const NetworkFailure([super.message = 'Sem conexão com a internet.']);
 }
 
 class UnauthorizedFailure extends Failure {
-  const UnauthorizedFailure([String message = 'Sessão expirada ou acesso negado.'])
-      : super(message);
+  const UnauthorizedFailure([super.message = 'Sessão expirada ou acesso negado.']);
 }
 
 class CacheFailure extends Failure {
-  const CacheFailure([String message = 'Erro ao acessar dados locais.'])
-      : super(message);
+  const CacheFailure([super.message = 'Erro ao acessar dados locais.']);
 }
 
 class ValidationFailure extends Failure {
-  const ValidationFailure(String message) : super(message);
+  const ValidationFailure(super.message);
 }
 
 class GenericFailure extends Failure {
-  const GenericFailure([String message = 'Ocorreu um erro inesperado.'])
-      : super(message);
+  const GenericFailure([super.message = 'Ocorreu um erro inesperado.']);
 }

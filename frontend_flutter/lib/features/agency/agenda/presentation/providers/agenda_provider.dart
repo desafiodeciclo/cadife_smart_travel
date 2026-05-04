@@ -2,7 +2,7 @@ import 'package:cadife_smart_travel/features/agency/agenda/domain/entities/agend
 import 'package:cadife_smart_travel/features/agency/agenda/domain/repositories/i_agenda_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-final IAgendaRepositoryProvider = Provider<IAgendaRepository>((ref) {
+final iAgendaRepositoryProvider = Provider<IAgendaRepository>((ref) {
   throw UnimplementedError('Override em ProviderScope');
 });
 
@@ -22,8 +22,8 @@ final agendaProvider = AsyncNotifierProvider<AgendaNotifier, List<Agendamento>>(
 class AgendaNotifier extends AsyncNotifier<List<Agendamento>> {
   @override
   Future<List<Agendamento>> build() async {
-    final repo = ref.watch(IAgendaRepositoryProvider);
-    final result = await repo.getAgenda();
+    final agendaRepository = ref.watch(iAgendaRepositoryProvider);
+    final result = await agendaRepository.getAgenda();
     return result.fold(
       (failure) => throw failure,
       (agenda) => agenda,
@@ -32,27 +32,27 @@ class AgendaNotifier extends AsyncNotifier<List<Agendamento>> {
 
   Future<void> refresh() async {
     state = const AsyncLoading();
-    final repo = ref.read(IAgendaRepositoryProvider);
-    final result = await repo.getAgenda();
+    final agendaRepository = ref.read(iAgendaRepositoryProvider);
+    final result = await agendaRepository.getAgenda();
     state = result.fold(
       (failure) => AsyncError(failure, StackTrace.current),
-      (agenda) => AsyncData(agenda),
+      AsyncData.new,
     );
   }
 
   Future<void> filterByDate(DateTime date) async {
     state = const AsyncLoading();
-    final repo = ref.read(IAgendaRepositoryProvider);
-    final result = await repo.getAgenda(date: date);
+    final agendaRepository = ref.read(iAgendaRepositoryProvider);
+    final result = await agendaRepository.getAgenda(date: date);
     state = result.fold(
       (failure) => AsyncError(failure, StackTrace.current),
-      (agenda) => AsyncData(agenda),
+      AsyncData.new,
     );
   }
 
   Future<void> blockSlot(DateTime slotDateTime, {String? notes}) async {
-    final repo = ref.read(IAgendaRepositoryProvider);
-    final result = await repo.createAgenda(
+    final agendaRepository = ref.read(iAgendaRepositoryProvider);
+    final result = await agendaRepository.createAgenda(
       CreateAgendaRequest(
         leadId: 'blocked',
         dateTime: slotDateTime,
@@ -64,29 +64,28 @@ class AgendaNotifier extends AsyncNotifier<List<Agendamento>> {
     state = await result.fold(
       (failure) => AsyncError(failure, StackTrace.current),
       (_) async {
-        final refreshResult = await repo.getAgenda();
+        final refreshResult = await agendaRepository.getAgenda();
         return refreshResult.fold(
           (f) => AsyncError(f, StackTrace.current),
-          (a) => AsyncData(a),
+          AsyncData.new,
         );
       },
     );
   }
 
   Future<void> unblockSlot(String id) async {
-    final repo = ref.read(IAgendaRepositoryProvider);
-    final result = await repo.deleteAgenda(id);
+    final agendaRepository = ref.read(iAgendaRepositoryProvider);
+    final result = await agendaRepository.deleteAgenda(id);
     
     state = await result.fold(
       (failure) => AsyncError(failure, StackTrace.current),
       (_) async {
-        final refreshResult = await repo.getAgenda();
+        final refreshResult = await agendaRepository.getAgenda();
         return refreshResult.fold(
           (f) => AsyncError(f, StackTrace.current),
-          (a) => AsyncData(a),
+          AsyncData.new,
         );
       },
     );
   }
 }
-

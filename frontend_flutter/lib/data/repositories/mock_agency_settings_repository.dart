@@ -1,7 +1,7 @@
-import 'package:fpdart/fpdart.dart';
 import 'package:cadife_smart_travel/core/error/failures.dart';
+import 'package:cadife_smart_travel/features/agency/settings/domain/entities/agency_settings.dart';
 import 'package:cadife_smart_travel/features/agency/settings/domain/repositories/i_agency_settings_repository.dart';
-import 'package:cadife_smart_travel/features/agency/settings/settings_models.dart';
+import 'package:fpdart/fpdart.dart';
 
 class MockAgencySettingsRepository implements IAgencySettingsRepository {
   int _idCounter = 3;
