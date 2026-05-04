@@ -1,4 +1,5 @@
 import 'dart:developer' as dev;
+import 'package:cadife_smart_travel/core/config/env_config.dart';
 
 import 'package:cadife_smart_travel/core/di/service_locator.dart';
 import 'package:cadife_smart_travel/core/ports/agenda_port.dart';
@@ -31,7 +32,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
-Future<void> main() async {
+Future<void> main({EnvConfig? config}) async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('pt_BR', null);
 
@@ -41,6 +42,7 @@ Future<void> main() async {
 
   try {
     await setupServiceLocator(
+      config: config,
       onTokenExpired: () => container.read(authProvider.notifier).logout(),
     );
     await initDependencies();

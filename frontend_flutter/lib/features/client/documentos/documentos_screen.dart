@@ -1,9 +1,7 @@
-
 import 'package:cadife_smart_travel/core/theme/app_colors.dart';
 import 'package:cadife_smart_travel/core/widgets/cadife_app_bar.dart';
 import 'package:cadife_smart_travel/features/client/documentos/widgets/widgets.dart';
 import 'package:cadife_smart_travel/features/client/documents/documents_provider.dart';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -52,41 +50,49 @@ class _DocumentosScreenState extends ConsumerState<DocumentosScreen> {
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
-                      children: [
-                        'Todos',
-                        'Roteiro',
-                        'Voucher',
-                        'Seguro',
-                        'Passagens',
-                        'Geral',
-                      ].map((category) {
-                        final isSelected = _selectedCategory == category;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: FilterChip(
-                            label: Text(category),
-                            selected: isSelected,
-                            onSelected: (selected) {
-                              setState(() => _selectedCategory = category);
-                            },
-                            selectedColor: AppColors.primary.withValues(alpha: 0.2),
-                            checkmarkColor: AppColors.primary,
-                            labelStyle: TextStyle(
-                              color: isSelected ? AppColors.primary : null,
-                              fontWeight: isSelected ? FontWeight.bold : null,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                          ),
-                        );
-                      }).toList(),
+                      children:
+                          [
+                            'Todos',
+                            'Roteiro',
+                            'Voucher',
+                            'Seguro',
+                            'Passagens',
+                            'Geral',
+                          ].map((category) {
+                            final isSelected = _selectedCategory == category;
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: FilterChip(
+                                label: Text(category),
+                                selected: isSelected,
+                                onSelected: (selected) {
+                                  setState(() => _selectedCategory = category);
+                                },
+                                selectedColor: AppColors.primary.withValues(
+                                  alpha: 0.2,
+                                ),
+                                checkmarkColor: AppColors.primary,
+                                labelStyle: TextStyle(
+                                  color: isSelected ? AppColors.primary : null,
+                                  fontWeight: isSelected
+                                      ? FontWeight.bold
+                                      : null,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                              ),
+                            );
+                          }).toList(),
                     ),
                   ),
                   const SizedBox(height: 16),
                   globalDocsAsync.when(
                     loading: () => Column(
-                      children: List.generate(3, (index) => const DocumentCardSkeleton()),
+                      children: List.generate(
+                        3,
+                        (index) => const DocumentCardSkeleton(),
+                      ),
                     ),
                     error: (e, st) => Center(
                       child: Padding(
@@ -94,7 +100,8 @@ class _DocumentosScreenState extends ConsumerState<DocumentosScreen> {
                         child: Text(
                           'Erro ao carregar documentos',
                           style: TextStyle(
-                            color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                            color: Theme.of(context).textTheme.bodyMedium?.color
+                                ?.withValues(alpha: 0.7),
                           ),
                         ),
                       ),
@@ -102,25 +109,38 @@ class _DocumentosScreenState extends ConsumerState<DocumentosScreen> {
                     data: (docs) {
                       final filteredDocs = _selectedCategory == 'Todos'
                           ? docs
-                          : docs.where((d) => d.category == _selectedCategory).toList();
+                          : docs
+                                .where((d) => d.category == _selectedCategory)
+                                .toList();
 
                       if (docs.isEmpty) {
                         return Center(
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 40,
+                              horizontal: 24,
+                            ),
                             child: Column(
                               children: [
                                 Icon(
                                   Icons.folder_open,
                                   size: 64,
-                                  color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.3),
+                                  color: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.color
+                                      ?.withValues(alpha: 0.3),
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
                                   'Nenhum documento disponível ainda. Seu consultor irá compartilhá-los em breve.',
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
-                                    color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                                    color: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.color
+                                        ?.withValues(alpha: 0.7),
                                   ),
                                 ),
                               ],
@@ -136,7 +156,9 @@ class _DocumentosScreenState extends ConsumerState<DocumentosScreen> {
                             child: Text(
                               'Nenhum documento nesta categoria.',
                               style: TextStyle(
-                                color: Theme.of(context).textTheme.bodySmall?.color,
+                                color: Theme.of(
+                                  context,
+                                ).textTheme.bodySmall?.color,
                               ),
                             ),
                           ),
@@ -149,11 +171,17 @@ class _DocumentosScreenState extends ConsumerState<DocumentosScreen> {
                               (doc) => CadifeDocumentCard(
                                 document: doc,
                                 onView: () {
-                                  context.push('/client/documentos/viewer', extra: doc);
+                                  context.push(
+                                    '/client/documentos/viewer',
+                                    extra: doc,
+                                  );
                                 },
                                 onDownload: () {
                                   // Navigating to viewer also allows download
-                                  context.push('/client/documentos/viewer', extra: doc);
+                                  context.push(
+                                    '/client/documentos/viewer',
+                                    extra: doc,
+                                  );
                                 },
                               ),
                             )
@@ -184,7 +212,10 @@ class _DocumentosScreenState extends ConsumerState<DocumentosScreen> {
                   const SizedBox(height: 12),
                   tripsWithDocsAsync.when(
                     loading: () => Column(
-                      children: List.generate(2, (index) => const DocumentCardSkeleton()),
+                      children: List.generate(
+                        2,
+                        (index) => const DocumentCardSkeleton(),
+                      ),
                     ),
                     error: (e, st) => Center(
                       child: Padding(
@@ -192,7 +223,8 @@ class _DocumentosScreenState extends ConsumerState<DocumentosScreen> {
                         child: Text(
                           'Erro ao carregar viagens',
                           style: TextStyle(
-                            color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                            color: Theme.of(context).textTheme.bodyMedium?.color
+                                ?.withValues(alpha: 0.7),
                           ),
                         ),
                       ),
@@ -204,7 +236,11 @@ class _DocumentosScreenState extends ConsumerState<DocumentosScreen> {
                               child: Text(
                                 'Nenhuma viagem com documentos',
                                 style: TextStyle(
-                                  color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                                  color: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.color
+                                      ?.withValues(alpha: 0.7),
                                 ),
                               ),
                             ),
@@ -215,7 +251,9 @@ class _DocumentosScreenState extends ConsumerState<DocumentosScreen> {
                                   (trip) => TripSelectionCard(
                                     trip: trip,
                                     onTap: () {
-                                      context.push('/client/documentos/${trip.id}');
+                                      context.push(
+                                        '/client/documentos/${trip.id}',
+                                      );
                                     },
                                   ),
                                 )

@@ -1,16 +1,13 @@
+import 'package:cadife_smart_travel/core/config/env_config.dart';
+import 'package:get_it/get_it.dart';
+
 /// Constantes de API — URLs e paths dos endpoints.
 class ApiConstants {
   ApiConstants._();
 
   // ── Base URL ───────────────────────────────────────────
-  // Set at build time via --dart-define=BASE_URL=<url>
-  // flutter run                                     → dev (default)
-  // flutter run --dart-define=BASE_URL=<stagingUrl> → staging
-  // flutter build apk --dart-define=BASE_URL=<prodUrl> → production
-  static const String baseUrl = String.fromEnvironment(
-    'BASE_URL',
-    defaultValue: 'http://10.0.2.2:8000', // emulador Android → localhost
-  );
+  // Recupera a URL base dinamicamente do EnvConfig registrado no Service Locator.
+  static String get baseUrl => GetIt.I<EnvConfig>().apiBaseUrl;
 
   static const String baseUrlDev = 'http://10.0.2.2:8000';
   static const String baseUrlStaging = 'https://api-staging.cadife.com';
