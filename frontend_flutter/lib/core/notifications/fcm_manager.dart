@@ -1,7 +1,7 @@
-﻿import 'dart:developer' as developer;
+import 'dart:developer' as developer;
 
 import 'package:cadife_smart_travel/core/notifications/local_notification_manager.dart';
-import 'package:cadife_smart_travel/features/auth/domain/repositories/auth_port.dart';
+import 'package:cadife_smart_travel/features/auth/domain/repositories/i_auth_repository.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:get_it/get_it.dart';
 
@@ -53,7 +53,7 @@ class FCMManager {
 
   static Future<void> _sendTokenIfAuthenticated(String token) async {
     try {
-      final authPort = GetIt.instance<AuthPort>();
+      final authPort = GetIt.instance<IAuthRepository>();
       final isLoggedIn = await authPort.isLoggedIn();
       if (!isLoggedIn) {
         developer.log('UsuÃ¡rio nÃ£o autenticado â€” token FCM nÃ£o enviado.', name: 'FCMManager');

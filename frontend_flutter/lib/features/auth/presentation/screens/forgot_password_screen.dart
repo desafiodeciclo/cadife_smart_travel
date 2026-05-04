@@ -1,8 +1,7 @@
-import 'package:cadife_smart_travel/core/theme/app_colors.dart';
-import 'package:cadife_smart_travel/core/theme/app_text_styles.dart';
-import 'package:cadife_smart_travel/core/theme/cadife_theme_extension.dart';
 import 'package:cadife_smart_travel/core/utils/extensions/string_extensions.dart';
-import 'package:cadife_smart_travel/features/auth/providers/auth_provider.dart';
+import 'package:cadife_smart_travel/design_system/design_system.dart';
+import 'package:cadife_smart_travel/features/auth/presentation/bloc/auth_event.dart';
+import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_bloc_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -38,9 +37,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       _errorMessage = null;
     });
     try {
-      await ref
-          .read(authProvider.notifier)
-          .forgotPassword(_emailController.text.trim());
+      ref.read(authBlocProvider).add(AuthEvent.forgotPasswordRequested(
+            email: _emailController.text.trim(),
+          ));
       if (mounted) setState(() => _step = _ForgotStep.confirmation);
     } catch (_) {
       if (mounted) {

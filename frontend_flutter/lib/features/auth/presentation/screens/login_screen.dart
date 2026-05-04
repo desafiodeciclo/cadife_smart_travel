@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'dart:math' as math;
 
-import 'package:cadife_smart_travel/core/theme/app_colors.dart';
-import 'package:cadife_smart_travel/core/theme/app_text_styles.dart';
-import 'package:cadife_smart_travel/core/theme/cadife_theme_extension.dart';
-import 'package:cadife_smart_travel/core/theme/theme_mode_provider.dart';
 import 'package:cadife_smart_travel/core/utils/extensions/string_extensions.dart';
-import 'package:cadife_smart_travel/features/auth/providers/auth_provider.dart';
+import 'package:cadife_smart_travel/design_system/design_system.dart';
+import 'package:cadife_smart_travel/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:cadife_smart_travel/features/auth/presentation/bloc/auth_event.dart';
+import 'package:cadife_smart_travel/features/auth/presentation/bloc/auth_state.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
@@ -27,7 +27,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _passwordController = TextEditingController();
 
   bool _obscurePassword = true;
-  bool _isLoggingIn = false;
   _EmailState _emailState = _EmailState.idle;
   Timer? _emailDebounce;
 
@@ -57,19 +56,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _handleLogin() async {
-    if (_isLoggingIn) return;
+    final authBloc = context.read<AuthBloc>();
+    if (authBloc.state is AuthLoading) return;
     if (!_formKey.currentState!.validate()) return;
     if (_emailState == _EmailState.invalid) return;
 
-    setState(() => _isLoggingIn = true);
-    try {
-      await ref.read(authProvider.notifier).login(
-            _emailController.text.trim(),
-            _passwordController.text,
-          );
-    } finally {
-      if (mounted) setState(() => _isLoggingIn = false);
-    }
+    context.read<AuthBloc>().add(AuthEvent.loginRequested(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        ));
   }
 
   Widget _emailSuffix() => switch (_emailState) {
@@ -102,15 +97,33 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             MediaQuery.platformBrightnessOf(context) == Brightness.dark);
 
     final cadife = context.cadife;
-    final hasLoginError = ref.watch(authProvider).hasError;
+    
+    return BlocListener<AuthBloc, AuthState>(
+      listener: (context, state) {
+        state.maybeWhen(
+          authenticated: (user) {
+            // GoRouter handles redirection automatically via refreshListenable
+          },
+          failure: (message) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(message)),
+            );
+          },
+          orElse: () {},
+        );
+      },
+      child: BlocBuilder<AuthBloc, AuthState>(
+        builder: (context, state) {
+          final isLoggingIn = state is AuthLoading;
+          final hasLoginError = state is AuthFailure;
 
-    final textSecondary = isDark ? Colors.white60 : AppColors.textSecondary;
-    final borderColor = isDark ? Colors.white24 : AppColors.border;
-    final dividerColor = isDark ? Colors.white12 : AppColors.border;
-    final labelStyle = AppTextStyles.labelSmall.copyWith(
-      letterSpacing: 1.2,
-      color: textSecondary,
-    );
+          final textSecondary = isDark ? Colors.white60 : AppColors.textSecondary;
+          final borderColor = isDark ? Colors.white24 : AppColors.border;
+          final dividerColor = isDark ? Colors.white12 : AppColors.border;
+          final labelStyle = AppTextStyles.labelSmall.copyWith(
+            letterSpacing: 1.2,
+            color: textSecondary,
+          );
 
     // ── FIX: Column layout instead of Stack — avoids unbounded constraints
     //         and hit-testing issues that blocked all interactions.
@@ -279,7 +292,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               ),
                               elevation: 0,
                             ),
-                            child: _isLoggingIn
+                            child: isLoggingIn
                                 ? const SizedBox(
                                     height: 22,
                                     width: 22,
@@ -420,6 +433,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
           ],
         ),
+      ),
+    );
+        },
       ),
     );
   }

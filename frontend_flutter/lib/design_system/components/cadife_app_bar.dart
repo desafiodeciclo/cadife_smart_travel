@@ -15,7 +15,7 @@ class CadifeAppBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notifications = ref.watch(notificationProvider);
-    
+
     return SliverAppBar(
       pinned: true,
       backgroundColor: AppColors.primary,

@@ -1,77 +1,58 @@
-import 'package:cadife_smart_travel/config/router/agency_shell.dart';
-import 'package:cadife_smart_travel/config/router/client_shell.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/agenda_screen.dart';
 import 'package:cadife_smart_travel/features/agency/dashboard/dashboard_screen.dart';
+import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/pages/lead_detail_page.dart';
-import 'package:cadife_smart_travel/features/agency/leads/presentation/pages/lead_edit_page.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/pages/leads_page.dart';
-import 'package:cadife_smart_travel/features/agency/profile/profile_screen.dart';
-import 'package:cadife_smart_travel/features/agency/proposals/proposal_create_screen.dart';
-import 'package:cadife_smart_travel/features/agency/settings/settings_screen.dart';
+import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
+import 'package:cadife_smart_travel/features/auth/presentation/bloc/auth_state.dart';
+import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_bloc_provider.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/screens/forgot_password_screen.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/screens/login_screen.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/screens/register_screen.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/screens/splash_screen.dart';
-import 'package:cadife_smart_travel/features/auth/providers/auth_provider.dart';
-import 'package:cadife_smart_travel/features/client/documentos/domain/entities/documento.dart';
-import 'package:cadife_smart_travel/features/client/documentos/presentation/pages/document_viewer_page.dart';
-import 'package:cadife_smart_travel/features/client/documentos/presentation/pages/documentos_page.dart';
-import 'package:cadife_smart_travel/features/client/documentos/presentation/pages/trip_documents_page.dart';
 import 'package:cadife_smart_travel/features/client/historico/presentation/pages/historico_page.dart';
-import 'package:cadife_smart_travel/features/client/profile/profile.dart';
+import 'package:cadife_smart_travel/features/client/profile/profile_screen.dart';
 import 'package:cadife_smart_travel/features/client/status/presentation/pages/status_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-// Bridges Riverpod auth state to GoRouter's refreshListenable
-class _RouterNotifier extends ChangeNotifier {
-  _RouterNotifier(Ref ref) {
-    ref.listen<AsyncValue<AuthState>>(authProvider, (_, _) => notifyListeners());
-  }
-}
-
-final _routerNotifierProvider = Provider<_RouterNotifier>((ref) {
-  final notifier = _RouterNotifier(ref);
-  ref.onDispose(notifier.dispose);
-  return notifier;
-});
-
 final routerProvider = Provider<GoRouter>((ref) {
-  final notifier = ref.watch(_routerNotifierProvider);
+  final authBloc = ref.watch(authBlocProvider);
+  final notifier = _RouterNotifier(authBloc.stream);
 
   return GoRouter(
-    initialLocation: '/splash',
     refreshListenable: notifier,
+    initialLocation: '/splash',
     redirect: (context, state) {
-      final loc = state.matchedLocation;
+      final authState = authBloc.state;
+      final bool isLoggingIn = state.matchedLocation.startsWith('/auth');
 
-      // Splash gerencia sua prÃƒÂ³pria navegaÃƒÂ§ÃƒÂ£o Ã¢â‚¬â€  nÃƒÂ£o redirecionar daqui
-      if (loc == '/splash') return null;
-
-      final authValue = ref.read(authProvider);
-      final auth = authValue.valueOrNull;
-      final isLogged = auth?.isAuthenticated ?? false;
-      final isAuthRoute = loc.startsWith('/auth');
-
-      if (!isLogged && !isAuthRoute) return '/auth/login';
-
-      if (isLogged && isAuthRoute) {
-        return auth?.userPerfil == 'agencia'
-            ? '/agency/dashboard'
-            : '/client/status';
+      if (authState is AuthInitial || authState is AuthLoading) {
+        return state.matchedLocation == '/splash' ? null : '/splash';
       }
 
-      // Cross-role guard
-      if (isLogged &&
-          auth?.userPerfil == 'agencia' &&
-          loc.startsWith('/client')) {
-        return '/agency/dashboard';
+      if (authState is AuthUnauthenticated) {
+        return isLoggingIn ? null : '/auth/login';
       }
-      if (isLogged &&
-          auth?.userPerfil == 'cliente' &&
-          loc.startsWith('/agency')) {
-        return '/client/status';
+
+      if (authState is AuthAuthenticated) {
+        if (isLoggingIn || state.matchedLocation == '/splash') {
+          return authState.user.role == UserRole.consultor
+              ? '/agency/dashboard'
+              : '/client/status';
+        }
+
+        // Proteção de rotas por role
+        final isAgencyRoute = state.matchedLocation.startsWith('/agency');
+        final isClientRoute = state.matchedLocation.startsWith('/client');
+
+        if (isAgencyRoute && authState.user.role != UserRole.consultor) {
+          return '/client/status';
+        }
+        if (isClientRoute && authState.user.role == UserRole.consultor) {
+          return '/agency/dashboard';
+        }
       }
 
       return null;
@@ -79,165 +60,74 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(
         path: '/splash',
-        pageBuilder: (_, state) =>
-            NoTransitionPage(key: state.pageKey, child: const SplashScreen()),
+        builder: (context, state) => const SplashScreen(),
       ),
       GoRoute(
         path: '/auth/login',
-        pageBuilder: (_, state) =>
-            NoTransitionPage(key: state.pageKey, child: const LoginScreen()),
-      ),
-      GoRoute(
-        path: '/auth/forgot-password',
-        pageBuilder: (_, state) => MaterialPage(
-          key: state.pageKey,
-          child: const ForgotPasswordScreen(),
-        ),
+        builder: (context, state) => const LoginScreen(),
       ),
       GoRoute(
         path: '/auth/register',
-        pageBuilder: (_, state) => MaterialPage(
-          key: state.pageKey,
-          child: const RegisterScreen(),
-        ),
+        builder: (context, state) => const RegisterScreen(),
+      ),
+      GoRoute(
+        path: '/auth/forgot-password',
+        builder: (context, state) => const ForgotPasswordScreen(),
       ),
 
-      // Agency shell Ã¢â‚¬â€  persistent BottomNavBar with SharedAxis tab transitions
+      // Fluxo da Agência (Consultor)
       ShellRoute(
-        builder: (context, state, child) => AgencyShell(
-          key: const ValueKey('agency-shell'),
-          location: state.uri.path,
-          child: child,
-        ),
+        builder: (context, state, child) {
+          return _AgencyShell(child: child);
+        },
         routes: [
           GoRoute(
             path: '/agency/dashboard',
-            pageBuilder: (_, state) => NoTransitionPage(
-              key: state.pageKey,
-              child: const DashboardScreen(),
-            ),
+            builder: (context, state) => const DashboardScreen(),
           ),
           GoRoute(
             path: '/agency/leads',
-            pageBuilder: (_, state) => NoTransitionPage(
-              key: state.pageKey,
-              child: const LeadsPage(),
-            ),
+            builder: (context, state) => const LeadsPage(),
+            routes: [
+              GoRoute(
+                path: 'details',
+                builder: (context, state) {
+                  final lead = state.extra as Lead;
+                  return LeadDetailPage(leadId: lead.id);
+                },
+              ),
+            ],
           ),
           GoRoute(
             path: '/agency/agenda',
-            pageBuilder: (_, state) => NoTransitionPage(
-              key: state.pageKey,
-              child: const AgendaScreen(),
-            ),
+            builder: (context, state) => const AgendaScreen(),
           ),
           GoRoute(
-            path: '/agency/profile',
-            pageBuilder: (_, state) => NoTransitionPage(
-              key: state.pageKey,
-              child: const ConsultorProfileScreen(),
+            path: '/agency/proposals',
+            builder: (context, state) => const Scaffold(
+              body: Center(child: Text('Propostas (Em breve)')),
             ),
           ),
         ],
       ),
 
-      // Settings Ã¢â‚¬â€  full-screen push, no BottomNavBar
-      GoRoute(
-        path: '/agency/settings',
-        pageBuilder: (_, state) => MaterialPage(
-          key: state.pageKey,
-          child: const SettingsScreen(),
-        ),
-      ),
-
-      // Lead detail Ã¢â‚¬â€  full-screen push without BottomNavBar
-      GoRoute(
-        path: '/agency/leads/:id',
-        pageBuilder: (_, state) => MaterialPage(
-          key: state.pageKey,
-          child: LeadDetailPage(leadId: state.pathParameters['id']!),
-        ),
-      ),
-
-      // Lead edit Ã¢â‚¬â€  full-screen push without BottomNavBar
-      GoRoute(
-        path: '/agency/leads/:id/edit',
-        pageBuilder: (_, state) => MaterialPage(
-          key: state.pageKey,
-          child: LeadEditPage(leadId: state.pathParameters['id']!),
-        ),
-      ),
-
-      // Proposal create Ã¢â‚¬â€  full-screen modal
-      GoRoute(
-        path: '/agency/proposals/new',
-        pageBuilder: (_, state) {
-          final extra = state.extra as Map<String, String>? ?? {};
-          return MaterialPage(
-            key: state.pageKey,
-            child: ProposalCreateScreen(
-              leadId: extra['leadId'] ?? '',
-              consultorId: extra['consultorId'] ?? '',
-            ),
-          );
-        },
-      ),
-
-      // Client shell Ã¢â‚¬â€  persistent BottomNavBar with SharedAxis tab transitions
+      // Fluxo do Cliente
       ShellRoute(
-        builder: (context, state, child) => ClientShell(
-          key: const ValueKey('client-shell'),
-          location: state.uri.path,
-          child: child,
-        ),
+        builder: (context, state, child) {
+          return _ClientShell(child: child);
+        },
         routes: [
           GoRoute(
             path: '/client/status',
-            pageBuilder: (_, state) => NoTransitionPage(
-              key: state.pageKey,
-              child: const StatusPage(),
-            ),
+            builder: (context, state) => const StatusPage(),
           ),
           GoRoute(
             path: '/client/historico',
-            pageBuilder: (_, state) => NoTransitionPage(
-              key: state.pageKey,
-              child: const HistoricoPage(),
-            ),
+            builder: (context, state) => const HistoricoPage(),
           ),
           GoRoute(
-            path: '/client/documentos',
-            pageBuilder: (_, state) => NoTransitionPage(
-              key: state.pageKey,
-              child: const DocumentosPage(),
-            ),
-            routes: [
-              GoRoute(
-                path: 'viewer',
-                pageBuilder: (context, state) => MaterialPage(
-                  key: state.pageKey,
-                  child: DocumentViewerPage(
-                    document: state.extra as Documento,
-                  ),
-                ),
-              ),
-              GoRoute(
-                path: ':tripId',
-                pageBuilder: (_, state) => NoTransitionPage(
-                  key: state.pageKey,
-                  child: TripDocumentsPage(
-                    tripId: state.pathParameters['tripId']!,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          GoRoute(
-            path: '/client/perfil',
-            pageBuilder: (_, state) => NoTransitionPage(
-              key: state.pageKey,
-              child: const ProfileScreen(),
-            ),
+            path: '/client/profile',
+            builder: (context, state) => const ProfileScreen(),
           ),
         ],
       ),
@@ -245,26 +135,113 @@ final routerProvider = Provider<GoRouter>((ref) {
   );
 });
 
-class AppLoadingWidget extends StatelessWidget {
-  const AppLoadingWidget({super.key, required this.message});
-  final String message;
+class _AgencyShell extends StatelessWidget {
+  final Widget child;
+  const _AgencyShell({required this.child});
 
   @override
   Widget build(BuildContext context) {
+    final location = GoRouterState.of(context).matchedLocation;
+    int currentIndex = 0;
+    if (location.startsWith('/agency/dashboard')) {
+      currentIndex = 0;
+    } else if (location.startsWith('/agency/leads')) {
+      currentIndex = 1;
+    } else if (location.startsWith('/agency/agenda')) {
+      currentIndex = 2;
+    } else if (location.startsWith('/agency/proposals')) {
+      currentIndex = 3;
+    }
+
     return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const CircularProgressIndicator(),
-            const SizedBox(height: 16),
-            Text(message),
-          ],
-        ),
+      body: child,
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: currentIndex,
+        onDestinationSelected: (idx) {
+          switch (idx) {
+            case 0:
+              context.go('/agency/dashboard');
+              break;
+            case 1:
+              context.go('/agency/leads');
+              break;
+            case 2:
+              context.go('/agency/agenda');
+              break;
+            case 3:
+              context.go('/agency/proposals');
+              break;
+          }
+        },
+        destinations: const [
+          NavigationDestination(
+              icon: Icon(Icons.dashboard_outlined), label: 'Home'),
+          NavigationDestination(
+              icon: Icon(Icons.people_outline), label: 'Leads'),
+          NavigationDestination(
+              icon: Icon(Icons.calendar_month_outlined), label: 'Agenda'),
+          NavigationDestination(
+              icon: Icon(Icons.description_outlined), label: 'Propostas'),
+        ],
       ),
     );
   }
 }
 
+class _ClientShell extends StatelessWidget {
+  final Widget child;
+  const _ClientShell({required this.child});
 
+  @override
+  Widget build(BuildContext context) {
+    final location = GoRouterState.of(context).matchedLocation;
+    int currentIndex = 0;
+    if (location.startsWith('/client/status')) {
+      currentIndex = 0;
+    } else if (location.startsWith('/client/historico')) {
+      currentIndex = 1;
+    } else if (location.startsWith('/client/profile')) {
+      currentIndex = 2;
+    }
 
+    return Scaffold(
+      body: child,
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: currentIndex,
+        onDestinationSelected: (idx) {
+          switch (idx) {
+            case 0:
+              context.go('/client/status');
+              break;
+            case 1:
+              context.go('/client/historico');
+              break;
+            case 2:
+              context.go('/client/profile');
+              break;
+          }
+        },
+        destinations: const [
+          NavigationDestination(icon: Icon(Icons.map_outlined), label: 'Status'),
+          NavigationDestination(icon: Icon(Icons.history), label: 'Histórico'),
+          NavigationDestination(
+              icon: Icon(Icons.person_outline), label: 'Perfil'),
+        ],
+      ),
+    );
+  }
+}
+
+class _RouterNotifier extends ChangeNotifier {
+  _RouterNotifier(Stream stream) {
+    _subscription = stream.listen((_) => notifyListeners());
+  }
+
+  late final dynamic _subscription;
+
+  @override
+  void dispose() {
+    _subscription.cancel();
+    super.dispose();
+  }
+}

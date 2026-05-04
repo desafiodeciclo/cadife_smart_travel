@@ -12,7 +12,6 @@ import 'package:cadife_smart_travel/core/offline/offline_sync_queue.dart';
 import 'package:cadife_smart_travel/core/security/secure_config.dart';
 import 'package:cadife_smart_travel/data/local/database_helper.dart';
 import 'package:cadife_smart_travel/data/repositories/mock_agenda_repository.dart';
-import 'package:cadife_smart_travel/data/repositories/mock_auth_repository.dart';
 import 'package:cadife_smart_travel/data/repositories/mock_profile_repository.dart';
 import 'package:cadife_smart_travel/data/repositories/offline_event_repository_impl.dart';
 import 'package:cadife_smart_travel/data/repositories/proposal_repository_impl.dart';
@@ -23,30 +22,24 @@ import 'package:cadife_smart_travel/features/agency/leads/data/datasources/leads
 import 'package:cadife_smart_travel/features/agency/leads/data/repositories/leads_repository_impl.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/repositories/i_leads_repository.dart';
 import 'package:cadife_smart_travel/features/agency/proposals/domain/repositories/proposal_port.dart';
-import 'package:cadife_smart_travel/features/auth/domain/repositories/auth_port.dart';
+import 'package:cadife_smart_travel/features/auth/data/datasources/auth_remote_mock_datasource.dart';
+import 'package:cadife_smart_travel/features/auth/domain/repositories/i_auth_repository.dart';
 import 'package:cadife_smart_travel/features/client/profile/domain/repositories/profile_port.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 
-/// Service Locator global â€” get_it com registro explÃ­cito e lifecycle controlado.
-///
-/// REGRA: Singletons APENAS para serviÃ§os performance-critical (network, DB, security).
-/// Repositories sÃ£o lazySingletons pois encapsulam Dio (singleton) â€” sem state prÃ³prio.
+/// Service Locator global — get_it com registro explícito e lifecycle controlado.
 final sl = GetIt.instance;
 
-/// Registra TODOS os serviÃ§os core e ports por mÃ³dulo.
-///
-/// [onTokenExpired] â€” callback acionado quando o refresh de token falha.
-/// Tipicamente chama `authProvider.notifier.logout()` para disparar o redirect do GoRouter.
-/// Chamado uma vez no `main()` antes de `runApp()`.
+/// Registra TODOS os serviços core e ports por módulo.
 Future<void> setupServiceLocator({
   List<String>? pinnedCertificates,
   List<String>? backupCertificates,
   VoidCallback? onTokenExpired,
 }) async {
-  // â”€â”€ 1. Infra Layer (singletons â€” performance-critical) â”€â”€
+  // ── 1. Infra Layer (singletons — performance-critical) ──
 
   sl.registerLazySingleton<NetworkInfo>(NetworkInfo.new);
   sl.registerLazySingleton<SecureConfig>(SecureConfig.new);
@@ -66,10 +59,8 @@ Future<void> setupServiceLocator({
     () => ProcessOfflineQueueUseCase(sl<IOfflineEventRepository>()),
   );
 
-  // â”€â”€ 2. Network Layer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── 2. Network Layer ─────────────────────────────────
 
-  // Lightweight Dio used only by AuthInterceptor (no auth/error interceptors).
-  // Named instance to avoid collision with the main Dio registration.
   sl.registerLazySingleton<Dio>(
     () => DioClientFactory.createForRefresh(
       pinnedSha256: pinnedCertificates ?? [],
@@ -84,8 +75,6 @@ Future<void> setupServiceLocator({
     () => OfflineInterceptor(sl<OfflineManager>()),
   );
 
-  // AuthInterceptor must be a singleton â€” its Completer<bool> field deduplicates
-  // concurrent 401s across the lifetime of the app.
   sl.registerLazySingleton<AuthInterceptor>(
     () => AuthInterceptor(
       secureConfig: sl<SecureConfig>(),
@@ -94,15 +83,12 @@ Future<void> setupServiceLocator({
     ),
   );
 
-  // Main authenticated Dio (unnamed â€” default instance used by all repositories).
   sl.registerLazySingleton<Dio>(() {
     const isRelease = bool.fromEnvironment('dart.vm.product');
     if (isRelease) {
-      // Fail-closed: em release SEMPRE exige pinning configurado.
       if (pinnedCertificates == null || pinnedCertificates.isEmpty) {
         throw StateError(
-          'Certificate pinning Ã© obrigatÃ³rio em builds de release. '
-          'ForneÃ§a pinnedCertificates no setupServiceLocator().',
+          'Certificate pinning é obrigatório em builds de release.',
         );
       }
       return DioClientFactory.createPinned(
@@ -113,7 +99,6 @@ Future<void> setupServiceLocator({
         offlineInterceptor: sl<OfflineInterceptor>(),
       );
     }
-    // Debug/dev: permite unpinned para facilitar desenvolvimento local.
     if (pinnedCertificates == null || pinnedCertificates.isEmpty) {
       return DioClientFactory.createUnpinned();
     }
@@ -126,8 +111,7 @@ Future<void> setupServiceLocator({
     );
   });
 
-  // â”€â”€ 3. Ports (interfaces) â†’ Implementations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  // Features importam apenas a PORT (interface), nunca a impl.
+  // ── 3. Ports (interfaces) → Implementations ──────────
 
   _registerAuthModule();
   _registerLeadModule();
@@ -137,13 +121,7 @@ Future<void> setupServiceLocator({
 }
 
 void _registerAuthModule() {
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  // MOCK LOGIN ATIVADO â€” COMENTE A LINHA ABAIXO E DESCOMENTE A SEGUINTE PARA PROD
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  sl.registerLazySingleton<AuthPort>(() => MockAuthRepository(secureConfig: sl<SecureConfig>()));
-  // sl.registerLazySingleton<AuthPort>(
-  //   () => AuthRepositoryImpl(dio: sl<Dio>(), secureConfig: sl<SecureConfig>()),
-  // );
+  sl.registerLazySingleton<IAuthRepository>(() => AuthRemoteMockDatasource(secureConfig: sl<SecureConfig>()));
 }
 
 void _registerLeadModule() {
@@ -155,16 +133,7 @@ void _registerLeadModule() {
 }
 
 void _registerAgendaModule() {
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  // MOCK AGENDA ATIVADO â€” COMENTE A LINHA ABAIXO E DESCOMENTE A SEGUINTE PARA PROD
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   sl.registerLazySingleton<AgendaPort>(MockAgendaRepository.new);
-  // sl.registerLazySingleton<AgendaPort>(
-  //   () => AgendaRepositoryImpl(
-  //     dio: sl<Dio>(),
-  //     offlineManager: sl<OfflineManager>(),
-  //   ),
-  // );
 }
 
 void _registerProposalModule() {
@@ -177,19 +146,9 @@ void _registerProposalModule() {
 }
 
 void _registerProfileModule() {
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  // MOCK PROFILE ATIVADO â€” COMENTE A LINHA ABAIXO E DESCOMENTE A SEGUINTE PARA PROD
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   sl.registerLazySingleton<ProfilePort>(MockProfileRepository.new);
-  // sl.registerLazySingleton<ProfilePort>(
-  //   () => ProfileRepositoryImpl(
-  //     dio: sl<Dio>(),
-  //     offlineManager: sl<OfflineManager>(),
-  //   ),
-  // );
 }
 
-/// Inicializa infra offline (Hive + Isar + SyncQueue).
 Future<void> initDependencies() async {
   await Firebase.initializeApp();
   await sl<OfflineManager>().initialize();
@@ -201,7 +160,6 @@ Future<void> initDependencies() async {
   ConnectivityService.init();
 }
 
-/// Limpa dados do usuÃ¡rio (logout). NÃƒO descarta infra singletons.
 Future<void> resetDependencies() async {
   await sl<OfflineManager>().clearUserData();
   await sl<SecureConfig>().clearTokens();
@@ -209,7 +167,6 @@ Future<void> resetDependencies() async {
   await sl<OfflineSyncQueue>().clear();
 }
 
-/// Descarta completamente o DI (dispose).
 Future<void> disposeDependencies() async {
   await sl<OfflineSyncQueue>().dispose();
   await sl<OfflineManager>().dispose();
@@ -217,4 +174,3 @@ Future<void> disposeDependencies() async {
   await sl<DatabaseHelper>().close();
   await sl.reset(dispose: true);
 }
-

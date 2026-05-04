@@ -15,7 +15,7 @@ extension GetProposalCacheCollection on Isar {
 
 const ProposalCacheSchema = CollectionSchema(
   name: r'pr',
-  id: 1004,
+  id: 3427291387740469612,
   properties: {
     r'cachedAt': PropertySchema(
       id: 0,
@@ -95,7 +95,7 @@ const ProposalCacheSchema = CollectionSchema(
   idName: r'id',
   indexes: {
     r's3': IndexSchema(
-      id: 2004,
+      id: -7711782640431452748,
       name: r's3',
       unique: true,
       replace: false,

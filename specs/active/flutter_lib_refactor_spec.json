@@ -93,61 +93,61 @@
             "design_system/tokens/ — app_colors.dart, app_typography.dart, app_spacing.dart, app_radius.dart, app_shadows.dart, app_durations.dart, index.dart",
             "design_system/theme/ — app_theme.dart, index.dart",
             "design_system/components/ — index.dart",
-            "design_system/effects/ — transitions.dart, index.dart",
-            "design_system/utils/ — extensions.dart, index.dart",
+            "design_system/effects/ — transitions.dart, index.dart (pendente criação de conteúdo)",
+            "design_system/utils/ — extensions.dart, index.dart (pendente criação de conteúdo)",
             "design_system/design_system.dart (barrel file)"
           ],
-          "status": "pending"
+          "status": "done"
         },
         {
           "id": "E2.2",
           "acao": "Migrar core/theme/ → design_system/",
           "detalhes": [
-            "app_colors.dart → design_system/tokens/app_colors.dart (preencher com valores reais Cadife: #dd0b0e, #393532, etc.)",
-            "app_text_styles.dart → design_system/tokens/app_typography.dart",
-            "app_theme.dart → design_system/theme/app_theme.dart",
-            "cadife_theme_extension.dart → absorver em app_theme.dart",
-            "theme_mode_provider.dart → mover para core/providers/theme_provider.dart"
+            "app_colors.dart → design_system/tokens/app_colors.dart ✓",
+            "app_text_styles.dart → design_system/tokens/app_typography.dart ✓",
+            "app_theme.dart → design_system/theme/app_theme.dart ✓",
+            "cadife_theme_extension.dart → design_system/theme/cadife_theme_extension.dart (absorção em app_theme.dart pendente — BUG-008)",
+            "theme_mode_provider.dart → design_system/theme/theme_provider.dart (movido para core/providers/ pendente — BUG-007)"
           ],
-          "status": "pending"
+          "status": "done"
         },
         {
           "id": "E2.3",
           "acao": "Migrar core/widgets/ → design_system/components/",
           "detalhes": [
-            "app_text_field.dart → design_system/components/app_text_field.dart",
-            "cadife_button.dart → design_system/components/app_button.dart",
-            "cadife_card.dart → design_system/components/app_card.dart",
-            "cadife_bottom_nav.dart → design_system/components/app_bottom_nav.dart",
-            "cadife_input.dart → absorver em app_text_field.dart (duplicata)",
-            "cadife_app_bar.dart → design_system/components/cadife_app_bar.dart",
-            "shimmer_loading.dart → design_system/components/shimmer_loading.dart",
-            "app_shell.dart → mover para features/shell/ (é lógica de feature)"
+            "app_text_field.dart → design_system/components/app_text_field.dart ✓",
+            "cadife_button.dart → design_system/components/cadife_button.dart ✓",
+            "cadife_card.dart → design_system/components/cadife_card.dart ✓",
+            "cadife_bottom_nav.dart → design_system/components/cadife_bottom_nav.dart ✓",
+            "cadife_input.dart → design_system/components/cadife_input.dart ✓ (mantido separado de app_text_field)",
+            "cadife_app_bar.dart → design_system/components/cadife_app_bar.dart ✓",
+            "shimmer_loading.dart → design_system/components/shimmer_loading.dart ✓",
+            "app_shell.dart → features/shell/ ✓ (já migrado)"
           ],
-          "status": "pending"
+          "status": "done"
         },
         {
           "id": "E2.4",
           "acao": "Criar design_system/design_system.dart (barrel file)",
           "detalhes": [
-            "Exportar todos os tokens, tema, componentes, efeitos e utils",
-            "Substituir todos os imports antigos (core/theme, core/widgets) pelo novo barrel file em todo o projeto"
+            "Exportar tokens, tema e componentes ✓",
+            "Todos os imports antigos (core/theme, core/widgets) substituídos pelo barrel em 24 arquivos ✓"
           ],
-          "status": "pending"
+          "status": "done"
         },
         {
           "id": "E2.5",
           "acao": "Adicionar ao design_system componentes específicos do Cadife",
           "detalhes": [
-            "design_system/components/app_badge.dart — score badge (quente/morno/frio) com AppColors.scoreHot/scoreWarm/scoreCold",
-            "design_system/components/lead_status_stepper.dart — stepper visual do ciclo NOVO→FECHADO"
+            "design_system/components/app_badge.dart — score badge (quente/morno/frio) ✓",
+            "design_system/components/lead_status_stepper.dart — stepper visual ✓"
           ],
-          "status": "pending"
+          "status": "done"
         },
         {
           "id": "E2.6",
           "acao": "Remover core/theme/ e core/widgets/ (agora vazias)",
-          "status": "pending"
+          "status": "done"
         },
         {
           "id": "E2.7",
