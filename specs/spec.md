@@ -8,12 +8,12 @@
 
 | Campo | Valor |
 |---|---|
-| **Versão** | 1.0.0 — MVP |
+| **Versão** | 1.1.0 — MVP |
 | **Projeto** | Cadife Smart Travel |
 | **Cliente** | Cadife Tour |
 | **Prazo MVP** | 25 dias |
-| **Data** | Junho 2025 |
-| **Status** | **Em Desenvolvimento** |
+| **Data** | Maio 2026 (atualizado) |
+| **Status** | **Em Andamento — Fase Final (Fase 4)** |
 
 ---
 
@@ -56,20 +56,20 @@ O sistema **NÃO** substitui o consultor humano. A IA atua como pré-atendente, 
 
 | Funcionalidade | Prioridade | Status MVP |
 |---|---|---|
-| Webhook WhatsApp Cloud API | **CRÍTICO** | Fase 1 — Dias 1–6 |
-| Assistente IA com RAG (LangChain) | **CRÍTICO** | Fase 2 — Dias 7–13 |
-| Coleta estruturada de briefing | **CRÍTICO** | Fase 2 — Dias 7–13 |
-| Criação automática de leads | **CRÍTICO** | Fase 2 — Dias 7–13 |
-| App Flutter — Perfil Agência (CRM) | **CRÍTICO** | Fase 3 — Dias 14–20 |
-| App Flutter — Perfil Cliente | **ALTA** | Fase 3 — Dias 14–20 |
-| Notificações Push (Firebase FCM) | **ALTA** | Fase 3 — Dias 14–20 |
-| Autenticação (Auth) no App | **ALTA** | Fase 1 — Dias 1–6 |
-| Base de conhecimento RAG da Cadife | **ALTA** | Fase 2 — Dias 7–13 |
-| Score de qualificação de leads | **MÉDIA** | Fase 2 — Dias 7–13 |
-| Agendamento básico de curadoria | **MÉDIA** | Fase 3 — Dias 14–20 |
-| Tratamento de mídias (áudio/imagem) | **MÉDIA** | Fase 4 — Dias 21–25 |
-| Documentação API (Swagger) | **MÉDIA** | Fase 4 — Dias 21–25 |
-| Docker / containerização | **BAIXA** | Fase 4 — Dias 21–25 |
+| Webhook WhatsApp Cloud API | **CRÍTICO** | ✅ **CONCLUÍDO** |
+| Assistente IA com RAG (LangChain) | **CRÍTICO** | ✅ **CONCLUÍDO** |
+| Coleta estruturada de briefing | **CRÍTICO** | ✅ **CONCLUÍDO** |
+| Criação automática de leads | **CRÍTICO** | ✅ **CONCLUÍDO** |
+| App Flutter — Perfil Agência (CRM) | **CRÍTICO** | 🔄 **EM ANDAMENTO** (auth/perfil/config restantes) |
+| App Flutter — Perfil Cliente | **ALTA** | ✅ **CONCLUÍDO** |
+| Notificações Push (Firebase FCM) | **ALTA** | ✅ **CONCLUÍDO** |
+| Autenticação (Auth) no App | **ALTA** | ✅ **CONCLUÍDO** |
+| Base de conhecimento RAG da Cadife | **ALTA** | ✅ **CONCLUÍDO** |
+| Score de qualificação de leads | **MÉDIA** | ✅ **CONCLUÍDO** |
+| Agendamento básico de curadoria | **MÉDIA** | ✅ **CONCLUÍDO** |
+| Tratamento de mídias (áudio/imagem) | **MÉDIA** | Fase 4 — Em andamento |
+| Documentação API (Swagger) | **MÉDIA** | Fase 4 — Pendente |
+| Docker / containerização | **BAIXA** | Fase 4 — Pendente |
 
 ### 2.2 Fora do Escopo — MVP
 
@@ -123,10 +123,10 @@ Fluxo principal de ponta a ponta (WhatsApp → App):
 | Camada | Tecnologia | Justificativa |
 |---|---|---|
 | **Backend / API** | FastAPI (Python) | Alta performance assíncrona, tipagem com Pydantic, suporte nativo a async/await e ecossistema Python para IA |
-| **IA / Orquestração** | LangChain + OpenAI GPT | Cadeia de processos para RAG, extração de entidades, memória de conversação e roteamento de fluxo |
+| **IA / Orquestração** | LangChain + Google Gemini | Cadeia de processos para RAG, extração de entidades, memória de conversação e roteamento de fluxo (migrado de OpenAI GPT para Gemini) |
 | **Vector DB (RAG)** | ChromaDB ou PGVector | Chroma para desenvolvimento local; PGVector para produção integrado ao PostgreSQL |
 | **Banco de Dados** | PostgreSQL (preferencial) ou MongoDB | PostgreSQL recomendado pelo suporte ao PGVector e ACID; MongoDB como alternativa para flexibilidade de schema |
-| **Frontend / App** | Flutter (Dart) | Multiplataforma (Android + iOS + Web), performance nativa, single codebase para os dois perfis de usuário |
+| **Frontend / App** | Flutter (Dart) — Riverpod + GoRouter + Isar | Multiplataforma (Android + iOS + Web), offline-first (Hive + Isar), autenticação biométrica, certificate pinning, dois perfis de usuário |
 | **Notificações** | Firebase Cloud Messaging (FCM) | Push notifications confiáveis em tempo real para Android e iOS |
 | **WhatsApp** | WhatsApp Cloud API (Meta) | API oficial, sem custo de mensagens para a empresa, suporte a webhook, multi-mídia e templates |
 | **Infraestrutura** | Docker + Docker Compose | Containerização do backend, banco e IA para portabilidade e deploy simplificado (LXC compatível) |
@@ -242,17 +242,21 @@ Fluxo principal de ponta a ponta (WhatsApp → App):
 | **POST** | `/ia/processar` | Processa mensagem e retorna resposta da IA | AI Core |
 | **POST** | `/ia/extrair-briefing` | Extrai dados estruturados de uma conversa | AI Core |
 | **GET** | `/ia/status` | Health check do serviço de IA | AI Core |
+| **POST** | `/ia/reindexar` | Reindexa a base de conhecimento no Vector DB | AI Core |
+| **GET** | `/ia/ingestion-status` | Status do pipeline de ingestão de documentos | AI Core |
 
 ### 5.3 Leads (CRM)
 
 | Método | Endpoint | Descrição | Módulo |
 |---|---|---|---|
 | **GET** | `/leads` | Lista todos os leads com filtros e paginação | Leads |
+| **GET** | `/leads/my-active` | Retorna o lead ativo do usuário autenticado (perfil cliente) | Leads |
 | **POST** | `/leads` | Cria novo lead (via webhook ou manual) | Leads |
 | **GET** | `/leads/{id}` | Retorna detalhes de um lead específico | Leads |
 | **PUT** | `/leads/{id}` | Atualiza dados ou status do lead | Leads |
 | **DELETE** | `/leads/{id}` | Arquiva (soft delete) um lead | Leads |
 | **GET** | `/leads/{id}/interacoes` | Histórico completo de conversas do lead | Leads |
+| **POST** | `/leads/{id}/interacao` | Adiciona uma interação manual ao lead | Leads |
 | **GET** | `/leads/{id}/briefing` | Briefing estruturado do lead | Leads |
 | **PUT** | `/leads/{id}/briefing` | Atualiza briefing manualmente | Leads |
 
@@ -280,6 +284,7 @@ Fluxo principal de ponta a ponta (WhatsApp → App):
 | **POST** | `/auth/login` | Login com e-mail e senha, retorna JWT | Auth |
 | **POST** | `/auth/refresh` | Renova token JWT | Auth |
 | **GET** | `/users/me` | Retorna perfil do usuário autenticado | Auth |
+| **PATCH** | `/users/me` | Atualiza perfil do usuário autenticado | Auth |
 | **POST** | `/users/fcm-token` | Registra token FCM do dispositivo | Auth |
 
 ---
@@ -648,7 +653,7 @@ Uma tarefa é considerada **PRONTA (Done)** quando:
 | `WHATSAPP_TOKEN` | **Sim** | Token de acesso da Meta (WhatsApp Cloud API) |
 | `PHONE_NUMBER_ID` | **Sim** | ID do número de telefone registrado na Meta |
 | `VERIFY_TOKEN` | **Sim** | Token secreto para verificação do webhook pela Meta |
-| `OPENAI_API_KEY` | **Sim** | Chave da API OpenAI para o modelo de linguagem (GPT) |
+| `GEMINI_API_KEY` | **Sim** | Chave da API Google Gemini para o modelo de linguagem (migrado de OpenAI) |
 | `DATABASE_URL` | **Sim** | String de conexão com PostgreSQL ou MongoDB |
 | `JWT_SECRET_KEY` | **Sim** | Chave secreta para assinatura dos tokens JWT |
 | `FIREBASE_CREDENTIALS` | **Sim** | Caminho para o arquivo JSON de credenciais do Firebase Admin |
