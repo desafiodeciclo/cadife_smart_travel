@@ -1,7 +1,7 @@
-import 'package:cadife_smart_travel/core/config/env_config.dart';
-import 'package:cadife_smart_travel/core/config/firebase_options_stg.dart';
-import 'package:cadife_smart_travel/core/config/firebase_options_prod.dart';
 import 'package:cadife_smart_travel/core/cache/isar_cache_manager.dart';
+import 'package:cadife_smart_travel/core/config/env_config.dart';
+import 'package:cadife_smart_travel/core/config/firebase_options_prod.dart';
+import 'package:cadife_smart_travel/core/config/firebase_options_stg.dart';
 import 'package:cadife_smart_travel/core/network/connectivity_service.dart';
 import 'package:cadife_smart_travel/core/network/dio_client.dart';
 import 'package:cadife_smart_travel/core/network/interceptors/auth_interceptor.dart';
@@ -19,7 +19,6 @@ import 'package:cadife_smart_travel/core/ports/profile_port.dart';
 import 'package:cadife_smart_travel/core/ports/proposal_port.dart';
 import 'package:cadife_smart_travel/core/security/secure_config.dart';
 import 'package:cadife_smart_travel/data/local/database_helper.dart';
-
 import 'package:cadife_smart_travel/data/repositories/mock_agenda_repository.dart';
 import 'package:cadife_smart_travel/data/repositories/mock_auth_repository.dart';
 import 'package:cadife_smart_travel/data/repositories/mock_lead_repository.dart';
