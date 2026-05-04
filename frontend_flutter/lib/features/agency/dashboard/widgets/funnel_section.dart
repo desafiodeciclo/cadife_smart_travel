@@ -30,42 +30,40 @@ class FunnelSection extends StatelessWidget {
                 ),
           ),
           const SizedBox(height: 16),
-          Card(
-            elevation: 0,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  _FunnelBar(
-                    label: 'Novo',
-                    value: novo,
-                    maxValue: maxValue,
-                    color: context.cadife.textSecondary,
-                  ),
-                  const SizedBox(height: 12),
-                  _FunnelBar(
-                    label: 'Qualificado',
-                    value: qualificado,
-                    maxValue: maxValue,
-                    color: AppColors.warning,
-                  ),
-                  const SizedBox(height: 12),
-                  _FunnelBar(
-                    label: 'Proposta',
-                    value: proposta,
-                    maxValue: maxValue,
-                    color: AppColors.primary,
-                  ),
-                  const SizedBox(height: 12),
-                  _FunnelBar(
-                    label: 'Fechado',
-                    value: fechado,
-                    maxValue: maxValue,
-                    color: AppColors.success,
-                  ),
-                ],
-              ),
+          ShadCard(
+            padding: const EdgeInsets.all(16),
+            radius: BorderRadius.circular(12),
+            border: ShadBorder.all(color: context.cadife.cardBorder),
+            child: Column(
+              children: [
+                _FunnelBar(
+                  label: 'Novo',
+                  value: novo,
+                  maxValue: maxValue,
+                  color: context.cadife.textSecondary,
+                ),
+                const SizedBox(height: 12),
+                _FunnelBar(
+                  label: 'Qualificado',
+                  value: qualificado,
+                  maxValue: maxValue,
+                  color: AppColors.warning,
+                ),
+                const SizedBox(height: 12),
+                _FunnelBar(
+                  label: 'Proposta',
+                  value: proposta,
+                  maxValue: maxValue,
+                  color: AppColors.primary,
+                ),
+                const SizedBox(height: 12),
+                _FunnelBar(
+                  label: 'Fechado',
+                  value: fechado,
+                  maxValue: maxValue,
+                  color: AppColors.success,
+                ),
+              ],
             ),
           ),
         ],

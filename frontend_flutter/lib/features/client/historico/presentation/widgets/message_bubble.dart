@@ -1,7 +1,6 @@
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/client/historico/domain/entities/interacao.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 class MessageBubble extends StatelessWidget {
   const MessageBubble({super.key, required this.interaction});

@@ -1,6 +1,5 @@
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:flutter/material.dart';
-import 'package:shadcn_ui/shadcn_ui.dart';
 
 class CadifeButton extends StatelessWidget {
   final String text;

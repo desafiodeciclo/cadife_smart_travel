@@ -1,6 +1,5 @@
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 
 /// Scaffold padrão do Cadife com suporte a AppBar configurável,
 /// body com padding consistente e efeitos de fundo modernos.

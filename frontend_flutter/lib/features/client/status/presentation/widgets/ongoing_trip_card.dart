@@ -104,20 +104,10 @@ class OngoingTripCard extends StatelessWidget {
 class _ProximaViagemTag extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primary,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: const Text(
-        'Próxima Viagem',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
+    return ShadBadge(
+      backgroundColor: Theme.of(context).colorScheme.primary,
+      hoverBackgroundColor: Theme.of(context).colorScheme.primary,
+      child: const Text('Próxima Viagem'),
     );
   }
 }

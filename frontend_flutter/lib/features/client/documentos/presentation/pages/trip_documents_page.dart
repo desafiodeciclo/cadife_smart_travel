@@ -25,12 +25,13 @@ class TripDocumentsPage extends ConsumerWidget {
           orElse: () => throw Exception('Trip not found'),
         );
 
-        return Scaffold(
-          body: CustomScrollView(
-            slivers: [
-              CadifeAppBar(title: trip.name),
-              SliverToBoxAdapter(
-                child: Padding(
+        return PageScaffold(
+          title: trip.name,
+          body: SingleChildScrollView(
+            child: Column(
+              children: [
+                const SizedBox(height: 72),
+                Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -119,13 +120,13 @@ class TripDocumentsPage extends ConsumerWidget {
                     ],
                   ),
                 ),
-              ),
-              const SliverToBoxAdapter(child: SizedBox(height: 24)),
-            ],
+                const SizedBox(height: 24),
+              ],
+            ),
           ),
         );
       },
-      orElse: () => const Scaffold(
+      orElse: () => const PageScaffold(
         body: Center(
           child: CircularProgressIndicator(),
         ),

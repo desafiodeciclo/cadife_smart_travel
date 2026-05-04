@@ -244,14 +244,12 @@ class _ConfirmationStep extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 32),
-                Container(
+                ShadCard(
                   padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).brightness == Brightness.dark 
-                        ? context.cadife.cardBackground 
-                        : context.cadife.surface,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  backgroundColor: Theme.of(context).brightness == Brightness.dark 
+                      ? context.cadife.cardBackground 
+                      : context.cadife.surface,
+                  radius: BorderRadius.circular(12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -351,13 +349,11 @@ class _ErrorBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return ShadCard(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppColors.error.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
-      ),
+      backgroundColor: AppColors.error.withValues(alpha: 0.08),
+      radius: BorderRadius.circular(8),
+      border: ShadBorder.all(color: AppColors.error.withValues(alpha: 0.3)),
       child: Row(
         children: [
           const Icon(Icons.error_outline, color: AppColors.error, size: 18),

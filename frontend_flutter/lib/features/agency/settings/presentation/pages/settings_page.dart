@@ -12,6 +12,7 @@ class SettingsScreen extends ConsumerWidget {
     final settingsAsync = ref.watch(agencySettingsProvider);
 
     return Scaffold(
+      backgroundColor: context.cadife.background,
       appBar: const CadifeAppBar(
         title: 'Configurações',
         showProfile: false,
@@ -26,7 +27,7 @@ class SettingsScreen extends ConsumerWidget {
               const SizedBox(height: 12),
               const Text('Erro ao carregar configurações'),
               const SizedBox(height: 8),
-              TextButton(
+              ShadButton.outline(
                 onPressed: () => ref.invalidate(agencySettingsProvider),
                 child: const Text('Tentar novamente'),
               ),
@@ -80,13 +81,10 @@ class _OfficeHoursSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: context.cadife.cardBorder),
-      ),
+    return ShadCard(
+      padding: EdgeInsets.zero,
+      radius: BorderRadius.circular(12),
+      border: ShadBorder.all(color: context.cadife.cardBorder, width: 1),
       child: Column(
         children: hours.asMap().entries.map((e) {
           final i = e.key;
@@ -149,9 +147,8 @@ class _DayRow extends ConsumerWidget {
             child: Text(hours.weekdayLabel,
                 style: AppTextStyles.bodyMedium),
           ),
-          Switch(
+          ShadSwitch(
             value: hours.isOpen,
-            activeThumbColor: AppColors.primary,
             onChanged: (v) => ref
                 .read(agencySettingsProvider.notifier)
                 .toggleDay(hours.weekday, isOpen: v),
@@ -188,14 +185,11 @@ class _TimeChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: context.cadife.surface,
+    return ShadBadge.secondary(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: context.cadife.cardBorder),
       ),
-      child: Text(time, style: AppTextStyles.bodySmall),
+      child: Text(time),
     );
   }
 }
@@ -209,35 +203,60 @@ class _NotificationsSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notifier = ref.read(agencySettingsProvider.notifier);
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: context.cadife.cardBorder),
-      ),
+    return ShadCard(
+      padding: EdgeInsets.zero,
+      radius: BorderRadius.circular(12),
+      border: ShadBorder.all(color: context.cadife.cardBorder, width: 1),
       child: Column(
         children: [
-          SwitchListTile(
-            title: Text('Novos leads', style: AppTextStyles.bodyMedium),
-            subtitle: Text('Notificar quando um lead for criado',
-                style:
-                    AppTextStyles.bodySmall.copyWith(color: context.cadife.textSecondary)),
-            value: prefs.newLeads,
-            activeThumbColor: AppColors.primary,
-            onChanged: (v) => notifier.toggleNotification(
-                newLeads: v, qualifiedLeads: prefs.qualifiedLeads),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              children: [
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Novos leads', style: AppTextStyles.bodyMedium),
+                      Text('Notificar quando um lead for criado',
+                          style: AppTextStyles.bodySmall.copyWith(color: context.cadife.textSecondary)),
+                    ],
+                  ),
+                ),
+                ShadSwitch(
+                  value: prefs.newLeads,
+                  onChanged: (v) => notifier.toggleNotification(
+                      newLeads: v, qualifiedLeads: prefs.qualifiedLeads),
+                ),
+                const SizedBox(width: 16),
+              ],
+            ),
           ),
           const Divider(height: 1, indent: 16, endIndent: 16),
-          SwitchListTile(
-            title: Text('Leads qualificados', style: AppTextStyles.bodyMedium),
-            subtitle: Text('Notificar quando score ≥ 60%',
-                style:
-                    AppTextStyles.bodySmall.copyWith(color: context.cadife.textSecondary)),
-            value: prefs.qualifiedLeads,
-            activeThumbColor: AppColors.primary,
-            onChanged: (v) => notifier.toggleNotification(
-                newLeads: prefs.newLeads, qualifiedLeads: v),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              children: [
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Leads qualificados', style: AppTextStyles.bodyMedium),
+                      Text('Notificar quando score ≥ 60%',
+                          style: AppTextStyles.bodySmall.copyWith(color: context.cadife.textSecondary)),
+                    ],
+                  ),
+                ),
+                ShadSwitch(
+                  value: prefs.qualifiedLeads,
+                  onChanged: (v) => notifier.toggleNotification(
+                      newLeads: prefs.newLeads, qualifiedLeads: v),
+                ),
+                const SizedBox(width: 16),
+              ],
+            ),
           ),
         ],
       ),
@@ -254,35 +273,16 @@ class _TemplatesSection extends ConsumerWidget {
   Future<void> _showAddDialog(BuildContext context, WidgetRef ref) async {
     final titleCtrl = TextEditingController();
     final bodyCtrl = TextEditingController();
-    await showDialog<void>(
+    await showShadDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => ShadDialog(
         title: const Text('Novo Template'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: titleCtrl,
-              decoration: const InputDecoration(labelText: 'Título'),
-              textCapitalization: TextCapitalization.sentences,
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: bodyCtrl,
-              decoration: const InputDecoration(labelText: 'Mensagem'),
-              maxLines: 3,
-              textCapitalization: TextCapitalization.sentences,
-            ),
-          ],
-        ),
         actions: [
-          CadifeButton(
+          ShadButton.outline(
             onPressed: () => Navigator.pop(ctx),
-            text: 'Cancelar',
-            isOutline: true,
+            child: const Text('Cancelar'),
           ),
-          const SizedBox(height: 8),
-          CadifeButton(
+          ShadButton(
             onPressed: () {
               if (titleCtrl.text.trim().isEmpty ||
                   bodyCtrl.text.trim().isEmpty) { return; }
@@ -292,9 +292,26 @@ class _TemplatesSection extends ConsumerWidget {
                   );
               Navigator.pop(ctx);
             },
-            text: 'Adicionar',
+            child: const Text('Adicionar'),
           ),
         ],
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ShadInput(
+              controller: titleCtrl,
+              placeholder: const Text('Título'),
+              textCapitalization: TextCapitalization.sentences,
+            ),
+            const SizedBox(height: 12),
+            ShadInput(
+              controller: bodyCtrl,
+              placeholder: const Text('Mensagem'),
+              maxLines: 3,
+              textCapitalization: TextCapitalization.sentences,
+            ),
+          ],
+        ),
       ),
     );
     titleCtrl.dispose();
@@ -308,38 +325,37 @@ class _TemplatesSection extends ConsumerWidget {
       child: Column(
         children: [
           ...templates.map(
-            (t) => Card(
-              margin: const EdgeInsets.only(bottom: 8),
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(color: context.cadife.cardBorder),
-              ),
-              child: ListTile(
-                title: Text(t.title, style: AppTextStyles.labelLarge),
-                subtitle: Text(
-                  t.body,
-                  style: AppTextStyles.bodySmall
-                      .copyWith(color: context.cadife.textSecondary),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete_outline,
-                      color: AppColors.error, size: 20),
-                  onPressed: () => ref
-                      .read(agencySettingsProvider.notifier)
-                      .removeTemplate(t.id),
+            (t) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: ShadCard(
+                padding: EdgeInsets.zero,
+                radius: BorderRadius.circular(12),
+                border: ShadBorder.all(color: context.cadife.cardBorder, width: 1),
+                child: ListTile(
+                  title: Text(t.title, style: AppTextStyles.labelLarge),
+                  subtitle: Text(
+                    t.body,
+                    style: AppTextStyles.bodySmall
+                        .copyWith(color: context.cadife.textSecondary),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete_outline,
+                        color: AppColors.error, size: 20),
+                    onPressed: () => ref
+                        .read(agencySettingsProvider.notifier)
+                        .removeTemplate(t.id),
+                  ),
                 ),
               ),
             ),
           ),
           const SizedBox(height: 4),
-          CadifeButton(
+          ShadButton.outline(
             onPressed: () => _showAddDialog(context, ref),
-            icon: Icons.add,
-            text: 'Adicionar template',
-            isOutline: true,
+            leading: const Icon(Icons.add, size: 18),
+            child: const Text('Adicionar template'),
           ),
           const SizedBox(height: 16),
         ],

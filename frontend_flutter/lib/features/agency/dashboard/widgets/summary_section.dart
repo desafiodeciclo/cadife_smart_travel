@@ -75,46 +75,44 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
+    return ShadCard(
+      padding: const EdgeInsets.all(12),
+      radius: BorderRadius.circular(12),
+      border: ShadBorder.all(color: context.cadife.cardBorder),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: color, size: 24),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: color,
             ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 11,
+              color: context.cadife.textSecondary,
+            ),
+          ),
+          if (variation != null) ...[
             const SizedBox(height: 4),
             Text(
-              label,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 11,
-                color: context.cadife.textSecondary,
+              variation!,
+              style: const TextStyle(
+                fontSize: 10,
+                color: AppColors.success,
+                fontWeight: FontWeight.w600,
               ),
             ),
-            if (variation != null) ...[
-              const SizedBox(height: 4),
-              Text(
-                variation!,
-                style: const TextStyle(
-                  fontSize: 10,
-                  color: AppColors.success,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
           ],
-        ),
+        ],
       ),
     );
   }

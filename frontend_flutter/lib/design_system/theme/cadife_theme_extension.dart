@@ -1,5 +1,6 @@
 import 'package:cadife_smart_travel/design_system/tokens/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
 
 @immutable
 class CadifeThemeExtension extends ThemeExtension<CadifeThemeExtension> {
@@ -112,4 +113,6 @@ extension CadifeTheme on BuildContext {
       Theme.of(this).extension<CadifeThemeExtension>()!;
       
   bool get isDark => Theme.of(this).brightness == Brightness.dark;
+
+  ShadTextTheme get shadText => ShadTheme.of(this).textTheme;
 }

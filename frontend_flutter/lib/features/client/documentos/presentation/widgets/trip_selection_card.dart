@@ -1,7 +1,6 @@
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/client/documentos/domain/entities/trip_summary.dart';
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class TripSelectionCard extends StatelessWidget {
   const TripSelectionCard({
@@ -25,22 +24,13 @@ class TripSelectionCard extends StatelessWidget {
     final primaryColor = isDark ? Colors.white : Colors.black;
     final secondaryColor = isDark ? Colors.white.withValues(alpha: 0.6) : Colors.black.withValues(alpha: 0.5);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: theme.cardTheme.color ?? (isDark ? context.cadife.cardBackground : Colors.white),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
+    return ShadCard(
+      padding: EdgeInsets.zero,
+      backgroundColor: theme.cardTheme.color ?? (isDark ? context.cadife.cardBackground : Colors.white),
+      radius: BorderRadius.circular(16),
+      border: ShadBorder.all(
+        color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
+        width: 1,
       ),
       child: Material(
         color: Colors.transparent,

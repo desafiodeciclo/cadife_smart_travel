@@ -9,7 +9,6 @@ import 'package:cadife_smart_travel/features/auth/presentation/bloc/auth_state.d
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 enum _EmailState { idle, validating, valid, invalid }
@@ -210,15 +209,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         // ── Error message ─────────────────────────────────
                         if (hasLoginError) ...[
                           const SizedBox(height: 14),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 10),
-                            decoration: BoxDecoration(
-                              color: AppColors.error.withValues(alpha: 0.08),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: AppColors.error.withValues(alpha: 0.3),
-                              ),
+                          ShadCard(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            backgroundColor: AppColors.error.withValues(alpha: 0.08),
+                            radius: BorderRadius.circular(8),
+                            border: ShadBorder.all(
+                              color: AppColors.error.withValues(alpha: 0.3),
                             ),
                             child: Row(
                               children: [
@@ -260,30 +256,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         Row(
                           children: [
                             Expanded(
-                              child: _SocialButton(
-                                label: 'Google',
-                                icon: const _GoogleIcon(),
-                                isDark: isDark,
-                                onTap: () => ScaffoldMessenger.of(context)
-                                    .showSnackBar(const SnackBar(
-                                        content: Text('Login social em breve'))),
+                              child: ShadButton.outline(
+                                onPressed: () => ShadToaster.of(context).show(
+                                  const ShadToast(description: Text('Login social em breve')),
+                                ),
+                                leading: const _GoogleIcon(),
+                                child: const Text('Google'),
                               ),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
-                              child: _SocialButton(
-                                label: 'Apple',
-                                icon: Icon(
-                                  Icons.apple,
-                                  size: 22,
-                                  color: isDark
-                                      ? Colors.white
-                                      : context.cadife.textPrimary,
+                              child: ShadButton.outline(
+                                onPressed: () => ShadToaster.of(context).show(
+                                  const ShadToast(description: Text('Login social em breve')),
                                 ),
-                                isDark: isDark,
-                                onTap: () => ScaffoldMessenger.of(context)
-                                    .showSnackBar(const SnackBar(
-                                        content: Text('Login social em breve'))),
+                                leading: Icon(
+                                  Icons.apple,
+                                  size: 20,
+                                  color: isDark ? Colors.white : context.cadife.textPrimary,
+                                ),
+                                child: const Text('Apple'),
                               ),
                             ),
                           ],
@@ -400,51 +392,7 @@ class _CadifeLogo extends StatelessWidget {
   }
 }
 
-class _SocialButton extends StatelessWidget {
-  const _SocialButton({
-    required this.label,
-    required this.icon,
-    required this.isDark,
-    required this.onTap,
-  });
 
-  final String label;
-  final Widget icon;
-  final bool isDark;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return OutlinedButton(
-      onPressed: onTap,
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 13),
-        side: BorderSide(
-          color: isDark ? Colors.white24 : context.cadife.cardBorder,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-        foregroundColor: isDark ? Colors.white : context.cadife.textPrimary,
-        backgroundColor: Colors.transparent,
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          icon,
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: AppTextStyles.labelLarge.copyWith(
-              color: isDark ? Colors.white : context.cadife.textPrimary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _GoogleIcon extends StatelessWidget {
   const _GoogleIcon();

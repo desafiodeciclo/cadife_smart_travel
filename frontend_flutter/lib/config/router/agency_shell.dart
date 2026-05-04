@@ -2,7 +2,6 @@ import 'package:animations/animations.dart';
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class AgencyShell extends StatefulWidget {
   const AgencyShell({super.key, required this.child, required this.location});

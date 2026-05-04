@@ -12,6 +12,7 @@ class TripSummary extends Equatable {
     this.dataVolta,
     this.numPessoas,
     this.imageUrl,
+    this.orcamento,
   });
 
   final String id;
@@ -21,7 +22,17 @@ class TripSummary extends Equatable {
   final DateTime? dataVolta;
   final int? numPessoas;
   final String? imageUrl;
+  final double? orcamento;
 
   @override
-  List<Object?> get props => [id, name, destino, dataIda, dataVolta, numPessoas, imageUrl];
+  List<Object?> get props => [
+        id,
+        name,
+        destino,
+        dataIda,
+        dataVolta,
+        numPessoas,
+        imageUrl,
+        orcamento,
+      ];
 }

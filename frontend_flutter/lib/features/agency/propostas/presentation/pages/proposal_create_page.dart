@@ -1,11 +1,10 @@
-﻿import 'package:cadife_smart_travel/design_system/design_system.dart';
+import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/agency/propostas/domain/entities/proposta.dart';
 import 'package:cadife_smart_travel/features/agency/propostas/presentation/providers/proposals_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 // Date range constants for the proposal date picker
 const int _kDefaultDaysAhead    = 7;
@@ -120,22 +119,19 @@ class _ProposalCreateScreenState extends ConsumerState<ProposalCreateScreen>
     try {
       await ref.read(proposalsProvider.notifier).createProposal(request);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Proposta criada com sucesso! Ã°Å¸Å½â€°'),
+        ShadToaster.of(context).show(
+          const ShadToast(
+            description: Text('Proposta criada com sucesso! 🎉'),
             backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
           ),
         );
         context.pop();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erro: $e'),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
+        ShadToaster.of(context).show(
+          ShadToast.destructive(
+            description: Text('Erro: $e'),
           ),
         );
       }
@@ -212,12 +208,12 @@ class _ProposalCreateScreenState extends ConsumerState<ProposalCreateScreen>
                         title: 'Viagem',
                         icon: Icons.flight_takeoff_rounded,
                         children: [
-                          TextFormField(
+                          ShadInput(
                             controller: _destinoController,
-                            decoration: const InputDecoration(
-                              labelText: 'Destino',
-                              hintText: 'Ex: Paris, FranÃƒÂ§a',
-                              prefixIcon: Icon(Icons.place_outlined),
+                            placeholder: const Text('Ex: Paris, França'),
+                            leading: const Padding(
+                              padding: EdgeInsets.only(right: 8),
+                              child: Icon(Icons.place_outlined, size: 20),
                             ),
                             textCapitalization: TextCapitalization.words,
                           ),
@@ -244,11 +240,12 @@ class _ProposalCreateScreenState extends ConsumerState<ProposalCreateScreen>
                             ],
                           ),
                           const SizedBox(height: 16),
-                          TextFormField(
+                          ShadInput(
                             controller: _pessoasController,
-                            decoration: const InputDecoration(
-                              labelText: 'NÃ‚Âº de pessoas',
-                              prefixIcon: Icon(Icons.group_outlined),
+                            placeholder: const Text('Nº de pessoas'),
+                            leading: const Padding(
+                              padding: EdgeInsets.only(right: 8),
+                              child: Icon(Icons.group_outlined, size: 20),
                             ),
                             keyboardType: TextInputType.number,
                             inputFormatters: [
@@ -264,28 +261,14 @@ class _ProposalCreateScreenState extends ConsumerState<ProposalCreateScreen>
                         title: 'Valor',
                         icon: Icons.attach_money_rounded,
                         children: [
-                          TextFormField(
+                          ShadInput(
                             controller: _valorController,
-                            decoration: const InputDecoration(
-                              labelText: 'Valor estimado (R\$)',
-                              prefixIcon:
-                                  Icon(Icons.monetization_on_outlined),
+                            placeholder: const Text('Valor estimado (R\$)'),
+                            leading: const Padding(
+                              padding: EdgeInsets.only(right: 8),
+                              child: Icon(Icons.monetization_on_outlined, size: 20),
                             ),
-                            keyboardType:
-                                const TextInputType.numberWithOptions(
-                                    decimal: true),
-                            validator: (v) {
-                              if (v == null || v.trim().isEmpty) {
-                                return 'Informe o valor da proposta';
-                              }
-                              final numeric = v
-                                  .replaceAll(RegExp(r'[^0-9,]'), '')
-                                  .replaceAll(',', '.');
-                              if (double.tryParse(numeric) == null) {
-                                return 'Valor invÃƒÂ¡lido';
-                              }
-                              return null;
-                            },
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
                           ),
                         ],
                       ),
@@ -296,14 +279,9 @@ class _ProposalCreateScreenState extends ConsumerState<ProposalCreateScreen>
                         title: 'ObservaÃƒÂ§ÃƒÂµes',
                         icon: Icons.notes_rounded,
                         children: [
-                          TextFormField(
+                          ShadInput(
                             controller: _notesController,
-                            decoration: const InputDecoration(
-                              labelText: 'Detalhes adicionais',
-                              hintText:
-                                  'AcomodaÃƒÂ§ÃƒÂ£o, transfers, seguro viagem...',
-                              alignLabelWithHint: true,
-                            ),
+                            placeholder: const Text('Acomodação, transfers, seguro viagem...'),
                             maxLines: 4,
                             textCapitalization: TextCapitalization.sentences,
                           ),
@@ -312,60 +290,20 @@ class _ProposalCreateScreenState extends ConsumerState<ProposalCreateScreen>
                       const SizedBox(height: 32),
 
                       // Ã¢â€â‚¬Ã¢â€â‚¬ Submit Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        height: 56,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [
-                              AppColors.primaryLight,
-                              AppColors.primary,
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primary.withValues(alpha: 0.4),
-                              blurRadius: 20,
-                              offset: const Offset(0, 8),
-                            ),
-                          ],
-                        ),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(16),
-                            onTap: _saving ? null : _submit,
-                            child: Center(
-                              child: _saving
-                                  ? const SizedBox(
-                                      height: 22,
-                                      width: 22,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2.5,
-                                        color: Colors.white,
-                                      ),
-                                    )
-                                  : const Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(Icons.send_rounded,
-                                            color: Colors.white, size: 20),
-                                        SizedBox(width: 10),
-                                        Text(
-                                          'Criar Proposta',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16,
-                                            letterSpacing: 0.5,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                            ),
-                          ),
-                        ),
+                      ShadButton(
+                        onPressed: _saving ? null : _submit,
+                        size: ShadButtonSize.lg,
+                        leading: _saving 
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.send_rounded, size: 20),
+                        child: Text(_saving ? 'Salvando...' : 'Criar Proposta'),
                       ),
                     ],
                   ),
@@ -395,26 +333,17 @@ class _GlassSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
+    return ShadCard(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
+      radius: BorderRadius.circular(20),
+      border: ShadBorder.all(
         color: isDark
-            ? Colors.white.withValues(alpha: 0.05)
-            : Colors.white.withValues(alpha: 0.9),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.08)
-              : Colors.grey.shade200,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
-          ),
-        ],
+            ? Colors.white.withValues(alpha: 0.08)
+            : Colors.grey.shade200,
       ),
+      backgroundColor: isDark
+          ? Colors.white.withValues(alpha: 0.05)
+          : Colors.white.withValues(alpha: 0.9),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

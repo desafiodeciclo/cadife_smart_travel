@@ -9,53 +9,32 @@ class HistoricoShimmer extends StatelessWidget {
     return ShimmerLoading(
       isLoading: true,
       child: ListView.builder(
-        padding: const EdgeInsets.only(top: 16, bottom: 96),
-        itemCount: 9,
+        padding: const EdgeInsets.only(top: 72, bottom: 96, left: 16, right: 16),
+        itemCount: 3,
         itemBuilder: (context, index) {
-          final isRight = index % 3 == 0;
-          final showDivider = index == 0 || index == 4;
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+          return const Column(
             children: [
-              if (showDivider)
-                const Padding(
-                  padding: EdgeInsets.symmetric(
-                    vertical: 12,
-                    horizontal: 16,
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(child: Skeleton(height: 1)),
-                      SizedBox(width: 12),
-                      Skeleton(width: 64, height: 11),
-                      SizedBox(width: 12),
-                      Expanded(child: Skeleton(height: 1)),
-                    ],
-                  ),
-                ),
-              Padding(
-                padding: EdgeInsets.only(
-                  left: isRight ? 56 : 16,
-                  right: isRight ? 16 : 56,
-                  bottom: 14,
-                ),
-                child: Column(
-                  crossAxisAlignment:
-                      isRight ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                  children: [
-                    if (!isRight) ...[
-                      const Skeleton(width: 100, height: 11),
-                      const SizedBox(height: 4),
-                    ],
-                    Skeleton(
-                      height: index.isEven ? 60 : 40,
-                      borderRadius: 16,
-                    ),
-                    const SizedBox(height: 4),
-                    const Skeleton(width: 72, height: 10),
-                  ],
-                ),
+        Skeleton(
+                height: 180,
+                borderRadius: 24,
               ),
+        SizedBox(height: 12),
+        Row(
+                children: [
+                  Expanded(child: Skeleton(height: 14)),
+                  SizedBox(width: 16),
+                  Expanded(child: Skeleton(height: 14)),
+                ],
+              ),
+        SizedBox(height: 8),
+        Row(
+                children: [
+                  Expanded(child: Skeleton(height: 14)),
+                  SizedBox(width: 16),
+                  Expanded(child: Skeleton(height: 14)),
+                ],
+              ),
+        SizedBox(height: 24),
             ],
           );
         },
@@ -69,6 +48,8 @@ class HistoricoEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.isDark;
+    
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(40),
@@ -78,35 +59,30 @@ class HistoricoEmptyState extends StatelessWidget {
             Container(
               width: 88,
               height: 88,
-              decoration: const BoxDecoration(
-                color: AppColors.primaryLight,
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
-                Icons.chat_bubble_outline_rounded,
+                LucideIcons.plane,
                 size: 44,
                 color: AppColors.primary,
               ),
             ),
             const SizedBox(height: 24),
             Text(
-              'Sua conversa com a AYA aparecerá aqui',
+              'Nenhuma viagem encontrada',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
+              style: context.shadText.h4.copyWith(
                 color: context.cadife.textPrimary,
-                height: 1.4,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Inicie um atendimento pelo WhatsApp para ver o histórico.',
+              'Suas últimas aventuras concluídas aparecerão aqui para você relembrar.',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 13,
+              style: context.shadText.muted.copyWith(
                 color: context.cadife.textSecondary,
-                height: 1.5,
               ),
             ),
           ],
@@ -144,13 +120,11 @@ class HistoricoErrorState extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-            FilledButton(
+            ShadButton(
               onPressed: onRetry,
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-              ),
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
               child: const Text('Tentar novamente'),
             ),
           ],

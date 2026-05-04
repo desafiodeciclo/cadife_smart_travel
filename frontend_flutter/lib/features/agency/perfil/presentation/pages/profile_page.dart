@@ -4,8 +4,6 @@ import 'package:cadife_smart_travel/features/agency/perfil/presentation/provider
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
-
 class ConsultorProfileScreen extends ConsumerWidget {
   const ConsultorProfileScreen({super.key});
 
@@ -38,7 +36,7 @@ class ConsultorProfileScreen extends ConsumerWidget {
               Text('Erro ao carregar perfil',
                   style: AppTextStyles.bodyMedium),
               const SizedBox(height: 8),
-              TextButton(
+              ShadButton.outline(
                 onPressed: () =>
                     ref.invalidate(consultorProfileProvider),
                 child: const Text('Tentar novamente'),
@@ -95,18 +93,10 @@ class _ProfileHeader extends StatelessWidget {
 
     return Row(
       children: [
-        CircleAvatar(
-          radius: 36,
-          backgroundColor: AppColors.primary.withValues(alpha: 0.12),
-          backgroundImage: profile.avatarUrl != null
-              ? NetworkImage(profile.avatarUrl!)
-              : null,
-          child: profile.avatarUrl == null
-              ? Text(
-                  initials,
-                  style: AppTextStyles.h3.copyWith(color: AppColors.primary),
-                )
-              : null,
+        ShadAvatar(
+          profile.avatarUrl ?? '',
+          placeholder: Text(initials, style: AppTextStyles.h3.copyWith(color: AppColors.primary)),
+          size: const Size(72, 72),
         ),
         const SizedBox(width: 16),
         Expanded(
@@ -190,13 +180,11 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return ShadCard(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
-      ),
+      radius: BorderRadius.circular(12),
+      backgroundColor: color.withValues(alpha: 0.08),
+      border: ShadBorder.all(color: color.withValues(alpha: 0.2)),
       child: Column(
         children: [
           Icon(icon, color: color, size: 22),
@@ -274,29 +262,27 @@ class _BioSectionState extends ConsumerState<_BioSection> {
         if (_editing)
           Column(
             children: [
-               CadifeInput(
+               ShadInput(
                  controller: _controller,
-                 label: 'Bio',
+                 placeholder: const Text('Escreva sua bio...'),
                  maxLines: 4,
-                                   hintText: 'Escreva sua bio...',
-
+                 textCapitalization: TextCapitalization.sentences,
                ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  CadifeButton(
+                  ShadButton.outline(
                     onPressed: () {
                       _controller.text = widget.profile.bio;
                       setState(() => _editing = false);
                     },
-                    text: 'Cancelar',
-                    isOutline: true,
+                    child: const Text('Cancelar'),
                   ),
                   const SizedBox(width: 8),
-                  CadifeButton(
+                  ShadButton(
                     onPressed: _save,
-                    text: 'Salvar',
+                    child: const Text('Salvar'),
                   ),
                 ],
               ),
@@ -353,13 +339,11 @@ class _GoalItem extends StatelessWidget {
         DateFormat('MMMM yyyy', 'pt_BR').format(DateTime(goal.year, goal.month));
     final color = goal.isCompleted ? AppColors.success : AppColors.primary;
 
-    return Container(
+    return ShadCard(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: context.cadife.cardBackground,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.cadife.cardBorder),
-      ),
+      radius: BorderRadius.circular(12),
+      backgroundColor: context.cadife.cardBackground,
+      border: ShadBorder.all(color: context.cadife.cardBorder),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

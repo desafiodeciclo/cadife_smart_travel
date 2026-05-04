@@ -4,7 +4,7 @@ import 'package:cadife_smart_travel/features/agency/agenda/presentation/provider
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
+
 
 part 'agenda_month_view.dart';
 part 'agenda_daily_view.dart';
@@ -78,19 +78,12 @@ class AgendaScreen extends ConsumerWidget {
         ],
       ),
       floatingActionButton: viewMode == 1
-          ? FloatingActionButton.extended(
-              backgroundColor: context.cadife.primary,
-              onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                      'Selecione um slot vazio na timeline para agendar.'),
-                ),
+          ? ShadButton(
+              onPressed: () => ShadToaster.of(context).show(
+                const ShadToast(description: Text('Selecione um slot vazio na timeline para agendar.')),
               ),
-              icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text(
-                'Novo agendamento',
-                style: TextStyle(color: Colors.white),
-              ),
+              leading: const Icon(Icons.add, size: 20),
+              child: const Text('Novo agendamento'),
             )
           : null,
     );
@@ -107,73 +100,21 @@ class _ViewToggleBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: Row(
-        children: [
-          _ToggleChip(
-            label: 'Mês',
-            icon: Icons.calendar_month,
-            selected: viewMode == 0,
-            onTap: () =>
-                ref.read(agendaViewModeProvider.notifier).state = 0,
+      child: ShadTabs<int>(
+        value: viewMode,
+        onChanged: (v) => ref.read(agendaViewModeProvider.notifier).state = v,
+        tabs: [
+          const ShadTab(
+            value: 0,
+            content: SizedBox.shrink(),
+            child: Text('Mês'),
           ),
-          const SizedBox(width: 8),
-          _ToggleChip(
-            label: 'Dia',
-            icon: Icons.view_day,
-            selected: viewMode == 1,
-            onTap: () =>
-                ref.read(agendaViewModeProvider.notifier).state = 1,
+          const ShadTab(
+            value: 1,
+            content: SizedBox.shrink(),
+            child: Text('Dia'),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _ToggleChip extends StatelessWidget {
-  const _ToggleChip({
-    required this.label,
-    required this.icon,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final IconData icon;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-        decoration: BoxDecoration(
-          color: selected ? context.cadife.primary : context.cadife.surface,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 16,
-              color: selected ? Colors.white : context.cadife.textSecondary,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                color: selected ? Colors.white : context.cadife.textSecondary,
-                fontWeight:
-                    selected ? FontWeight.w600 : FontWeight.normal,
-                fontSize: 13,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

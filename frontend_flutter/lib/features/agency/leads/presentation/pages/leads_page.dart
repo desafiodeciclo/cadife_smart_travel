@@ -75,7 +75,7 @@ class _LeadsPageState extends ConsumerState<LeadsPage> {
         ref.watch(_searchQueryProvider).isNotEmpty;
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: context.cadife.background,
       appBar: CadifeAppBar(
         title: 'Leads',
         actions: [
@@ -142,57 +142,31 @@ class _SearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+    final isDark = context.isDark;
     return Container(
-      color: Theme.of(context).scaffoldBackgroundColor,
+      color: context.cadife.background,
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
-      child: TextField(
+      child: ShadInput(
         controller: controller,
-        style: TextStyle(
-          color: Theme.of(context).textTheme.bodyLarge?.color,
-          fontSize: 14,
-        ),
-        decoration: InputDecoration(
-          hintText: 'Buscar por nome, telefone ou destino...',
-          hintStyle: TextStyle(
-            color: isDark ? Colors.white60 : context.cadife.textSecondary, 
-            fontSize: 14
-          ),
-          prefixIcon: Icon(
+        placeholder: const Text('Buscar por nome, telefone ou destino...'),
+        leading: Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: Icon(
             Icons.search, 
             color: isDark ? Colors.white60 : context.cadife.textSecondary, 
             size: 20
           ),
-          suffixIcon: controller.text.isNotEmpty
-              ? IconButton(
-                  icon: Icon(
-                    Icons.close, 
-                    color: isDark ? Colors.white60 : context.cadife.textSecondary, 
-                    size: 18
-                  ),
-                  onPressed: onClear,
-                )
-              : null,
-          fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade100,
-          filled: true,
-          isDense: true,
-          contentPadding: const EdgeInsets.symmetric(vertical: 11),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
-              color: isDark ? Colors.white10 : context.cadife.cardBorder,
-            ),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
-          ),
         ),
+        trailing: controller.text.isNotEmpty
+            ? IconButton(
+                icon: Icon(
+                  Icons.close, 
+                  color: isDark ? Colors.white60 : context.cadife.textSecondary, 
+                  size: 18
+                ),
+                onPressed: onClear,
+              )
+            : null,
         onChanged: onChanged,
       ),
     );
@@ -285,7 +259,7 @@ class _FilterStrip extends ConsumerWidget {
     ];
 
     return Container(
-      color: Theme.of(context).scaffoldBackgroundColor,
+      color: context.cadife.background,
       child: ShaderMask(
         shaderCallback: (bounds) => const LinearGradient(
           begin: Alignment.centerLeft,
@@ -369,39 +343,49 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: isActive ? activeColor.withValues(alpha: 0.12) : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isActive ? activeColor : context.cadife.cardBorder,
-            width: isActive ? 1.5 : 1,
+    if (isActive) {
+      return ShadButton(
+        onPressed: onTap,
+        size: ShadButtonSize.sm,
+        backgroundColor: activeColor.withValues(alpha: 0.12),
+        foregroundColor: activeColor,
+        decoration: ShadDecoration(
+          border: ShadBorder.all(
+            color: activeColor,
+            width: 1.5,
           ),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icon != null) ...[
-              Icon(
-                icon,
-                size: 13,
-                color: isActive ? activeColor : context.cadife.textSecondary,
-              ),
-              const SizedBox(width: 4),
-            ],
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                color: isActive ? activeColor : context.cadife.textSecondary,
-              ),
-            ),
-          ],
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        leading: icon != null ? Icon(icon, size: 13) : null,
+        child: Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      );
+    }
+    
+    return ShadButton.outline(
+      onPressed: onTap,
+      size: ShadButtonSize.sm,
+      backgroundColor: Colors.transparent,
+      foregroundColor: context.cadife.textSecondary,
+      decoration: ShadDecoration(
+        border: ShadBorder.all(
+          color: context.cadife.cardBorder,
+          width: 1,
+          radius: BorderRadius.circular(20),
+        ),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      leading: icon != null ? Icon(icon, size: 13) : null,
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
         ),
       ),
     );
@@ -417,191 +401,183 @@ class _LeadCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
     final statusColor = AppColors.statusColor(lead.status.name);
     final scoreColor = AppColors.scoreColor(lead.score.name);
     final borderColor = isDark ? Colors.white10 : context.cadife.cardBorder;
     final dividerColor = isDark ? Colors.white10 : context.cadife.cardBorder;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: borderColor),
-        boxShadow: [
-          if (!isDark)
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: ShadCard(
+        padding: EdgeInsets.zero,
+        backgroundColor: context.cadife.cardBackground,
+        radius: BorderRadius.circular(12),
+        border: ShadBorder.all(color: borderColor, width: 1),
+        child: Material(
+          color: Colors.transparent,
           borderRadius: BorderRadius.circular(12),
-          onTap: () => context.push('/agency/leads/${lead.id}'),
-          child: Stack(
-            children: [
-              // Borda lateral colorida por status
-              Positioned(
-                left: 0,
-                top: 0,
-                bottom: 0,
-                child: Container(
-                  width: 4,
-                  decoration: BoxDecoration(
-                    color: statusColor,
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(12),
-                      bottomLeft: Radius.circular(12),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () => context.push('/agency/leads/${lead.id}'),
+            child: Stack(
+              children: [
+                // Borda lateral colorida por status
+                Positioned(
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  child: Container(
+                    width: 4,
+                    decoration: BoxDecoration(
+                      color: statusColor,
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(12),
+                        bottomLeft: Radius.circular(12),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            lead.name,
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: Theme.of(context).textTheme.bodyLarge?.color,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        _StatusBadge(status: lead.status, color: statusColor),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        Icon(Icons.phone_outlined,
-                            size: 13, color: context.cadife.textSecondary),
-                        const SizedBox(width: 5),
-                        Text(
-                          lead.phone,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: context.cadife.textSecondary,
-                          ),
-                        ),
-                        if (lead.perfil != null) ...[
-                          const SizedBox(width: 10),
-                          Icon(Icons.people_outline,
-                              size: 13, color: context.cadife.textSecondary),
-                          const SizedBox(width: 4),
-                          Text(
-                            lead.perfil!,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: context.cadife.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Divider(height: 1, color: dividerColor),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Icon(Icons.flight_takeoff,
-                            size: 13, color: context.cadife.textSecondary),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            lead.destino ?? 'Destino a definir',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: context.cadife.textSecondary,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (lead.dataIda != null) ...[
-                          const SizedBox(width: 8),
-                          Icon(Icons.calendar_today_outlined,
-                              size: 12, color: context.cadife.textSecondary),
-                          const SizedBox(width: 3),
-                          Text(
-                            lead.dataIda!.toDateString(),
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: context.cadife.textSecondary,
-                            ),
-                          ),
-                        ],
-                        const SizedBox(width: 10),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              _scoreIcon(lead.score),
-                              size: 13,
-                              color: scoreColor,
-                            ),
-                            const SizedBox(width: 3),
-                            Text(
-                              lead.score.name.capitalized,
-                              style: TextStyle(
-                                fontSize: 11,
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              lead.name,
+                              style: const TextStyle(
+                                fontSize: 15,
                                 fontWeight: FontWeight.w700,
-                                color: scoreColor,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          _StatusBadge(status: lead.status, color: statusColor),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Icon(Icons.phone_outlined,
+                              size: 13, color: context.cadife.textSecondary),
+                          const SizedBox(width: 5),
+                          Text(
+                            lead.phone,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: context.cadife.textSecondary,
+                            ),
+                          ),
+                          if (lead.perfil != null) ...[
+                            const SizedBox(width: 10),
+                            Icon(Icons.people_outline,
+                                size: 13, color: context.cadife.textSecondary),
+                            const SizedBox(width: 4),
+                            Text(
+                              lead.perfil!,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: context.cadife.textSecondary,
                               ),
                             ),
                           ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(4),
-                            child: LinearProgressIndicator(
-                              value: lead.completudePct / 100,
-                              minHeight: 4,
-                              backgroundColor: context.cadife.cardBorder,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                lead.completudePct >= 80
-                                    ? AppColors.success
-                                    : lead.completudePct >= 50
-                                        ? AppColors.warning
-                                        : context.cadife.textSecondary,
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Divider(height: 1, color: dividerColor),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Icon(Icons.flight_takeoff,
+                              size: 13, color: context.cadife.textSecondary),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              lead.destino ?? 'Destino a definir',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: context.cadife.textSecondary,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (lead.dataIda != null) ...[
+                            const SizedBox(width: 8),
+                            Icon(Icons.calendar_today_outlined,
+                                size: 12, color: context.cadife.textSecondary),
+                            const SizedBox(width: 3),
+                            Text(
+                              lead.dataIda!.toDateString(),
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: context.cadife.textSecondary,
+                              ),
+                            ),
+                          ],
+                          const SizedBox(width: 10),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                _scoreIcon(lead.score),
+                                size: 13,
+                                color: scoreColor,
+                              ),
+                              const SizedBox(width: 3),
+                              Text(
+                                lead.score.name.capitalized,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: scoreColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: LinearProgressIndicator(
+                                value: lead.completudePct / 100,
+                                minHeight: 4,
+                                backgroundColor: context.cadife.cardBorder,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  lead.completudePct >= 80
+                                      ? AppColors.success
+                                      : lead.completudePct >= 50
+                                          ? AppColors.warning
+                                          : context.cadife.textSecondary,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '${lead.completudePct}%',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: context.cadife.textSecondary,
-                            fontWeight: FontWeight.w600,
+                          const SizedBox(width: 8),
+                          Text(
+                            '${lead.completudePct}%',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: context.cadife.textSecondary,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -623,22 +599,14 @@ class _StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
+    return ShadBadge(
+      backgroundColor: color.withValues(alpha: 0.10),
+      foregroundColor: color,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withValues(alpha: 0.25)),
+        side: BorderSide(color: color.withValues(alpha: 0.25)),
       ),
-      child: Text(
-        status.name.sentenceCase,
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
-          color: color,
-          letterSpacing: 0.2,
-        ),
-      ),
+      child: Text(status.name.sentenceCase),
     );
   }
 }
@@ -663,10 +631,10 @@ class _ErrorView extends StatelessWidget {
             style: TextStyle(color: context.cadife.textSecondary, fontSize: 14),
           ),
           const SizedBox(height: 12),
-          CadifeButton(
+          ShadButton(
             onPressed: onRetry,
-            text: 'Tentar novamente',
-            icon: Icons.refresh,
+            leading: const Icon(Icons.refresh, size: 18),
+            child: const Text('Tentar novamente'),
           ),
         ],
       ),

@@ -34,6 +34,7 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> with SingleTick
     final detailAsync = ref.watch(leadDetailProvider(widget.leadId));
 
     return Scaffold(
+      backgroundColor: context.cadife.background,
       appBar: CadifeAppBar(
         title: 'Detalhes do Lead',
         actions: [
@@ -94,19 +95,10 @@ class _InfoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final statusColor = AppColors.statusColor(lead.status.name);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.cadife.cardBorder.withValues(alpha: 0.5)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+    return ShadCard(
+      padding: EdgeInsets.zero,
+      radius: BorderRadius.circular(12),
+      border: ShadBorder.all(color: context.cadife.cardBorder.withValues(alpha: 0.5), width: 1),
       child: Row(
         children: [
           Container(
@@ -153,10 +145,10 @@ class _InfoCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  _Chip(
-                    label: lead.status.name,
-                    color: statusColor,
-                    icon: Icons.circle,
+                  ShadBadge(
+                    backgroundColor: statusColor.withValues(alpha: 0.15),
+                    foregroundColor: statusColor,
+                    child: Text(lead.status.name.replaceAll('_', ' ')),
                   ),
                 ],
               ),
@@ -179,21 +171,20 @@ class _ActionButtons extends ConsumerWidget {
         Row(
           children: [
             Expanded(
-              child: CadifeButton(
-                text: 'Aprovar',
-                icon: Icons.check_circle_outline,
+              child: ShadButton(
                 onPressed: () {},
+                leading: const Icon(Icons.check_circle_outline, size: 18),
+                child: const Text('Aprovar'),
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: CadifeButton(
-                text: 'Criar Proposta',
-                icon: Icons.description_outlined,
-                isOutline: true,
+              child: ShadButton.outline(
                 onPressed: () {
                   CreateProposalModal.show(context, lead.id);
                 },
+                leading: const Icon(Icons.description_outlined, size: 18),
+                child: const Text('Criar Proposta'),
               ),
             ),
           ],
@@ -202,30 +193,28 @@ class _ActionButtons extends ConsumerWidget {
         Row(
           children: [
             Expanded(
-              child: CadifeButton(
-                text: 'Agendar',
-                icon: Icons.calendar_today_outlined,
-                isOutline: true,
+              child: ShadButton.outline(
                 onPressed: () async {
                   final result = await ScheduleAppointmentModal.show(context, lead);
                   if (result == true) {
                     ref.read(leadDetailProvider(lead.id).notifier).updateStatus(LeadStatus.agendado);
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Agendamento realizado com sucesso!')),
+                      ShadToaster.of(context).show(
+                        const ShadToast(description: Text('Agendamento realizado com sucesso!')),
                       );
                     }
                   }
                 },
+                leading: const Icon(Icons.calendar_today_outlined, size: 18),
+                child: const Text('Agendar'),
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: CadifeButton(
-                text: 'WhatsApp',
-                icon: Icons.chat_bubble_outline,
-                isOutline: true,
+              child: ShadButton.outline(
                 onPressed: () {},
+                leading: const Icon(Icons.chat_bubble_outline, size: 18),
+                child: const Text('WhatsApp'),
               ),
             ),
           ],
@@ -270,28 +259,16 @@ class _BriefingTab extends StatelessWidget {
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: context.cadife.textSecondary),
         ),
         const SizedBox(height: 12),
-        TextField(
+        const ShadInput(
           maxLines: 4,
-          decoration: InputDecoration(
-            hintText: 'Adicione notas sobre o atendimento...',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: context.cadife.cardBorder),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: context.cadife.cardBorder),
-            ),
-            filled: true,
-            fillColor: Theme.of(context).cardColor,
-          ),
+          placeholder: Text('Adicione notas sobre o atendimento...'),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
         Align(
           alignment: Alignment.centerRight,
-          child: TextButton(
+          child: ShadButton.ghost(
             onPressed: () {},
-            child: const Text('Salvar Nota', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+            child: const Text('Salvar Nota'),
           ),
         ),
       ],
@@ -308,13 +285,11 @@ class _GridItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return ShadCard(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: context.cadife.background,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.cadife.cardBorder.withValues(alpha: 0.3)),
-      ),
+      radius: BorderRadius.circular(12),
+      border: ShadBorder.all(color: context.cadife.cardBorder.withValues(alpha: 0.3), width: 1),
+      backgroundColor: context.cadife.background,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
@@ -359,13 +334,10 @@ class _ChatTimelineTab extends StatelessWidget {
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: context.cadife.textSecondary),
         ),
         const SizedBox(height: 16),
-        Container(
+        ShadCard(
           padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: context.cadife.cardBorder.withValues(alpha: 0.5)),
-          ),
+          radius: BorderRadius.circular(12),
+          border: ShadBorder.all(color: context.cadife.cardBorder.withValues(alpha: 0.5), width: 1),
           child: const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -435,42 +407,6 @@ class _TimelineItem extends StatelessWidget {
                   ),
                 ],
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Chip extends StatelessWidget {
-  final String label;
-  final Color color;
-  final IconData? icon;
-
-  const _Chip({required this.label, required this.color, this.icon});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (icon != null) ...[
-            Icon(icon, size: 8, color: color),
-            const SizedBox(width: 4),
-          ],
-          Text(
-            label.replaceAll('_', ' '),
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.w600,
-              fontSize: 12,
             ),
           ),
         ],

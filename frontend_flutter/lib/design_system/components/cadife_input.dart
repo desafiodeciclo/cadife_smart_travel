@@ -1,7 +1,6 @@
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class CadifeInput extends StatefulWidget {
   final String label;

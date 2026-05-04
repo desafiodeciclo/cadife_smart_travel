@@ -4,8 +4,6 @@ import 'package:cadife_smart_travel/features/client/documentos/presentation/widg
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
-
 class DocumentosPage extends ConsumerStatefulWidget {
   const DocumentosPage({super.key});
 
@@ -27,7 +25,7 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            const SizedBox(height: 100),
+            const SizedBox(height: 72),
             // Principais Documentos Section
             Padding(
               padding: const EdgeInsets.all(16),
@@ -63,32 +61,37 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
                         final isSelected = _selectedCategory == category;
                         return Padding(
                           padding: const EdgeInsets.only(right: 8),
-                          child: FilterChip(
-                            label: Text(category),
-                            selected: isSelected,
-                            onSelected: (selected) {
-                              setState(() => _selectedCategory = category);
-                            },
-                            selectedColor: isDark ? Colors.white : Colors.black,
-                            checkmarkColor: isDark ? Colors.black : Colors.white,
-                            labelStyle: TextStyle(
-                              color: isSelected 
-                                  ? (isDark ? Colors.black : Colors.white) 
-                                  : (isDark ? Colors.white70 : Colors.black87),
-                              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
-                              fontSize: 13,
-                            ),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              side: BorderSide(
-                                color: isSelected 
-                                    ? (isDark ? Colors.white : Colors.black)
-                                    : (isDark ? Colors.white24 : Colors.black12),
-                              ),
-                            ),
-                            showCheckmark: false,
-                          ),
+                          child: isSelected
+                              ? ShadButton(
+                                  onPressed: () {
+                                    setState(() => _selectedCategory = category);
+                                  },
+                                  size: ShadButtonSize.sm,
+                                  backgroundColor: isDark ? Colors.white : Colors.black,
+                                  foregroundColor: isDark ? Colors.black : Colors.white,
+                                  decoration: ShadDecoration(
+                                    border: ShadBorder.all(
+                                      color: isDark ? Colors.white : Colors.black,
+                                      radius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  child: Text(category),
+                                )
+                              : ShadButton.outline(
+                                  onPressed: () {
+                                    setState(() => _selectedCategory = category);
+                                  },
+                                  size: ShadButtonSize.sm,
+                                  backgroundColor: Colors.transparent,
+                                  foregroundColor: isDark ? Colors.white70 : Colors.black87,
+                                  decoration: ShadDecoration(
+                                    border: ShadBorder.all(
+                                      color: isDark ? Colors.white24 : Colors.black12,
+                                      radius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  child: Text(category),
+                                ),
                         );
                       }).toList(),
                     ),

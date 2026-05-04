@@ -2,7 +2,6 @@ import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/client/documentos/domain/entities/documento.dart';
 import 'package:cadife_smart_travel/features/client/documentos/presentation/widgets/document_icon.dart';
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class CadifeDocumentCard extends StatelessWidget {
   const CadifeDocumentCard({
@@ -24,28 +23,19 @@ class CadifeDocumentCard extends StatelessWidget {
     final secondaryColor = isDark ? Colors.white.withValues(alpha: 0.7) : Colors.black.withValues(alpha: 0.6);
     final surfaceColor = isDark ? context.cadife.cardBackground : Colors.white;
 
-    return InkWell(
-      onTap: onView,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        decoration: BoxDecoration(
-          color: surfaceColor,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: ShadCard(
+        padding: const EdgeInsets.all(16),
+        backgroundColor: surfaceColor,
+        radius: BorderRadius.circular(16),
+        border: ShadBorder.all(
+          color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
+          width: 1,
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
+        child: InkWell(
+          onTap: onView,
+          borderRadius: BorderRadius.circular(16),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -146,61 +136,52 @@ class _ActionButton extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final color = isDark ? Colors.white : Colors.black;
 
-    if (isPrimary) {
-      return SizedBox(
-        height: 32,
-        width: 80,
-        child: TextButton(
-          onPressed: onPressed,
-          style: TextButton.styleFrom(
-            backgroundColor: color,
-            foregroundColor: isDark ? Colors.black : Colors.white,
-            padding: EdgeInsets.zero,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-          child: Text(
-            label,
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        ),
-      );
-    }
-
     return SizedBox(
       height: 32,
       width: 80,
-      child: OutlinedButton(
-        onPressed: onPressed,
-        style: OutlinedButton.styleFrom(
-          foregroundColor: color,
-          side: BorderSide(color: color.withValues(alpha: 0.3), width: 1),
-          padding: EdgeInsets.zero,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (icon != null) ...[
-              Icon(icon, size: 12),
-              const SizedBox(width: 4),
-            ],
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
+      child: isPrimary
+          ? ShadButton(
+              onPressed: onPressed,
+              size: ShadButtonSize.sm,
+              backgroundColor: color,
+              foregroundColor: isDark ? Colors.black : Colors.white,
+              decoration: ShadDecoration(
+                border: ShadBorder.all(
+                  radius: BorderRadius.circular(8),
+                ),
+              ),
+              padding: EdgeInsets.zero,
+              leading: icon != null ? Icon(icon, size: 12) : null,
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            )
+          : ShadButton.outline(
+              onPressed: onPressed,
+              size: ShadButtonSize.sm,
+              backgroundColor: Colors.transparent,
+              foregroundColor: color,
+              decoration: ShadDecoration(
+                border: ShadBorder.all(
+                  color: color.withValues(alpha: 0.3),
+                  width: 1,
+                  radius: BorderRadius.circular(8),
+                ),
+              ),
+              padding: EdgeInsets.zero,
+              leading: icon != null ? Icon(icon, size: 12) : null,
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ),
-          ],
-        ),
-      ),
     );
   }
 }

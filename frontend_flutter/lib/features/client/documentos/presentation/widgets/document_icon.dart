@@ -39,18 +39,57 @@ class DocumentIcon extends StatelessWidget {
         ? Colors.white 
         : Colors.black);
 
-    return Container(
-      width: size * 2,
-      height: size * 2,
-      decoration: BoxDecoration(
-        color: effectiveBgColor,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Icon(
-        _getLucideIcon(type),
-        color: effectiveIconColor,
-        size: size,
-      ),
+    final typeLabel = switch (type) {
+      DocumentType.pdf => 'PDF',
+      DocumentType.image => 'IMG',
+      DocumentType.video => 'VID',
+      DocumentType.audio => 'AUD',
+      DocumentType.other => 'DOC',
+    };
+
+    return Stack(
+      children: [
+        Container(
+          width: size * 2,
+          height: size * 2,
+          decoration: BoxDecoration(
+            color: effectiveBgColor,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(
+            _getLucideIcon(type),
+            color: effectiveIconColor,
+            size: size,
+          ),
+        ),
+        Positioned(
+          bottom: 2,
+          right: 2,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+            decoration: BoxDecoration(
+              color: isDark ? Colors.white : Colors.black,
+              borderRadius: BorderRadius.circular(4),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.2),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Text(
+              typeLabel,
+              style: TextStyle(
+                fontSize: 7,
+                fontWeight: FontWeight.w900,
+                color: isDark ? Colors.black : Colors.white,
+                letterSpacing: 0.2,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

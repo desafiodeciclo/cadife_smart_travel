@@ -3,7 +3,6 @@ import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-
 class ProfileHeader extends StatelessWidget {
   const ProfileHeader({
     super.key,
@@ -22,28 +21,18 @@ class ProfileHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cadife = context.cadife;
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = context.isDark;
     final initials = _initials(user?.name ?? '?');
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      child: Container(
-        width: double.infinity,
+      child: ShadCard(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-        decoration: BoxDecoration(
-          color: isDark ? context.cadife.cardBackground : Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: isDark ? Colors.white.withValues(alpha: 0.05) : context.cadife.cardBorder,
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
+        backgroundColor: isDark ? context.cadife.cardBackground : Colors.white,
+        radius: BorderRadius.circular(24),
+        border: ShadBorder.all(
+          color: isDark ? Colors.white.withValues(alpha: 0.05) : context.cadife.cardBorder,
+          width: 1,
         ),
         child: Column(
           children: [
@@ -59,23 +48,18 @@ class ProfileHeader extends StatelessWidget {
                       width: 2,
                     ),
                   ),
-                  child: CircleAvatar(
-                    radius: 54,
-                    backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                    backgroundImage: user?.avatarUrl != null
-                        ? NetworkImage(user!.avatarUrl!)
-                        : null,
-                    child: user?.avatarUrl == null
-                        ? Text(
-                            initials,
-                            style: GoogleFonts.inter(
-                              fontSize: 36,
-                              fontWeight: FontWeight.w800,
-                              color: isDark ? Colors.white : AppColors.primary,
-                              letterSpacing: -1,
-                            ),
-                          )
-                        : null,
+                  child: ShadAvatar(
+                    user?.avatarUrl != null ? user!.avatarUrl! : '',
+                    size: const Size.square(108),
+                    placeholder: Text(
+                      initials,
+                      style: GoogleFonts.inter(
+                        fontSize: 36,
+                        fontWeight: FontWeight.w800,
+                        color: isDark ? Colors.white : AppColors.primary,
+                        letterSpacing: -1,
+                      ),
+                    ),
                   ),
                 ),
                 GestureDetector(
@@ -106,29 +90,33 @@ class ProfileHeader extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             if (isEditing) ...[
-              TextField(
+              ShadInput(
                 controller: nameController,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w800,
                   color: cadife.textPrimary,
                 ),
-                decoration: InputDecoration(
-                  hintText: 'Seu nome',
-                  fillColor: Colors.transparent,
-                  hintStyle: theme.textTheme.headlineSmall?.copyWith(
+                placeholder: Text(
+                  'Seu nome',
+                  style: theme.textTheme.headlineSmall?.copyWith(
                     color: cadife.textSecondary.withValues(alpha: 0.4),
                   ),
-                  border: UnderlineInputBorder(
-                    borderSide: BorderSide(color: AppColors.primary.withValues(alpha: 0.3)),
+                ),
+                padding: EdgeInsets.zero,
+                decoration: ShadDecoration(
+                  border: ShadBorder(
+                    bottom: ShadBorderSide(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      width: 1,
+                    ),
                   ),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: AppColors.primary.withValues(alpha: 0.1)),
+                  focusedBorder: const ShadBorder(
+                    bottom: ShadBorderSide(
+                      color: AppColors.primary,
+                      width: 2,
+                    ),
                   ),
-                  focusedBorder: const UnderlineInputBorder(
-                    borderSide: BorderSide(color: AppColors.primary, width: 2),
-                  ),
-                  contentPadding: EdgeInsets.zero,
                 ),
               ),
             ] else ...[
@@ -176,20 +164,17 @@ class ProfileSectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = context.isDark;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      child: Container(
-        width: double.infinity,
+      child: ShadCard(
         padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: isDark ? context.cadife.cardBackground : Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: isDark ? Colors.white.withValues(alpha: 0.05) : context.cadife.cardBorder,
-            width: 1,
-          ),
+        backgroundColor: isDark ? context.cadife.cardBackground : Colors.white,
+        radius: BorderRadius.circular(24),
+        border: ShadBorder.all(
+          color: isDark ? Colors.white.withValues(alpha: 0.05) : context.cadife.cardBorder,
+          width: 1,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -242,7 +227,7 @@ class ProfileInfoRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cadife = context.cadife;
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = context.isDark;
 
     return Row(
       children: [
@@ -323,7 +308,7 @@ class ProfileChipGroup extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cadife = context.cadife;
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = context.isDark;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -405,7 +390,7 @@ class ProfilePassaporteCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cadife = context.cadife;
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = context.isDark;
 
     final bgColor = _hasPassport
         ? (isDark ? AppColors.passaporteBgDark.withValues(alpha: 0.5) : AppColors.passaporteBgLight)
@@ -480,14 +465,9 @@ class ProfilePassaporteCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                Switch(
+                ShadSwitch(
                   value: _hasPassport,
                   onChanged: onToggle != null ? (_) => onToggle!() : null,
-                  activeThumbColor: Colors.white,
-                  activeTrackColor: AppColors.success,
-                  inactiveThumbColor: Colors.white,
-                  inactiveTrackColor: isDark ? Colors.white10 : context.cadife.cardBorder,
-                  trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
                 ),
               ],
             ),
@@ -549,7 +529,7 @@ class _ProfileThemeOption extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cadife = context.cadife;
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = context.isDark;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -601,7 +581,3 @@ class _ProfileThemeOption extends StatelessWidget {
     );
   }
 }
-
-
-
-

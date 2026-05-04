@@ -3,7 +3,7 @@ import 'package:cadife_smart_travel/features/agency/agenda/presentation/provider
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
+
 
 class ScheduleAppointmentModal extends ConsumerStatefulWidget {
   final Lead lead;
@@ -118,19 +118,18 @@ class _ScheduleAppointmentModalState
             const SizedBox(height: 24),
 
             // Lead Info Card
-            Container(
+            ShadCard(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
-              ),
+              backgroundColor: AppColors.primary.withValues(alpha: 0.05),
+              radius: BorderRadius.circular(12),
+              border: ShadBorder.all(color: AppColors.primary.withValues(alpha: 0.2)),
               child: Row(
                 children: [
-                  CircleAvatar(
+                  ShadAvatar(
+                    '',
+                    placeholder: const Icon(Icons.person, color: AppColors.primary),
                     backgroundColor: AppColors.primary.withValues(alpha: 0.2),
-                    radius: 24,
-                    child: const Icon(Icons.person, color: AppColors.primary),
+                    size: const Size(48, 48),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -230,17 +229,16 @@ class _ScheduleAppointmentModalState
 
                   return GestureDetector(
                     onTap: isPast ? null : () => notifier.selectDate(date),
-                    child: Container(
+                    child: ShadCard(
                       width: 56,
-                      decoration: BoxDecoration(
-                        color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : Colors.transparent,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: isSelected 
-                              ? AppColors.primary 
-                              : (isPast ? context.cadife.cardBorder.withValues(alpha: 0.5) : context.cadife.cardBorder),
-                          width: isSelected ? 2 : 1,
-                        ),
+                      padding: EdgeInsets.zero,
+                      backgroundColor: isSelected ? AppColors.primary.withValues(alpha: 0.1) : Colors.transparent,
+                      radius: BorderRadius.circular(12),
+                      border: ShadBorder.all(
+                        color: isSelected 
+                            ? AppColors.primary 
+                            : (isPast ? context.cadife.cardBorder.withValues(alpha: 0.5) : context.cadife.cardBorder),
+                        width: isSelected ? 2 : 1,
                       ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -325,36 +323,27 @@ class _ScheduleAppointmentModalState
                   
                   return GestureDetector(
                     onTap: slot.available ? () => notifier.selectSlot(slot) : null,
-                    child: Container(
-                      decoration: BoxDecoration(
+                    child: ShadCard(
+                      padding: EdgeInsets.zero,
+                      backgroundColor: isSelected 
+                          ? AppColors.primary 
+                          : (slot.available ? Colors.transparent : context.cadife.cardBorder.withValues(alpha: 0.3)),
+                      radius: BorderRadius.circular(8),
+                      border: ShadBorder.all(
                         color: isSelected 
                             ? AppColors.primary 
-                            : (slot.available ? Colors.transparent : context.cadife.cardBorder.withValues(alpha: 0.3)),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: isSelected 
-                              ? AppColors.primary 
-                              : (slot.available ? context.cadife.cardBorder : context.cadife.cardBorder.withValues(alpha: 0.3)),
-                        ),
-                        boxShadow: isSelected
-                            ? [
-                                BoxShadow(
-                                  color: AppColors.primary.withValues(alpha: 0.3),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 4),
-                                )
-                              ]
-                            : null,
+                            : (slot.available ? context.cadife.cardBorder : context.cadife.cardBorder.withValues(alpha: 0.3)),
                       ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        _timeFormat.format(slot.startTime),
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                          color: isSelected 
-                              ? Colors.white 
-                              : (slot.available ? context.cadife.textPrimary : context.cadife.textSecondary.withValues(alpha: 0.5)),
+                      child: Center(
+                        child: Text(
+                          _timeFormat.format(slot.startTime),
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                            color: isSelected 
+                                ? Colors.white 
+                                : (slot.available ? context.cadife.textPrimary : context.cadife.textSecondary.withValues(alpha: 0.5)),
+                          ),
                         ),
                       ),
                     ),
@@ -375,7 +364,7 @@ class _ScheduleAppointmentModalState
             const SizedBox(height: 32),
 
             // Actions
-            CadifeButton(
+            ShadButton(
               onPressed: state.selectedSlot != null && !state.isLoading
                   ? () async {
                       final success = await notifier.confirmAppointment(widget.lead.id);
@@ -384,15 +373,19 @@ class _ScheduleAppointmentModalState
                       }
                     }
                   : null,
-              isLoading: state.isLoading && state.selectedSlot != null,
-              text: 'CONFIRM SCHEDULE',
-              icon: Icons.check_circle_outline,
+              leading: state.isLoading && state.selectedSlot != null
+                  ? const SizedBox(
+                      height: 18,
+                      width: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Icon(Icons.check_circle_outline, size: 18),
+              child: const Text('CONFIRM SCHEDULE'),
             ),
             const SizedBox(height: 8),
-            CadifeButton(
+            ShadButton.outline(
               onPressed: () => Navigator.of(context).pop(false),
-              text: 'Cancel',
-              isOutline: true,
+              child: const Text('Cancel'),
             ),
           ],
         ),

@@ -7,7 +7,6 @@ import 'package:cadife_smart_travel/features/client/profile/presentation/widgets
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 /// Tela de perfil do cliente.
 ///
@@ -85,15 +84,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           _hasSynced = false;
           _isSaving = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Perfil atualizado com sucesso')),
+        ShadToaster.of(context).show(
+          const ShadToast(
+            description: Text('Perfil atualizado com sucesso'),
+          ),
         );
       }
     } catch (_) {
       if (mounted) {
         setState(() => _isSaving = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erro ao salvar. Tente novamente.')),
+        ShadToaster.of(context).show(
+          const ShadToast.destructive(
+            description: Text('Erro ao salvar. Tente novamente.'),
+          ),
         );
       }
     }
@@ -129,7 +132,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   ) {
     return CustomScrollView(
       slivers: [
-        const SliverToBoxAdapter(child: SizedBox(height: 100)),
+        const SliverToBoxAdapter(child: SizedBox(height: 72)),
         // ── Header com avatar e nome ──────────────────────────────
         SliverToBoxAdapter(
           child: ProfileHeader(
@@ -291,22 +294,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Future<void> _confirmLogout(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showShadDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => ShadDialog(
         title: const Text('Sair da conta'),
-        content: const Text('Tem certeza que deseja sair?'),
+        description: const Text('Tem certeza que deseja sair?'),
         actions: [
-          TextButton(
+          ShadButton.outline(
             onPressed: () => Navigator.of(ctx).pop(false),
             child: const Text('Cancelar'),
           ),
-          TextButton(
+          ShadButton.destructive(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text(
-              'Sair',
-              style: TextStyle(color: AppColors.error),
-            ),
+            child: const Text('Sair'),
           ),
         ],
       ),
@@ -318,41 +318,38 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Future<void> _confirmDeleteAccount(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showShadDialog<bool>(
       context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        icon: const Icon(Icons.warning_amber_rounded,
-            color: AppColors.error, size: 40),
-        title: const Text('Apagar conta'),
-        content: const Column(
+      builder: (ctx) => ShadDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: AppColors.error, size: 24),
+            SizedBox(width: 8),
+            Text('Apagar conta'),
+          ],
+        ),
+        description: const Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'Você está prestes a apagar permanentemente sua conta e todos os dados associados.',
-              textAlign: TextAlign.center,
             ),
             SizedBox(height: 12),
             Text(
               'Esta ação não pode ser desfeita.',
-              style: TextStyle(
-                  fontWeight: FontWeight.w600, color: AppColors.error),
-              textAlign: TextAlign.center,
+              style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.error),
             ),
           ],
         ),
         actions: [
-          TextButton(
+          ShadButton.outline(
             onPressed: () => Navigator.of(ctx).pop(false),
             child: const Text('Cancelar'),
           ),
-          TextButton(
+          ShadButton.destructive(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text(
-              'Apagar minha conta',
-              style: TextStyle(
-                  color: AppColors.error, fontWeight: FontWeight.w700),
-            ),
+            child: const Text('Apagar minha conta'),
           ),
         ],
       ),
@@ -360,8 +357,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     // Backend integration pending: integrar com DELETE /users/me quando o endpoint existir.
     if (confirmed == true && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Funcionalidade em breve')),
+      ShadToaster.of(context).show(
+        const ShadToast(
+          description: Text('Funcionalidade em breve'),
+        ),
       );
     }
   }

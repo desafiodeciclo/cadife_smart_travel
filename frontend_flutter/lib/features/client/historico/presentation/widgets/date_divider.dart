@@ -1,6 +1,5 @@
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 class DateDivider extends StatelessWidget {
   const DateDivider({super.key, required this.date});
