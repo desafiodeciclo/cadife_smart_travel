@@ -1,0 +1,32 @@
+{
+  "task_id": "MVP-F3-AG-001",
+  "name": "UI — Calendário de Agenda do Consultor (Visão Mensal + Diária + Gestão de Slots)",
+  "branch": "feat/ui-manager-agenda",
+  "status": "done",
+  "description": "Implementar a tela de Agenda do consultor com: (1) Visão Mensal com marcadores de densidade de reuniões; (2) Visão Diária (Timeline 09h–16h) com cards de reuniões clicáveis para abrir perfil do lead; (3) Gestão de Slots com bloqueio manual de horários para pausas ou reuniões internas.",
+  "dependencies": [],
+  "responsible": "Jakeline / Frontend",
+  "estimated_hours": "6h",
+  "steps": [
+    {
+      "id": "step1",
+      "description": "Atualizar CreateAgendaRequest no agenda_model.dart: leadId opcional, campo status com default 'agendado'. Adicionar leadName opcional em AgendaModel.",
+      "status": "done"
+    },
+    {
+      "id": "step2",
+      "description": "Atualizar agenda_provider.dart: adicionar selectedAgendaDateProvider (StateProvider<DateTime>), agendaViewModeProvider (StateProvider<int>), métodos blockSlot e unblockSlot no AgendaNotifier.",
+      "status": "done"
+    },
+    {
+      "id": "step3",
+      "description": "Reescrever agenda_screen.dart com: toggle Mês/Dia, visão mensal (GridView 7 colunas, células com dia + dot de densidade), visão diária (timeline 09h–16h com MeetingCard, BlockedSlotCard, EmptySlot), modal de opções de slot e confirmação de desbloqueio.",
+      "status": "done"
+    },
+    {
+      "id": "step4",
+      "description": "Validação manual: navegar meses, clicar em dia (switch para daily), navegar dias, bloquear/desbloquear slot, clicar em reunião para abrir lead via GoRouter.",
+      "status": "done"
+    }
+  ]
+}

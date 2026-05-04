@@ -60,6 +60,10 @@ async def execute(payload: dict, db: AsyncSession) -> None:
         await lead_service.update_lead_status(db, lead, LeadStatus.em_atendimento)
         logger.info("lead_status_updated", lead_id=str(lead.id), new_status=LeadStatus.em_atendimento)
 
+    # ── Step 2.5: Ensure conversation memory is loaded (restart-resilient) ─
+    interacoes_list = await lead_service.get_recent_interacoes(db, lead.id, limit=20)
+    ai_service.preload_memory_from_db(phone, interacoes_list)
+
     # ── Step 3: Generate AI reply or media fallback ────────────────────────
     reply: str
     tipo: TipoMensagem

@@ -59,5 +59,8 @@ class InteracaoModel(Base):
     timestamp: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
+    enviado_em: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    status_envio: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
+    erro_envio: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     lead: Mapped["LeadModel"] = relationship("LeadModel", back_populates="interacoes")

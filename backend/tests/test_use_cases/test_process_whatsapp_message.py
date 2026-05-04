@@ -9,6 +9,8 @@ Coverage targets:
   - Media message: fallback reply used, send_message called, result persisted
   - Empty payload (no message extracted): early return, no DB writes
   - Send failure: status_envio = 'failed', worker does not raise
+  - Memory preload: conversation history hydrated before AI reply
+  - Curation offer: triggered when lead freshly qualified (≥60%) without appointment
 """
 import uuid
 from datetime import datetime, timezone
@@ -112,6 +114,7 @@ async def test_text_message_full_flow():
         )
         mock_ls.save_interacao = AsyncMock(return_value=interacao)
         mock_ls.update_interacao_send_result = AsyncMock()
+        mock_ls.get_recent_interacoes = AsyncMock(return_value=[])
 
         mock_ai.process_message = AsyncMock(return_value="Olá! Conte mais sobre sua viagem.")
         mock_ai.extract_briefing = AsyncMock(return_value=MagicMock())
@@ -152,6 +155,7 @@ async def test_media_message_uses_fallback_and_persists_result():
         mock_ls.update_lead_status = AsyncMock(return_value=lead)
         mock_ls.save_interacao = AsyncMock(return_value=interacao)
         mock_ls.update_interacao_send_result = AsyncMock()
+        mock_ls.get_recent_interacoes = AsyncMock(return_value=[])
 
         mock_ws.extract_message_from_payload = MagicMock(return_value={
             "phone": "5584999990001",
@@ -213,6 +217,7 @@ async def test_send_failure_persisted_without_raising():
         )
         mock_ls.save_interacao = AsyncMock(return_value=interacao)
         mock_ls.update_interacao_send_result = AsyncMock()
+        mock_ls.get_recent_interacoes = AsyncMock(return_value=[])
 
         mock_ai.process_message = AsyncMock(return_value="Resposta da IA")
         mock_ai.extract_briefing = AsyncMock(return_value=MagicMock())
@@ -255,6 +260,7 @@ async def test_lead_qualified_receives_curadoria_offer():
     ):
         mock_ls.get_or_create_by_phone = AsyncMock(return_value=lead)
         mock_ls.update_lead_status = AsyncMock(return_value=lead)
+        mock_ls.get_recent_interacoes = AsyncMock(return_value=[])
 
         # Simulate qualification happening during briefing update
         briefing_mock = MagicMock(completude_pct=70, destino="Paris")
@@ -322,6 +328,7 @@ async def test_lead_already_scheduled_no_curadoria_offer():
         )
         mock_ls.save_interacao = AsyncMock(return_value=interacao)
         mock_ls.update_interacao_send_result = AsyncMock()
+        mock_ls.get_recent_interacoes = AsyncMock(return_value=[])
 
         mock_ai.process_message = AsyncMock(return_value="Resposta normal da IA")
         mock_ai.extract_briefing = AsyncMock(return_value=MagicMock())
@@ -368,6 +375,7 @@ async def test_lead_below_60_no_curadoria_offer():
         )
         mock_ls.save_interacao = AsyncMock(return_value=interacao)
         mock_ls.update_interacao_send_result = AsyncMock()
+        mock_ls.get_recent_interacoes = AsyncMock(return_value=[])
 
         mock_ai.process_message = AsyncMock(return_value="Resposta normal da IA")
         mock_ai.extract_briefing = AsyncMock(return_value=MagicMock())
@@ -387,3 +395,49 @@ async def test_lead_below_60_no_curadoria_offer():
 
     mock_ws.send_message.assert_awaited_once_with("5584999990001", "Resposta normal da IA")
     mock_cs.lead_tem_agendamento_ativo.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_memory_preloaded_from_db():
+    """Conversation memory must be hydrated from persisted interactions before AI reply."""
+    db = AsyncMock()
+    lead = _fake_lead()
+    lead.status = LeadStatus.em_atendimento
+    interacao = _fake_interacao()
+    send_result = SendResult(success=True, wamid="wamid.ok", retries_used=0, latency_ms=120)
+
+    recent_interacoes = [
+        {"mensagem_cliente": "Oi", "mensagem_ia": "Olá! Como posso ajudar?"},
+        {"mensagem_cliente": "Quero ir a Paris", "mensagem_ia": "Que destino incrível!"},
+    ]
+
+    with (
+        patch("app.application.use_cases.process_whatsapp_message.lead_service") as mock_ls,
+        patch("app.application.use_cases.process_whatsapp_message.ai_service") as mock_ai,
+        patch("app.application.use_cases.process_whatsapp_message.whatsapp_service") as mock_ws,
+        patch("app.application.use_cases.process_whatsapp_message.fcm_service"),
+    ):
+        mock_ls.get_or_create_by_phone = AsyncMock(return_value=lead)
+        mock_ls.update_lead_status = AsyncMock(return_value=lead)
+        mock_ls.get_recent_interacoes = AsyncMock(return_value=recent_interacoes)
+        mock_ls.save_interacao = AsyncMock(return_value=interacao)
+        mock_ls.update_interacao_send_result = AsyncMock()
+
+        mock_ai.process_message = AsyncMock(return_value="Resposta com contexto")
+        mock_ai.extract_briefing = AsyncMock(return_value=MagicMock())
+        mock_ai.preload_memory_from_db = MagicMock()
+
+        mock_ws.extract_message_from_payload = MagicMock(return_value={
+            "phone": "5584999990001",
+            "text": "Quero ir a Paris",
+            "type": "text",
+            "name": "Maria",
+            "message_id": "wamid.test",
+        })
+        mock_ws.send_message = AsyncMock(return_value=send_result)
+
+        await process_whatsapp_message.execute(_text_payload(), db)
+
+    mock_ls.get_recent_interacoes.assert_awaited_once_with(db, lead.id, limit=20)
+    mock_ai.preload_memory_from_db.assert_called_once_with("5584999990001", recent_interacoes)
+    mock_ai.process_message.assert_awaited_once()

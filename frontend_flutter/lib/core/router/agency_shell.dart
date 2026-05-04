@@ -13,7 +13,7 @@ class AgencyShell extends StatefulWidget {
 }
 
 class _AgencyShellState extends State<AgencyShell> {
-  static const _tabs = ['/agency/dashboard', '/agency/leads', '/agency/agenda'];
+  static const _tabs = ['/agency/dashboard', '/agency/leads', '/agency/agenda', '/agency/profile'];
 
   int _currentIndex = 0;
   int _previousIndex = 0;
@@ -78,6 +78,11 @@ class _AgencyShellState extends State<AgencyShell> {
             icon: Icon(Icons.calendar_today_outlined),
             activeIcon: Icon(Icons.calendar_today),
             label: 'Agenda',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            activeIcon: Icon(Icons.person),
+            label: 'Perfil',
           ),
         ],
       ),

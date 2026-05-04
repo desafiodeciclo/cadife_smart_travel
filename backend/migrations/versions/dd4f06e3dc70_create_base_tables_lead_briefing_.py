@@ -155,6 +155,9 @@ def upgrade() -> None:
         sa.Column('tipo_mensagem', tipo_mensagem_enum, nullable=False, server_default='texto'),
         sa.Column('timestamp', sa.DateTime(timezone=True),
                   server_default=sa.func.now(), nullable=False),
+        sa.Column('enviado_em', sa.DateTime(timezone=True), nullable=True),
+        sa.Column('status_envio', sa.String(10), nullable=True),
+        sa.Column('erro_envio', sa.Text, nullable=True),
     )
     op.create_index('ix_interacoes_lead_id', 'interacoes', ['lead_id'])
     op.create_index('ix_interacoes_lead_timestamp', 'interacoes', ['lead_id', 'timestamp'])

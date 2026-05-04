@@ -14,10 +14,10 @@ class AuthRepositoryImpl implements AuthPort {
   final SecureConfig _secureConfig;
 
   @override
-  Future<UserModel> login(String email, String password) async {
+  Future<UserModel> login(String email, String password, {UserRole? profileHint}) async {
     final response = await _dio.post(
       ApiConstants.login,
-      data: {'email': email, 'password': password},
+      data: {'email': email, 'password': password, if (profileHint != null) 'role': profileHint.name},
     );
     final tokenData = response.data['token'] as Map<String, dynamic>;
     await _secureConfig.saveTokens(
@@ -95,5 +95,10 @@ class AuthRepositoryImpl implements AuthPort {
   @override
   Future<void> saveFcmToken(String token) async {
     await _dio.post(ApiConstants.registerFcmToken, data: {'fcm_token': token});
+  }
+
+  @override
+  Future<void> forgotPassword(String email) async {
+    await _dio.post(ApiConstants.forgotPassword, data: {'email': email});
   }
 }
