@@ -1,4 +1,4 @@
-﻿import 'package:cadife_smart_travel/config/router/agency_shell.dart';
+import 'package:cadife_smart_travel/config/router/agency_shell.dart';
 import 'package:cadife_smart_travel/config/router/client_shell.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/agenda_screen.dart';
 import 'package:cadife_smart_travel/features/agency/dashboard/dashboard_screen.dart';
@@ -13,13 +13,13 @@ import 'package:cadife_smart_travel/features/auth/presentation/screens/login_scr
 import 'package:cadife_smart_travel/features/auth/presentation/screens/register_screen.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/screens/splash_screen.dart';
 import 'package:cadife_smart_travel/features/auth/providers/auth_provider.dart';
-import 'package:cadife_smart_travel/features/client/documentos/document_viewer_screen.dart';
-import 'package:cadife_smart_travel/features/client/documentos/documentos_screen.dart';
 import 'package:cadife_smart_travel/features/client/documentos/domain/entities/documento.dart';
-import 'package:cadife_smart_travel/features/client/documentos/trip_documents_screen.dart';
-import 'package:cadife_smart_travel/features/client/historico/historico_screen.dart';
-import 'package:cadife_smart_travel/features/client/home/home_screen.dart';
+import 'package:cadife_smart_travel/features/client/documentos/presentation/pages/document_viewer_page.dart';
+import 'package:cadife_smart_travel/features/client/documentos/presentation/pages/documentos_page.dart';
+import 'package:cadife_smart_travel/features/client/documentos/presentation/pages/trip_documents_page.dart';
+import 'package:cadife_smart_travel/features/client/historico/presentation/pages/historico_page.dart';
 import 'package:cadife_smart_travel/features/client/profile/profile.dart';
+import 'package:cadife_smart_travel/features/client/status/presentation/pages/status_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -46,7 +46,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final loc = state.matchedLocation;
 
-      // Splash gerencia sua prÃƒÂ³pria navegaÃƒÂ§ÃƒÂ£o Ã¢â‚¬â€ nÃƒÂ£o redirecionar daqui
+      // Splash gerencia sua prÃƒÂ³pria navegaÃƒÂ§ÃƒÂ£o Ã¢â‚¬â€  nÃƒÂ£o redirecionar daqui
       if (loc == '/splash') return null;
 
       final authValue = ref.read(authProvider);
@@ -102,7 +102,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
 
-      // Agency shell Ã¢â‚¬â€ persistent BottomNavBar with SharedAxis tab transitions
+      // Agency shell Ã¢â‚¬â€  persistent BottomNavBar with SharedAxis tab transitions
       ShellRoute(
         builder: (context, state, child) => AgencyShell(
           key: const ValueKey('agency-shell'),
@@ -141,7 +141,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
 
-      // Settings Ã¢â‚¬â€ full-screen push, no BottomNavBar
+      // Settings Ã¢â‚¬â€  full-screen push, no BottomNavBar
       GoRoute(
         path: '/agency/settings',
         pageBuilder: (_, state) => MaterialPage(
@@ -150,7 +150,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
 
-      // Lead detail Ã¢â‚¬â€ full-screen push without BottomNavBar
+      // Lead detail Ã¢â‚¬â€  full-screen push without BottomNavBar
       GoRoute(
         path: '/agency/leads/:id',
         pageBuilder: (_, state) => MaterialPage(
@@ -159,7 +159,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
 
-      // Lead edit Ã¢â‚¬â€ full-screen push without BottomNavBar
+      // Lead edit Ã¢â‚¬â€  full-screen push without BottomNavBar
       GoRoute(
         path: '/agency/leads/:id/edit',
         pageBuilder: (_, state) => MaterialPage(
@@ -168,7 +168,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
 
-      // Proposal create Ã¢â‚¬â€ full-screen modal
+      // Proposal create Ã¢â‚¬â€  full-screen modal
       GoRoute(
         path: '/agency/proposals/new',
         pageBuilder: (_, state) {
@@ -183,7 +183,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
 
-      // Client shell Ã¢â‚¬â€ persistent BottomNavBar with SharedAxis tab transitions
+      // Client shell Ã¢â‚¬â€  persistent BottomNavBar with SharedAxis tab transitions
       ShellRoute(
         builder: (context, state, child) => ClientShell(
           key: const ValueKey('client-shell'),
@@ -195,28 +195,28 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/client/status',
             pageBuilder: (_, state) => NoTransitionPage(
               key: state.pageKey,
-              child: const HomeScreen(),
+              child: const StatusPage(),
             ),
           ),
           GoRoute(
             path: '/client/historico',
             pageBuilder: (_, state) => NoTransitionPage(
               key: state.pageKey,
-              child: const HistoricoScreen(),
+              child: const HistoricoPage(),
             ),
           ),
           GoRoute(
             path: '/client/documentos',
             pageBuilder: (_, state) => NoTransitionPage(
               key: state.pageKey,
-              child: const DocumentosScreen(),
+              child: const DocumentosPage(),
             ),
             routes: [
               GoRoute(
                 path: 'viewer',
                 pageBuilder: (context, state) => MaterialPage(
                   key: state.pageKey,
-                  child: DocumentViewerScreen(
+                  child: DocumentViewerPage(
                     document: state.extra as Documento,
                   ),
                 ),
@@ -225,7 +225,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                 path: ':tripId',
                 pageBuilder: (_, state) => NoTransitionPage(
                   key: state.pageKey,
-                  child: TripDocumentsScreen(
+                  child: TripDocumentsPage(
                     tripId: state.pathParameters['tripId']!,
                   ),
                 ),

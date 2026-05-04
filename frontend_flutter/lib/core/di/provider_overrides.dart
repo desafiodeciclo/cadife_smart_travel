@@ -9,10 +9,10 @@ import 'package:cadife_smart_travel/features/agency/proposals/domain/repositorie
 import 'package:cadife_smart_travel/features/agency/proposals/proposals_provider.dart' as agency_proposals;
 import 'package:cadife_smart_travel/features/auth/domain/repositories/auth_port.dart';
 import 'package:cadife_smart_travel/features/auth/providers/auth_provider.dart';
-import 'package:cadife_smart_travel/features/client/interactions/interactions_provider.dart' as client_interactions;
+import 'package:cadife_smart_travel/features/client/historico/presentation/providers/historico_notifier.dart' as client_historico;
 import 'package:cadife_smart_travel/features/client/profile/domain/repositories/profile_port.dart';
 import 'package:cadife_smart_travel/features/client/profile/profile_provider.dart' as client_profile;
-import 'package:cadife_smart_travel/features/client/trip_status/trip_status_provider.dart' as client_trip;
+import 'package:cadife_smart_travel/features/client/status/presentation/providers/status_notifier.dart' as client_status;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 List<Override> getProviderOverrides() {
@@ -23,8 +23,8 @@ List<Override> getProviderOverrides() {
     agency_detail.leadPortProvider.overrideWithValue(sl<LeadPort>()),
     agency_agenda.agendaPortProvider.overrideWithValue(sl<AgendaPort>()),
     agency_proposals.proposalPortProvider.overrideWithValue(sl<ProposalPort>()),
-    client_trip.clientLeadPortProvider.overrideWithValue(sl<LeadPort>()),
-    client_interactions.interactionsPortProvider.overrideWithValue(sl<LeadPort>()),
+    client_status.statusRepositoryProvider.overrideWithValue(sl<LeadPort>()),
+    client_historico.historicoRepositoryProvider.overrideWithValue(sl<LeadPort>()),
     client_profile.profilePortProvider.overrideWithValue(sl<ProfilePort>()),
   ];
 }

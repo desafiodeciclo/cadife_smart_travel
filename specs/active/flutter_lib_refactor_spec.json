@@ -248,7 +248,7 @@
       "id": "E4",
       "titulo": "Eliminação de Duplicatas — Client Features",
       "descricao": "Resolver os três pares de features duplicadas na pasta client/ (status, historico, documentos), unificando em uma estrutura canônica com data/domain/presentation.",
-      "status": "pending",
+      "status": "in-progress",
       "arquivos_afetados": [
         "frontend_flutter/lib/features/client/status/",
         "frontend_flutter/lib/features/client/trip_status/",
@@ -268,7 +268,7 @@
             "Criar estrutura interna: client/status/domain/entities/, client/status/presentation/",
             "Deletar client/trip_status/"
           ],
-          "status": "pending"
+          "status": "done"
         },
         {
           "id": "E4.2",
@@ -280,7 +280,7 @@
             "Entidade Interacao (migrada de shared/ na E3) → client/historico/domain/entities/",
             "Deletar client/interactions/"
           ],
-          "status": "pending"
+          "status": "done"
         },
         {
           "id": "E4.3",
@@ -292,7 +292,7 @@
             "Entidade Documento (migrada de shared/ na E3) → client/documentos/domain/entities/",
             "Deletar client/documents/"
           ],
-          "status": "pending"
+          "status": "done"
         },
         {
           "id": "E4.4",

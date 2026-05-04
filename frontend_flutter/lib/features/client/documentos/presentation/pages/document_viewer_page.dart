@@ -1,4 +1,4 @@
-﻿import 'dart:io';
+import 'dart:io';
 
 import 'package:cadife_smart_travel/features/client/documentos/domain/entities/documento.dart';
 import 'package:dio/dio.dart';
@@ -9,16 +9,16 @@ import 'package:pdfrx/pdfrx.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:share_plus/share_plus.dart';
 
-class DocumentViewerScreen extends StatefulWidget {
-  const DocumentViewerScreen({super.key, required this.document});
+class DocumentViewerPage extends StatefulWidget {
+  const DocumentViewerPage({super.key, required this.document});
 
   final Documento document;
 
   @override
-  State<DocumentViewerScreen> createState() => _DocumentViewerScreenState();
+  State<DocumentViewerPage> createState() => _DocumentViewerPageState();
 }
 
-class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
+class _DocumentViewerPageState extends State<DocumentViewerPage> {
   bool _isDownloading = false;
 
   Future<void> _shareDocument() async {

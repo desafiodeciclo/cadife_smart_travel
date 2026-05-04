@@ -1,4 +1,4 @@
-﻿import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
+import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/client/documentos/domain/entities/documento.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

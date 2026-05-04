@@ -1,7 +1,7 @@
-﻿import 'package:cadife_smart_travel/features/agency/leads/domain/entities/briefing.dart';
-import 'package:cadife_smart_travel/features/agency/leads/domain/entities/interacao.dart';
+import 'package:cadife_smart_travel/features/agency/leads/domain/entities/briefing.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/repositories/lead_port.dart';
+import 'package:cadife_smart_travel/features/client/historico/domain/entities/interacao.dart';
 
 class MockLeadRepository implements LeadPort {
   final List<Lead> _mockLeads = [

@@ -1,9 +1,9 @@
-﻿import 'package:cadife_smart_travel/core/constants/api_constants.dart';
+import 'package:cadife_smart_travel/core/constants/api_constants.dart';
 import 'package:cadife_smart_travel/core/offline/offline_manager.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/briefing.dart';
-import 'package:cadife_smart_travel/features/agency/leads/domain/entities/interacao.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/repositories/lead_port.dart';
+import 'package:cadife_smart_travel/features/client/historico/domain/entities/interacao.dart';
 import 'package:dio/dio.dart';
 
 class LeadRepositoryImpl implements LeadPort {

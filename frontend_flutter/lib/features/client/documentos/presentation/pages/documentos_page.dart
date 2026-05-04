@@ -1,21 +1,20 @@
 
 import 'package:cadife_smart_travel/core/theme/app_colors.dart';
 import 'package:cadife_smart_travel/core/widgets/cadife_app_bar.dart';
-import 'package:cadife_smart_travel/features/client/documentos/widgets/widgets.dart';
-import 'package:cadife_smart_travel/features/client/documents/documents_provider.dart';
-
+import 'package:cadife_smart_travel/features/client/documentos/presentation/providers/documentos_notifier.dart';
+import 'package:cadife_smart_travel/features/client/documentos/presentation/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-class DocumentosScreen extends ConsumerStatefulWidget {
-  const DocumentosScreen({super.key});
+class DocumentosPage extends ConsumerStatefulWidget {
+  const DocumentosPage({super.key});
 
   @override
-  ConsumerState<DocumentosScreen> createState() => _DocumentosScreenState();
+  ConsumerState<DocumentosPage> createState() => _DocumentosPageState();
 }
 
-class _DocumentosScreenState extends ConsumerState<DocumentosScreen> {
+class _DocumentosPageState extends ConsumerState<DocumentosPage> {
   String _selectedCategory = 'Todos';
 
   @override
