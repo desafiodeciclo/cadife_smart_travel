@@ -28,7 +28,7 @@ class StatusNotifier extends FamilyAsyncNotifier<Lead?, String> {
     final result = await repository.getLeadById(arg);
     state = result.fold(
       (failure) => AsyncError(failure, StackTrace.current),
-      (lead) => AsyncData(lead),
+      AsyncData.new,
     );
   }
 }

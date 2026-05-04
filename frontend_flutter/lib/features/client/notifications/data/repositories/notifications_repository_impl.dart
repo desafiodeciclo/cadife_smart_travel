@@ -1,8 +1,9 @@
 import 'dart:async';
-import 'package:fpdart/fpdart.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
+
 import 'package:cadife_smart_travel/core/error/failures.dart';
 import 'package:cadife_smart_travel/features/client/notifications/domain/repositories/i_notifications_repository.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:fpdart/fpdart.dart';
 
 class NotificationsRepositoryImpl implements INotificationsRepository {
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
@@ -15,7 +16,7 @@ class NotificationsRepositoryImpl implements INotificationsRepository {
   @override
   Future<Either<Failure, void>> initialize() async {
     try {
-      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      FirebaseMessaging.onMessage.listen((message) {
         if (message.notification != null) {
           _notificationController.add(NotificationPayload(
             title: message.notification!.title ?? '',

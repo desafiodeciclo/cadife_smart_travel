@@ -41,7 +41,7 @@ class HistoricoNotifier extends AsyncNotifier<List<Interacao>> {
         final interactionsResult = await repository.getInteractions(lead.id);
         return interactionsResult.fold(
           (f) => AsyncError(f, StackTrace.current),
-          (list) => AsyncData(list),
+          AsyncData.new,
         );
       },
     );

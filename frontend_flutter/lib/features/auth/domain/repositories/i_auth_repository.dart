@@ -1,6 +1,6 @@
-import 'package:fpdart/fpdart.dart';
 import 'package:cadife_smart_travel/core/error/failures.dart';
 import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
+import 'package:fpdart/fpdart.dart';
 
 abstract class IAuthRepository {
   Future<Either<Failure, AuthUser>> login(String email, String password, {UserRole? profileHint});

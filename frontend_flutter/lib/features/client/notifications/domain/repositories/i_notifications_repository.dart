@@ -1,5 +1,5 @@
-import 'package:fpdart/fpdart.dart';
 import 'package:cadife_smart_travel/core/error/failures.dart';
+import 'package:fpdart/fpdart.dart';
 
 abstract class INotificationsRepository {
   Future<Either<Failure, void>> initialize();
