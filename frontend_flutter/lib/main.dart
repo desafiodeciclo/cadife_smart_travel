@@ -1,7 +1,7 @@
 import 'dart:developer' as dev;
-import 'package:cadife_smart_travel/core/config/env_config.dart';
 
 import 'package:cadife_smart_travel/app.dart';
+import 'package:cadife_smart_travel/core/config/env_config.dart';
 import 'package:cadife_smart_travel/core/di/provider_overrides.dart';
 import 'package:cadife_smart_travel/core/di/service_locator.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/bloc/auth_event.dart';
