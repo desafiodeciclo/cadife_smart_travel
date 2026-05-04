@@ -1,5 +1,5 @@
-import 'package:cadife_smart_travel/core/ports/lead_port.dart';
-import 'package:cadife_smart_travel/shared/models/models.dart';
+﻿import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
+import 'package:cadife_smart_travel/features/agency/leads/domain/repositories/lead_port.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final clientLeadPortProvider = Provider<LeadPort>((ref) {
@@ -7,13 +7,13 @@ final clientLeadPortProvider = Provider<LeadPort>((ref) {
 });
 
 final clientTripStatusProvider =
-    AsyncNotifierProvider.family<ClientTripStatusNotifier, LeadModel?, String>(
+    AsyncNotifierProvider.family<ClientTripStatusNotifier, Lead?, String>(
       ClientTripStatusNotifier.new,
     );
 
-class ClientTripStatusNotifier extends FamilyAsyncNotifier<LeadModel?, String> {
+class ClientTripStatusNotifier extends FamilyAsyncNotifier<Lead?, String> {
   @override
-  Future<LeadModel?> build(String arg) async {
+  Future<Lead?> build(String arg) async {
     final leadPort = ref.watch(clientLeadPortProvider);
     return leadPort.getLeadById(arg);
   }
@@ -26,3 +26,7 @@ class ClientTripStatusNotifier extends FamilyAsyncNotifier<LeadModel?, String> {
     });
   }
 }
+
+
+
+

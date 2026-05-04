@@ -1,6 +1,6 @@
-import 'package:cadife_smart_travel/core/ports/agenda_port.dart';
-import 'package:cadife_smart_travel/features/agency/agenda/agenda_provider.dart';
-import 'package:cadife_smart_travel/shared/models/agenda_model.dart';
+﻿import 'package:cadife_smart_travel/features/agency/agenda/agenda_provider.dart';
+import 'package:cadife_smart_travel/features/agency/agenda/domain/entities/agendamento.dart';
+import 'package:cadife_smart_travel/features/agency/agenda/domain/repositories/agenda_port.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -91,7 +91,7 @@ class ScheduleAppointmentNotifier
       final request = CreateAgendaRequest(
         leadId: leadId,
         dateTime: state.selectedSlot!.startTime,
-        durationMinutes: 60, // De acordo com a resposta do usuário
+        durationMinutes: 60, // De acordo com a resposta do usuÃƒÂ¡rio
         notes: notes,
       );
       await _agendaPort.createAgenda(request);
@@ -103,3 +103,6 @@ class ScheduleAppointmentNotifier
     }
   }
 }
+
+
+

@@ -9,14 +9,8 @@ import 'package:cadife_smart_travel/core/notifications/local_notification_manage
 import 'package:cadife_smart_travel/core/offline/offline_interceptor.dart';
 import 'package:cadife_smart_travel/core/offline/offline_manager.dart';
 import 'package:cadife_smart_travel/core/offline/offline_sync_queue.dart';
-import 'package:cadife_smart_travel/core/ports/agenda_port.dart';
-import 'package:cadife_smart_travel/core/ports/auth_port.dart';
-import 'package:cadife_smart_travel/core/ports/lead_port.dart';
-import 'package:cadife_smart_travel/core/ports/profile_port.dart';
-import 'package:cadife_smart_travel/core/ports/proposal_port.dart';
 import 'package:cadife_smart_travel/core/security/secure_config.dart';
 import 'package:cadife_smart_travel/data/local/database_helper.dart';
-
 import 'package:cadife_smart_travel/data/repositories/mock_agenda_repository.dart';
 import 'package:cadife_smart_travel/data/repositories/mock_auth_repository.dart';
 import 'package:cadife_smart_travel/data/repositories/mock_lead_repository.dart';
@@ -25,20 +19,25 @@ import 'package:cadife_smart_travel/data/repositories/offline_event_repository_i
 import 'package:cadife_smart_travel/data/repositories/proposal_repository_impl.dart';
 import 'package:cadife_smart_travel/domain/repositories/i_offline_event_repository.dart';
 import 'package:cadife_smart_travel/domain/usecases/process_offline_queue_usecase.dart';
+import 'package:cadife_smart_travel/features/agency/agenda/domain/repositories/agenda_port.dart';
+import 'package:cadife_smart_travel/features/agency/leads/domain/repositories/lead_port.dart';
+import 'package:cadife_smart_travel/features/agency/proposals/domain/repositories/proposal_port.dart';
+import 'package:cadife_smart_travel/features/auth/domain/repositories/auth_port.dart';
+import 'package:cadife_smart_travel/features/client/profile/domain/repositories/profile_port.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 
-/// Service Locator global — get_it com registro explícito e lifecycle controlado.
+/// Service Locator global â€” get_it com registro explÃ­cito e lifecycle controlado.
 ///
-/// REGRA: Singletons APENAS para serviços performance-critical (network, DB, security).
-/// Repositories são lazySingletons pois encapsulam Dio (singleton) — sem state próprio.
+/// REGRA: Singletons APENAS para serviÃ§os performance-critical (network, DB, security).
+/// Repositories sÃ£o lazySingletons pois encapsulam Dio (singleton) â€” sem state prÃ³prio.
 final sl = GetIt.instance;
 
-/// Registra TODOS os serviços core e ports por módulo.
+/// Registra TODOS os serviÃ§os core e ports por mÃ³dulo.
 ///
-/// [onTokenExpired] — callback acionado quando o refresh de token falha.
+/// [onTokenExpired] â€” callback acionado quando o refresh de token falha.
 /// Tipicamente chama `authProvider.notifier.logout()` para disparar o redirect do GoRouter.
 /// Chamado uma vez no `main()` antes de `runApp()`.
 Future<void> setupServiceLocator({
@@ -46,7 +45,7 @@ Future<void> setupServiceLocator({
   List<String>? backupCertificates,
   VoidCallback? onTokenExpired,
 }) async {
-  // ── 1. Infra Layer (singletons — performance-critical) ──
+  // â”€â”€ 1. Infra Layer (singletons â€” performance-critical) â”€â”€
 
   sl.registerLazySingleton<NetworkInfo>(NetworkInfo.new);
   sl.registerLazySingleton<SecureConfig>(SecureConfig.new);
@@ -66,7 +65,7 @@ Future<void> setupServiceLocator({
     () => ProcessOfflineQueueUseCase(sl<IOfflineEventRepository>()),
   );
 
-  // ── 2. Network Layer ──────────────────────────────────
+  // â”€â”€ 2. Network Layer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   // Lightweight Dio used only by AuthInterceptor (no auth/error interceptors).
   // Named instance to avoid collision with the main Dio registration.
@@ -84,7 +83,7 @@ Future<void> setupServiceLocator({
     () => OfflineInterceptor(sl<OfflineManager>()),
   );
 
-  // AuthInterceptor must be a singleton — its Completer<bool> field deduplicates
+  // AuthInterceptor must be a singleton â€” its Completer<bool> field deduplicates
   // concurrent 401s across the lifetime of the app.
   sl.registerLazySingleton<AuthInterceptor>(
     () => AuthInterceptor(
@@ -94,15 +93,15 @@ Future<void> setupServiceLocator({
     ),
   );
 
-  // Main authenticated Dio (unnamed — default instance used by all repositories).
+  // Main authenticated Dio (unnamed â€” default instance used by all repositories).
   sl.registerLazySingleton<Dio>(() {
     const isRelease = bool.fromEnvironment('dart.vm.product');
     if (isRelease) {
       // Fail-closed: em release SEMPRE exige pinning configurado.
       if (pinnedCertificates == null || pinnedCertificates.isEmpty) {
         throw StateError(
-          'Certificate pinning é obrigatório em builds de release. '
-          'Forneça pinnedCertificates no setupServiceLocator().',
+          'Certificate pinning Ã© obrigatÃ³rio em builds de release. '
+          'ForneÃ§a pinnedCertificates no setupServiceLocator().',
         );
       }
       return DioClientFactory.createPinned(
@@ -126,7 +125,7 @@ Future<void> setupServiceLocator({
     );
   });
 
-  // ── 3. Ports (interfaces) → Implementations ──────────
+  // â”€â”€ 3. Ports (interfaces) â†’ Implementations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // Features importam apenas a PORT (interface), nunca a impl.
 
   _registerAuthModule();
@@ -138,7 +137,7 @@ Future<void> setupServiceLocator({
 
 void _registerAuthModule() {
   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  // MOCK LOGIN ATIVADO — COMENTE A LINHA ABAIXO E DESCOMENTE A SEGUINTE PARA PROD
+  // MOCK LOGIN ATIVADO â€” COMENTE A LINHA ABAIXO E DESCOMENTE A SEGUINTE PARA PROD
   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   sl.registerLazySingleton<AuthPort>(() => MockAuthRepository(secureConfig: sl<SecureConfig>()));
   // sl.registerLazySingleton<AuthPort>(
@@ -148,7 +147,7 @@ void _registerAuthModule() {
 
 void _registerLeadModule() {
   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  // MOCK LEAD ATIVADO — COMENTE A LINHA ABAIXO E DESCOMENTE A SEGUINTE PARA PROD
+  // MOCK LEAD ATIVADO â€” COMENTE A LINHA ABAIXO E DESCOMENTE A SEGUINTE PARA PROD
   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   sl.registerLazySingleton<LeadPort>(MockLeadRepository.new);
   // sl.registerLazySingleton<LeadPort>(
@@ -161,7 +160,7 @@ void _registerLeadModule() {
 
 void _registerAgendaModule() {
   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  // MOCK AGENDA ATIVADO — COMENTE A LINHA ABAIXO E DESCOMENTE A SEGUINTE PARA PROD
+  // MOCK AGENDA ATIVADO â€” COMENTE A LINHA ABAIXO E DESCOMENTE A SEGUINTE PARA PROD
   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   sl.registerLazySingleton<AgendaPort>(MockAgendaRepository.new);
   // sl.registerLazySingleton<AgendaPort>(
@@ -183,7 +182,7 @@ void _registerProposalModule() {
 
 void _registerProfileModule() {
   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  // MOCK PROFILE ATIVADO — COMENTE A LINHA ABAIXO E DESCOMENTE A SEGUINTE PARA PROD
+  // MOCK PROFILE ATIVADO â€” COMENTE A LINHA ABAIXO E DESCOMENTE A SEGUINTE PARA PROD
   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   sl.registerLazySingleton<ProfilePort>(MockProfileRepository.new);
   // sl.registerLazySingleton<ProfilePort>(
@@ -206,7 +205,7 @@ Future<void> initDependencies() async {
   ConnectivityService.init();
 }
 
-/// Limpa dados do usuário (logout). NÃO descarta infra singletons.
+/// Limpa dados do usuÃ¡rio (logout). NÃƒO descarta infra singletons.
 Future<void> resetDependencies() async {
   await sl<OfflineManager>().clearUserData();
   await sl<SecureConfig>().clearTokens();
@@ -222,3 +221,4 @@ Future<void> disposeDependencies() async {
   await sl<DatabaseHelper>().close();
   await sl.reset(dispose: true);
 }
+

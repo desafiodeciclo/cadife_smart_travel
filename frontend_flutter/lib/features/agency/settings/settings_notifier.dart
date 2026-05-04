@@ -1,4 +1,4 @@
-import 'package:cadife_smart_travel/core/ports/agency_settings_port.dart';
+﻿import 'package:cadife_smart_travel/features/agency/settings/domain/repositories/agency_settings_port.dart';
 import 'package:cadife_smart_travel/features/agency/settings/settings_models.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -79,3 +79,4 @@ class AgencySettingsNotifier extends AsyncNotifier<AgencySettings> {
     await _save(current.copyWith(templates: templates));
   }
 }
+

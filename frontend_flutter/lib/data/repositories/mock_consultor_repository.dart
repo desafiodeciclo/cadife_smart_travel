@@ -1,13 +1,13 @@
-import 'package:cadife_smart_travel/core/ports/consultor_port.dart';
 import 'package:cadife_smart_travel/features/agency/profile/consultor_profile_models.dart';
+import 'package:cadife_smart_travel/features/agency/profile/domain/repositories/consultor_port.dart';
 
 class MockConsultorRepository implements ConsultorPort {
   ConsultorProfile _profile = const ConsultorProfile(
     id: 'consultor-001',
     name: 'Jakeline Ferreira',
     email: 'jakeline@cadifetravel.com.br',
-    bio: 'Especialista em viagens internacionais e cruzeiros há 8 anos. '
-        'Apaixonada por criar experiências únicas para cada cliente.',
+    bio: 'Especialista em viagens internacionais e cruzeiros hÃ¡ 8 anos. '
+        'Apaixonada por criar experiÃªncias Ãºnicas para cada cliente.',
     phone: '+55 11 99876-5432',
     avatarUrl: null,
     totalSales: 142,
@@ -52,3 +52,4 @@ class MockConsultorRepository implements ConsultorPort {
     ];
   }
 }
+

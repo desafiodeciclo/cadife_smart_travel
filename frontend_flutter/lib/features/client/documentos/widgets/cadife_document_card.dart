@@ -1,5 +1,5 @@
-import 'package:cadife_smart_travel/core/theme/app_colors.dart';
-import 'package:cadife_smart_travel/shared/models/document_model.dart';
+﻿import 'package:cadife_smart_travel/core/theme/app_colors.dart';
+import 'package:cadife_smart_travel/features/client/documentos/domain/entities/documento.dart';
 import 'package:flutter/material.dart';
 
 class CadifeDocumentCard extends StatelessWidget {
@@ -10,7 +10,7 @@ class CadifeDocumentCard extends StatelessWidget {
     this.onDownload,
   });
 
-  final DocumentModel document;
+  final Documento document;
   final VoidCallback? onView;
   final VoidCallback? onDownload;
 
@@ -181,3 +181,6 @@ class CadifeDocumentCard extends StatelessWidget {
     );
   }
 }
+
+
+

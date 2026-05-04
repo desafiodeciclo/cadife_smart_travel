@@ -1,4 +1,4 @@
-import 'package:cadife_smart_travel/core/ports/agency_settings_port.dart';
+﻿import 'package:cadife_smart_travel/features/agency/settings/domain/repositories/agency_settings_port.dart';
 import 'package:cadife_smart_travel/features/agency/settings/settings_models.dart';
 
 class MockAgencySettingsRepository implements AgencySettingsPort {
@@ -19,12 +19,12 @@ class MockAgencySettingsRepository implements AgencySettingsPort {
       MessageTemplate(
         id: 'tpl-001',
         title: 'Boas-vindas',
-        body: 'Olá! Sou consultor da Cadife Tour e estou aqui para ajudar com sua viagem. Quando podemos conversar?',
+        body: 'OlÃ¡! Sou consultor da Cadife Tour e estou aqui para ajudar com sua viagem. Quando podemos conversar?',
       ),
       MessageTemplate(
         id: 'tpl-002',
         title: 'Proposta enviada',
-        body: 'Sua proposta personalizada foi enviada. Fique à vontade para tirar dúvidas!',
+        body: 'Sua proposta personalizada foi enviada. Fique Ã  vontade para tirar dÃºvidas!',
       ),
     ],
   );
@@ -44,3 +44,4 @@ class MockAgencySettingsRepository implements AgencySettingsPort {
 
   String nextTemplateId() => 'tpl-${_idCounter++}';
 }
+

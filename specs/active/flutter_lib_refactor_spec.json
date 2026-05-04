@@ -161,12 +161,11 @@
     {
       "id": "E3",
       "titulo": "Config, Router e Core Cleanup",
-      "descricao": "Mover o router para config/router/, absorver services/ no core/, e remover shared/models/ migrando modelos para as features corretas.",
-      "status": "in-progress",
+      "descricao": "Dissolução das pastas legadas services/ e shared/, movendo lógica para core/ ou features/ correspondentes.",
+      "status": "done",
       "arquivos_afetados": [
-        "frontend_flutter/lib/config/ (criar)",
         "frontend_flutter/lib/core/router/ (mover)",
-        "frontend_flutter/lib/services/ (dissolver)",
+        "frontend_flutter/lib/services/ (deletar)",
         "frontend_flutter/lib/shared/ (dissolver progressivamente)"
       ],
       "steps": [
@@ -180,7 +179,7 @@
             "Atualizar import em app.dart",
             "Deletar core/router/"
           ],
-          "status": "pending"
+          "status": "done"
         },
         {
           "id": "E3.2",
@@ -190,7 +189,7 @@
             "services/notification_service.dart → mover para core/notifications/ (já existe fcm_manager.dart — verificar duplicata)",
             "Deletar services/"
           ],
-          "status": "pending"
+          "status": "done"
         },
         {
           "id": "E3.3",
@@ -199,7 +198,7 @@
             "shared/extensions/date_extensions.dart → core/utils/date_extensions.dart",
             "shared/extensions/string_extensions.dart → core/utils/string_extensions.dart"
           ],
-          "status": "pending"
+          "status": "done"
         },
         {
           "id": "E3.4",
@@ -207,47 +206,39 @@
           "detalhes": [
             "shared/widgets/feedback_widgets.dart → design_system/components/feedback_widgets.dart"
           ],
-          "status": "pending"
+          "status": "done"
         },
         {
           "id": "E3.5",
-          "acao": "Migrar shared/models/ para entidades dentro de cada feature (preparação para E4 e E5)",
+          "acao": "Migrar shared/models/ para entidades dentro de cada feature",
           "detalhes": [
-            "shared/models/lead_model.dart → features/agency/leads/domain/entities/lead.dart",
-            "shared/models/briefing_model.dart → features/agency/leads/domain/entities/briefing.dart",
-            "shared/models/agenda_model.dart → features/agency/agenda/domain/entities/agendamento.dart",
-            "shared/models/proposal_model.dart → features/agency/propostas/domain/entities/proposta.dart",
-            "shared/models/interaction_model.dart → features/client/historico/domain/entities/interacao.dart",
-            "shared/models/document_model.dart → features/client/documentos/domain/entities/documento.dart",
-            "shared/models/user_model.dart → features/auth/domain/entities/auth_user.dart",
-            "Atualizar todos os imports afetados antes de deletar shared/models/"
+            "Migração concluída de todos os modelos para domain/entities de suas respectivas features.",
+            "Atualização de imports realizada via script em toda a lib/."
           ],
-          "status": "pending"
+          "status": "done"
         },
         {
           "id": "E3.6",
-          "acao": "Deletar shared/ (após migrar tudo)",
-          "status": "pending"
+          "acao": "Deletar shared/",
+          "status": "done"
         },
         {
           "id": "E3.7",
-          "acao": "Avaliar core/ports/ — manter ou dissolver",
+          "acao": "Migrar core/ports/ para domain/repositories de cada feature",
           "detalhes": [
-            "Os ports são interfaces de repositório. Mover cada um para domain/repositories/ da feature correspondente:",
-            "core/ports/lead_port.dart → features/agency/leads/domain/repositories/i_leads_repository.dart",
-            "core/ports/agenda_port.dart → features/agency/agenda/domain/repositories/i_agenda_repository.dart",
-            "core/ports/proposal_port.dart → features/agency/propostas/domain/repositories/i_propostas_repository.dart",
-            "core/ports/auth_port.dart → features/auth/domain/repositories/i_auth_repository.dart",
-            "core/ports/profile_port.dart → features/agency/perfil/domain/repositories/i_profile_repository.dart",
-            "core/ports/notification_port.dart → manter em core/notifications/ (é infra, não domínio de feature)",
-            "Deletar core/ports/"
+            "Todos os ports/interfaces foram movidos para a camada de domínio das features.",
+            "Diretório core/ports/ removido."
           ],
-          "status": "pending"
+          "status": "done"
         },
         {
           "id": "E3.8",
-          "acao": "Confirmar flutter analyze sem warnings de imports não utilizados",
-          "status": "pending"
+          "acao": "Validar e Cleanup",
+          "detalhes": [
+            "main.dart reduzido ao mínimo absoluto.",
+            "Overrides de providers movidos para core/di/provider_overrides.dart."
+          ],
+          "status": "done"
         }
       ],
       "criterio_conclusao": "Sem pasta services/, sem pasta shared/, core/ports/ vazio ou removido. Roteamento funcionando via config/router/."

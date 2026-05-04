@@ -1,5 +1,5 @@
-import 'package:cadife_smart_travel/core/ports/profile_port.dart';
-import 'package:cadife_smart_travel/shared/models/models.dart';
+﻿import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
+import 'package:cadife_smart_travel/features/client/profile/domain/repositories/profile_port.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final profilePortProvider = Provider<ProfilePort>((ref) {
@@ -7,13 +7,13 @@ final profilePortProvider = Provider<ProfilePort>((ref) {
 });
 
 final userProfileProvider =
-    AsyncNotifierProvider<UserProfileNotifier, UserModel?>(
+    AsyncNotifierProvider<UserProfileNotifier, AuthUser?>(
       UserProfileNotifier.new,
     );
 
-class UserProfileNotifier extends AsyncNotifier<UserModel?> {
+class UserProfileNotifier extends AsyncNotifier<AuthUser?> {
   @override
-  Future<UserModel?> build() async {
+  Future<AuthUser?> build() async {
     final profilePort = ref.watch(profilePortProvider);
     return profilePort.getCurrentUser();
   }
@@ -44,3 +44,7 @@ class UserProfileNotifier extends AsyncNotifier<UserModel?> {
     });
   }
 }
+
+
+
+

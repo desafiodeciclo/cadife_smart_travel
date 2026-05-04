@@ -1,27 +1,27 @@
-import 'package:cadife_smart_travel/core/ports/agenda_port.dart';
-import 'package:cadife_smart_travel/shared/models/agenda_model.dart';
+﻿import 'package:cadife_smart_travel/features/agency/agenda/domain/entities/agendamento.dart';
+import 'package:cadife_smart_travel/features/agency/agenda/domain/repositories/agenda_port.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final agendaPortProvider = Provider<AgendaPort>((ref) {
   throw UnimplementedError('Override em ProviderScope');
 });
 
-/// 0 = visão mensal  |  1 = visão diária
+/// 0 = visÃƒÂ£o mensal  |  1 = visÃƒÂ£o diÃƒÂ¡ria
 final agendaViewModeProvider = StateProvider<int>((ref) => 0);
 
-/// Data selecionada — controla o mês exibido no calendário e o dia na timeline.
+/// Data selecionada Ã¢â‚¬â€ controla o mÃƒÂªs exibido no calendÃƒÂ¡rio e o dia na timeline.
 final selectedAgendaDateProvider = StateProvider<DateTime>((ref) {
   final now = DateTime.now();
   return DateTime(now.year, now.month, now.day);
 });
 
-final agendaProvider = AsyncNotifierProvider<AgendaNotifier, List<AgendaModel>>(
+final agendaProvider = AsyncNotifierProvider<AgendaNotifier, List<Agendamento>>(
   AgendaNotifier.new,
 );
 
-class AgendaNotifier extends AsyncNotifier<List<AgendaModel>> {
+class AgendaNotifier extends AsyncNotifier<List<Agendamento>> {
   @override
-  Future<List<AgendaModel>> build() async {
+  Future<List<Agendamento>> build() async {
     final agendaPort = ref.watch(agendaPortProvider);
     return agendaPort.getAgenda();
   }
@@ -65,3 +65,7 @@ class AgendaNotifier extends AsyncNotifier<List<AgendaModel>> {
     });
   }
 }
+
+
+
+

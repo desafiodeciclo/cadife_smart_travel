@@ -1,11 +1,11 @@
-import 'package:cadife_smart_travel/core/ports/agenda_port.dart';
-import 'package:cadife_smart_travel/shared/models/agenda_model.dart';
+﻿import 'package:cadife_smart_travel/features/agency/agenda/domain/entities/agendamento.dart';
+import 'package:cadife_smart_travel/features/agency/agenda/domain/repositories/agenda_port.dart';
 
 class MockAgendaRepository implements AgendaPort {
-  final List<AgendaModel> _agendas = [];
+  final List<Agendamento> _agendas = [];
 
   @override
-  Future<List<AgendaModel>> getAgenda({DateTime? date}) async {
+  Future<List<Agendamento>> getAgenda({DateTime? date}) async {
     await Future.delayed(const Duration(milliseconds: 400));
     if (date == null) return List.unmodifiable(_agendas);
     return _agendas
@@ -19,18 +19,18 @@ class MockAgendaRepository implements AgendaPort {
   }
 
   @override
-  Future<AgendaModel> getAgendaById(String id) async {
+  Future<Agendamento> getAgendaById(String id) async {
     await Future.delayed(const Duration(milliseconds: 200));
     return _agendas.firstWhere(
       (a) => a.id == id,
-      orElse: () => throw Exception('Agenda não encontrada: $id'),
+      orElse: () => throw Exception('Agenda nÃƒÂ£o encontrada: $id'),
     );
   }
 
   @override
-  Future<AgendaModel> createAgenda(CreateAgendaRequest request) async {
+  Future<Agendamento> createAgenda(CreateAgendaRequest request) async {
     await Future.delayed(const Duration(milliseconds: 600));
-    final agenda = AgendaModel(
+    final agenda = Agendamento(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       leadId: request.leadId,
       consultorId: 'mock-consultor-id',
@@ -45,12 +45,12 @@ class MockAgendaRepository implements AgendaPort {
   }
 
   @override
-  Future<AgendaModel> updateAgenda(String id, UpdateAgendaRequest request) async {
+  Future<Agendamento> updateAgenda(String id, UpdateAgendaRequest request) async {
     await Future.delayed(const Duration(milliseconds: 400));
     final index = _agendas.indexWhere((a) => a.id == id);
-    if (index == -1) throw Exception('Agenda não encontrada: $id');
+    if (index == -1) throw Exception('Agenda nÃƒÂ£o encontrada: $id');
     final old = _agendas[index];
-    final updated = AgendaModel(
+    final updated = Agendamento(
       id: old.id,
       leadId: old.leadId,
       consultorId: old.consultorId,
@@ -92,3 +92,7 @@ class MockAgendaRepository implements AgendaPort {
     });
   }
 }
+
+
+
+

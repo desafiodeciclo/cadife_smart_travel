@@ -1,7 +1,7 @@
-import 'package:cadife_smart_travel/core/constants/api_constants.dart';
+﻿import 'package:cadife_smart_travel/core/constants/api_constants.dart';
 import 'package:cadife_smart_travel/core/offline/offline_manager.dart';
-import 'package:cadife_smart_travel/core/ports/proposal_port.dart';
-import 'package:cadife_smart_travel/shared/models/models.dart';
+import 'package:cadife_smart_travel/features/agency/proposals/domain/entities/proposta.dart';
+import 'package:cadife_smart_travel/features/agency/proposals/domain/repositories/proposal_port.dart';
 import 'package:dio/dio.dart';
 
 class ProposalRepositoryImpl implements ProposalPort {
@@ -17,7 +17,7 @@ class ProposalRepositoryImpl implements ProposalPort {
   static const _cacheKeyPrefix = 'proposals';
 
   @override
-  Future<List<ProposalModel>> getProposals({
+  Future<List<Proposta>> getProposals({
     String? leadId,
     ProposalStatus? status,
   }) async {
@@ -30,7 +30,7 @@ class ProposalRepositoryImpl implements ProposalPort {
         },
       );
       final items = (response.data as List)
-          .map((e) => ProposalModel.fromJson(e as Map<String, dynamic>))
+          .map((e) => Proposta.fromJson(e as Map<String, dynamic>))
           .toList();
 
       await _offlineManager.saveToCache(
@@ -44,7 +44,7 @@ class ProposalRepositoryImpl implements ProposalPort {
       );
       if (cached != null) {
         return (cached as List)
-            .map((e) => ProposalModel.fromJson(e as Map<String, dynamic>))
+            .map((e) => Proposta.fromJson(e as Map<String, dynamic>))
             .toList();
       }
       rethrow;
@@ -52,10 +52,10 @@ class ProposalRepositoryImpl implements ProposalPort {
   }
 
   @override
-  Future<ProposalModel> getProposalById(String id) async {
+  Future<Proposta> getProposalById(String id) async {
     try {
       final response = await _dio.get(ApiConstants.proposalById(id));
-      final proposal = ProposalModel.fromJson(
+      final proposal = Proposta.fromJson(
         response.data as Map<String, dynamic>,
       );
 
@@ -69,19 +69,19 @@ class ProposalRepositoryImpl implements ProposalPort {
         '$_cacheKeyPrefix:detail:$id',
       );
       if (cached != null) {
-        return ProposalModel.fromJson(cached as Map<String, dynamic>);
+        return Proposta.fromJson(cached as Map<String, dynamic>);
       }
       rethrow;
     }
   }
 
   @override
-  Future<ProposalModel> createProposal(CreateProposalRequest request) async {
+  Future<Proposta> createProposal(CreateProposalRequest request) async {
     final response = await _dio.post(
       ApiConstants.proposals,
       data: request.toJson(),
     );
-    final proposal = ProposalModel.fromJson(
+    final proposal = Proposta.fromJson(
       response.data as Map<String, dynamic>,
     );
 
@@ -90,7 +90,7 @@ class ProposalRepositoryImpl implements ProposalPort {
   }
 
   @override
-  Future<ProposalModel> updateProposal(
+  Future<Proposta> updateProposal(
     String id,
     UpdateProposalRequest request,
   ) async {
@@ -98,7 +98,7 @@ class ProposalRepositoryImpl implements ProposalPort {
       ApiConstants.proposalById(id),
       data: request.toJson(),
     );
-    final proposal = ProposalModel.fromJson(
+    final proposal = Proposta.fromJson(
       response.data as Map<String, dynamic>,
     );
 
@@ -117,3 +117,7 @@ class ProposalRepositoryImpl implements ProposalPort {
     await _offlineManager.invalidateByPrefix('$_cacheKeyPrefix:list:');
   }
 }
+
+
+
+

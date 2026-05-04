@@ -1,6 +1,6 @@
-import 'dart:io';
+﻿import 'dart:io';
 
-import 'package:cadife_smart_travel/shared/models/document_model.dart';
+import 'package:cadife_smart_travel/features/client/documentos/domain/entities/documento.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -12,7 +12,7 @@ import 'package:share_plus/share_plus.dart';
 class DocumentViewerScreen extends StatefulWidget {
   const DocumentViewerScreen({super.key, required this.document});
 
-  final DocumentModel document;
+  final Documento document;
 
   @override
   State<DocumentViewerScreen> createState() => _DocumentViewerScreenState();
@@ -102,3 +102,6 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
     );
   }
 }
+
+
+

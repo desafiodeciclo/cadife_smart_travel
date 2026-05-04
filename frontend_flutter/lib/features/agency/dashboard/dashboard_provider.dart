@@ -1,6 +1,5 @@
-import 'package:cadife_smart_travel/core/ports/lead_port.dart';
-import 'package:cadife_smart_travel/shared/models/lead_model.dart';
-import 'package:cadife_smart_travel/shared/models/models.dart';
+﻿import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
+import 'package:cadife_smart_travel/features/agency/leads/domain/repositories/lead_port.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class DashboardStats {
@@ -79,3 +78,7 @@ class DashboardStatsNotifier extends AsyncNotifier<DashboardStats> {
     state = await AsyncValue.guard(build);
   }
 }
+
+
+
+

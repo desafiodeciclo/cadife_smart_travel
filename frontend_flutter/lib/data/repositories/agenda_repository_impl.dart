@@ -1,7 +1,7 @@
-import 'package:cadife_smart_travel/core/constants/api_constants.dart';
+﻿import 'package:cadife_smart_travel/core/constants/api_constants.dart';
 import 'package:cadife_smart_travel/core/offline/offline_manager.dart';
-import 'package:cadife_smart_travel/core/ports/agenda_port.dart';
-import 'package:cadife_smart_travel/shared/models/models.dart';
+import 'package:cadife_smart_travel/features/agency/agenda/domain/entities/agendamento.dart';
+import 'package:cadife_smart_travel/features/agency/agenda/domain/repositories/agenda_port.dart';
 import 'package:dio/dio.dart';
 
 class AgendaRepositoryImpl implements AgendaPort {
@@ -17,14 +17,14 @@ class AgendaRepositoryImpl implements AgendaPort {
   static const _cacheKeyPrefix = 'agenda';
 
   @override
-  Future<List<AgendaModel>> getAgenda({DateTime? date}) async {
+  Future<List<Agendamento>> getAgenda({DateTime? date}) async {
     try {
       final response = await _dio.get(
         ApiConstants.agenda,
         queryParameters: {if (date != null) 'date': date.toIso8601String()},
       );
       final items = (response.data as List)
-          .map((e) => AgendaModel.fromJson(e as Map<String, dynamic>))
+          .map((e) => Agendamento.fromJson(e as Map<String, dynamic>))
           .toList();
 
       await _offlineManager.saveToCache(
@@ -38,7 +38,7 @@ class AgendaRepositoryImpl implements AgendaPort {
       );
       if (cached != null) {
         return (cached as List)
-            .map((e) => AgendaModel.fromJson(e as Map<String, dynamic>))
+            .map((e) => Agendamento.fromJson(e as Map<String, dynamic>))
             .toList();
       }
       rethrow;
@@ -46,10 +46,10 @@ class AgendaRepositoryImpl implements AgendaPort {
   }
 
   @override
-  Future<AgendaModel> getAgendaById(String id) async {
+  Future<Agendamento> getAgendaById(String id) async {
     try {
       final response = await _dio.get(ApiConstants.agendaById(id));
-      final agenda = AgendaModel.fromJson(
+      final agenda = Agendamento.fromJson(
         response.data as Map<String, dynamic>,
       );
 
@@ -63,26 +63,26 @@ class AgendaRepositoryImpl implements AgendaPort {
         '$_cacheKeyPrefix:detail:$id',
       );
       if (cached != null) {
-        return AgendaModel.fromJson(cached as Map<String, dynamic>);
+        return Agendamento.fromJson(cached as Map<String, dynamic>);
       }
       rethrow;
     }
   }
 
   @override
-  Future<AgendaModel> createAgenda(CreateAgendaRequest request) async {
+  Future<Agendamento> createAgenda(CreateAgendaRequest request) async {
     final response = await _dio.post(
       ApiConstants.agenda,
       data: request.toJson(),
     );
-    final agenda = AgendaModel.fromJson(response.data as Map<String, dynamic>);
+    final agenda = Agendamento.fromJson(response.data as Map<String, dynamic>);
 
     await _offlineManager.invalidateByPrefix('$_cacheKeyPrefix:list:');
     return agenda;
   }
 
   @override
-  Future<AgendaModel> updateAgenda(
+  Future<Agendamento> updateAgenda(
     String id,
     UpdateAgendaRequest request,
   ) async {
@@ -90,7 +90,7 @@ class AgendaRepositoryImpl implements AgendaPort {
       ApiConstants.agendaById(id),
       data: request.toJson(),
     );
-    final agenda = AgendaModel.fromJson(response.data as Map<String, dynamic>);
+    final agenda = Agendamento.fromJson(response.data as Map<String, dynamic>);
 
     await _offlineManager.saveToCache(
       '$_cacheKeyPrefix:detail:$id',
@@ -148,3 +148,7 @@ class AgendaRepositoryImpl implements AgendaPort {
     }
   }
 }
+
+
+
+

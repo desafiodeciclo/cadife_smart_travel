@@ -1,23 +1,23 @@
-import 'package:cadife_smart_travel/core/theme/app_colors.dart';
+﻿import 'package:cadife_smart_travel/core/theme/app_colors.dart';
 import 'package:cadife_smart_travel/core/widgets/shimmer_loading.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/agenda_provider.dart';
-import 'package:cadife_smart_travel/shared/models/agenda_model.dart';
+import 'package:cadife_smart_travel/features/agency/agenda/domain/entities/agendamento.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-// ─── Localisation helpers (no locale init needed) ────────────────────────────
+// â”€â”€â”€ Localisation helpers (no locale init needed) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const _meses = [
-  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Janeiro', 'Fevereiro', 'MarÃ§o', 'Abril', 'Maio', 'Junho',
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
 ];
-const _diasSemana = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+const _diasSemana = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'SÃ¡b', 'Dom'];
 
 String _monthLabel(DateTime d) => '${_meses[d.month - 1]} ${d.year}';
 
-// ─── Screen ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Screen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class AgendaScreen extends ConsumerWidget {
   const AgendaScreen({super.key});
@@ -103,7 +103,7 @@ class AgendaScreen extends ConsumerWidget {
   }
 }
 
-// ─── View toggle ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ View toggle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class _ViewToggleBar extends ConsumerWidget {
   const _ViewToggleBar({required this.viewMode});
@@ -116,7 +116,7 @@ class _ViewToggleBar extends ConsumerWidget {
       child: Row(
         children: [
           _ToggleChip(
-            label: 'Mês',
+            label: 'MÃªs',
             icon: Icons.calendar_month,
             selected: viewMode == 0,
             onTap: () =>
@@ -185,11 +185,11 @@ class _ToggleChip extends StatelessWidget {
   }
 }
 
-// ─── Monthly view ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ Monthly view â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class _MonthView extends ConsumerWidget {
   const _MonthView({required this.items});
-  final List<AgendaModel> items;
+  final List<Agendamento> items;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -292,13 +292,13 @@ class _CalendarGrid extends ConsumerWidget {
 
   final DateTime currentMonth;
   final DateTime selectedDate;
-  final List<AgendaModel> items;
+  final List<Agendamento> items;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final firstDay = currentMonth;
     final daysInMonth = DateTime(currentMonth.year, currentMonth.month + 1, 0).day;
-    // DateTime.weekday: 1=Mon … 7=Sun → offset for Mon-first grid
+    // DateTime.weekday: 1=Mon â€¦ 7=Sun â†’ offset for Mon-first grid
     final startOffset = firstDay.weekday - 1;
 
     final cells = <Widget>[];
@@ -436,9 +436,9 @@ class _DensityLegend extends StatelessWidget {
       spacing: 16,
       runSpacing: 8,
       children: [
-        _LegendItem(color: AppColors.success, label: '1–2 reuniões'),
-        _LegendItem(color: AppColors.warning, label: '3–4 reuniões'),
-        _LegendItem(color: AppColors.primary, label: '5+ reuniões'),
+        _LegendItem(color: AppColors.success, label: '1â€“2 reuniÃµes'),
+        _LegendItem(color: AppColors.warning, label: '3â€“4 reuniÃµes'),
+        _LegendItem(color: AppColors.primary, label: '5+ reuniÃµes'),
       ],
     );
   }
@@ -468,11 +468,11 @@ class _LegendItem extends StatelessWidget {
   }
 }
 
-// ─── Daily view ───────────────────────────────────────────────────────────────
+// â”€â”€â”€ Daily view â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class _DailyView extends ConsumerWidget {
   const _DailyView({required this.items});
-  final List<AgendaModel> items;
+  final List<Agendamento> items;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -494,7 +494,7 @@ class _DailyView extends ConsumerWidget {
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
-            itemCount: 7, // slots 09:00 → 15:00
+            itemCount: 7, // slots 09:00 â†’ 15:00
             itemBuilder: (context, index) {
               final hour = 9 + index;
               final slotStart = DateTime(
@@ -568,7 +568,7 @@ class _DayNavBar extends ConsumerWidget {
   }
 }
 
-// ─── Time slot row ────────────────────────────────────────────────────────────
+// â”€â”€â”€ Time slot row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class _TimeSlotRow extends StatelessWidget {
   const _TimeSlotRow({
@@ -579,7 +579,7 @@ class _TimeSlotRow extends StatelessWidget {
 
   final int hour;
   final DateTime slotStart;
-  final AgendaModel? meeting;
+  final Agendamento? meeting;
 
   @override
   Widget build(BuildContext context) {
@@ -635,19 +635,19 @@ class _TimeSlotRow extends StatelessWidget {
   }
 }
 
-// ─── Meeting card ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ Meeting card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class _MeetingCard extends StatelessWidget {
   const _MeetingCard({required this.meeting});
-  final AgendaModel meeting;
+  final Agendamento meeting;
 
   @override
   Widget build(BuildContext context) {
     final endTime =
         meeting.dateTime.add(Duration(minutes: meeting.durationMinutes));
     final timeRange =
-        '${DateFormat('HH:mm').format(meeting.dateTime)} – ${DateFormat('HH:mm').format(endTime)}';
-    final displayName = meeting.notes?.isNotEmpty == true ? meeting.notes! : 'Reunião de Curadoria';
+        '${DateFormat('HH:mm').format(meeting.dateTime)} â€“ ${DateFormat('HH:mm').format(endTime)}';
+    final displayName = meeting.notes?.isNotEmpty == true ? meeting.notes! : 'ReuniÃ£o de Curadoria';
 
     return Material(
       color: AppColors.primaryLight,
@@ -741,16 +741,16 @@ class _StatusChip extends StatelessWidget {
   }
 }
 
-// ─── Blocked slot card ────────────────────────────────────────────────────────
+// â”€â”€â”€ Blocked slot card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class _BlockedSlotCard extends ConsumerWidget {
   const _BlockedSlotCard({required this.meeting});
-  final AgendaModel meeting;
+  final Agendamento meeting;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final label =
-        meeting.notes?.isNotEmpty == true ? meeting.notes! : 'Horário Bloqueado';
+        meeting.notes?.isNotEmpty == true ? meeting.notes! : 'HorÃ¡rio Bloqueado';
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -789,12 +789,12 @@ class _BlockedSlotCard extends ConsumerWidget {
   Future<void> _confirmUnblock(
     BuildContext context,
     WidgetRef ref,
-    AgendaModel m,
+    Agendamento m,
   ) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Desbloquear horário?'),
+        title: const Text('Desbloquear horÃ¡rio?'),
         content: Text(
           'Deseja liberar ${DateFormat('HH:mm').format(m.dateTime)} para agendamentos?',
         ),
@@ -818,7 +818,7 @@ class _BlockedSlotCard extends ConsumerWidget {
   }
 }
 
-// ─── Empty slot card ──────────────────────────────────────────────────────────
+// â”€â”€â”€ Empty slot card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class _EmptySlotCard extends ConsumerWidget {
   const _EmptySlotCard({required this.slotStart});
@@ -837,7 +837,7 @@ class _EmptySlotCard extends ConsumerWidget {
         ),
         child: const Center(
           child: Text(
-            'Disponível  ·  Toque para agendar ou bloquear',
+            'DisponÃ­vel  Â·  Toque para agendar ou bloquear',
             style: TextStyle(
               color: AppColors.textSecondary,
               fontSize: 12,
@@ -878,7 +878,7 @@ class _EmptySlotCard extends ConsumerWidget {
   }
 }
 
-// ─── Slot options bottom sheet ────────────────────────────────────────────────
+// â”€â”€â”€ Slot options bottom sheet â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class _SlotOptionsSheet extends StatefulWidget {
   const _SlotOptionsSheet({
@@ -933,7 +933,7 @@ class _SlotOptionsSheetState extends State<_SlotOptionsSheet> {
           ),
           const SizedBox(height: 16),
           Text(
-            'Horário $timeStr',
+            'HorÃ¡rio $timeStr',
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -942,7 +942,7 @@ class _SlotOptionsSheetState extends State<_SlotOptionsSheet> {
           ),
           const SizedBox(height: 4),
           const Text(
-            'O que deseja fazer com este horário?',
+            'O que deseja fazer com este horÃ¡rio?',
             style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
           ),
           const SizedBox(height: 16),
@@ -953,7 +953,7 @@ class _SlotOptionsSheetState extends State<_SlotOptionsSheet> {
             tileColor: AppColors.primaryLight,
             leading: const Icon(Icons.event_available, color: AppColors.primary),
             title: const Text(
-              'Agendar Reunião',
+              'Agendar ReuniÃ£o',
               style: TextStyle(fontWeight: FontWeight.w600),
             ),
             subtitle: const Text('Vincular a um lead existente'),
@@ -968,10 +968,10 @@ class _SlotOptionsSheetState extends State<_SlotOptionsSheet> {
             leading:
                 const Icon(Icons.do_not_disturb_on, color: AppColors.warning),
             title: const Text(
-              'Bloquear Horário',
+              'Bloquear HorÃ¡rio',
               style: TextStyle(fontWeight: FontWeight.w600),
             ),
-            subtitle: const Text('Pausa ou reunião interna'),
+            subtitle: const Text('Pausa ou reuniÃ£o interna'),
             trailing: _showNotesField
                 ? null
                 : const Icon(Icons.expand_more, color: AppColors.textSecondary),
@@ -1035,3 +1035,6 @@ class _SlotOptionsSheetState extends State<_SlotOptionsSheet> {
     );
   }
 }
+
+
+

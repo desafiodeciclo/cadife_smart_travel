@@ -1,10 +1,10 @@
-import 'package:cadife_smart_travel/core/theme/app_colors.dart';
+﻿import 'package:cadife_smart_travel/core/theme/app_colors.dart';
 import 'package:cadife_smart_travel/core/theme/theme_mode_provider.dart';
+import 'package:cadife_smart_travel/design_system/components/index.dart';
+import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
 import 'package:cadife_smart_travel/features/auth/providers/auth_provider.dart';
 import 'package:cadife_smart_travel/features/client/profile/profile_provider.dart';
 import 'package:cadife_smart_travel/features/client/profile/profile_widgets.dart';
-import 'package:cadife_smart_travel/shared/models/models.dart';
-import 'package:cadife_smart_travel/shared/widgets/feedback_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -12,9 +12,9 @@ import 'package:intl/intl.dart';
 
 /// Tela de perfil do cliente.
 ///
-/// Exibe dados pessoais (nome editável, email, telefone read-only),
-/// preferências de viagem via chips (tipo_viagem, preferencias),
-/// toggle de passaporte válido, controle de tema e logout.
+/// Exibe dados pessoais (nome editÃƒÂ¡vel, email, telefone read-only),
+/// preferÃƒÂªncias de viagem via chips (tipo_viagem, preferencias),
+/// toggle de passaporte vÃƒÂ¡lido, controle de tema e logout.
 ///
 /// Integra com GET /users/me e PATCH /users/me via [ProfilePort].
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -38,8 +38,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     'turismo',
     'lazer',
     'aventura',
-    'imigração',
-    'negócios',
+    'imigraÃƒÂ§ÃƒÂ£o',
+    'negÃƒÂ³cios',
   ];
 
   static const _preferenciasOptions = [
@@ -48,7 +48,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     'praia',
     'cidade',
     'luxo',
-    'econômico',
+    'econÃƒÂ´mico',
   ];
 
   @override
@@ -57,7 +57,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     super.dispose();
   }
 
-  void _syncFromUser(UserModel? user) {
+  void _syncFromUser(AuthUser? user) {
     if (user == null || _hasSynced) return;
     _nameController.text = user.name;
     _tipoViagemSelected
@@ -70,7 +70,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _hasSynced = true;
   }
 
-  Future<void> _save(UserModel? current) async {
+  Future<void> _save(AuthUser? current) async {
     if (current == null || _isSaving) return;
     setState(() => _isSaving = true);
     try {
@@ -128,13 +128,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   Widget _buildContent(
     BuildContext context,
-    UserModel? user,
+    AuthUser? user,
     ThemeMode themeMode,
     bool isDark,
   ) {
     return CustomScrollView(
       slivers: [
-        // ── Header com avatar e nome ───────────────────────────────
+        // Ã¢â€â‚¬Ã¢â€â‚¬ Header com avatar e nome Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
         SliverToBoxAdapter(
           child: ProfileHeader(
             user: user,
@@ -145,7 +145,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
         ),
 
-        // ── Dados Pessoais ─────────────────────────────────────────
+        // Ã¢â€â‚¬Ã¢â€â‚¬ Dados Pessoais Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
         SliverToBoxAdapter(
           child: ProfileSectionCard(
             title: 'Dados Pessoais',
@@ -154,14 +154,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ProfileInfoRow(
                 icon: Icons.email_outlined,
                 label: 'E-mail',
-                value: user?.email ?? '—',
+                value: user?.email ?? 'Ã¢â‚¬â€',
                 isDark: isDark,
               ),
               const SizedBox(height: 16),
               ProfileInfoRow(
                 icon: Icons.phone_outlined,
                 label: 'Telefone',
-                value: user?.phone ?? 'Não informado',
+                value: user?.phone ?? 'NÃƒÂ£o informado',
                 isDark: isDark,
                 readOnly: true,
               ),
@@ -171,17 +171,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 label: 'Membro desde',
                 value: user?.createdAt != null
                     ? DateFormat('dd/MM/yyyy').format(user!.createdAt!)
-                    : '—',
+                    : 'Ã¢â‚¬â€',
                 isDark: isDark,
               ),
             ],
           ),
         ),
 
-        // ── Preferências de Viagem ─────────────────────────────────
+        // Ã¢â€â‚¬Ã¢â€â‚¬ PreferÃƒÂªncias de Viagem Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
         SliverToBoxAdapter(
           child: ProfileSectionCard(
-            title: 'Preferências de Viagem',
+            title: 'PreferÃƒÂªncias de Viagem',
             isDark: isDark,
             children: [
               ProfileChipGroup(
@@ -201,7 +201,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
               const SizedBox(height: 20),
               ProfileChipGroup(
-                label: 'Preferências',
+                label: 'PreferÃƒÂªncias',
                 options: _preferenciasOptions,
                 selected: _preferenciasSelected,
                 isDark: isDark,
@@ -219,7 +219,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
         ),
 
-        // ── Passaporte ─────────────────────────────────────────────
+        // Ã¢â€â‚¬Ã¢â€â‚¬ Passaporte Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
         SliverToBoxAdapter(
           child: ProfilePassaporteCard(
             value: _temPassaporte,
@@ -231,10 +231,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
         ),
 
-        // ── Aparência (tema) ───────────────────────────────────────
+        // Ã¢â€â‚¬Ã¢â€â‚¬ AparÃƒÂªncia (tema) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
         SliverToBoxAdapter(
           child: ProfileSectionCard(
-            title: 'Aparência',
+            title: 'AparÃƒÂªncia',
             isDark: isDark,
             children: [
               ProfileThemeSelector(
@@ -256,7 +256,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
         ),
 
-        // ── Ações (salvar / logout / apagar conta) ─────────────────
+        // Ã¢â€â‚¬Ã¢â€â‚¬ AÃƒÂ§ÃƒÂµes (salvar / logout / apagar conta) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -277,7 +277,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 color: Colors.white,
                               ),
                             )
-                          : const Text('Salvar alterações'),
+                          : const Text('Salvar alteraÃƒÂ§ÃƒÂµes'),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -404,12 +404,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Você está prestes a apagar permanentemente sua conta e todos os dados associados.',
+              'VocÃƒÂª estÃƒÂ¡ prestes a apagar permanentemente sua conta e todos os dados associados.',
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 12),
             Text(
-              'Esta ação não pode ser desfeita.',
+              'Esta aÃƒÂ§ÃƒÂ£o nÃƒÂ£o pode ser desfeita.',
               style: TextStyle(
                   fontWeight: FontWeight.w600, color: AppColors.error),
               textAlign: TextAlign.center,
@@ -441,3 +441,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
   }
 }
+
+
+

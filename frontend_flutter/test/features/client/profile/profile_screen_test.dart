@@ -1,23 +1,23 @@
-import 'package:cadife_smart_travel/core/ports/auth_port.dart';
-import 'package:cadife_smart_travel/core/ports/profile_port.dart';
-import 'package:cadife_smart_travel/core/theme/theme_mode_provider.dart';
+﻿import 'package:cadife_smart_travel/core/theme/theme_mode_provider.dart';
+import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
+import 'package:cadife_smart_travel/features/auth/domain/repositories/auth_port.dart';
 import 'package:cadife_smart_travel/features/auth/providers/auth_provider.dart';
+import 'package:cadife_smart_travel/features/client/profile/domain/repositories/profile_port.dart';
 import 'package:cadife_smart_travel/features/client/profile/profile.dart';
-import 'package:cadife_smart_travel/shared/models/user_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _FakeProfilePort implements ProfilePort {
-  final UserModel? _user;
+  final AuthUser? _user;
 
-  _FakeProfilePort({UserModel? user}) : _user = user;
-
-  @override
-  Future<UserModel> getCurrentUser() async => _user!;
+  _FakeProfilePort({AuthUser? user}) : _user = user;
 
   @override
-  Future<UserModel> updateProfile({
+  Future<AuthUser> getCurrentUser() async => _user!;
+
+  @override
+  Future<AuthUser> updateProfile({
     String? name,
     List<String>? tipoViagem,
     List<String>? preferencias,
@@ -33,15 +33,15 @@ class _FakeProfilePort implements ProfilePort {
 }
 
 class _FakeAuthPort implements AuthPort {
-  final UserModel? _user;
+  final AuthUser? _user;
 
-  _FakeAuthPort({UserModel? user}) : _user = user;
-
-  @override
-  Future<UserModel> login(String email, String password, {UserRole? profileHint}) async => _user!;
+  _FakeAuthPort({AuthUser? user}) : _user = user;
 
   @override
-  Future<UserModel> register(String name, String email, String password) async => _user!;
+  Future<AuthUser> login(String email, String password, {UserRole? profileHint}) async => _user!;
+
+  @override
+  Future<AuthUser> register(String name, String email, String password) async => _user!;
 
   @override
   Future<void> logout() async {}
@@ -51,7 +51,7 @@ class _FakeAuthPort implements AuthPort {
       const TokenModel(accessToken: 'a', refreshToken: 'r', expiresIn: 3600);
 
   @override
-  Future<UserModel?> getCurrentUser() async => _user;
+  Future<AuthUser?> getCurrentUser() async => _user;
 
   @override
   Future<bool> isLoggedIn() async => _user != null;
@@ -86,9 +86,9 @@ Widget _buildTestableWidget({
 
 void main() {
   group('ProfileScreen', () {
-    final mockUser = UserModel(
+    final mockUser = AuthUser(
       id: 'client-1',
-      name: 'João Silva',
+      name: 'JoÃƒÂ£o Silva',
       email: 'joao@email.com',
       role: UserRole.cliente,
       phone: '+55 11 91234-5678',
@@ -98,7 +98,7 @@ void main() {
       temPassaporte: true,
     );
 
-    testWidgets('renderiza nome, email e telefone do usuário', (tester) async {
+    testWidgets('renderiza nome, email e telefone do usuÃƒÂ¡rio', (tester) async {
       await tester.pumpWidget(
         _buildTestableWidget(
           profilePort: _FakeProfilePort(user: mockUser),
@@ -107,13 +107,13 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('João Silva'), findsOneWidget);
+      expect(find.text('JoÃƒÂ£o Silva'), findsOneWidget);
       expect(find.text('joao@email.com'), findsAtLeastNWidgets(1));
       expect(find.text('+55 11 91234-5678'), findsOneWidget);
       expect(find.text('15/06/2024'), findsOneWidget);
     });
 
-    testWidgets('renderiza chips de preferências de viagem', (tester) async {
+    testWidgets('renderiza chips de preferÃƒÂªncias de viagem', (tester) async {
       await tester.pumpWidget(
         _buildTestableWidget(
           profilePort: _FakeProfilePort(user: mockUser),
@@ -128,7 +128,7 @@ void main() {
       expect(find.text('Calor'), findsOneWidget);
     });
 
-    testWidgets('renderiza toggle de passaporte válido', (tester) async {
+    testWidgets('renderiza toggle de passaporte vÃƒÂ¡lido', (tester) async {
       await tester.pumpWidget(
         _buildTestableWidget(
           profilePort: _FakeProfilePort(user: mockUser),
@@ -137,11 +137,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Passaporte válido'), findsOneWidget);
-      expect(find.text('Sim, possui passaporte válido'), findsOneWidget);
+      expect(find.text('Passaporte vÃƒÂ¡lido'), findsOneWidget);
+      expect(find.text('Sim, possui passaporte vÃƒÂ¡lido'), findsOneWidget);
     });
 
-    testWidgets('renderiza botão de logout', (tester) async {
+    testWidgets('renderiza botÃƒÂ£o de logout', (tester) async {
       await tester.pumpWidget(
         _buildTestableWidget(
           profilePort: _FakeProfilePort(user: mockUser),
@@ -158,7 +158,7 @@ void main() {
       expect(find.widgetWithText(OutlinedButton, 'Sair da conta'), findsOneWidget);
     });
 
-    testWidgets('renderiza opções de tema', (tester) async {
+    testWidgets('renderiza opÃƒÂ§ÃƒÂµes de tema', (tester) async {
       await tester.pumpWidget(
         _buildTestableWidget(
           profilePort: _FakeProfilePort(user: mockUser),
@@ -168,16 +168,16 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.scrollUntilVisible(
-        find.text('Padrão do sistema'),
+        find.text('PadrÃƒÂ£o do sistema'),
         100,
       );
 
-      expect(find.text('Padrão do sistema'), findsOneWidget);
+      expect(find.text('PadrÃƒÂ£o do sistema'), findsOneWidget);
       expect(find.text('Claro'), findsOneWidget);
       expect(find.text('Escuro'), findsOneWidget);
     });
 
-    testWidgets('mostra loading quando dados ainda não carregaram', (tester) async {
+    testWidgets('mostra loading quando dados ainda nÃƒÂ£o carregaram', (tester) async {
       await tester.pumpWidget(
         _buildTestableWidget(
           profilePort: _FakeProfilePort(user: mockUser),
@@ -189,8 +189,8 @@ void main() {
       expect(find.text('Carregando perfil...'), findsOneWidget);
     });
 
-    testWidgets('exibe mensagem quando telefone não está informado', (tester) async {
-      const userSemTelefone = UserModel(
+    testWidgets('exibe mensagem quando telefone nÃƒÂ£o estÃƒÂ¡ informado', (tester) async {
+      const userSemTelefone = AuthUser(
         id: 'client-2',
         name: 'Maria Souza',
         email: 'maria@email.com',
@@ -205,8 +205,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Telefone e passaporte podem mostrar "Não informado"
-      expect(find.text('Não informado'), findsAtLeastNWidgets(1));
+      // Telefone e passaporte podem mostrar "NÃƒÂ£o informado"
+      expect(find.text('NÃƒÂ£o informado'), findsAtLeastNWidgets(1));
     });
 
     testWidgets('adapta cores para tema escuro', (tester) async {
@@ -223,7 +223,7 @@ void main() {
       expect(scaffold.backgroundColor, const Color(0xFF1C1917));
     });
 
-    testWidgets('entra em modo de edição ao tocar no ícone de editar', (tester) async {
+    testWidgets('entra em modo de ediÃƒÂ§ÃƒÂ£o ao tocar no ÃƒÂ­cone de editar', (tester) async {
       await tester.pumpWidget(
         _buildTestableWidget(
           profilePort: _FakeProfilePort(user: mockUser),
@@ -235,8 +235,11 @@ void main() {
       await tester.tap(find.byIcon(Icons.edit));
       await tester.pumpAndSettle();
 
-      // Após tocar em editar, o TextField de nome deve aparecer
+      // ApÃƒÂ³s tocar em editar, o TextField de nome deve aparecer
       expect(find.byType(TextField), findsOneWidget);
     });
   });
 }
+
+
+

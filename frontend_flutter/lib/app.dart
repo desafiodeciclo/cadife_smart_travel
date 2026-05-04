@@ -1,4 +1,4 @@
-import 'package:cadife_smart_travel/core/router/app_router.dart';
+import 'package:cadife_smart_travel/config/router/app_router.dart';
 import 'package:cadife_smart_travel/core/theme/app_theme.dart';
 import 'package:cadife_smart_travel/core/theme/theme_mode_provider.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/widgets/app_lock_wrapper.dart';

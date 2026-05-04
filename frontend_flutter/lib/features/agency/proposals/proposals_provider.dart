@@ -1,5 +1,5 @@
-import 'package:cadife_smart_travel/core/ports/proposal_port.dart';
-import 'package:cadife_smart_travel/shared/models/models.dart';
+﻿import 'package:cadife_smart_travel/features/agency/proposals/domain/entities/proposta.dart';
+import 'package:cadife_smart_travel/features/agency/proposals/domain/repositories/proposal_port.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final proposalPortProvider = Provider<ProposalPort>((ref) {
@@ -7,13 +7,13 @@ final proposalPortProvider = Provider<ProposalPort>((ref) {
 });
 
 final proposalsProvider =
-    AsyncNotifierProvider<ProposalsNotifier, List<ProposalModel>>(
+    AsyncNotifierProvider<ProposalsNotifier, List<Proposta>>(
       ProposalsNotifier.new,
     );
 
-class ProposalsNotifier extends AsyncNotifier<List<ProposalModel>> {
+class ProposalsNotifier extends AsyncNotifier<List<Proposta>> {
   @override
-  Future<List<ProposalModel>> build() async {
+  Future<List<Proposta>> build() async {
     final proposalPort = ref.watch(proposalPortProvider);
     return proposalPort.getProposals();
   }
@@ -40,3 +40,7 @@ class ProposalsNotifier extends AsyncNotifier<List<ProposalModel>> {
     await refresh();
   }
 }
+
+
+
+

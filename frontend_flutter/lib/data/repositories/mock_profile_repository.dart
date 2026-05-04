@@ -1,17 +1,17 @@
-import 'package:cadife_smart_travel/core/ports/profile_port.dart';
-import 'package:cadife_smart_travel/shared/models/user_model.dart';
+﻿import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
+import 'package:cadife_smart_travel/features/client/profile/domain/repositories/profile_port.dart';
 
 /// Mock de ProfilePort para desenvolvimento local.
 ///
-/// Não faz chamadas HTTP — retorna um usuário cliente mockado
-/// com preferências de viagem preenchidas.
+/// NÃƒÂ£o faz chamadas HTTP Ã¢â‚¬â€ retorna um usuÃƒÂ¡rio cliente mockado
+/// com preferÃƒÂªncias de viagem preenchidas.
 class MockProfileRepository implements ProfilePort {
-  UserModel? _user;
+  AuthUser? _user;
 
   @override
-  Future<UserModel> getCurrentUser() async {
+  Future<AuthUser> getCurrentUser() async {
     await Future.delayed(const Duration(milliseconds: 400));
-    _user ??= UserModel(
+    _user ??= AuthUser(
       id: 'mock-client-001',
       name: 'Maria Fernanda Costa',
       email: 'maria.costa@email.com',
@@ -27,7 +27,7 @@ class MockProfileRepository implements ProfilePort {
   }
 
   @override
-  Future<UserModel> updateProfile({
+  Future<AuthUser> updateProfile({
     String? name,
     List<String>? tipoViagem,
     List<String>? preferencias,
@@ -43,3 +43,7 @@ class MockProfileRepository implements ProfilePort {
     return _user!;
   }
 }
+
+
+
+

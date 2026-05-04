@@ -1,4 +1,5 @@
-import 'package:cadife_smart_travel/services/api_service.dart';
+import 'package:cadife_smart_travel/core/di/service_locator.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class SaleGoal {
@@ -71,20 +72,20 @@ class ConsultorProfile {
 }
 
 class ProfileRepository {
-  final ApiService _api;
-  ProfileRepository(this._api);
+  final Dio _dio;
+  ProfileRepository(this._dio);
 
   Future<ConsultorProfile> getProfile() async {
-    final response = await _api.get('/consultor/profile');
+    final response = await _dio.get('/consultor/profile');
     return ConsultorProfile.fromJson(response.data as Map<String, dynamic>);
   }
 
   Future<ConsultorProfile> updateBio(String bio) async {
-    final response = await _api.put('/consultor/profile', data: {'bio': bio});
+    final response = await _dio.put('/consultor/profile', data: {'bio': bio});
     return ConsultorProfile.fromJson(response.data as Map<String, dynamic>);
   }
 }
 
 final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
-  return ProfileRepository(ref.watch(apiServiceProvider));
+  return ProfileRepository(sl<Dio>());
 });

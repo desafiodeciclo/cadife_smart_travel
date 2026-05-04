@@ -1,5 +1,5 @@
-import 'package:cadife_smart_travel/core/ports/lead_port.dart';
-import 'package:cadife_smart_travel/shared/models/models.dart';
+﻿import 'package:cadife_smart_travel/features/agency/leads/domain/entities/interacao.dart';
+import 'package:cadife_smart_travel/features/agency/leads/domain/repositories/lead_port.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final interactionsPortProvider = Provider<LeadPort>((ref) {
@@ -9,14 +9,14 @@ final interactionsPortProvider = Provider<LeadPort>((ref) {
 final interactionsProvider =
     AsyncNotifierProvider.family<
       InteractionsNotifier,
-      List<InteractionModel>,
+      List<Interacao>,
       String
     >(InteractionsNotifier.new);
 
 class InteractionsNotifier
-    extends FamilyAsyncNotifier<List<InteractionModel>, String> {
+    extends FamilyAsyncNotifier<List<Interacao>, String> {
   @override
-  Future<List<InteractionModel>> build(String arg) async {
+  Future<List<Interacao>> build(String arg) async {
     final leadPort = ref.watch(interactionsPortProvider);
     return leadPort.getInteractions(arg);
   }
@@ -30,19 +30,19 @@ class InteractionsNotifier
   }
 }
 
-// ── Client-facing provider ──────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬ Client-facing provider Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 // Resolves the active lead automatically and fetches its interactions,
 // so HistoricoScreen does not need to know the lead ID.
 
 final clientInteractionsProvider = AsyncNotifierProvider<
-    ClientInteractionsNotifier, List<InteractionModel>>(
+    ClientInteractionsNotifier, List<Interacao>>(
   ClientInteractionsNotifier.new,
 );
 
 class ClientInteractionsNotifier
-    extends AsyncNotifier<List<InteractionModel>> {
+    extends AsyncNotifier<List<Interacao>> {
   @override
-  Future<List<InteractionModel>> build() async {
+  Future<List<Interacao>> build() async {
     final leadPort = ref.watch(interactionsPortProvider);
     final lead = await leadPort.getMyLead();
     if (lead == null) return [];
@@ -54,8 +54,12 @@ class ClientInteractionsNotifier
     state = await AsyncValue.guard(() async {
       final leadPort = ref.read(interactionsPortProvider);
       final lead = await leadPort.getMyLead();
-      if (lead == null) return <InteractionModel>[];
+      if (lead == null) return <Interacao>[];
       return leadPort.getInteractions(lead.id);
     });
   }
 }
+
+
+
+

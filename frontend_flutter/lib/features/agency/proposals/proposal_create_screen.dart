@@ -1,13 +1,13 @@
-import 'package:cadife_smart_travel/core/theme/app_colors.dart';
+﻿import 'package:cadife_smart_travel/core/theme/app_colors.dart';
+import 'package:cadife_smart_travel/features/agency/proposals/domain/entities/proposta.dart';
 import 'package:cadife_smart_travel/features/agency/proposals/proposals_provider.dart';
-import 'package:cadife_smart_travel/shared/models/models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-/// Tela de criação de proposta — Fase 4.2
+/// Tela de criaÃƒÂ§ÃƒÂ£o de proposta Ã¢â‚¬â€ Fase 4.2
 /// Preenche [CreateProposalRequest] e envia via ProposalsNotifier.
 class ProposalCreateScreen extends ConsumerStatefulWidget {
   final String leadId;
@@ -117,7 +117,7 @@ class _ProposalCreateScreenState extends ConsumerState<ProposalCreateScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Proposta criada com sucesso! 🎉'),
+            content: Text('Proposta criada com sucesso! Ã°Å¸Å½â€°'),
             backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
           ),
@@ -146,7 +146,7 @@ class _ProposalCreateScreenState extends ConsumerState<ProposalCreateScreen>
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          // ── Gradient app bar ─────────────────────────────────────────────
+          // Ã¢â€â‚¬Ã¢â€â‚¬ Gradient app bar Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
           SliverAppBar(
             expandedHeight: 160,
             pinned: true,
@@ -191,7 +191,7 @@ class _ProposalCreateScreenState extends ConsumerState<ProposalCreateScreen>
             ),
           ),
 
-          // ── Form ─────────────────────────────────────────────────────────
+          // Ã¢â€â‚¬Ã¢â€â‚¬ Form Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
           SliverToBoxAdapter(
             child: SlideTransition(
               position: _slideAnim,
@@ -202,7 +202,7 @@ class _ProposalCreateScreenState extends ConsumerState<ProposalCreateScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // ── Destino & Datas ─────────────────────────────────
+                      // Ã¢â€â‚¬Ã¢â€â‚¬ Destino & Datas Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
                       _GlassSection(
                         title: 'Viagem',
                         icon: Icons.flight_takeoff_rounded,
@@ -211,7 +211,7 @@ class _ProposalCreateScreenState extends ConsumerState<ProposalCreateScreen>
                             controller: _destinoController,
                             decoration: const InputDecoration(
                               labelText: 'Destino',
-                              hintText: 'Ex: Paris, França',
+                              hintText: 'Ex: Paris, FranÃƒÂ§a',
                               prefixIcon: Icon(Icons.place_outlined),
                             ),
                             textCapitalization: TextCapitalization.words,
@@ -242,7 +242,7 @@ class _ProposalCreateScreenState extends ConsumerState<ProposalCreateScreen>
                           TextFormField(
                             controller: _pessoasController,
                             decoration: const InputDecoration(
-                              labelText: 'Nº de pessoas',
+                              labelText: 'NÃ‚Âº de pessoas',
                               prefixIcon: Icon(Icons.group_outlined),
                             ),
                             keyboardType: TextInputType.number,
@@ -254,7 +254,7 @@ class _ProposalCreateScreenState extends ConsumerState<ProposalCreateScreen>
                       ),
                       const SizedBox(height: 16),
 
-                      // ── Valor ────────────────────────────────────────────
+                      // Ã¢â€â‚¬Ã¢â€â‚¬ Valor Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
                       _GlassSection(
                         title: 'Valor',
                         icon: Icons.attach_money_rounded,
@@ -277,7 +277,7 @@ class _ProposalCreateScreenState extends ConsumerState<ProposalCreateScreen>
                                   .replaceAll(RegExp(r'[^0-9,]'), '')
                                   .replaceAll(',', '.');
                               if (double.tryParse(numeric) == null) {
-                                return 'Valor inválido';
+                                return 'Valor invÃƒÂ¡lido';
                               }
                               return null;
                             },
@@ -286,9 +286,9 @@ class _ProposalCreateScreenState extends ConsumerState<ProposalCreateScreen>
                       ),
                       const SizedBox(height: 16),
 
-                      // ── Observações ──────────────────────────────────────
+                      // Ã¢â€â‚¬Ã¢â€â‚¬ ObservaÃƒÂ§ÃƒÂµes Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
                       _GlassSection(
-                        title: 'Observações',
+                        title: 'ObservaÃƒÂ§ÃƒÂµes',
                         icon: Icons.notes_rounded,
                         children: [
                           TextFormField(
@@ -296,7 +296,7 @@ class _ProposalCreateScreenState extends ConsumerState<ProposalCreateScreen>
                             decoration: const InputDecoration(
                               labelText: 'Detalhes adicionais',
                               hintText:
-                                  'Acomodação, transfers, seguro viagem...',
+                                  'AcomodaÃƒÂ§ÃƒÂ£o, transfers, seguro viagem...',
                               alignLabelWithHint: true,
                             ),
                             maxLines: 4,
@@ -306,7 +306,7 @@ class _ProposalCreateScreenState extends ConsumerState<ProposalCreateScreen>
                       ),
                       const SizedBox(height: 32),
 
-                      // ── Submit ───────────────────────────────────────────
+                      // Ã¢â€â‚¬Ã¢â€â‚¬ Submit Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
                       AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
                         height: 56,
@@ -374,7 +374,7 @@ class _ProposalCreateScreenState extends ConsumerState<ProposalCreateScreen>
   }
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬ Helpers Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
 class _GlassSection extends StatelessWidget {
   final String title;
@@ -504,3 +504,5 @@ class _DateTile extends StatelessWidget {
     );
   }
 }
+
+

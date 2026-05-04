@@ -1,16 +1,14 @@
-
+﻿
 import 'package:cadife_smart_travel/core/widgets/cadife_app_bar.dart';
+import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/auth/providers/auth_provider.dart';
 import 'package:cadife_smart_travel/features/client/home/providers/home_provider.dart';
-
 import 'package:cadife_smart_travel/features/client/home/widgets/consultant_card.dart';
 import 'package:cadife_smart_travel/features/client/home/widgets/documents_section.dart';
 import 'package:cadife_smart_travel/features/client/home/widgets/ongoing_trip_card.dart';
 import 'package:cadife_smart_travel/features/client/home/widgets/status_stepper_widget.dart';
-import 'package:cadife_smart_travel/shared/models/models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import 'package:intl/intl.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -62,7 +60,7 @@ class HomeScreen extends ConsumerWidget {
                     StatusStepperWidget(currentStep: currentStep),
                     const SizedBox(height: 20),
                     OngoingTripCard(
-                      destination: lead?.destino ?? 'Próxima aventura',
+                      destination: lead?.destino ?? 'PrÃƒÂ³xima aventura',
                       date: _formatDate(lead?.dataIda),
                       time: lead?.dataIda != null ? DateFormat('HH:mm').format(lead!.dataIda!) : '--:--',
                       imageUrl: null, // Pode ser expandido futuramente
@@ -119,7 +117,7 @@ class _GreetingSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Olá, $userName!',
+            'OlÃƒÂ¡, $userName!',
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.w800,
@@ -128,7 +126,7 @@ class _GreetingSection extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Sua próxima aventura começa em breve.',
+            'Sua prÃƒÂ³xima aventura comeÃƒÂ§a em breve.',
             style: TextStyle(
               fontSize: 14,
               color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
@@ -139,3 +137,5 @@ class _GreetingSection extends StatelessWidget {
     );
   }
 }
+
+

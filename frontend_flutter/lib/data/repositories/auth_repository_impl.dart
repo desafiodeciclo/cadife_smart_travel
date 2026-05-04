@@ -1,8 +1,8 @@
-import 'package:cadife_smart_travel/core/constants/api_constants.dart';
-import 'package:cadife_smart_travel/core/ports/auth_port.dart';
+﻿import 'package:cadife_smart_travel/core/constants/api_constants.dart';
 import 'package:cadife_smart_travel/core/security/jwt_utils.dart';
 import 'package:cadife_smart_travel/core/security/secure_config.dart';
-import 'package:cadife_smart_travel/shared/models/models.dart';
+import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
+import 'package:cadife_smart_travel/features/auth/domain/repositories/auth_port.dart';
 import 'package:dio/dio.dart';
 
 class AuthRepositoryImpl implements AuthPort {
@@ -14,7 +14,7 @@ class AuthRepositoryImpl implements AuthPort {
   final SecureConfig _secureConfig;
 
   @override
-  Future<UserModel> login(String email, String password, {UserRole? profileHint}) async {
+  Future<AuthUser> login(String email, String password, {UserRole? profileHint}) async {
     final response = await _dio.post(
       ApiConstants.login,
       data: {'email': email, 'password': password, if (profileHint != null) 'role': profileHint.name},
@@ -24,16 +24,16 @@ class AuthRepositoryImpl implements AuthPort {
       accessToken: tokenData['access_token'] as String,
       refreshToken: tokenData['refresh_token'] as String,
     );
-    return UserModel.fromJson(response.data['user'] as Map<String, dynamic>);
+    return AuthUser.fromJson(response.data['user'] as Map<String, dynamic>);
   }
 
   @override
-  Future<UserModel> register(String name, String email, String password) async {
+  Future<AuthUser> register(String name, String email, String password) async {
     final response = await _dio.post(
       '/auth/register',
       data: {'name': name, 'email': email, 'password': password},
     );
-    return UserModel.fromJson(response.data as Map<String, dynamic>);
+    return AuthUser.fromJson(response.data as Map<String, dynamic>);
   }
 
   @override
@@ -61,21 +61,21 @@ class AuthRepositoryImpl implements AuthPort {
   }
 
   @override
-  Future<UserModel?> getCurrentUser() async {
+  Future<AuthUser?> getCurrentUser() async {
     try {
       final response = await _dio.get('/users/me');
-      return UserModel.fromJson(response.data as Map<String, dynamic>);
+      return AuthUser.fromJson(response.data as Map<String, dynamic>);
     } on DioException {
       return _getUserFromStoredToken();
     }
   }
 
-  Future<UserModel?> _getUserFromStoredToken() async {
+  Future<AuthUser?> _getUserFromStoredToken() async {
     final token = await _secureConfig.getAccessToken();
     if (token == null) return null;
     final payload = JwtUtils.decodePayload(token);
     if (payload == null) return null;
-    return UserModel(
+    return AuthUser(
       id: payload['sub'] as String? ?? '',
       name: payload['name'] as String? ?? '',
       email: payload['email'] as String? ?? '',
@@ -102,3 +102,7 @@ class AuthRepositoryImpl implements AuthPort {
     await _dio.post(ApiConstants.forgotPassword, data: {'email': email});
   }
 }
+
+
+
+

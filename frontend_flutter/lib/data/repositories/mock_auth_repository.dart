@@ -1,29 +1,29 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 
-import 'package:cadife_smart_travel/core/ports/auth_port.dart';
 import 'package:cadife_smart_travel/core/security/jwt_validator.dart';
 import 'package:cadife_smart_travel/core/security/secure_config.dart';
-import 'package:cadife_smart_travel/shared/models/user_model.dart';
+import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
+import 'package:cadife_smart_travel/features/auth/domain/repositories/auth_port.dart';
 
 /// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-/// AVISO: ESTE REPOSITÓRIO É APENAS PARA DESENVOLVIMENTO (MOCK).
-/// DEVE SER REMOVIDO OU SUBSTITUÍDO PELO AuthRepositoryImpl EM PRODUÇÃO.
+/// AVISO: ESTE REPOSITÃƒâ€œRIO Ãƒâ€° APENAS PARA DESENVOLVIMENTO (MOCK).
+/// DEVE SER REMOVIDO OU SUBSTITUÃƒÂDO PELO AuthRepositoryImpl EM PRODUÃƒâ€¡ÃƒÆ’O.
 /// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 class MockAuthRepository implements AuthPort {
   MockAuthRepository({required SecureConfig secureConfig})
       : _secureConfig = secureConfig;
 
   final SecureConfig _secureConfig;
-  UserModel? _currentUser;
+  AuthUser? _currentUser;
 
   @override
-  Future<UserModel> login(String email, String password, {UserRole? profileHint}) async {
+  Future<AuthUser> login(String email, String password, {UserRole? profileHint}) async {
     await Future.delayed(const Duration(milliseconds: 800));
 
     final role = profileHint ??
         (email.contains('agencia') ? UserRole.consultor : UserRole.cliente);
 
-    _currentUser = UserModel(
+    _currentUser = AuthUser(
       id: 'mock-id-123',
       name: role == UserRole.consultor ? 'Consultor de Teste' : 'Cliente de Teste',
       email: email,
@@ -39,14 +39,14 @@ class MockAuthRepository implements AuthPort {
   }
 
   @override
-  Future<UserModel?> getCurrentUser() async {
+  Future<AuthUser?> getCurrentUser() async {
     if (_currentUser != null) return _currentUser;
 
     final token = await _secureConfig.getAccessToken();
     if (token != null && JwtValidator.isTokenValid(token)) {
-      _currentUser = const UserModel(
+      _currentUser = const AuthUser(
         id: 'mock-id-123',
-        name: 'Usuário Restaurado',
+        name: 'UsuÃƒÂ¡rio Restaurado',
         email: 'restored@mock.com',
         role: UserRole.cliente,
       );
@@ -78,7 +78,7 @@ class MockAuthRepository implements AuthPort {
   }
 
   @override
-  Future<UserModel> register(String name, String email, String password) async {
+  Future<AuthUser> register(String name, String email, String password) async {
     return login(email, password);
   }
 
@@ -91,8 +91,8 @@ class MockAuthRepository implements AuthPort {
     // Mock: simula envio de e-mail sem erro
   }
 
-  /// Constrói um JWT com payload base64url válido (sem verificação de assinatura).
-  /// Necessário para que JwtValidator.isTokenValid() funcione corretamente em dev.
+  /// ConstrÃƒÂ³i um JWT com payload base64url vÃƒÂ¡lido (sem verificaÃƒÂ§ÃƒÂ£o de assinatura).
+  /// NecessÃƒÂ¡rio para que JwtValidator.isTokenValid() funcione corretamente em dev.
   String _buildMockJwt(String userId, UserRole role, {int hours = 24}) {
     final header = base64Url
         .encode(utf8.encode('{"alg":"none","typ":"JWT"}'))
@@ -113,3 +113,7 @@ class MockAuthRepository implements AuthPort {
     return '$header.$payload.mock-signature';
   }
 }
+
+
+
+

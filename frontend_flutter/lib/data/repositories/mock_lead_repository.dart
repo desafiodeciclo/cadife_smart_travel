@@ -1,11 +1,11 @@
-import 'package:cadife_smart_travel/core/ports/lead_port.dart';
-import 'package:cadife_smart_travel/shared/models/briefing_model.dart';
-import 'package:cadife_smart_travel/shared/models/interaction_model.dart';
-import 'package:cadife_smart_travel/shared/models/lead_model.dart';
+﻿import 'package:cadife_smart_travel/features/agency/leads/domain/entities/briefing.dart';
+import 'package:cadife_smart_travel/features/agency/leads/domain/entities/interacao.dart';
+import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
+import 'package:cadife_smart_travel/features/agency/leads/domain/repositories/lead_port.dart';
 
 class MockLeadRepository implements LeadPort {
-  final List<LeadModel> _mockLeads = [
-    LeadModel(
+  final List<Lead> _mockLeads = [
+    Lead(
       id: '1',
       name: 'Mariana Souza',
       phone: '+55 11 99999-0001',
@@ -13,7 +13,7 @@ class MockLeadRepository implements LeadPort {
       status: LeadStatus.novo,
       score: LeadScore.quente,
       completudePct: 20,
-      destino: 'Paris, França',
+      destino: 'Paris, FranÃƒÂ§a',
       numPessoas: 2,
       perfil: 'Casal',
       tipoViagem: 'Lua de mel',
@@ -23,7 +23,7 @@ class MockLeadRepository implements LeadPort {
       consultorNome: 'Jakeline Lima',
       createdAt: DateTime.now().subtract(const Duration(minutes: 8)),
     ),
-    LeadModel(
+    Lead(
       id: '2',
       name: 'Ricardo Fernandes',
       phone: '+55 11 98888-0002',
@@ -35,16 +35,16 @@ class MockLeadRepository implements LeadPort {
       dataIda: DateTime(2025, 8, 10),
       dataVolta: DateTime(2025, 8, 22),
       numPessoas: 4,
-      perfil: 'Família',
+      perfil: 'FamÃƒÂ­lia',
       tipoViagem: 'Lazer',
       orcamentoFaixa: '50k - 80k',
       passaporteValido: true,
       experienciaInternacional: true,
-      preferencias: 'Hotel no centro, parques temáticos',
+      preferencias: 'Hotel no centro, parques temÃƒÂ¡ticos',
       consultorNome: 'Jakeline Lima',
       createdAt: DateTime.now().subtract(const Duration(hours: 3)),
     ),
-    LeadModel(
+    Lead(
       id: '3',
       name: 'Camila Rocha',
       phone: '+55 21 97777-0003',
@@ -52,7 +52,7 @@ class MockLeadRepository implements LeadPort {
       status: LeadStatus.qualificado,
       score: LeadScore.quente,
       completudePct: 80,
-      destino: 'Tóquio, Japão',
+      destino: 'TÃƒÂ³quio, JapÃƒÂ£o',
       dataIda: DateTime(2025, 10, 5),
       dataVolta: DateTime(2025, 10, 18),
       numPessoas: 2,
@@ -61,11 +61,11 @@ class MockLeadRepository implements LeadPort {
       orcamentoFaixa: '40k - 60k',
       passaporteValido: true,
       experienciaInternacional: false,
-      preferencias: 'Ryokan tradicional, tour de culinária',
+      preferencias: 'Ryokan tradicional, tour de culinÃƒÂ¡ria',
       consultorNome: 'Diego Costa',
       createdAt: DateTime.now().subtract(const Duration(hours: 18)),
     ),
-    LeadModel(
+    Lead(
       id: '4',
       name: 'Bruno Almeida',
       phone: '+55 31 96666-0004',
@@ -76,7 +76,7 @@ class MockLeadRepository implements LeadPort {
       dataIda: DateTime(2025, 9, 15),
       dataVolta: DateTime(2025, 9, 26),
       numPessoas: 3,
-      perfil: 'Família',
+      perfil: 'FamÃƒÂ­lia',
       tipoViagem: 'Lazer',
       orcamentoFaixa: '20k - 35k',
       passaporteValido: true,
@@ -85,7 +85,7 @@ class MockLeadRepository implements LeadPort {
       consultorNome: 'Jakeline Lima',
       createdAt: DateTime.now().subtract(const Duration(days: 2)),
     ),
-    LeadModel(
+    Lead(
       id: '5',
       name: 'Fernanda Castro',
       phone: '+55 41 95555-0005',
@@ -106,14 +106,14 @@ class MockLeadRepository implements LeadPort {
       consultorNome: 'Diego Costa',
       createdAt: DateTime.now().subtract(const Duration(days: 4)),
     ),
-    LeadModel(
+    Lead(
       id: '6',
       name: 'Thiago Mendes',
       phone: '+55 62 94444-0006',
       status: LeadStatus.fechado,
       score: LeadScore.quente,
       completudePct: 100,
-      destino: 'Roma + Amalfi, Itália',
+      destino: 'Roma + Amalfi, ItÃƒÂ¡lia',
       dataIda: DateTime(2025, 6, 10),
       dataVolta: DateTime(2025, 6, 24),
       numPessoas: 2,
@@ -125,7 +125,7 @@ class MockLeadRepository implements LeadPort {
       consultorNome: 'Diego Costa',
       createdAt: DateTime.now().subtract(const Duration(days: 14)),
     ),
-    LeadModel(
+    Lead(
       id: '7',
       name: 'Larissa Pinto',
       phone: '+55 85 93333-0007',
@@ -143,7 +143,7 @@ class MockLeadRepository implements LeadPort {
       consultorNome: 'Jakeline Lima',
       createdAt: DateTime.now().subtract(const Duration(hours: 5)),
     ),
-    LeadModel(
+    Lead(
       id: '8',
       name: 'Henrique Barbosa',
       phone: '+55 51 92222-0008',
@@ -153,19 +153,19 @@ class MockLeadRepository implements LeadPort {
       consultorNome: 'Diego Costa',
       createdAt: DateTime.now().subtract(const Duration(minutes: 45)),
     ),
-    LeadModel(
+    Lead(
       id: '9',
-      name: 'Patrícia Nunes',
+      name: 'PatrÃƒÂ­cia Nunes',
       phone: '+55 71 91111-0009',
       email: 'patricias@empresa.com.br',
       status: LeadStatus.qualificado,
       score: LeadScore.morno,
       completudePct: 70,
-      destino: 'Cancún, México',
+      destino: 'CancÃƒÂºn, MÃƒÂ©xico',
       dataIda: DateTime(2025, 11, 1),
       dataVolta: DateTime(2025, 11, 10),
       numPessoas: 5,
-      perfil: 'Família',
+      perfil: 'FamÃƒÂ­lia',
       tipoViagem: 'Praia e Lazer',
       orcamentoFaixa: '35k - 50k',
       passaporteValido: true,
@@ -173,9 +173,9 @@ class MockLeadRepository implements LeadPort {
       consultorNome: 'Jakeline Lima',
       createdAt: DateTime.now().subtract(const Duration(days: 1)),
     ),
-    LeadModel(
+    Lead(
       id: '10',
-      name: 'Eduardo Gonçalves',
+      name: 'Eduardo GonÃƒÂ§alves',
       phone: '+55 11 90000-0010',
       status: LeadStatus.perdido,
       score: LeadScore.frio,
@@ -189,7 +189,7 @@ class MockLeadRepository implements LeadPort {
       consultorNome: 'Diego Costa',
       createdAt: DateTime.now().subtract(const Duration(days: 35)),
     ),
-    LeadModel(
+    Lead(
       id: '11',
       name: 'Amanda Silveira',
       phone: '+55 27 98877-0011',
@@ -202,22 +202,22 @@ class MockLeadRepository implements LeadPort {
       dataVolta: DateTime(2026, 1, 2),
       numPessoas: 2,
       perfil: 'Casal',
-      tipoViagem: 'Réveillon',
+      tipoViagem: 'RÃƒÂ©veillon',
       orcamentoFaixa: '80k - 120k',
       passaporteValido: true,
       experienciaInternacional: true,
-      preferencias: 'Hotel de luxo, experiências VIP',
+      preferencias: 'Hotel de luxo, experiÃƒÂªncias VIP',
       consultorNome: 'Diego Costa',
       createdAt: DateTime.now().subtract(const Duration(days: 3)),
     ),
-    LeadModel(
+    Lead(
       id: '12',
       name: 'Gustavo Teixeira',
       phone: '+55 34 97766-0012',
       status: LeadStatus.proposta,
       score: LeadScore.morno,
       completudePct: 75,
-      destino: 'Amsterdã, Holanda',
+      destino: 'AmsterdÃƒÂ£, Holanda',
       dataIda: DateTime(2025, 9, 5),
       dataVolta: DateTime(2025, 9, 14),
       numPessoas: 3,
@@ -232,7 +232,7 @@ class MockLeadRepository implements LeadPort {
   ];
 
   @override
-  Future<List<LeadModel>> getLeads({LeadStatus? status, LeadScore? score}) async {
+  Future<List<Lead>> getLeads({LeadStatus? status, LeadScore? score}) async {
     await Future.delayed(const Duration(milliseconds: 600));
     return _mockLeads.where((l) {
       if (status != null && l.status != status) return false;
@@ -242,24 +242,24 @@ class MockLeadRepository implements LeadPort {
   }
 
   @override
-  Future<LeadModel> getLeadById(String id) async {
+  Future<Lead> getLeadById(String id) async {
     await Future.delayed(const Duration(milliseconds: 300));
     return _mockLeads.firstWhere((l) => l.id == id);
   }
 
   @override
-  Future<LeadModel?> getMyLead() async {
+  Future<Lead?> getMyLead() async {
     await Future.delayed(const Duration(milliseconds: 400));
     return _mockLeads.first;
   }
 
   @override
-  Future<LeadModel> updateLeadStatus(String id, LeadStatus newStatus) async {
+  Future<Lead> updateLeadStatus(String id, LeadStatus newStatus) async {
     await Future.delayed(const Duration(milliseconds: 500));
     final index = _mockLeads.indexWhere((l) => l.id == id);
-    if (index == -1) throw Exception('Lead não encontrado: $id');
+    if (index == -1) throw Exception('Lead nÃƒÂ£o encontrado: $id');
     final old = _mockLeads[index];
-    final updated = LeadModel(
+    final updated = Lead(
       id: old.id,
       name: old.name,
       phone: old.phone,
@@ -288,13 +288,13 @@ class MockLeadRepository implements LeadPort {
   }
 
   @override
-  Future<BriefingModel> getBriefing(String leadId) async {
+  Future<Briefing> getBriefing(String leadId) async {
     await Future.delayed(const Duration(milliseconds: 300));
     final lead = _mockLeads.firstWhere(
       (l) => l.id == leadId,
       orElse: () => _mockLeads.first,
     );
-    return BriefingModel(
+    return Briefing(
       leadId: leadId,
       completudePct: lead.completudePct,
       destino: lead.destino,
@@ -305,52 +305,52 @@ class MockLeadRepository implements LeadPort {
       orcamentoFaixa: lead.orcamentoFaixa,
       resumoConversa:
           'Cliente interessado em ${lead.destino ?? "destino a confirmar"}. '
-          'Perfil: ${lead.perfil ?? "não identificado"}. '
+          'Perfil: ${lead.perfil ?? "nÃƒÂ£o identificado"}. '
           'Aguardando curadoria do consultor.',
     );
   }
 
   @override
-  Future<List<InteractionModel>> getInteractions(String leadId) async {
+  Future<List<Interacao>> getInteractions(String leadId) async {
     await Future.delayed(const Duration(milliseconds: 300));
     final now = DateTime.now();
     return [
-      InteractionModel(
+      Interacao(
         id: 'i1_$leadId',
         leadId: leadId,
         channel: 'whatsapp',
         direction: 'inbound',
-        content: 'Olá! Gostaria de saber mais sobre pacotes de viagem.',
+        content: 'OlÃƒÂ¡! Gostaria de saber mais sobre pacotes de viagem.',
         timestamp: DateTime.now().subtract(const Duration(hours: 4)),
       ),
-      InteractionModel(
+      Interacao(
         id: 'i2_$leadId',
         leadId: leadId,
         channel: 'whatsapp',
         direction: 'outbound',
         content:
-            'Olá! Que ótimo ter você aqui. Sou a AYA, assistente da Cadife Tour. '
-            'Para te ajudar melhor, pode me contar um pouco mais sobre a viagem que você sonha?',
+            'OlÃƒÂ¡! Que ÃƒÂ³timo ter vocÃƒÂª aqui. Sou a AYA, assistente da Cadife Tour. '
+            'Para te ajudar melhor, pode me contar um pouco mais sobre a viagem que vocÃƒÂª sonha?',
         timestamp: DateTime.now().subtract(const Duration(hours: 3, minutes: 55)),
       ),
-      InteractionModel(
+      Interacao(
         id: 'i3_$leadId',
         leadId: leadId,
         channel: 'whatsapp',
         direction: 'inbound',
         content:
-            'Quero viajar com minha família em julho. Somos 4 pessoas e queremos algo especial!',
+            'Quero viajar com minha famÃƒÂ­lia em julho. Somos 4 pessoas e queremos algo especial!',
         timestamp: DateTime.now().subtract(const Duration(hours: 3, minutes: 50)),
       ),
-      InteractionModel(
+      Interacao(
         id: 'i4_$leadId',
         leadId: leadId,
         channel: 'whatsapp',
         direction: 'outbound',
-        content: 'Que lindo! Parabéns pelo aniversário de casamento! 🎉 Paris é um destino perfeito para esse momento especial. Para te ajudar melhor, qual seria o período de viagem pretendido?',
+        content: 'Que lindo! ParabÃƒÂ©ns pelo aniversÃƒÂ¡rio de casamento! Ã°Å¸Å½â€° Paris ÃƒÂ© um destino perfeito para esse momento especial. Para te ajudar melhor, qual seria o perÃƒÂ­odo de viagem pretendido?',
         timestamp: now.subtract(const Duration(days: 3, hours: 1, minutes: 55)),
       ),
-      InteractionModel(
+      Interacao(
         id: 'i3',
         leadId: leadId,
         channel: 'whatsapp',
@@ -358,69 +358,69 @@ class MockLeadRepository implements LeadPort {
         content: 'Pensamos em ir em julho, por uns 10 dias.',
         timestamp: now.subtract(const Duration(days: 3, hours: 1, minutes: 30)),
       ),
-      InteractionModel(
+      Interacao(
         id: 'i4',
         leadId: leadId,
         channel: 'whatsapp',
         direction: 'outbound',
-        content: 'Julho em Paris é maravilhoso! Dias longos e o clima perfeito para passear pelos bairros. Vocês têm alguma preferência de hospedagem? Hotel boutique, hotel de luxo ou apartamento?',
+        content: 'Julho em Paris ÃƒÂ© maravilhoso! Dias longos e o clima perfeito para passear pelos bairros. VocÃƒÂªs tÃƒÂªm alguma preferÃƒÂªncia de hospedagem? Hotel boutique, hotel de luxo ou apartamento?',
         timestamp: now.subtract(const Duration(days: 3, hours: 1, minutes: 20)),
       ),
-      InteractionModel(
+      Interacao(
         id: 'i5',
         leadId: leadId,
         channel: 'whatsapp',
         direction: 'inbound',
-        content: 'Prefiro hotel mesmo, algo próximo ao centro ou à Torre Eiffel.',
+        content: 'Prefiro hotel mesmo, algo prÃƒÂ³ximo ao centro ou ÃƒÂ  Torre Eiffel.',
         timestamp: now.subtract(const Duration(days: 2, hours: 10)),
       ),
-      InteractionModel(
+      Interacao(
         id: 'i6',
         leadId: leadId,
         channel: 'whatsapp',
         direction: 'outbound',
-        content: 'Ótima escolha! Temos opções incríveis no 7º arrondissement, bem pertinho da Torre Eiffel. Nosso consultor vai montar uma curadoria especial para vocês. Tem alguma restrição alimentar ou preferência de passeio?',
+        content: 'Ãƒâ€œtima escolha! Temos opÃƒÂ§ÃƒÂµes incrÃƒÂ­veis no 7Ã‚Âº arrondissement, bem pertinho da Torre Eiffel. Nosso consultor vai montar uma curadoria especial para vocÃƒÂªs. Tem alguma restriÃƒÂ§ÃƒÂ£o alimentar ou preferÃƒÂªncia de passeio?',
         timestamp: now.subtract(const Duration(days: 2, hours: 9, minutes: 50)),
       ),
-      InteractionModel(
+      Interacao(
         id: 'i7',
         leadId: leadId,
         channel: 'consultor',
         direction: 'outbound',
-        content: 'Olá! Sou o Ricardo, consultor da Cadife Tour. Acabei de analisar seu perfil e já tenho algumas sugestões maravilhosas para sua lua de mel em Paris. Posso entrar em contato por aqui para alinhar os detalhes?',
+        content: 'OlÃƒÂ¡! Sou o Ricardo, consultor da Cadife Tour. Acabei de analisar seu perfil e jÃƒÂ¡ tenho algumas sugestÃƒÂµes maravilhosas para sua lua de mel em Paris. Posso entrar em contato por aqui para alinhar os detalhes?',
         timestamp: now.subtract(const Duration(days: 1, hours: 14)),
       ),
-      InteractionModel(
+      Interacao(
         id: 'i8',
         leadId: leadId,
         channel: 'whatsapp',
         direction: 'inbound',
-        content: 'Claro! Adoraria ouvir as sugestões.',
+        content: 'Claro! Adoraria ouvir as sugestÃƒÂµes.',
         timestamp: now.subtract(const Duration(days: 1, hours: 13, minutes: 45)),
       ),
-      InteractionModel(
+      Interacao(
         id: 'i9',
         leadId: leadId,
         channel: 'consultor',
         direction: 'outbound',
-        content: 'Perfeito! Vou preparar uma proposta completa com roteiro, hospedagem e experiências gastronômicas exclusivas. Você recebe ainda hoje.',
+        content: 'Perfeito! Vou preparar uma proposta completa com roteiro, hospedagem e experiÃƒÂªncias gastronÃƒÂ´micas exclusivas. VocÃƒÂª recebe ainda hoje.',
         timestamp: now.subtract(const Duration(days: 1, hours: 13, minutes: 30)),
       ),
-      InteractionModel(
+      Interacao(
         id: 'i10',
         leadId: leadId,
         channel: 'whatsapp',
         direction: 'outbound',
-        content: 'Seu briefing está completo! 🎯 Nosso consultor Ricardo já está preparando uma proposta personalizada para a sua viagem a Paris. Em breve você receberá todos os detalhes.',
+        content: 'Seu briefing estÃƒÂ¡ completo! Ã°Å¸Å½Â¯ Nosso consultor Ricardo jÃƒÂ¡ estÃƒÂ¡ preparando uma proposta personalizada para a sua viagem a Paris. Em breve vocÃƒÂª receberÃƒÂ¡ todos os detalhes.',
         timestamp: now.subtract(const Duration(hours: 3)),
       ),
     ];
   }
 
   @override
-  Future<LeadModel> createLead(CreateLeadRequest request) async {
+  Future<Lead> createLead(CreateLeadRequest request) async {
     await Future.delayed(const Duration(milliseconds: 500));
-    final newLead = LeadModel(
+    final newLead = Lead(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       name: request.name,
       phone: request.phone,
@@ -435,3 +435,7 @@ class MockLeadRepository implements LeadPort {
     return newLead;
   }
 }
+
+
+
+

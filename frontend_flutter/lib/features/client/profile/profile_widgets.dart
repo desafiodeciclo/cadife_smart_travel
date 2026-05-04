@@ -1,5 +1,5 @@
-import 'package:cadife_smart_travel/core/theme/app_colors.dart';
-import 'package:cadife_smart_travel/shared/models/models.dart';
+﻿import 'package:cadife_smart_travel/core/theme/app_colors.dart';
+import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
 import 'package:flutter/material.dart';
 
 class ProfileHeader extends StatelessWidget {
@@ -12,7 +12,7 @@ class ProfileHeader extends StatelessWidget {
     required this.onToggleEdit,
   });
 
-  final UserModel? user;
+  final AuthUser? user;
   final bool isDark;
   final bool isEditing;
   final TextEditingController nameController;
@@ -427,7 +427,7 @@ class ProfilePassaporteCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Passaporte válido',
+                      'Passaporte vÃƒÂ¡lido',
                       style: textTheme.bodyLarge?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: isDark ? Colors.white : AppColors.textPrimary,
@@ -438,8 +438,8 @@ class ProfilePassaporteCard extends StatelessWidget {
                       duration: const Duration(milliseconds: 200),
                       child: Text(
                         _hasPassport
-                            ? 'Sim, possui passaporte válido'
-                            : 'Não possui passaporte válido',
+                            ? 'Sim, possui passaporte vÃƒÂ¡lido'
+                            : 'NÃƒÂ£o possui passaporte vÃƒÂ¡lido',
                         key: ValueKey<bool>(_hasPassport),
                         style: textTheme.bodySmall?.copyWith(
                           fontWeight: _hasPassport
@@ -510,7 +510,7 @@ class _ProfileThemeOption extends StatelessWidget {
   final bool isDark;
 
   String get _label => switch (mode) {
-        ThemeMode.system => 'Padrão do sistema',
+        ThemeMode.system => 'PadrÃƒÂ£o do sistema',
         ThemeMode.light => 'Claro',
         ThemeMode.dark => 'Escuro',
       };
@@ -579,3 +579,6 @@ class _ProfileThemeOption extends StatelessWidget {
     );
   }
 }
+
+
+

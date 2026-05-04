@@ -2,6 +2,7 @@ export 'app_text_field.dart';
 export 'cadife_bottom_nav.dart';
 export 'cadife_button.dart';
 export 'cadife_card.dart';
+export 'feedback_widgets.dart';
 export 'lead_status_stepper.dart';
 export 'page_scaffold.dart';
 export 'score_badge.dart';

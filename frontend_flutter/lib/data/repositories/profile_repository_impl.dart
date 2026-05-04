@@ -1,7 +1,7 @@
-import 'package:cadife_smart_travel/core/constants/api_constants.dart';
+﻿import 'package:cadife_smart_travel/core/constants/api_constants.dart';
 import 'package:cadife_smart_travel/core/offline/offline_manager.dart';
-import 'package:cadife_smart_travel/core/ports/profile_port.dart';
-import 'package:cadife_smart_travel/shared/models/user_model.dart';
+import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
+import 'package:cadife_smart_travel/features/client/profile/domain/repositories/profile_port.dart';
 import 'package:dio/dio.dart';
 
 class ProfileRepositoryImpl implements ProfilePort {
@@ -15,24 +15,24 @@ class ProfileRepositoryImpl implements ProfilePort {
   static const _cacheKey = 'profile:me';
 
   @override
-  Future<UserModel> getCurrentUser() async {
+  Future<AuthUser> getCurrentUser() async {
     try {
       final response = await _dio.get(ApiConstants.me);
-      final user = UserModel.fromJson(response.data as Map<String, dynamic>);
+      final user = AuthUser.fromJson(response.data as Map<String, dynamic>);
 
       await _offlineManager.saveToCache(_cacheKey, response.data);
       return user;
     } on DioException {
       final cached = _offlineManager.getFromCacheOffline(_cacheKey);
       if (cached != null) {
-        return UserModel.fromJson(cached as Map<String, dynamic>);
+        return AuthUser.fromJson(cached as Map<String, dynamic>);
       }
       rethrow;
     }
   }
 
   @override
-  Future<UserModel> updateProfile({
+  Future<AuthUser> updateProfile({
     String? name,
     List<String>? tipoViagem,
     List<String>? preferencias,
@@ -47,9 +47,13 @@ class ProfileRepositoryImpl implements ProfilePort {
         'tem_passaporte': temPassaporte,
       }..removeWhere((_, v) => v == null),
     );
-    final user = UserModel.fromJson(response.data as Map<String, dynamic>);
+    final user = AuthUser.fromJson(response.data as Map<String, dynamic>);
 
     await _offlineManager.saveToCache(_cacheKey, response.data);
     return user;
   }
 }
+
+
+
+

@@ -1,16 +1,16 @@
-import 'package:cadife_smart_travel/core/theme/app_colors.dart';
+﻿import 'package:cadife_smart_travel/core/theme/app_colors.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/providers/schedule_appointment_provider.dart';
-import 'package:cadife_smart_travel/shared/models/lead_model.dart';
+import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 class ScheduleAppointmentModal extends ConsumerStatefulWidget {
-  final LeadModel lead;
+  final Lead lead;
 
   const ScheduleAppointmentModal({super.key, required this.lead});
 
-  static Future<bool?> show(BuildContext context, LeadModel lead) {
+  static Future<bool?> show(BuildContext context, Lead lead) {
     return showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -73,9 +73,9 @@ class _ScheduleAppointmentModalState
     final notifier = ref.read(scheduleAppointmentProvider.notifier);
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     
-    // Obter dias do mês atual para o seletor
+    // Obter dias do mÃªs atual para o seletor
     final days = _getDaysInMonth(_currentMonth);
-    // Para facilitar, focar no dia de hoje se o mês atual for o mês de hoje
+    // Para facilitar, focar no dia de hoje se o mÃªs atual for o mÃªs de hoje
     final today = DateTime.now();
 
     return Container(
@@ -158,7 +158,7 @@ class _ScheduleAppointmentModalState
                             const Icon(Icons.location_on_outlined, size: 14, color: AppColors.textSecondary),
                             const SizedBox(width: 4),
                             Text(
-                              widget.lead.destino ?? 'Destino não informado',
+                              widget.lead.destino ?? 'Destino nÃ£o informado',
                               style: const TextStyle(
                                 fontSize: 13,
                                 color: AppColors.textSecondary,
@@ -305,7 +305,7 @@ class _ScheduleAppointmentModalState
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 24),
                 child: Center(
-                  child: Text('Nenhum horário disponível para esta data.'),
+                  child: Text('Nenhum horÃ¡rio disponÃ­vel para esta data.'),
                 ),
               )
             else
@@ -366,7 +366,7 @@ class _ScheduleAppointmentModalState
               Padding(
                 padding: const EdgeInsets.only(top: 16),
                 child: Text(
-                  'Erro ao carregar horários: ${state.error}',
+                  'Erro ao carregar horÃ¡rios: ${state.error}',
                   style: const TextStyle(color: AppColors.error, fontSize: 12),
                   textAlign: TextAlign.center,
                 ),
@@ -419,3 +419,6 @@ class _ScheduleAppointmentModalState
     );
   }
 }
+
+
+

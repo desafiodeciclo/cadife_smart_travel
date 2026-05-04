@@ -1,15 +1,15 @@
-import 'package:cadife_smart_travel/core/ports/lead_port.dart';
-import 'package:cadife_smart_travel/shared/models/models.dart';
+﻿import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
+import 'package:cadife_smart_travel/features/agency/leads/domain/repositories/lead_port.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final leadDetailProvider =
-    AsyncNotifierProvider.family<LeadDetailNotifier, LeadModel?, String>(
+    AsyncNotifierProvider.family<LeadDetailNotifier, Lead?, String>(
       LeadDetailNotifier.new,
     );
 
-class LeadDetailNotifier extends FamilyAsyncNotifier<LeadModel?, String> {
+class LeadDetailNotifier extends FamilyAsyncNotifier<Lead?, String> {
   @override
-  Future<LeadModel?> build(String arg) async {
+  Future<Lead?> build(String arg) async {
     final leadPort = ref.watch(leadPortProvider);
     return leadPort.getLeadById(arg);
   }
@@ -32,3 +32,7 @@ class LeadDetailNotifier extends FamilyAsyncNotifier<LeadModel?, String> {
 final leadPortProvider = Provider<LeadPort>((ref) {
   throw UnimplementedError('Override em ProviderScope');
 });
+
+
+
+

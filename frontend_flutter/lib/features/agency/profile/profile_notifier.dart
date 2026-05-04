@@ -1,12 +1,12 @@
-import 'package:cadife_smart_travel/core/ports/consultor_port.dart';
 import 'package:cadife_smart_travel/features/agency/profile/consultor_profile_models.dart';
+import 'package:cadife_smart_travel/features/agency/profile/domain/repositories/consultor_port.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final consultorPortProvider = Provider<ConsultorPort>((ref) {
   throw UnimplementedError('Override em ProviderScope');
 });
 
-// ── Profile ──────────────────────────────────────────────────────────────────
+// â”€â”€ Profile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 final consultorProfileProvider =
     AsyncNotifierProvider<ConsultorProfileNotifier, ConsultorProfile>(
@@ -37,7 +37,7 @@ class ConsultorProfileNotifier
   }
 }
 
-// ── Goals ─────────────────────────────────────────────────────────────────────
+// â”€â”€ Goals â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 final saleGoalsProvider =
     AsyncNotifierProvider<SaleGoalsNotifier, List<SaleGoal>>(
@@ -49,3 +49,4 @@ class SaleGoalsNotifier extends AsyncNotifier<List<SaleGoal>> {
   Future<List<SaleGoal>> build() =>
       ref.watch(consultorPortProvider).getGoals();
 }
+

@@ -1,4 +1,5 @@
-import 'package:cadife_smart_travel/services/api_service.dart';
+import 'package:cadife_smart_travel/core/di/service_locator.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -177,21 +178,21 @@ class AgencySettings {
 }
 
 class SettingsRepository {
-  final ApiService _api;
-  SettingsRepository(this._api);
+  final Dio _dio;
+  SettingsRepository(this._dio);
 
   Future<AgencySettings> getSettings() async {
-    final response = await _api.get('/agency/settings');
+    final response = await _dio.get('/agency/settings');
     return AgencySettings.fromJson(response.data as Map<String, dynamic>);
   }
 
   Future<AgencySettings> saveSettings(AgencySettings settings) async {
-    final response = await _api.put('/agency/settings', data: settings.toJson());
+    final response = await _dio.put('/agency/settings', data: settings.toJson());
     return AgencySettings.fromJson(response.data as Map<String, dynamic>);
   }
 
   Future<MessageTemplate> addTemplate(String name, String content) async {
-    final response = await _api.post('/agency/settings/templates', data: {
+    final response = await _dio.post('/agency/settings/templates', data: {
       'nome': name,
       'conteudo': content,
     });
@@ -199,10 +200,10 @@ class SettingsRepository {
   }
 
   Future<void> deleteTemplate(String id) async {
-    await _api.delete('/agency/settings/templates/$id');
+    await _dio.delete('/agency/settings/templates/$id');
   }
 }
 
 final settingsRepositoryProvider = Provider<SettingsRepository>((ref) {
-  return SettingsRepository(ref.watch(apiServiceProvider));
+  return SettingsRepository(sl<Dio>());
 });

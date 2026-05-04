@@ -1,4 +1,5 @@
-import 'package:cadife_smart_travel/services/api_service.dart';
+import 'package:cadife_smart_travel/core/di/service_locator.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class Lead {
@@ -32,10 +33,10 @@ class Lead {
 }
 
 class LeadsRepository {
-  final ApiService _api;
-  LeadsRepository(this._api);
+  final Dio _dio;
+  LeadsRepository(this._dio);
   Future<List<Lead>> getLeads({String? status, String? score, String? search, int page = 1}) async {
-    final response = await _api.get('/leads', queryParameters: {
+    final response = await _dio.get('/leads', queryParameters: {
       'status': status,
       'score': score,
       'search': search,
@@ -48,19 +49,19 @@ class LeadsRepository {
   }
 
   Future<Map<String, dynamic>> getLeadDetail(String id) async {
-    final response = await _api.get('/leads/$id');
+    final response = await _dio.get('/leads/$id');
     return response.data as Map<String, dynamic>;
   }
 
   Future<void> updateLeadStatus(String id, String status) async {
-    await _api.put('/leads/$id', data: {'status': status});
+    await _dio.put('/leads/$id', data: {'status': status});
   }
 
   Future<void> archiveLead(String id) async {
-    await _api.delete('/leads/$id');
+    await _dio.delete('/leads/$id');
   }
 }
 
 final leadsRepositoryProvider = Provider<LeadsRepository>((ref) {
-  return LeadsRepository(ref.watch(apiServiceProvider));
+  return LeadsRepository(sl<Dio>());
 });

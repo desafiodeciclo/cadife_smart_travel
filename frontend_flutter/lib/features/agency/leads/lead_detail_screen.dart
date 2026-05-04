@@ -1,8 +1,8 @@
-import 'package:cadife_smart_travel/core/theme/app_colors.dart';
+﻿import 'package:cadife_smart_travel/core/theme/app_colors.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/widgets/schedule_appointment_modal.dart';
 import 'package:cadife_smart_travel/features/agency/lead_detail/lead_detail_provider.dart';
+import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/agency/proposals/create_proposal_modal.dart';
-import 'package:cadife_smart_travel/shared/models/lead_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -59,7 +59,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> with Single
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Erro: $e')),
         data: (lead) => lead == null
-            ? const Center(child: Text('Lead não encontrado.'))
+            ? const Center(child: Text('Lead nÃƒÂ£o encontrado.'))
             : Column(
                 children: [
                   Padding(
@@ -99,7 +99,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> with Single
 }
 
 class _InfoCard extends StatelessWidget {
-  final LeadModel lead;
+  final Lead lead;
   const _InfoCard({required this.lead});
 
   @override
@@ -181,7 +181,7 @@ class _InfoCard extends StatelessWidget {
 }
 
 class _ActionButtons extends ConsumerWidget {
-  final LeadModel lead;
+  final Lead lead;
   const _ActionButtons({required this.lead});
 
   @override
@@ -272,7 +272,7 @@ class _ActionButtons extends ConsumerWidget {
 }
 
 class _BriefingTab extends StatelessWidget {
-  final LeadModel lead;
+  final Lead lead;
   const _BriefingTab({required this.lead});
 
   @override
@@ -293,16 +293,16 @@ class _BriefingTab extends StatelessWidget {
           crossAxisSpacing: 12,
           childAspectRatio: 2.2,
           children: [
-            _GridItem(icon: Icons.flight_takeoff, title: 'Destino', value: lead.destino ?? 'Não informado'),
+            _GridItem(icon: Icons.flight_takeoff, title: 'Destino', value: lead.destino ?? 'NÃƒÂ£o informado'),
             const _GridItem(icon: Icons.calendar_month, title: 'Datas', value: '10 a 20 Fev 2026'),
             _GridItem(icon: Icons.people_outline, title: 'Pessoas', value: '${lead.numPessoas ?? 0} (Familia)'),
-            _GridItem(icon: Icons.account_balance_wallet_outlined, title: 'Orçamento', value: lead.orcamentoFaixa ?? 'Médio'),
-            _GridItem(icon: Icons.badge_outlined, title: 'Passaporte Válido', value: lead.passaporteValido == true ? 'Sim, todos' : 'Não informado'),
+            _GridItem(icon: Icons.account_balance_wallet_outlined, title: 'OrÃƒÂ§amento', value: lead.orcamentoFaixa ?? 'MÃƒÂ©dio'),
+            _GridItem(icon: Icons.badge_outlined, title: 'Passaporte VÃƒÂ¡lido', value: lead.passaporteValido == true ? 'Sim, todos' : 'NÃƒÂ£o informado'),
           ],
         ),
         const SizedBox(height: 24),
         const Text(
-          'Observações',
+          'ObservaÃƒÂ§ÃƒÂµes',
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
         ),
         const SizedBox(height: 12),
@@ -514,3 +514,6 @@ class _Chip extends StatelessWidget {
     );
   }
 }
+
+
+

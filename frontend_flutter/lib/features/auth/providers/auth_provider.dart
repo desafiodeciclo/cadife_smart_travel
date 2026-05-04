@@ -1,8 +1,7 @@
-import 'package:cadife_smart_travel/core/notifications/fcm_manager.dart';
-import 'package:cadife_smart_travel/core/ports/auth_port.dart';
-import 'package:cadife_smart_travel/services/notification_service.dart';
-import 'package:cadife_smart_travel/shared/models/models.dart';
-import 'package:cadife_smart_travel/shared/models/user_model.dart';
+﻿import 'package:cadife_smart_travel/core/notifications/fcm_manager.dart';
+import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
+import 'package:cadife_smart_travel/features/auth/domain/repositories/auth_port.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final authPortProvider = Provider<AuthPort>((ref) {
@@ -41,14 +40,14 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
 
   Future<void> _syncFcmToken(AuthPort authPort) async {
     try {
-      final fcmToken = await NotificationService.getToken();
+      final fcmToken = await FirebaseMessaging.instance.getToken();
       if (fcmToken != null) {
         await authPort.saveFcmToken(fcmToken);
-        // Se FCMManager for um utilitário global necessário:
+        // Se FCMManager for um utilitÃƒÂ¡rio global necessÃƒÂ¡rio:
         await FCMManager.sendTokenToBackend(); 
       }
     } catch (e) {
-      // Logar erro, mas não travar o login
+      // Logar erro, mas nÃƒÂ£o travar o login
     }
   }
 
@@ -65,8 +64,8 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
 
   /// Valida o JWT armazenado localmente (decode offline do claim `exp`).
   ///
-  /// Chamado pela SplashScreen durante a animação — evita round-trip ao backend.
-  /// Se o token for válido, restaura a sessão; se inválido/ausente, faz logout.
+  /// Chamado pela SplashScreen durante a animaÃƒÂ§ÃƒÂ£o Ã¢â‚¬â€ evita round-trip ao backend.
+  /// Se o token for vÃƒÂ¡lido, restaura a sessÃƒÂ£o; se invÃƒÂ¡lido/ausente, faz logout.
   Future<void> validateLocalToken() async {
     state = const AsyncLoading();
     try {
@@ -93,7 +92,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
 sealed class AuthState {
   const AuthState();
   const factory AuthState.unauthenticated() = AuthUnauthenticated;
-  const factory AuthState.authenticated(UserModel user) = AuthAuthenticated;
+  const factory AuthState.authenticated(AuthUser user) = AuthAuthenticated;
 }
 
 class AuthUnauthenticated implements AuthState {
@@ -102,7 +101,7 @@ class AuthUnauthenticated implements AuthState {
 
 class AuthAuthenticated implements AuthState {
   const AuthAuthenticated(this.user);
-  final UserModel user;
+  final AuthUser user;
 }
 
 class AuthLoading implements AuthState {
@@ -115,9 +114,9 @@ extension AuthStateX on AuthState {
         authenticated: (u) => u.role == UserRole.cliente ? 'cliente' : 'agencia',
         orElse: () => null,
       );
-  UserModel? get user => maybeWhen(authenticated: (u) => u, orElse: () => null);
+  AuthUser? get user => maybeWhen(authenticated: (u) => u, orElse: () => null);
   T maybeWhen<T>({
-    T Function(UserModel user)? authenticated,
+    T Function(AuthUser user)? authenticated,
     T Function()? unauthenticated,
     T Function()? loading,
     required T Function() orElse,
@@ -129,3 +128,8 @@ extension AuthStateX on AuthState {
     };
   }
 }
+
+
+
+
+
