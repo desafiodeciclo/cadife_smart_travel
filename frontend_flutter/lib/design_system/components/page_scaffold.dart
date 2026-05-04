@@ -1,3 +1,4 @@
+import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:flutter/material.dart';
 
 /// Scaffold padrão do Cadife com suporte a AppBar configurável,
@@ -30,8 +31,8 @@ class PageScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final effectiveAppBar = appBar ??
         (title != null
-            ? AppBar(
-                title: Text(title!),
+            ? CadifeAppBar(
+                title: title!,
                 actions: actions,
               )
             : null);

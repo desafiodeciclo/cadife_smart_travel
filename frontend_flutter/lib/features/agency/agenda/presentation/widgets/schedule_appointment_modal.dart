@@ -375,16 +375,7 @@ class _ScheduleAppointmentModalState
             const SizedBox(height: 32),
 
             // Actions
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                disabledBackgroundColor: AppColors.border,
-              ),
+            CadifeButton(
               onPressed: state.selectedSlot != null && !state.isLoading
                   ? () async {
                       final success = await notifier.confirmAppointment(widget.lead.id);
@@ -393,25 +384,15 @@ class _ScheduleAppointmentModalState
                       }
                     }
                   : null,
-              icon: state.isLoading && state.selectedSlot != null
-                  ? const SizedBox(
-                      width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : const Icon(Icons.check_circle_outline, size: 20),
-              label: const Text(
-                'CONFIRM SCHEDULE',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-              ),
+              isLoading: state.isLoading && state.selectedSlot != null,
+              text: 'CONFIRM SCHEDULE',
+              icon: Icons.check_circle_outline,
             ),
             const SizedBox(height: 8),
-            TextButton(
+            CadifeButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text(
-                'Cancel',
-                style: TextStyle(
-                  color: AppColors.textSecondary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              text: 'Cancel',
+              isOutline: true,
             ),
           ],
         ),

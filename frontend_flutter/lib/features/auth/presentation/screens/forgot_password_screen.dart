@@ -51,32 +51,16 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     }
   }
 
-  OutlineInputBorder _border(Color color, {double width = 1.0}) =>
-      OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: color, width: width),
-      );
 
   @override
   Widget build(BuildContext context) {
     final cadife = context.cadife;
 
     return Scaffold(
-      appBar: AppBar(
-        leading: BackButton(
-          onPressed: () {
-            if (_step != _ForgotStep.email) {
-              setState(() {
-                _step = _ForgotStep.email;
-                _errorMessage = null;
-              });
-            } else {
-              context.pop();
-            }
-          },
-        ),
-        title: const Text('Recuperar senha'),
-        centerTitle: false,
+      appBar: const CadifeAppBar(
+        title: 'Recuperar senha',
+        showProfile: false,
+        actions: [], // Empty list to override default notifications if needed
       ),
       body: SafeArea(
         child: AnimatedSwitcher(
@@ -103,7 +87,6 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 errorMessage: _errorMessage,
                 primaryColor: cadife.primary,
                 onSubmit: _sendReset,
-                borderFn: _border,
               ),
             _ForgotStep.confirmation => _ConfirmationStep(
                 key: const ValueKey('confirmation-step'),
@@ -133,7 +116,6 @@ class _EmailStep extends StatelessWidget {
     required this.errorMessage,
     required this.primaryColor,
     required this.onSubmit,
-    required this.borderFn,
   });
 
   final GlobalKey<FormState> formKey;
@@ -142,7 +124,6 @@ class _EmailStep extends StatelessWidget {
   final String? errorMessage;
   final Color primaryColor;
   final VoidCallback onSubmit;
-  final OutlineInputBorder Function(Color, {double width}) borderFn;
 
   @override
   Widget build(BuildContext context) {
@@ -171,31 +152,14 @@ class _EmailStep extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               'Informe o e-mail da sua conta. Enviaremos um link para criar uma nova senha.',
-              style: AppTextStyles.bodyMedium
-                  .copyWith(color: AppColors.textSecondary),
+              style: AppTextStyles.bodyMedium,
             ),
             const SizedBox(height: 32),
-            Text(
-              'E-MAIL',
-              style: AppTextStyles.labelSmall.copyWith(
-                letterSpacing: 1.2,
-                color: AppColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 6),
-            TextFormField(
+            CadifeInput(
+              label: 'E-mail',
+              hint: 'seu@email.com',
               controller: controller,
               keyboardType: TextInputType.emailAddress,
-              autofillHints: const [AutofillHints.email],
-              textInputAction: TextInputAction.done,
-              onEditingComplete: onSubmit,
-              decoration: InputDecoration(
-                hintText: 'seu@email.com',
-                enabledBorder: borderFn(AppColors.border),
-                focusedBorder: borderFn(primaryColor, width: 2),
-                errorBorder: borderFn(AppColors.error),
-                focusedErrorBorder: borderFn(AppColors.error, width: 2),
-              ),
               validator: (v) {
                 if (v == null || v.trim().isEmpty) return 'Informe o e-mail';
                 if (!v.trim().isValidEmail) return 'E-mail inválido';
@@ -207,35 +171,10 @@ class _EmailStep extends StatelessWidget {
               _ErrorBanner(message: errorMessage!),
             ],
             const SizedBox(height: 28),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: isLoading ? null : onSubmit,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8)),
-                  elevation: 0,
-                ),
-                child: isLoading
-                    ? const SizedBox(
-                        height: 22,
-                        width: 22,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2.5, color: Colors.white),
-                      )
-                    : Text(
-                        'ENVIAR LINK',
-                        style: TextStyle(
-                          fontFamily: AppTextStyles.fontFamily,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-              ),
+            CadifeButton(
+              text: 'ENVIAR LINK',
+              isLoading: isLoading,
+              onPressed: onSubmit,
             ),
           ],
         ),
@@ -308,7 +247,9 @@ class _ConfirmationStep extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: Theme.of(context).brightness == Brightness.dark 
+                        ? AppColors.darkCard 
+                        : AppColors.surface,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(
@@ -344,27 +285,10 @@ class _ConfirmationStep extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: OutlinedButton(
-                    onPressed: () => context.go('/auth/login'),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: AppColors.border),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                    ),
-                    child: Text(
-                      'VOLTAR AO LOGIN',
-                      style: TextStyle(
-                        fontFamily: AppTextStyles.fontFamily,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.2,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                  ),
+                CadifeButton(
+                  text: 'VOLTAR AO LOGIN',
+                  isOutline: true,
+                  onPressed: () => context.go('/auth/login'),
                 ),
               ],
             ),
@@ -406,28 +330,9 @@ class _SuccessStep extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
                 const Spacer(),
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: onBackToLogin,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                      elevation: 0,
-                    ),
-                    child: Text(
-                      'IR PARA O LOGIN',
-                      style: TextStyle(
-                        fontFamily: AppTextStyles.fontFamily,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                  ),
+                CadifeButton(
+                  text: 'IR PARA O LOGIN',
+                  onPressed: onBackToLogin,
                 ),
               ],
             ),

@@ -1,6 +1,5 @@
-import 'package:cadife_smart_travel/design_system/components/cadife_bottom_nav.dart';
+import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class AppShell extends StatelessWidget {
@@ -18,23 +17,20 @@ class AppShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: SvgPicture.asset(
-          'assets/images/cadife_logo_negativo.svg',
-          height: 24,
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(LucideIcons.bell, size: 20),
-            onPressed: () {},
-          ),
-          const SizedBox(width: 8),
-        ],
+      appBar: const CadifeAppBar(
+        title: 'Smart Travel',
+        showProfile: true,
       ),
       body: child,
       bottomNavigationBar: CadifeBottomNav(
         currentIndex: currentIndex,
         onTap: onNavTap,
+        items: const [
+          CadifeBottomNavItem(icon: LucideIcons.house, label: 'Início'),
+          CadifeBottomNavItem(icon: LucideIcons.map, label: 'Viagens'),
+          CadifeBottomNavItem(icon: LucideIcons.fileText, label: 'Docs'),
+          CadifeBottomNavItem(icon: LucideIcons.user, label: 'Perfil'),
+        ],
       ),
     );
   }

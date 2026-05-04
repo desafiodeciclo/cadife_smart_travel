@@ -1,4 +1,4 @@
-import 'package:cadife_smart_travel/design_system/tokens/app_colors.dart';
+import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -40,6 +40,10 @@ class _CadifeButtonState extends State<CadifeButton>
 
   @override
   Widget build(BuildContext context) {
+    final cadife = context.cadife;
+    final primaryColor = cadife.primary;
+    const textOnPrimary = Colors.white;
+
     return GestureDetector(
       onTapDown: _onTapDown,
       onTapUp: _onTapUp,
@@ -51,16 +55,22 @@ class _CadifeButtonState extends State<CadifeButton>
         child: Container(
           height: 56,
           decoration: BoxDecoration(
-            color: widget.isOutline ? Colors.transparent : AppColors.primary,
+            color: widget.onPressed == null
+                ? (widget.isOutline ? Colors.transparent : AppColors.textDisabled)
+                : (widget.isOutline ? Colors.transparent : primaryColor),
             borderRadius: BorderRadius.circular(12),
             border: widget.isOutline
-                ? Border.all(color: AppColors.primary, width: 2)
+                ? Border.all(
+                    color: widget.onPressed == null
+                        ? AppColors.textDisabled
+                        : primaryColor,
+                    width: 2)
                 : null,
             boxShadow: widget.isOutline || widget.onPressed == null
                 ? null
                 : [
                     BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.2),
+                      color: primaryColor.withValues(alpha: 0.2),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -68,11 +78,11 @@ class _CadifeButtonState extends State<CadifeButton>
           ),
           child: Center(
             child: widget.isLoading
-                ? const SizedBox(
+                ? SizedBox(
                     height: 24,
                     width: 24,
                     child: CircularProgressIndicator(
-                      color: Colors.white,
+                      color: widget.isOutline ? primaryColor : textOnPrimary,
                       strokeWidth: 2,
                     ),
                   )
@@ -83,8 +93,8 @@ class _CadifeButtonState extends State<CadifeButton>
                         Icon(
                           widget.icon,
                           color: widget.isOutline
-                              ? AppColors.primary
-                              : Colors.white,
+                              ? primaryColor
+                              : textOnPrimary,
                           size: 20,
                         ),
                         const SizedBox(width: 8),
@@ -95,8 +105,8 @@ class _CadifeButtonState extends State<CadifeButton>
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: widget.isOutline
-                              ? AppColors.primary
-                              : Colors.white,
+                              ? primaryColor
+                              : textOnPrimary,
                         ),
                       ),
                     ],

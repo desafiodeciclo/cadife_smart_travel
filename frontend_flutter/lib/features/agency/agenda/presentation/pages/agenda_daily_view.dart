@@ -332,14 +332,15 @@ class _BlockedSlotCard extends ConsumerWidget {
           'Deseja liberar ${DateFormat('HH:mm').format(m.dateTime)} para agendamentos?',
         ),
         actions: [
-          TextButton(
+          CadifeButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancelar'),
+            text: 'Cancelar',
+            isOutline: true,
           ),
-          TextButton(
-            style: TextButton.styleFrom(foregroundColor: AppColors.primary),
+          const SizedBox(height: 8),
+          CadifeButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Desbloquear'),
+            text: 'Desbloquear',
           ),
         ],
       ),
@@ -512,56 +513,25 @@ class _SlotOptionsSheetState extends State<_SlotOptionsSheet> {
           ),
           if (_showNotesField) ...[
             const SizedBox(height: 8),
-            TextField(
+            CadifeInput(
               controller: _notesController,
-              autofocus: true,
-              maxLength: 80,
-              decoration: InputDecoration(
-                hintText: 'Motivo (opcional)',
-                counterText: '',
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: AppColors.border),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide:
-                      const BorderSide(color: AppColors.primary, width: 1.5),
-                ),
-              ),
+              label: 'Motivo do bloqueio',
+              hintText: 'Motivo (opcional)',
             ),
             const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.warning,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                ),
-                onPressed: _isBlocking
-                    ? null
-                    : () async {
-                        setState(() => _isBlocking = true);
-                        await widget.onBlock(
-                          _notesController.text.trim().isEmpty
-                              ? null
-                              : _notesController.text.trim(),
-                        );
-                      },
-                child: _isBlocking
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : const Text('Confirmar Bloqueio'),
-              ),
+            CadifeButton(
+              onPressed: _isBlocking
+                  ? null
+                  : () async {
+                      setState(() => _isBlocking = true);
+                      await widget.onBlock(
+                        _notesController.text.trim().isEmpty
+                            ? null
+                            : _notesController.text.trim(),
+                      );
+                    },
+              text: 'Confirmar Bloqueio',
+              isLoading: _isBlocking,
             ),
           ],
           const SizedBox(height: 8),

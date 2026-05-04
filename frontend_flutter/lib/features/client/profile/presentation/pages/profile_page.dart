@@ -262,96 +262,37 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             child: Column(
               children: [
                 if (_isEditing) ...[
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton(
-                      onPressed: _isSaving ? null : () => _save(user),
-                      child: _isSaving
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Text('Salvar alteraÃƒÂ§ÃƒÂµes'),
-                    ),
+                  CadifeButton(
+                    onPressed: _isSaving ? null : () => _save(user),
+                    isLoading: _isSaving,
+                    text: 'Salvar alterações',
                   ),
                   const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: OutlinedButton(
-                      onPressed: () {
-                        setState(() {
-                          _isEditing = false;
-                          _hasSynced = false;
-                          _syncFromUser(user);
-                        });
-                      },
-                      child: const Text('Cancelar'),
-                    ),
+                  CadifeButton(
+                    onPressed: () {
+                      setState(() {
+                        _isEditing = false;
+                        _hasSynced = false;
+                        _syncFromUser(user);
+                      });
+                    },
+                    text: 'Cancelar',
+                    isOutline: true,
                   ),
                   const SizedBox(height: 12),
                 ],
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: OutlinedButton.icon(
-                    onPressed: () => _confirmLogout(context, ref),
-                    icon: Icon(
-                      Icons.logout,
-                      color: isDark ? AppColors.primaryLight : AppColors.primary,
-                    ),
-                    label: Text(
-                      'Sair da conta',
-                      style: TextStyle(
-                        color:
-                            isDark ? AppColors.primaryLight : AppColors.primary,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
-                      ),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(
-                        color: isDark
-                            ? AppColors.primaryLight
-                            : AppColors.primary,
-                        width: 1.5,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ),
+                CadifeButton(
+                  onPressed: () => _confirmLogout(context, ref),
+                  text: 'Sair da conta',
+                  icon: Icons.logout,
+                  isOutline: true,
                 ),
                 const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: OutlinedButton.icon(
-                    onPressed: () => _confirmDeleteAccount(context, ref),
-                    icon: const Icon(
-                      Icons.delete_outline,
-                      color: AppColors.error,
-                    ),
-                    label: const Text(
-                      'Apagar conta',
-                      style: TextStyle(
-                        color: AppColors.error,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
-                      ),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: AppColors.error, width: 1.5),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ),
+                CadifeButton(
+                  onPressed: () => _confirmDeleteAccount(context, ref),
+                  text: 'Apagar conta',
+                  icon: Icons.delete_outline,
+                  isOutline: true,
                 ),
               ],
             ),

@@ -5,23 +5,27 @@ import 'package:google_fonts/google_fonts.dart';
 class CadifeInput extends StatefulWidget {
   final String label;
   final String? hint;
+  final String? hintText; // Alias for hint
   final bool isPassword;
   final TextInputType? keyboardType;
   final String? Function(String?)? validator;
   final TextEditingController? controller;
   final void Function(String)? onChanged;
   final IconData? prefixIcon;
+  final int? maxLines;
 
   const CadifeInput({
     super.key,
     required this.label,
     this.hint,
+    this.hintText,
     this.isPassword = false,
     this.keyboardType,
     this.validator,
     this.controller,
     this.onChanged,
     this.prefixIcon,
+    this.maxLines = 1,
   });
 
   @override
@@ -78,6 +82,7 @@ class _CadifeInputState extends State<CadifeInput> {
             controller: widget.controller,
             obscureText: widget.isPassword && _obscureText,
             keyboardType: widget.keyboardType,
+            maxLines: widget.isPassword ? 1 : widget.maxLines,
             onTapOutside: (_) => FocusScope.of(context).unfocus(),
             style: GoogleFonts.inter(
               color: isDark ? Colors.white : AppColors.textPrimary,
@@ -85,7 +90,7 @@ class _CadifeInputState extends State<CadifeInput> {
             ),
             decoration: InputDecoration(
               labelText: widget.label,
-              hintText: widget.hint,
+              hintText: widget.hint ?? widget.hintText,
               prefixIcon: widget.prefixIcon != null
                   ? Icon(widget.prefixIcon, size: 20, color: _errorText != null ? AppColors.primary : AppColors.textSecondary)
                   : null,

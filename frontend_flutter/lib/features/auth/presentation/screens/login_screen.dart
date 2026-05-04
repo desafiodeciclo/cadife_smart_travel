@@ -26,7 +26,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  bool _obscurePassword = true;
   _EmailState _emailState = _EmailState.idle;
   Timer? _emailDebounce;
 
@@ -67,27 +66,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ));
   }
 
-  Widget _emailSuffix() => switch (_emailState) {
-        _EmailState.validating => const SizedBox(
-            width: 20,
-            height: 20,
-            child: Padding(
-              padding: EdgeInsets.all(12),
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-          ),
-        _EmailState.valid =>
-          const Icon(Icons.check_circle, color: AppColors.success, size: 20),
-        _EmailState.invalid =>
-          const Icon(Icons.cancel, color: AppColors.error, size: 20),
-        _EmailState.idle => const SizedBox.shrink(),
-      };
 
-  OutlineInputBorder _border(Color color, {double width = 1.0}) =>
-      OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: color, width: width),
-      );
+
 
   @override
   Widget build(BuildContext context) {
@@ -118,12 +98,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           final hasLoginError = state is AuthFailure;
 
           final textSecondary = isDark ? Colors.white60 : AppColors.textSecondary;
-          final borderColor = isDark ? Colors.white24 : AppColors.border;
           final dividerColor = isDark ? Colors.white12 : AppColors.border;
-          final labelStyle = AppTextStyles.labelSmall.copyWith(
-            letterSpacing: 1.2,
-            color: textSecondary,
-          );
 
     // ── FIX: Column layout instead of Stack — avoids unbounded constraints
     //         and hit-testing issues that blocked all interactions.
@@ -170,38 +145,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                         const SizedBox(height: 32),
 
-                        // ── E-mail label ──────────────────────────────────
-                        Text('E-MAIL', style: labelStyle),
-                        const SizedBox(height: 6),
-
                         // ── E-mail field ──────────────────────────────────
-                        TextFormField(
+                        CadifeInput(
                           key: const ValueKey('email_field'),
+                          label: 'E-mail',
+                          hint: 'seu@email.com',
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
-                          autofillHints: const [AutofillHints.email],
-                          textInputAction: TextInputAction.next,
                           onChanged: _onEmailChanged,
-                          decoration: InputDecoration(
-                            hintText: 'seu@email.com',
-                            suffixIcon: _emailSuffix(),
-                            enabledBorder: _border(
-                              _emailState == _EmailState.valid
-                                  ? AppColors.success
-                                  : _emailState == _EmailState.invalid
-                                      ? AppColors.error
-                                      : borderColor,
-                            ),
-                            focusedBorder: _border(
-                              _emailState == _EmailState.invalid
-                                  ? AppColors.error
-                                  : cadife.primary,
-                              width: 2,
-                            ),
-                            errorBorder: _border(AppColors.error),
-                            focusedErrorBorder:
-                                _border(AppColors.error, width: 2),
-                          ),
                           validator: (v) {
                             if (v == null || v.trim().isEmpty) {
                               return 'Informe o e-mail';
@@ -214,53 +165,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                         const SizedBox(height: 20),
 
-                        // ── Senha label + Esqueci a senha ─────────────────
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text('SENHA', style: labelStyle),
-                            GestureDetector(
-                              onTap: () =>
-                                  context.push('/auth/forgot-password'),
-                              child: Text(
-                                'Esqueci a senha',
-                                style: AppTextStyles.labelSmall.copyWith(
-                                  color: cadife.primary,
-                                  decoration: TextDecoration.underline,
-                                  decorationColor: cadife.primary,
-                                ),
+                        // ── Esqueci a senha ─────────────────
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: GestureDetector(
+                            onTap: () =>
+                                context.push('/auth/forgot-password'),
+                            child: Text(
+                              'Esqueci a senha',
+                              style: AppTextStyles.labelSmall.copyWith(
+                                color: cadife.primary,
+                                decoration: TextDecoration.underline,
+                                decorationColor: cadife.primary,
                               ),
                             ),
-                          ],
+                          ),
                         ),
                         const SizedBox(height: 6),
 
                         // ── Senha field ───────────────────────────────────
-                        TextFormField(
+                        CadifeInput(
                           key: const ValueKey('password_field'),
+                          label: 'Senha',
+                          hint: '••••••••',
                           controller: _passwordController,
-                          obscureText: _obscurePassword,
-                          autofillHints: const [AutofillHints.password],
-                          textInputAction: TextInputAction.done,
-                          onEditingComplete: _handleLogin,
-                          decoration: InputDecoration(
-                            hintText: '••••••••',
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscurePassword
-                                    ? Icons.visibility_off_outlined
-                                    : Icons.visibility_outlined,
-                              ),
-                              onPressed: () => setState(
-                                () => _obscurePassword = !_obscurePassword,
-                              ),
-                            ),
-                            enabledBorder: _border(borderColor),
-                            focusedBorder: _border(cadife.primary, width: 2),
-                            errorBorder: _border(AppColors.error),
-                            focusedErrorBorder:
-                                _border(AppColors.error, width: 2),
-                          ),
+                          isPassword: true,
                           validator: (v) {
                             if (v == null || v.isEmpty) {
                               return 'Informe a senha';
@@ -271,46 +200,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                         const SizedBox(height: 28),
 
-                        // ── ENTRAR button — explicit brand color ──────────
-                        // FIX: use local _isLoggingIn, not authAsync.isLoading
-                        // (isLoading is true during provider init, keeping the
-                        //  button disabled before the user ever touches it)
-                        SizedBox(
-                          width: double.infinity,
-                          height: 50,
-                          child: ElevatedButton(
-                            // Keep onPressed always active — _handleLogin guards
-                            // against double-submission via _isLoggingIn. This
-                            // avoids Flutter's disabled-button opacity washing
-                            // out the spinner against the scaffold background.
-                            onPressed: _handleLogin,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: cadife.primary,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              elevation: 0,
-                            ),
-                            child: isLoggingIn
-                                ? const SizedBox(
-                                    height: 22,
-                                    width: 22,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2.5,
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                : Text(
-                                    'ENTRAR',
-                                    style: TextStyle(
-                                      fontFamily: AppTextStyles.fontFamily,
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: 1.2,
-                                    ),
-                                  ),
-                          ),
+                        // ── ENTRAR button ──────────────────
+                        CadifeButton(
+                          text: 'ENTRAR',
+                          isLoading: isLoggingIn,
+                          onPressed: _handleLogin,
                         ),
 
                         // ── Error message ─────────────────────────────────

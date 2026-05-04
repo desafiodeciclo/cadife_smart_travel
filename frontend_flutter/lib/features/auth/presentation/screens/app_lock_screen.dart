@@ -64,17 +64,11 @@ class AppLockScreen extends ConsumerWidget {
                     ),
                   SizedBox(
                     width: double.infinity,
-                    child: ElevatedButton.icon(
+                    child: CadifeButton(
+                      text: 'Usar biometria / PIN',
+                      icon: Icons.fingerprint_rounded,
                       onPressed: () =>
                           ref.read(appLockProvider.notifier).authenticate(),
-                      icon: const Icon(Icons.fingerprint_rounded),
-                      label: const Text('Usar biometria / PIN'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: AppColors.textOnPrimary,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        textStyle: AppTextStyles.button,
-                      ),
                     ),
                   ),
                 ],

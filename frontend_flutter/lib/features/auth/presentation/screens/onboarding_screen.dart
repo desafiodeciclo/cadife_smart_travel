@@ -84,7 +84,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final isLast = _currentPage == _slides.length - 1;
 
     return Scaffold(
-      backgroundColor: AppColors.scaffold,
+      backgroundColor: Theme.of(context).brightness == Brightness.dark 
+          ? AppColors.darkSurface 
+          : AppColors.scaffold,
       body: SafeArea(
         child: Column(
           children: [
@@ -138,28 +140,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             // ── CTA button ────────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(28, 0, 28, 24),
-              child: SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: _next,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8)),
-                    elevation: 0,
-                  ),
-                  child: Text(
-                    isLast ? 'COMEÇAR' : 'PRÓXIMO',
-                    style: TextStyle(
-                      fontFamily: AppTextStyles.fontFamily,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                ),
+              child: CadifeButton(
+                text: isLast ? 'COMEÇAR' : 'PRÓXIMO',
+                onPressed: _next,
               ),
             ),
           ],

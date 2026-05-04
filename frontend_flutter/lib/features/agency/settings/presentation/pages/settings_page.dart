@@ -12,9 +12,9 @@ class SettingsScreen extends ConsumerWidget {
     final settingsAsync = ref.watch(agencySettingsProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Configurações'),
-        centerTitle: false,
+      appBar: const CadifeAppBar(
+        title: 'Configurações',
+        showProfile: false,
       ),
       body: settingsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -276,16 +276,13 @@ class _TemplatesSection extends ConsumerWidget {
           ],
         ),
         actions: [
-          TextButton(
+          CadifeButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
+            text: 'Cancelar',
+            isOutline: true,
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              elevation: 0,
-            ),
+          const SizedBox(height: 8),
+          CadifeButton(
             onPressed: () {
               if (titleCtrl.text.trim().isEmpty ||
                   bodyCtrl.text.trim().isEmpty) { return; }
@@ -295,7 +292,7 @@ class _TemplatesSection extends ConsumerWidget {
                   );
               Navigator.pop(ctx);
             },
-            child: const Text('Adicionar'),
+            text: 'Adicionar',
           ),
         ],
       ),
@@ -338,19 +335,11 @@ class _TemplatesSection extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 4),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () => _showAddDialog(context, ref),
-              icon: const Icon(Icons.add, size: 18),
-              label: const Text('Adicionar template'),
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: AppColors.border),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
-                foregroundColor: AppColors.textPrimary,
-              ),
-            ),
+          CadifeButton(
+            onPressed: () => _showAddDialog(context, ref),
+            icon: Icons.add,
+            text: 'Adicionar template',
+            isOutline: true,
           ),
           const SizedBox(height: 16),
         ],

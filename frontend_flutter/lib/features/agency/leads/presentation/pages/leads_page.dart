@@ -76,20 +76,8 @@ class _LeadsPageState extends ConsumerState<LeadsPage> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        centerTitle: true,
-        elevation: 0,
-        title: const Text(
-          'LEADS',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w800,
-            fontSize: 17,
-            letterSpacing: 2.5,
-          ),
-        ),
+      appBar: CadifeAppBar(
+        title: 'Leads',
         actions: [
           IconButton(
             icon: const Icon(Icons.add, color: Colors.white),
@@ -97,10 +85,6 @@ class _LeadsPageState extends ConsumerState<LeadsPage> {
             onPressed: () => context.push('/agency/leads/new'),
           ),
         ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: Colors.white12),
-        ),
       ),
       body: Column(
         children: [
@@ -660,14 +644,10 @@ class _ErrorView extends StatelessWidget {
             style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
           ),
           const SizedBox(height: 12),
-          ElevatedButton.icon(
+          CadifeButton(
             onPressed: onRetry,
-            icon: const Icon(Icons.refresh),
-            label: const Text('Tentar novamente'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-            ),
+            text: 'Tentar novamente',
+            icon: Icons.refresh,
           ),
         ],
       ),

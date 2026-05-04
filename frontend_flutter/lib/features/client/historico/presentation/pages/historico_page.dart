@@ -68,12 +68,8 @@ class _HistoricoPageState extends ConsumerState<HistoricoPage> {
     });
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Histórico'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        centerTitle: false,
-        elevation: 0,
+      appBar: const CadifeAppBar(
+        title: 'Histórico',
       ),
       floatingActionButton: const WhatsAppFab(),
       body: interactionsAsync.when(

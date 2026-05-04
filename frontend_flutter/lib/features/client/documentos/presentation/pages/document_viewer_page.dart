@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/client/documentos/domain/entities/documento.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -69,18 +70,19 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.document.name),
+      appBar: CadifeAppBar(
+        title: widget.document.name,
+        showProfile: false,
         actions: [
           IconButton(
-            icon: const Icon(Icons.share_outlined),
+            icon: const Icon(Icons.share_outlined, color: Colors.white),
             onPressed: _shareDocument,
             tooltip: 'Compartilhar',
           ),
           IconButton(
             icon: _isDownloading 
-              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-              : const Icon(Icons.download_outlined),
+              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+              : const Icon(Icons.download_outlined, color: Colors.white),
             onPressed: _isDownloading ? null : _downloadDocument,
             tooltip: 'Baixar',
           ),

@@ -33,7 +33,6 @@ class _CreateProposalModalState extends State<CreateProposalModal> {
 
   @override
   Widget build(BuildContext context) {
-    // Adiciona padding para o teclado
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     return Container(
@@ -70,30 +69,11 @@ class _CreateProposalModalState extends State<CreateProposalModal> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
-              const Text(
-                'Valor da Proposta',
-                style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textSecondary),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
+              CadifeInput(
                 controller: _valorController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(
-                  hintText: 'R\$ 0,00',
-                  prefixIcon: const Icon(Icons.attach_money, color: AppColors.textSecondary),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.border),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.border),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.primary),
-                  ),
-                ),
+                label: 'Valor da Proposta',
+                hintText: '0,00',
+                prefixIcon: Icons.attach_money,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Informe o valor da proposta';
@@ -102,29 +82,11 @@ class _CreateProposalModalState extends State<CreateProposalModal> {
                 },
               ),
               const SizedBox(height: 16),
-              const Text(
-                'Descrição (Resumo)',
-                style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textSecondary),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
+              CadifeInput(
                 controller: _descricaoController,
+                label: 'Descrição (Resumo)',
                 maxLines: 4,
-                decoration: InputDecoration(
-                  hintText: 'Descreva os detalhes e inclusões da proposta...',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.border),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.border),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.primary),
-                  ),
-                ),
+                hintText: 'Descreva os detalhes e inclusões da proposta...',
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Informe a descrição da proposta';
@@ -133,28 +95,16 @@ class _CreateProposalModalState extends State<CreateProposalModal> {
                 },
               ),
               const SizedBox(height: 32),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
+              CadifeButton(
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
-                    // Chamar API para criar a proposta futuramente
                     Navigator.of(context).pop();
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Proposta criada com sucesso!')),
                     );
                   }
                 },
-                child: const Text(
-                  'Enviar Proposta',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
+                text: 'Enviar Proposta',
               ),
             ],
           ),

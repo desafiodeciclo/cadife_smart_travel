@@ -31,20 +31,11 @@ class AgendaScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.scaffold,
-      appBar: AppBar(
-        backgroundColor: AppColors.scaffold,
-        elevation: 0,
-        title: const Text(
-          'Agenda',
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-          ),
-        ),
+      appBar: CadifeAppBar(
+        title: 'Agenda',
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh, color: AppColors.textSecondary),
+            icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: () => ref.read(agendaProvider.notifier).refresh(),
           ),
         ],

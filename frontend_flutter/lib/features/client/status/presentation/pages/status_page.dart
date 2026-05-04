@@ -3,6 +3,7 @@ import 'package:cadife_smart_travel/features/client/status/presentation/widgets/
 import 'package:cadife_smart_travel/features/client/status/presentation/widgets/status_stepper_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class StatusPage extends ConsumerWidget {
   const StatusPage({super.key});
@@ -43,34 +44,22 @@ class StatusPage extends ConsumerWidget {
   }
 
   Widget _buildAppBar(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cadife = context.cadife;
+
     return SliverAppBar(
-      expandedHeight: 120,
+      expandedHeight: 80,
       pinned: true,
-      stretch: true,
-      backgroundColor: AppColors.scaffold,
+      backgroundColor: isDark ? AppColors.darkSurface : cadife.primary,
       elevation: 0,
-      flexibleSpace: FlexibleSpaceBar(
-        centerTitle: false,
-        titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
-        title: const Text(
-          'Minha Viagem',
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.bold,
-            fontSize: 22,
-          ),
-        ),
-        background: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                AppColors.primary.withValues(alpha: 0.05),
-                AppColors.scaffold,
-              ],
-            ),
-          ),
+      centerTitle: true,
+      title: Text(
+        'MINHA VIAGEM',
+        style: GoogleFonts.inter(
+          color: Colors.white,
+          fontWeight: FontWeight.w800,
+          fontSize: 16,
+          letterSpacing: 2.0,
         ),
       ),
     );

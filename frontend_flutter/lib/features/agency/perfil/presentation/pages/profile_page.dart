@@ -15,12 +15,12 @@ class ConsultorProfileScreen extends ConsumerWidget {
     final goalsAsync = ref.watch(saleGoalsProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Meu Perfil'),
-        centerTitle: false,
+      appBar: CadifeAppBar(
+        title: 'Meu Perfil',
+        showProfile: false,
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings_outlined),
+            icon: const Icon(Icons.settings_outlined, color: Colors.white),
             tooltip: 'Configurações',
             onPressed: () => context.push('/agency/settings'),
           ),
@@ -274,43 +274,29 @@ class _BioSectionState extends ConsumerState<_BioSection> {
         if (_editing)
           Column(
             children: [
-              TextField(
-                controller: _controller,
-                maxLines: 4,
-                maxLength: 300,
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8)),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(
-                        color: AppColors.primary, width: 1.5),
-                  ),
-                  contentPadding: const EdgeInsets.all(12),
-                ),
-              ),
+               CadifeInput(
+                 controller: _controller,
+                 label: 'Bio',
+                 maxLines: 4,
+                                   hintText: 'Escreva sua bio...',
+
+               ),
               const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  TextButton(
+                  CadifeButton(
                     onPressed: () {
                       _controller.text = widget.profile.bio;
                       setState(() => _editing = false);
                     },
-                    child: const Text('Cancelar'),
+                    text: 'Cancelar',
+                    isOutline: true,
                   ),
                   const SizedBox(width: 8),
-                  ElevatedButton(
+                  CadifeButton(
                     onPressed: _save,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                    ),
-                    child: const Text('Salvar'),
+                    text: 'Salvar',
                   ),
                 ],
               ),

@@ -1,15 +1,26 @@
 import 'package:cadife_smart_travel/design_system/tokens/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+
+class CadifeBottomNavItem {
+  final IconData icon;
+  final String label;
+
+  const CadifeBottomNavItem({
+    required this.icon,
+    required this.label,
+  });
+}
 
 class CadifeBottomNav extends StatelessWidget {
   final int currentIndex;
+  final List<CadifeBottomNavItem> items;
   final Function(int) onTap;
 
   const CadifeBottomNav({
     super.key,
     required this.currentIndex,
+    required this.items,
     required this.onTap,
   });
 
@@ -31,32 +42,15 @@ class CadifeBottomNav extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _NavItem(
-                icon: LucideIcons.house,
-                label: 'Início',
-                isActive: currentIndex == 0,
-                onTap: () => onTap(0),
-              ),
-              _NavItem(
-                icon: LucideIcons.map,
-                label: 'Viagens',
-                isActive: currentIndex == 1,
-                onTap: () => onTap(1),
-              ),
-              _NavItem(
-                icon: LucideIcons.fileText,
-                label: 'Docs',
-                isActive: currentIndex == 2,
-                onTap: () => onTap(2),
-              ),
-              _NavItem(
-                icon: LucideIcons.user,
-                label: 'Perfil',
-                isActive: currentIndex == 3,
-                onTap: () => onTap(3),
-              ),
-            ],
+            children: List.generate(items.length, (index) {
+              final item = items[index];
+              return _NavItem(
+                icon: item.icon,
+                label: item.label,
+                isActive: currentIndex == index,
+                onTap: () => onTap(index),
+              );
+            }),
           ),
         ),
       ),

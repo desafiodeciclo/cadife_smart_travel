@@ -1,6 +1,8 @@
 import 'package:animations/animations.dart';
+import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class ClientShell extends StatefulWidget {
   const ClientShell({super.key, required this.child, required this.location});
@@ -65,30 +67,14 @@ class _ClientShellState extends State<ClientShell> {
             ),
         child: widget.child,
       ),
-      bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar: CadifeBottomNav(
         currentIndex: _currentIndex,
         onTap: (i) => context.go(_tabs[i]),
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Início',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.explore_outlined),
-            activeIcon: Icon(Icons.explore),
-            label: 'Viagens',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.description_outlined),
-            activeIcon: Icon(Icons.description),
-            label: 'Docs',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: 'Perfil',
-          ),
+          CadifeBottomNavItem(icon: LucideIcons.house, label: 'Início'),
+          CadifeBottomNavItem(icon: LucideIcons.history, label: 'Histórico'),
+          CadifeBottomNavItem(icon: LucideIcons.fileText, label: 'Docs'),
+          CadifeBottomNavItem(icon: LucideIcons.user, label: 'Perfil'),
         ],
       ),
     );

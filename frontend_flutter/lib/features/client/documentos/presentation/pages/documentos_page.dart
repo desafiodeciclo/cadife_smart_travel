@@ -20,17 +20,13 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
     final globalDocsAsync = ref.watch(globalDocumentsProvider);
     final tripsWithDocsAsync = ref.watch(tripsWithDocumentsProvider);
 
-    return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          const SliverAppBar(
-            title: Text('Documentos'),
-            floating: true,
-            centerTitle: true,
-          ),
-          // Principais Documentos Section
-          SliverToBoxAdapter(
-            child: Padding(
+    return PageScaffold(
+      title: 'Documentos',
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Principais Documentos Section
+            Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -165,11 +161,9 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
                 ],
               ),
             ),
-          ),
-          const SliverToBoxAdapter(child: SizedBox(height: 24)),
-          // Documentos por Viagem Section
-          SliverToBoxAdapter(
-            child: Padding(
+            const SizedBox(height: 24),
+            // Documentos por Viagem Section
+            Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -226,9 +220,9 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
                 ],
               ),
             ),
-          ),
-          const SliverToBoxAdapter(child: SizedBox(height: 24)),
-        ],
+            const SizedBox(height: 24),
+          ],
+        ),
       ),
     );
   }

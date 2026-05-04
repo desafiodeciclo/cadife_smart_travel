@@ -1,6 +1,8 @@
 import 'package:animations/animations.dart';
+import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class AgencyShell extends StatefulWidget {
   const AgencyShell({super.key, required this.child, required this.location});
@@ -60,30 +62,14 @@ class _AgencyShellState extends State<AgencyShell> {
             ),
         child: widget.child,
       ),
-      bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar: CadifeBottomNav(
         currentIndex: _currentIndex,
         onTap: (i) => context.go(_tabs[i]),
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard_outlined),
-            activeIcon: Icon(Icons.dashboard),
-            label: 'Dashboard',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people_outline),
-            activeIcon: Icon(Icons.people),
-            label: 'Leads',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today_outlined),
-            activeIcon: Icon(Icons.calendar_today),
-            label: 'Agenda',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: 'Perfil',
-          ),
+          CadifeBottomNavItem(icon: LucideIcons.layoutDashboard, label: 'Dashboard'),
+          CadifeBottomNavItem(icon: LucideIcons.users, label: 'Leads'),
+          CadifeBottomNavItem(icon: LucideIcons.calendarDays, label: 'Agenda'),
+          CadifeBottomNavItem(icon: LucideIcons.circleUser, label: 'Perfil'),
         ],
       ),
     );

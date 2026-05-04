@@ -34,26 +34,14 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> with SingleTick
     final detailAsync = ref.watch(leadDetailProvider(widget.leadId));
 
     return Scaffold(
-      appBar: AppBar(
-        leading: const BackButton(),
-        title: const Text(
-          'DETALHES DO LEAD',
-          style: TextStyle(
-            color: AppColors.primary,
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-            letterSpacing: 1.0,
-          ),
-        ),
-        centerTitle: true,
+      appBar: CadifeAppBar(
+        title: 'Detalhes do Lead',
         actions: [
           IconButton(
-            icon: const Icon(Icons.more_vert, color: AppColors.primary),
+            icon: const Icon(Icons.more_vert, color: Colors.white),
             onPressed: () {},
           ),
         ],
-        elevation: 0,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       ),
       body: detailAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -191,30 +179,18 @@ class _ActionButtons extends ConsumerWidget {
         Row(
           children: [
             Expanded(
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-                icon: const Icon(Icons.check_circle_outline, size: 20),
-                label: const Text('Aprovar', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: CadifeButton(
+                text: 'Aprovar',
+                icon: Icons.check_circle_outline,
                 onPressed: () {},
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                  foregroundColor: AppColors.primary,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-                icon: const Icon(Icons.description_outlined, size: 20),
-                label: const Text('Criar Proposta', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: CadifeButton(
+                text: 'Criar Proposta',
+                icon: Icons.description_outlined,
+                isOutline: true,
                 onPressed: () {
                   CreateProposalModal.show(context, lead.id);
                 },
@@ -226,16 +202,10 @@ class _ActionButtons extends ConsumerWidget {
         Row(
           children: [
             Expanded(
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                  foregroundColor: AppColors.primary,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-                icon: const Icon(Icons.calendar_today_outlined, size: 20),
-                label: const Text('Agendar', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: CadifeButton(
+                text: 'Agendar',
+                icon: Icons.calendar_today_outlined,
+                isOutline: true,
                 onPressed: () async {
                   final result = await ScheduleAppointmentModal.show(context, lead);
                   if (result == true) {
@@ -251,16 +221,10 @@ class _ActionButtons extends ConsumerWidget {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                  foregroundColor: AppColors.primary,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-                icon: const Icon(Icons.chat_bubble_outline, size: 20),
-                label: const Text('WhatsApp', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: CadifeButton(
+                text: 'WhatsApp',
+                icon: Icons.chat_bubble_outline,
+                isOutline: true,
                 onPressed: () {},
               ),
             ),
