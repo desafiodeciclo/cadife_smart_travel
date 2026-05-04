@@ -1,80 +1,61 @@
 import 'dart:convert';
 
-import 'package:cadife_smart_travel/core/security/jwt_validator.dart';
-import 'package:cadife_smart_travel/core/security/secure_config.dart';
+import 'package:cadife_smart_travel/features/auth/data/datasources/i_auth_datasource.dart';
 import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
-import 'package:cadife_smart_travel/features/auth/domain/repositories/i_auth_repository.dart';
 
-class AuthRemoteMockDatasource implements IAuthRepository {
-  AuthRemoteMockDatasource({required SecureConfig secureConfig})
-      : _secureConfig = secureConfig;
-
-  final SecureConfig _secureConfig;
-  AuthUser? _currentUser;
+class AuthRemoteMockDatasource implements IAuthDatasource {
+  AuthRemoteMockDatasource();
 
   @override
-  Future<AuthUser> login(String email, String password, {UserRole? profileHint}) async {
+  Future<Map<String, dynamic>> login(String email, String password, {UserRole? profileHint}) async {
     await Future.delayed(const Duration(milliseconds: 800));
 
     final role = profileHint ??
         (email.contains('agencia') ? UserRole.consultor : UserRole.cliente);
 
-    _currentUser = AuthUser(
-      id: 'mock-id-123',
-      name: role == UserRole.consultor ? 'Consultor de Teste' : 'Cliente de Teste',
-      email: email,
-      role: role,
-    );
+    final userMap = {
+      'id': 'mock-id-123',
+      'nome': role == UserRole.consultor ? 'Consultor de Teste' : 'Cliente de Teste',
+      'email': email,
+      'perfil': role.name,
+    };
 
-    await _secureConfig.saveTokens(
-      accessToken: _buildMockJwt(_currentUser!.id, role),
-      refreshToken: _buildMockJwt(_currentUser!.id, role, hours: 168),
-    );
+    final tokenMap = {
+      'access_token': _buildMockJwt(userMap['id'] as String, role),
+      'refresh_token': _buildMockJwt(userMap['id'] as String, role, hours: 168),
+      'expires_in': 3600,
+    };
 
-    return _currentUser!;
+    return {
+      'user': userMap,
+      'token': tokenMap,
+    };
   }
 
   @override
-  Future<AuthUser?> getCurrentUser() async {
-    if (_currentUser != null) return _currentUser;
-
-    final token = await _secureConfig.getAccessToken();
-    if (token != null && JwtValidator.isTokenValid(token)) {
-      _currentUser = const AuthUser(
-        id: 'mock-id-123',
-        name: 'Usuário Restaurado',
-        email: 'restored@mock.com',
-        role: UserRole.cliente,
-      );
-    }
-    return _currentUser;
-  }
-
-  @override
-  Future<bool> isLoggedIn() async {
-    if (_currentUser != null) return true;
-    final token = await _secureConfig.getAccessToken();
-    return JwtValidator.isTokenValid(token);
+  Future<Map<String, dynamic>?> getCurrentUser() async {
+    await Future.delayed(const Duration(milliseconds: 200));
+    // Simula que o usuário não está em cache no datasource (o repo cuidará do token)
+    return null;
   }
 
   @override
   Future<void> logout() async {
-    _currentUser = null;
-    await _secureConfig.clearTokens();
+    await Future.delayed(const Duration(milliseconds: 200));
   }
 
   @override
-  Future<TokenModel> refreshToken(String refreshToken) async {
-    final newToken = _buildMockJwt('mock-id-123', UserRole.cliente);
-    return TokenModel(
-      accessToken: newToken,
-      refreshToken: _buildMockJwt('mock-id-123', UserRole.cliente, hours: 168),
-      expiresIn: 3600,
-    );
+  Future<Map<String, dynamic>> refreshToken(String refreshToken) async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    return {
+      'access_token': _buildMockJwt('mock-id-123', UserRole.cliente),
+      'refresh_token': _buildMockJwt('mock-id-123', UserRole.cliente, hours: 168),
+      'expires_in': 3600,
+    };
   }
 
   @override
-  Future<AuthUser> register(String name, String email, String password) async {
+  Future<Map<String, dynamic>> register(String name, String email, String password) async {
     return login(email, password);
   }
 

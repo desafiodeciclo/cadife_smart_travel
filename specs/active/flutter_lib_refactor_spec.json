@@ -425,7 +425,7 @@
       "id": "E6",
       "titulo": "Auth — Migração Riverpod → BLoC + Freezed",
       "descricao": "Migrar o gerenciamento de estado de autenticação de Riverpod puro para BLoC + Freezed, habilitando broadcast global de estado de auth para o GoRouter e para o shell de navegação.",
-      "status": "pending",
+      "status": "done",
       "arquivos_afetados": [
         "frontend_flutter/lib/features/auth/",
         "frontend_flutter/lib/config/router/app_router.dart",
@@ -439,7 +439,7 @@
             "Classe AuthUser com: id, email, nome, role (UserRole enum: agency | client), fcmToken",
             "Migrar de shared/models/user_model.dart (feito em E3)"
           ],
-          "status": "pending"
+          "status": "done"
         },
         {
           "id": "E6.2",
@@ -448,7 +448,7 @@
             "Mover de core/ports/auth_port.dart (feito em E3)",
             "Métodos: login, logout, register, getCurrentUser, refreshToken, saveFcmToken"
           ],
-          "status": "pending"
+          "status": "done"
         },
         {
           "id": "E6.3",
@@ -459,7 +459,7 @@
             "auth_bloc.dart — mapeia eventos para estados via IAuthRepository",
             "Rodar build_runner para gerar .g.dart e .freezed.dart"
           ],
-          "status": "pending"
+          "status": "done"
         },
         {
           "id": "E6.4",
@@ -469,7 +469,7 @@
             "features/auth/data/datasources/ — AuthRemoteApiDatasource (JWT + Firebase Auth), AuthRemoteMockDatasource",
             "features/auth/data/providers/auth_data_providers.dart"
           ],
-          "status": "pending"
+          "status": "done"
         },
         {
           "id": "E6.5",
@@ -478,7 +478,7 @@
             "BlocProvider(create: (_) => AuthBloc(ref.read(authRepositoryProvider))..add(const AuthCheckRequested()))",
             "Adicionar BlocListener para redirecionar após login/logout via context.go()"
           ],
-          "status": "pending"
+          "status": "done"
         },
         {
           "id": "E6.6",
@@ -489,7 +489,7 @@
             "Redirect por role: AuthAuthenticated com user.role == UserRole.client → /client/status",
             "Unauthenticated → /auth/login"
           ],
-          "status": "pending"
+          "status": "done"
         },
         {
           "id": "E6.7",
@@ -498,22 +498,22 @@
             "Substituir ref.read(authProvider.notifier).login() por context.read<AuthBloc>().add(AuthLoginRequested(...))",
             "Manter feedback visual (loading, error) via BlocBuilder"
           ],
-          "status": "pending"
+          "status": "done"
         },
         {
           "id": "E6.8",
           "acao": "Manter app_lock_provider.dart (biometria) — compatível com Riverpod, não precisa migrar",
-          "status": "pending"
+          "status": "done"
         },
         {
           "id": "E6.9",
           "acao": "Deletar features/auth/providers/auth_provider.dart (substituído pelo BLoC)",
-          "status": "pending"
+          "status": "done"
         },
         {
           "id": "E6.10",
           "acao": "Validar fluxo completo: cold start → splash → login → redirect por role → logout",
-          "status": "pending"
+          "status": "done"
         }
       ],
       "criterio_conclusao": "Login, logout e redirect por role funcionando via BLoC. auth_provider.dart Riverpod removido. flutter analyze limpo."

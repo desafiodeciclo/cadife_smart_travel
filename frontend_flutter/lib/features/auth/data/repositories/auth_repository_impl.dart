@@ -1,46 +1,44 @@
-import 'package:cadife_smart_travel/core/constants/api_constants.dart';
 import 'package:cadife_smart_travel/core/security/jwt_utils.dart';
 import 'package:cadife_smart_travel/core/security/secure_config.dart';
+import 'package:cadife_smart_travel/features/auth/data/datasources/i_auth_datasource.dart';
 import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
 import 'package:cadife_smart_travel/features/auth/domain/repositories/i_auth_repository.dart';
-import 'package:dio/dio.dart';
 
 class AuthRepositoryImpl implements IAuthRepository {
-  AuthRepositoryImpl({required Dio dio, required SecureConfig secureConfig})
-    : _dio = dio,
-      _secureConfig = secureConfig;
+  AuthRepositoryImpl({
+    required IAuthDatasource remoteDatasource,
+    required SecureConfig secureConfig,
+  })  : _remoteDatasource = remoteDatasource,
+        _secureConfig = secureConfig;
 
-  final Dio _dio;
+  final IAuthDatasource _remoteDatasource;
   final SecureConfig _secureConfig;
 
   @override
   Future<AuthUser> login(String email, String password, {UserRole? profileHint}) async {
-    final response = await _dio.post(
-      ApiConstants.login,
-      data: {'email': email, 'password': password, if (profileHint != null) 'role': profileHint.name},
-    );
-    final tokenData = response.data['token'] as Map<String, dynamic>;
+    final data = await _remoteDatasource.login(email, password, profileHint: profileHint);
+    
+    final tokenData = data['token'] as Map<String, dynamic>;
     await _secureConfig.saveTokens(
       accessToken: tokenData['access_token'] as String,
       refreshToken: tokenData['refresh_token'] as String,
     );
-    return AuthUser.fromJson(response.data['user'] as Map<String, dynamic>);
+    
+    return AuthUser.fromJson(data['user'] as Map<String, dynamic>);
   }
 
   @override
   Future<AuthUser> register(String name, String email, String password) async {
-    final response = await _dio.post(
-      '/auth/register',
-      data: {'name': name, 'email': email, 'password': password},
-    );
-    return AuthUser.fromJson(response.data as Map<String, dynamic>);
+    final data = await _remoteDatasource.register(name, email, password);
+    return AuthUser.fromJson(data);
   }
 
   @override
   Future<void> logout() async {
     try {
-      await _dio.post('/auth/logout');
+      await _remoteDatasource.logout();
     } catch (_) {
+      // Ignore logout errors, continue to clear local tokens
     } finally {
       await _secureConfig.clearTokens();
     }
@@ -48,24 +46,25 @@ class AuthRepositoryImpl implements IAuthRepository {
 
   @override
   Future<TokenModel> refreshToken(String refreshToken) async {
-    final response = await _dio.post(
-      ApiConstants.refresh,
-      data: {'refresh_token': refreshToken},
-    );
-    final tokenData = response.data as Map<String, dynamic>;
+    final data = await _remoteDatasource.refreshToken(refreshToken);
+    
     await _secureConfig.saveTokens(
-      accessToken: tokenData['access_token'] as String,
-      refreshToken: tokenData['refresh_token'] as String,
+      accessToken: data['access_token'] as String,
+      refreshToken: data['refresh_token'] as String,
     );
-    return TokenModel.fromJson(tokenData);
+    
+    return TokenModel.fromJson(data);
   }
 
   @override
   Future<AuthUser?> getCurrentUser() async {
     try {
-      final response = await _dio.get('/users/me');
-      return AuthUser.fromJson(response.data as Map<String, dynamic>);
-    } on DioException {
+      final data = await _remoteDatasource.getCurrentUser();
+      if (data != null) {
+        return AuthUser.fromJson(data);
+      }
+      return _getUserFromStoredToken();
+    } catch (_) {
       return _getUserFromStoredToken();
     }
   }
@@ -73,15 +72,17 @@ class AuthRepositoryImpl implements IAuthRepository {
   Future<AuthUser?> _getUserFromStoredToken() async {
     final token = await _secureConfig.getAccessToken();
     if (token == null) return null;
+    
     final payload = JwtUtils.decodePayload(token);
     if (payload == null) return null;
+    
     return AuthUser(
       id: payload['sub'] as String? ?? '',
-      name: payload['name'] as String? ?? '',
+      name: payload['name'] as String? ?? payload['email'] as String? ?? 'Usuário',
       email: payload['email'] as String? ?? '',
       role: UserRole.values.firstWhere(
         (e) => e.name == (payload['role'] as String?),
-        orElse: () => UserRole.consultor,
+        orElse: () => UserRole.cliente,
       ),
     );
   }
@@ -94,11 +95,11 @@ class AuthRepositoryImpl implements IAuthRepository {
 
   @override
   Future<void> saveFcmToken(String token) async {
-    await _dio.post(ApiConstants.registerFcmToken, data: {'fcm_token': token});
+    await _remoteDatasource.saveFcmToken(token);
   }
 
   @override
   Future<void> forgotPassword(String email) async {
-    await _dio.post(ApiConstants.forgotPassword, data: {'email': email});
+    await _remoteDatasource.forgotPassword(email);
   }
 }

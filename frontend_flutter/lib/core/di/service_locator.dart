@@ -23,6 +23,8 @@ import 'package:cadife_smart_travel/features/agency/leads/data/repositories/lead
 import 'package:cadife_smart_travel/features/agency/leads/domain/repositories/i_leads_repository.dart';
 import 'package:cadife_smart_travel/features/agency/proposals/domain/repositories/proposal_port.dart';
 import 'package:cadife_smart_travel/features/auth/data/datasources/auth_remote_mock_datasource.dart';
+import 'package:cadife_smart_travel/features/auth/data/datasources/i_auth_datasource.dart';
+import 'package:cadife_smart_travel/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:cadife_smart_travel/features/auth/domain/repositories/i_auth_repository.dart';
 import 'package:cadife_smart_travel/features/client/profile/domain/repositories/profile_port.dart';
 import 'package:dio/dio.dart';
@@ -121,7 +123,16 @@ Future<void> setupServiceLocator({
 }
 
 void _registerAuthModule() {
-  sl.registerLazySingleton<IAuthRepository>(() => AuthRemoteMockDatasource(secureConfig: sl<SecureConfig>()));
+  sl.registerLazySingleton<IAuthDatasource>(
+    AuthRemoteMockDatasource.new,
+  );
+
+  sl.registerLazySingleton<IAuthRepository>(
+    () => AuthRepositoryImpl(
+      remoteDatasource: sl<IAuthDatasource>(),
+      secureConfig: sl<SecureConfig>(),
+    ),
+  );
 }
 
 void _registerLeadModule() {
