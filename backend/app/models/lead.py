@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from app.models.user import User
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, String, func
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import ENUM as PgEnum, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from pydantic import BaseModel
 
@@ -31,9 +31,9 @@ class Lead(Base):
     nome: Mapped[Optional[str]] = mapped_column(EncryptedString(512))
     telefone: Mapped[str] = mapped_column(EncryptedString(512), nullable=False)
     telefone_hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, index=True)
-    origem: Mapped[LeadOrigem] = mapped_column(String(20), nullable=False, default=LeadOrigem.whatsapp)
-    status: Mapped[LeadStatus] = mapped_column(String(30), nullable=False, default=LeadStatus.novo)
-    score: Mapped[Optional[LeadScore]] = mapped_column(String(10))
+    origem: Mapped[LeadOrigem] = mapped_column(PgEnum(LeadOrigem, name="lead_origem_enum", create_type=False), nullable=False, default=LeadOrigem.whatsapp)
+    status: Mapped[LeadStatus] = mapped_column(PgEnum(LeadStatus, name="lead_status_enum", create_type=False), nullable=False, default=LeadStatus.novo)
+    score: Mapped[Optional[LeadScore]] = mapped_column(PgEnum(LeadScore, name="lead_score_enum", create_type=False), nullable=True)
     consultor_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
     is_archived: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

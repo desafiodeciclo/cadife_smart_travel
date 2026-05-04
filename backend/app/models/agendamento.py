@@ -2,8 +2,8 @@ import uuid
 from datetime import date, datetime, time
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import Date, DateTime, ForeignKey, String, Time, func
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Date, DateTime, ForeignKey, Time, func
+from sqlalchemy.dialects.postgresql import ENUM as PgEnum, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from pydantic import BaseModel
 
@@ -22,8 +22,8 @@ class Agendamento(Base):
     lead_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("leads.id"), nullable=False, index=True)
     data: Mapped[date] = mapped_column(Date, nullable=False)
     hora: Mapped[time] = mapped_column(Time, nullable=False)
-    status: Mapped[AgendamentoStatus] = mapped_column(String(20), nullable=False, default=AgendamentoStatus.pendente)
-    tipo: Mapped[AgendamentoTipo] = mapped_column(String(20), nullable=False, default=AgendamentoTipo.online)
+    status: Mapped[AgendamentoStatus] = mapped_column(PgEnum(AgendamentoStatus, name="agendamento_status_enum", create_type=False), nullable=False, default=AgendamentoStatus.pendente)
+    tipo: Mapped[AgendamentoTipo] = mapped_column(PgEnum(AgendamentoTipo, name="agendamento_tipo_enum", create_type=False), nullable=False, default=AgendamentoTipo.online)
     consultor_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
     criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
