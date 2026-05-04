@@ -2,7 +2,7 @@ from typing import Optional
 
 import structlog
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_openai import ChatOpenAI
 from pydantic import SecretStr
 
 from app.core.config import get_settings
@@ -61,7 +61,7 @@ class SimpleWindowMemory:
     def has_pending_summary(self) -> bool:
         return len(self._pending_for_summary) > 0
 
-    async def compress_pending(self, llm: ChatGoogleGenerativeAI) -> None:
+    async def compress_pending(self, llm: ChatOpenAI) -> None:
         """Summarise overflowed messages and merge into the running summary."""
         if not self._pending_for_summary:
             return
@@ -105,24 +105,24 @@ class SimpleWindowMemory:
 
 
 _memories: dict[str, SimpleWindowMemory] = {}
-_llm: Optional[ChatGoogleGenerativeAI] = None
+_llm: Optional[ChatOpenAI] = None
 
 
-def get_llm() -> ChatGoogleGenerativeAI:
-    """Return LLM instance — Gemini exclusivo."""
+def get_llm() -> ChatOpenAI:
+    """Return LLM instance — OpenAI GPT-4o."""
     global _llm
     if _llm is None:
-        if settings.GEMINI_API_KEY:
-            _llm = ChatGoogleGenerativeAI(
-                model="gemini-2.0-flash",
+        if settings.OPENAI_API_KEY:
+            _llm = ChatOpenAI(
+                model=settings.OPENAI_MODEL,
                 temperature=0.3,
                 timeout=25,
                 max_retries=2,
-                google_api_key=SecretStr(settings.GEMINI_API_KEY),
+                api_key=SecretStr(settings.OPENAI_API_KEY),
             )
-            logger.info("llm_initialized", provider="google", model="gemini-2.0-flash")
+            logger.info("llm_initialized", provider="openai", model=settings.OPENAI_MODEL)
         else:
-            raise RuntimeError("Nenhuma GEMINI_API_KEY configurada. Defina GEMINI_API_KEY no .env")
+            raise RuntimeError("Nenhuma OPENAI_API_KEY configurada. Defina OPENAI_API_KEY no .env")
     return _llm
 
 
@@ -329,7 +329,7 @@ async def extract_briefing(conversation: list[dict]) -> BriefingExtracted:
     Returns:
         Instância de BriefingExtracted, possivelmente vazia.
     """
-    if not settings.GEMINI_API_KEY:
+    if not settings.OPENAI_API_KEY:
         return BriefingExtracted()
 
     # Sanitizar conversa antes de enviar à extração
@@ -386,13 +386,13 @@ async def extract_briefing(conversation: list[dict]) -> BriefingExtracted:
     # TENTATIVA 2 — Fallback: autocorreção com prompt explícito (Gemini)
     # -----------------------------------------------------------------------
     try:
-        # Usa Gemini com temperatura 0 para máxima determinismo na correção
-        fallback_llm = ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash",
+        # Usa GPT-4o-mini ou similar para autocorreção se necessário, ou mantém GPT-4o com temp 0
+        fallback_llm = ChatOpenAI(
+            model="gpt-4o-mini",
             temperature=0.0,
             timeout=15,
             max_retries=1,
-            google_api_key=SecretStr(settings.GEMINI_API_KEY) if settings.GEMINI_API_KEY else None,
+            api_key=SecretStr(settings.OPENAI_API_KEY) if settings.OPENAI_API_KEY else None,
         )
 
         autocorrect_prompt = ChatPromptTemplate.from_messages([
