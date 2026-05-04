@@ -9,7 +9,7 @@ Uso:
     python scripts/ingest_and_validate.py
 
 Requer:
-    - OPENAI_API_KEY configurada no .env
+    - GEMINI_API_KEY configurada no .env
     - Documentos .txt em ./knowledge_base/
 """
 import asyncio
