@@ -569,10 +569,10 @@ class _GoogleIcon extends StatelessWidget {
 class _GoogleIconPainter extends CustomPainter {
   const _GoogleIconPainter();
 
-  static const _blue = Color(0xFF4285F4);
-  static const _green = Color(0xFF34A853);
-  static const _yellow = Color(0xFFFBBC05);
-  static const _red = Color(0xFFEA4335);
+  static const _blue   = AppColors.googleBlue;
+  static const _green  = AppColors.googleGreen;
+  static const _yellow = AppColors.googleYellow;
+  static const _red    = AppColors.googleRed;
 
   @override
   void paint(Canvas canvas, Size size) {

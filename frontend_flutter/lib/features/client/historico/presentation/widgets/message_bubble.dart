@@ -16,13 +16,13 @@ class MessageBubble extends StatelessWidget {
   Color get _bubbleColor {
     if (_isClient) return AppColors.surface;
     if (_isAya) return AppColors.primaryLight;
-    return const Color(0xFFDCEEFA); // light blue for human consultant
+    return AppColors.bubbleConsultantLight;
   }
 
   Color get _textColor {
     if (_isClient) return AppColors.textPrimary;
     if (_isAya) return AppColors.primaryDark;
-    return const Color(0xFF154360); // dark blue for consultant
+    return AppColors.bubbleConsultantDark;
   }
 
   Color get _senderColor => _isAya ? AppColors.primary : AppColors.info;

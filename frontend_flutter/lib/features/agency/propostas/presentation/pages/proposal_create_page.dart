@@ -7,6 +7,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+// Date range constants for the proposal date picker
+const int _kDefaultDaysAhead    = 7;
+const int _kDefaultReturnOffset = 10;
+const int _kMaxDaysRange        = 730;
+
 /// Tela de criaÃƒÂ§ÃƒÂ£o de proposta Ã¢â‚¬â€ Fase 4.2
 /// Preenche [CreateProposalRequest] e envia via ProposalsNotifier.
 class ProposalCreateScreen extends ConsumerStatefulWidget {
@@ -67,11 +72,11 @@ class _ProposalCreateScreenState extends ConsumerState<ProposalCreateScreen>
     final picked = await showDatePicker(
       context: context,
       initialDate: isIda
-          ? (_dataIda ?? now.add(const Duration(days: 7)))
+          ? (_dataIda ?? now.add(const Duration(days: _kDefaultDaysAhead)))
           : (_dataVolta ??
-              (_dataIda ?? now).add(const Duration(days: 10))),
+              (_dataIda ?? now).add(const Duration(days: _kDefaultReturnOffset))),
       firstDate: now,
-      lastDate: now.add(const Duration(days: 730)),
+      lastDate: now.add(const Duration(days: _kMaxDaysRange)),
       helpText: isIda ? 'Data de ida' : 'Data de volta',
     );
     if (picked != null) {
@@ -177,7 +182,7 @@ class _ProposalCreateScreenState extends ConsumerState<ProposalCreateScreen>
                       child: Icon(
                         Icons.description_outlined,
                         size: 64,
-                        color: Color(0x26FFFFFF), // white 15% opacity
+                        color: AppColors.whiteOverlay15,
                       ),
                     ),
                   ),

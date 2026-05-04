@@ -1,3 +1,4 @@
+import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:flutter/material.dart';
 
 class OngoingTripCard extends StatelessWidget {
@@ -36,7 +37,7 @@ class OngoingTripCard extends StatelessWidget {
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [Colors.transparent, Color(0xCC000000)],
+                      colors: [Colors.transparent, AppColors.overlayDark],
                       stops: [0.35, 1.0],
                     ),
                   ),
@@ -148,7 +149,7 @@ class _FallbackGradient extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF1a237e), Color(0xFF283593)],
+          colors: [AppColors.fallbackNavyLight, AppColors.fallbackNavyDark],
         ),
       ),
     );

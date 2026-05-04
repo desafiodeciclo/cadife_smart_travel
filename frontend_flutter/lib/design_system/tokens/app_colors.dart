@@ -40,6 +40,27 @@ class AppColors {
   static const Color border  = Color(0xFFDEE2E6);
   static const Color divider = Color(0xFFE9ECEF);
 
+  // Google brand colors (login screen G icon)
+  static const Color googleBlue   = Color(0xFF4285F4);
+  static const Color googleGreen  = Color(0xFF34A853);
+  static const Color googleYellow = Color(0xFFFBBC05);
+  static const Color googleRed    = Color(0xFFEA4335);
+
+  // Overlay / glass
+  static const Color overlayDark    = Color(0xCC000000); // 80% black overlay
+  static const Color whiteOverlay15 = Color(0x26FFFFFF); // 15% white overlay
+
+  // Chat bubbles (historico feature)
+  static const Color bubbleConsultantLight = Color(0xFFDCEEFA);
+  static const Color bubbleConsultantDark  = Color(0xFF154360);
+
+  // Progress indicator track
+  static const Color progressBackground = Color(0xFFE0E0E0);
+
+  // Fallback trip card gradient (client feature)
+  static const Color fallbackNavyLight = Color(0xFF1A237E);
+  static const Color fallbackNavyDark  = Color(0xFF283593);
+
   // Shadows
   static Color shadow        = const Color(0xFF000000).withValues(alpha: 0.1);
   static Color premiumShadow = const Color(0xFF000000).withValues(alpha: 0.1);

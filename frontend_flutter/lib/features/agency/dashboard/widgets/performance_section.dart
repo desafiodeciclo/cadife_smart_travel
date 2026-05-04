@@ -80,7 +80,7 @@ class _QualificationRateCard extends StatelessWidget {
                       CircularProgressIndicator(
                         value: taxa / 100,
                         strokeWidth: strokeWidth,
-                        backgroundColor: const Color(0xFFE0E0E0),
+                        backgroundColor: AppColors.progressBackground,
                         valueColor: AlwaysStoppedAnimation<Color>(
                           taxa >= 70 ? AppColors.success : AppColors.warning,
                         ),
