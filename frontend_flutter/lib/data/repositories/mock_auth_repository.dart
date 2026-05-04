@@ -1,15 +1,16 @@
-﻿import 'dart:convert';
-
+import 'dart:convert';
+import 'package:fpdart/fpdart.dart';
+import 'package:cadife_smart_travel/core/error/failures.dart';
 import 'package:cadife_smart_travel/core/security/jwt_validator.dart';
 import 'package:cadife_smart_travel/core/security/secure_config.dart';
 import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
-import 'package:cadife_smart_travel/features/auth/domain/repositories/auth_port.dart';
+import 'package:cadife_smart_travel/features/auth/domain/repositories/i_auth_repository.dart';
 
 /// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-/// AVISO: ESTE REPOSITÃƒâ€œRIO Ãƒâ€° APENAS PARA DESENVOLVIMENTO (MOCK).
-/// DEVE SER REMOVIDO OU SUBSTITUÃƒÂDO PELO AuthRepositoryImpl EM PRODUÃƒâ€¡ÃƒÆ’O.
+/// AVISO: ESTE REPOSITÓRIO É APENAS PARA DESENVOLVIMENTO (MOCK).
+/// DEVE SER REMOVIDO OU SUBSTITUÍDO PELO AuthRepositoryImpl EM PRODUÇÃO.
 /// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-class MockAuthRepository implements AuthPort {
+class MockAuthRepository implements IAuthRepository {
   MockAuthRepository({required SecureConfig secureConfig})
       : _secureConfig = secureConfig;
 
@@ -17,7 +18,7 @@ class MockAuthRepository implements AuthPort {
   AuthUser? _currentUser;
 
   @override
-  Future<AuthUser> login(String email, String password, {UserRole? profileHint}) async {
+  Future<Either<Failure, AuthUser>> login(String email, String password, {UserRole? profileHint}) async {
     await Future.delayed(const Duration(milliseconds: 800));
 
     final role = profileHint ??
@@ -35,64 +36,67 @@ class MockAuthRepository implements AuthPort {
       refreshToken: _buildMockJwt(_currentUser!.id, role, hours: 168),
     );
 
-    return _currentUser!;
+    return Right(_currentUser!);
   }
 
   @override
-  Future<AuthUser?> getCurrentUser() async {
-    if (_currentUser != null) return _currentUser;
+  Future<Either<Failure, AuthUser?>> getCurrentUser() async {
+    if (_currentUser != null) return Right(_currentUser);
 
     final token = await _secureConfig.getAccessToken();
     if (token != null && JwtValidator.isTokenValid(token)) {
       _currentUser = const AuthUser(
         id: 'mock-id-123',
-        name: 'UsuÃƒÂ¡rio Restaurado',
+        name: 'Usuário Restaurado',
         email: 'restored@mock.com',
         role: UserRole.cliente,
       );
     }
-    return _currentUser;
+    return Right(_currentUser);
   }
 
   @override
-  Future<bool> isLoggedIn() async {
-    if (_currentUser != null) return true;
+  Future<Either<Failure, bool>> isLoggedIn() async {
+    if (_currentUser != null) return const Right(true);
     final token = await _secureConfig.getAccessToken();
-    return JwtValidator.isTokenValid(token);
+    return Right(JwtValidator.isTokenValid(token));
   }
 
   @override
-  Future<void> logout() async {
+  Future<Either<Failure, void>> logout() async {
     _currentUser = null;
     await _secureConfig.clearTokens();
+    return const Right(null);
   }
 
   @override
-  Future<TokenModel> refreshToken(String refreshToken) async {
+  Future<Either<Failure, TokenModel>> refreshToken(String refreshToken) async {
     final newToken = _buildMockJwt('mock-id-123', UserRole.cliente);
-    return TokenModel(
+    return Right(TokenModel(
       accessToken: newToken,
       refreshToken: _buildMockJwt('mock-id-123', UserRole.cliente, hours: 168),
       expiresIn: 3600,
-    );
+    ));
   }
 
   @override
-  Future<AuthUser> register(String name, String email, String password) async {
+  Future<Either<Failure, AuthUser>> register(String name, String email, String password) async {
     return login(email, password);
   }
 
   @override
-  Future<void> saveFcmToken(String token) async {}
-
-  @override
-  Future<void> forgotPassword(String email) async {
-    await Future.delayed(const Duration(milliseconds: 1000));
-    // Mock: simula envio de e-mail sem erro
+  Future<Either<Failure, void>> saveFcmToken(String token) async {
+    return const Right(null);
   }
 
-  /// ConstrÃƒÂ³i um JWT com payload base64url vÃƒÂ¡lido (sem verificaÃƒÂ§ÃƒÂ£o de assinatura).
-  /// NecessÃƒÂ¡rio para que JwtValidator.isTokenValid() funcione corretamente em dev.
+  @override
+  Future<Either<Failure, void>> forgotPassword(String email) async {
+    await Future.delayed(const Duration(milliseconds: 1000));
+    return const Right(null);
+  }
+
+  /// Constrói um JWT com payload base64url válido (sem verificação de assinatura).
+  /// Necessário para que JwtValidator.isTokenValid() funcione corretamente em dev.
   String _buildMockJwt(String userId, UserRole role, {int hours = 24}) {
     final header = base64Url
         .encode(utf8.encode('{"alg":"none","typ":"JWT"}'))
@@ -113,7 +117,3 @@ class MockAuthRepository implements AuthPort {
     return '$header.$payload.mock-signature';
   }
 }
-
-
-
-

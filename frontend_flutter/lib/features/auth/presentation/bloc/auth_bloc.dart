@@ -19,17 +19,30 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     emit(const AuthLoading());
-    final isLoggedIn = await _authRepository.isLoggedIn();
-    if (isLoggedIn) {
-      final user = await _authRepository.getCurrentUser();
-      if (user != null) {
-        emit(AuthAuthenticated(user));
-      } else {
+    final loggedResult = await _authRepository.isLoggedIn();
+    
+    await loggedResult.fold(
+      (failure) async {
         emit(const AuthUnauthenticated());
-      }
-    } else {
-      emit(const AuthUnauthenticated());
-    }
+      },
+      (isLoggedIn) async {
+        if (isLoggedIn) {
+          final userResult = await _authRepository.getCurrentUser();
+          userResult.fold(
+            (failure) => emit(const AuthUnauthenticated()),
+            (user) {
+              if (user != null) {
+                emit(AuthAuthenticated(user));
+              } else {
+                emit(const AuthUnauthenticated());
+              }
+            },
+          );
+        } else {
+          emit(const AuthUnauthenticated());
+        }
+      },
+    );
   }
 
   Future<void> _onAuthLoginRequested(
@@ -37,16 +50,16 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     emit(const AuthLoading());
-    try {
-      final user = await _authRepository.login(
-        event.email,
-        event.password,
-        profileHint: event.profileHint,
-      );
-      emit(AuthAuthenticated(user));
-    } catch (e) {
-      emit(AuthFailure(e.toString()));
-    }
+    final result = await _authRepository.login(
+      event.email,
+      event.password,
+      profileHint: event.profileHint,
+    );
+    
+    result.fold(
+      (failure) => emit(AuthFailure(failure.message)),
+      (user) => emit(AuthAuthenticated(user)),
+    );
   }
 
   Future<void> _onAuthLogoutRequested(
@@ -54,18 +67,25 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     emit(const AuthLoading());
-    await _authRepository.logout();
-    emit(const AuthUnauthenticated());
+    final result = await _authRepository.logout();
+    result.fold(
+      (failure) => emit(AuthFailure(failure.message)),
+      (_) => emit(const AuthUnauthenticated()),
+    );
   }
 
   Future<void> _onForgotPasswordRequested(
     AuthForgotPasswordRequested event,
     Emitter<AuthState> emit,
   ) async {
-    try {
-      await _authRepository.forgotPassword(event.email);
-    } catch (_) {
-      // For now, silent fail as it doesn't affect global auth state
-    }
+    final result = await _authRepository.forgotPassword(event.email);
+    result.fold(
+      (failure) {
+        // Log error if needed, but doesn't affect auth state
+      },
+      (_) {
+        // Success
+      },
+    );
   }
 }

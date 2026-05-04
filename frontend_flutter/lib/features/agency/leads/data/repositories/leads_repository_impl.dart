@@ -1,3 +1,5 @@
+import 'package:fpdart/fpdart.dart';
+import 'package:cadife_smart_travel/core/error/failures.dart';
 import 'package:cadife_smart_travel/features/agency/leads/data/datasources/i_leads_datasource.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/briefing.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
@@ -12,37 +14,72 @@ class LeadsRepositoryImpl implements ILeadsRepository {
   }) : _remoteDatasource = remoteDatasource;
 
   @override
-  Future<List<Lead>> getLeads({LeadStatus? status, LeadScore? score}) {
-    return _remoteDatasource.getLeads(status: status, score: score);
+  Future<Either<Failure, List<Lead>>> getLeads({LeadStatus? status, LeadScore? score}) async {
+    try {
+      final leads = await _remoteDatasource.getLeads(status: status, score: score);
+      return Right(leads);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
   }
 
   @override
-  Future<Lead> getLeadById(String id) {
-    return _remoteDatasource.getLeadById(id);
+  Future<Either<Failure, Lead>> getLeadById(String id) async {
+    try {
+      final lead = await _remoteDatasource.getLeadById(id);
+      return Right(lead);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
   }
 
   @override
-  Future<Lead?> getMyLead() {
-    return _remoteDatasource.getMyLead();
+  Future<Either<Failure, Lead?>> getMyLead() async {
+    try {
+      final lead = await _remoteDatasource.getMyLead();
+      return Right(lead);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
   }
 
   @override
-  Future<Lead> updateLeadStatus(String id, LeadStatus newStatus) {
-    return _remoteDatasource.updateLeadStatus(id, newStatus);
+  Future<Either<Failure, Lead>> updateLeadStatus(String id, LeadStatus newStatus) async {
+    try {
+      final lead = await _remoteDatasource.updateLeadStatus(id, newStatus);
+      return Right(lead);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
   }
 
   @override
-  Future<Briefing> getBriefing(String leadId) {
-    return _remoteDatasource.getBriefing(leadId);
+  Future<Either<Failure, Briefing>> getBriefing(String leadId) async {
+    try {
+      final briefing = await _remoteDatasource.getBriefing(leadId);
+      return Right(briefing);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
   }
 
   @override
-  Future<List<Interacao>> getInteractions(String leadId) {
-    return _remoteDatasource.getInteractions(leadId);
+  Future<Either<Failure, List<Interacao>>> getInteractions(String leadId) async {
+    try {
+      final interactions = await _remoteDatasource.getInteractions(leadId);
+      return Right(interactions);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
   }
 
   @override
-  Future<Lead> createLead(CreateLeadRequest request) {
-    return _remoteDatasource.createLead(request);
+  Future<Either<Failure, Lead>> createLead(CreateLeadRequest request) async {
+    try {
+      final lead = await _remoteDatasource.createLead(request);
+      return Right(lead);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
   }
 }

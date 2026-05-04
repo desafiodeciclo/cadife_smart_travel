@@ -11,22 +11,31 @@ import 'package:cadife_smart_travel/core/offline/offline_manager.dart';
 import 'package:cadife_smart_travel/core/offline/offline_sync_queue.dart';
 import 'package:cadife_smart_travel/core/security/secure_config.dart';
 import 'package:cadife_smart_travel/data/local/database_helper.dart';
+import 'package:cadife_smart_travel/data/repositories/mock_agency_settings_repository.dart';
+import 'package:cadife_smart_travel/features/agency/agenda/data/repositories/agenda_repository_impl.dart';
+import 'package:cadife_smart_travel/features/agency/proposals/data/repositories/proposal_repository_impl.dart';
+import 'package:cadife_smart_travel/features/client/profile/data/repositories/profile_repository_impl.dart';
+import 'package:cadife_smart_travel/data/repositories/mock_agency_settings_repository.dart';
 import 'package:cadife_smart_travel/data/repositories/mock_agenda_repository.dart';
+import 'package:cadife_smart_travel/data/repositories/mock_consultor_repository.dart';
 import 'package:cadife_smart_travel/data/repositories/mock_profile_repository.dart';
 import 'package:cadife_smart_travel/data/repositories/offline_event_repository_impl.dart';
-import 'package:cadife_smart_travel/data/repositories/proposal_repository_impl.dart';
 import 'package:cadife_smart_travel/domain/repositories/i_offline_event_repository.dart';
 import 'package:cadife_smart_travel/domain/usecases/process_offline_queue_usecase.dart';
-import 'package:cadife_smart_travel/features/agency/agenda/domain/repositories/agenda_port.dart';
+import 'package:cadife_smart_travel/features/agency/agenda/domain/repositories/i_agenda_repository.dart';
 import 'package:cadife_smart_travel/features/agency/leads/data/datasources/leads_remote_mock_datasource.dart';
 import 'package:cadife_smart_travel/features/agency/leads/data/repositories/leads_repository_impl.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/repositories/i_leads_repository.dart';
-import 'package:cadife_smart_travel/features/agency/proposals/domain/repositories/proposal_port.dart';
+import 'package:cadife_smart_travel/features/agency/profile/domain/repositories/i_consultor_repository.dart';
+import 'package:cadife_smart_travel/features/agency/settings/domain/repositories/i_agency_settings_repository.dart';
+import 'package:cadife_smart_travel/features/agency/proposals/domain/repositories/i_proposals_repository.dart';
 import 'package:cadife_smart_travel/features/auth/data/datasources/auth_remote_mock_datasource.dart';
 import 'package:cadife_smart_travel/features/auth/data/datasources/i_auth_datasource.dart';
 import 'package:cadife_smart_travel/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:cadife_smart_travel/features/auth/domain/repositories/i_auth_repository.dart';
-import 'package:cadife_smart_travel/features/client/profile/domain/repositories/profile_port.dart';
+import 'package:cadife_smart_travel/features/client/notifications/data/repositories/notifications_repository_impl.dart';
+import 'package:cadife_smart_travel/features/client/notifications/domain/repositories/i_notifications_repository.dart';
+import 'package:cadife_smart_travel/features/client/profile/domain/repositories/i_profile_repository.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
@@ -120,6 +129,8 @@ Future<void> setupServiceLocator({
   _registerAgendaModule();
   _registerProposalModule();
   _registerProfileModule();
+  _registerNotificationsModule();
+  _registerSettingsModule();
 }
 
 void _registerAuthModule() {
@@ -144,11 +155,11 @@ void _registerLeadModule() {
 }
 
 void _registerAgendaModule() {
-  sl.registerLazySingleton<AgendaPort>(MockAgendaRepository.new);
+  sl.registerLazySingleton<IAgendaRepository>(MockAgendaRepository.new);
 }
 
 void _registerProposalModule() {
-  sl.registerLazySingleton<ProposalPort>(
+  sl.registerLazySingleton<IProposalsRepository>(
     () => ProposalRepositoryImpl(
       dio: sl<Dio>(),
       offlineManager: sl<OfflineManager>(),
@@ -157,7 +168,16 @@ void _registerProposalModule() {
 }
 
 void _registerProfileModule() {
-  sl.registerLazySingleton<ProfilePort>(MockProfileRepository.new);
+  sl.registerLazySingleton<IProfileRepository>(MockProfileRepository.new);
+  sl.registerLazySingleton<IConsultorRepository>(MockConsultorRepository.new);
+}
+
+void _registerNotificationsModule() {
+  sl.registerLazySingleton<INotificationsRepository>(NotificationsRepositoryImpl.new);
+}
+
+void _registerSettingsModule() {
+  sl.registerLazySingleton<IAgencySettingsRepository>(MockAgencySettingsRepository.new);
 }
 
 Future<void> initDependencies() async {
@@ -185,3 +205,4 @@ Future<void> disposeDependencies() async {
   await sl<DatabaseHelper>().close();
   await sl.reset(dispose: true);
 }
+

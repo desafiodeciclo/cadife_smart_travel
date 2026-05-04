@@ -15,14 +15,20 @@ class StatusNotifier extends FamilyAsyncNotifier<Lead?, String> {
   @override
   Future<Lead?> build(String arg) async {
     final repository = ref.watch(leadsRepositoryProvider);
-    return repository.getLeadById(arg);
+    final result = await repository.getLeadById(arg);
+    return result.fold(
+      (failure) => throw failure,
+      (lead) => lead,
+    );
   }
 
   Future<void> refresh() async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() async {
-      final repository = ref.read(leadsRepositoryProvider);
-      return repository.getLeadById(arg);
-    });
+    final repository = ref.read(leadsRepositoryProvider);
+    final result = await repository.getLeadById(arg);
+    state = result.fold(
+      (failure) => AsyncError(failure, StackTrace.current),
+      (lead) => AsyncData(lead),
+    );
   }
 }

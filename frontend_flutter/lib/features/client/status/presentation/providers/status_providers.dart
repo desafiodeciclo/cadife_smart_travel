@@ -6,7 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// Provider que busca o lead ativo do cliente logado.
 final activeLeadProvider = FutureProvider<Lead?>((ref) async {
   final repository = ref.watch(leadsRepositoryProvider);
-  return repository.getMyLead();
+  final result = await repository.getMyLead();
+  return result.fold(
+    (failure) => throw failure,
+    (lead) => lead,
+  );
 });
 
 /// Provider mock para documentos do cliente.

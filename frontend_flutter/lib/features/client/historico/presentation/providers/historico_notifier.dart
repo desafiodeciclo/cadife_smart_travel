@@ -14,18 +14,36 @@ class HistoricoNotifier extends AsyncNotifier<List<Interacao>> {
   @override
   Future<List<Interacao>> build() async {
     final repository = ref.watch(leadsRepositoryProvider);
-    final lead = await repository.getMyLead();
-    if (lead == null) return [];
-    return repository.getInteractions(lead.id);
+    final leadResult = await repository.getMyLead();
+    
+    return await leadResult.fold(
+      (failure) => throw failure,
+      (lead) async {
+        if (lead == null) return [];
+        final interactionsResult = await repository.getInteractions(lead.id);
+        return interactionsResult.fold(
+          (f) => throw f,
+          (list) => list,
+        );
+      },
+    );
   }
 
   Future<void> refresh() async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() async {
-      final repository = ref.read(leadsRepositoryProvider);
-      final lead = await repository.getMyLead();
-      if (lead == null) return <Interacao>[];
-      return repository.getInteractions(lead.id);
-    });
+    final repository = ref.read(leadsRepositoryProvider);
+    final leadResult = await repository.getMyLead();
+    
+    state = await leadResult.fold(
+      (failure) => AsyncError(failure, StackTrace.current),
+      (lead) async {
+        if (lead == null) return const AsyncData(<Interacao>[]);
+        final interactionsResult = await repository.getInteractions(lead.id);
+        return interactionsResult.fold(
+          (f) => AsyncError(f, StackTrace.current),
+          (list) => AsyncData(list),
+        );
+      },
+    );
   }
 }

@@ -10,18 +10,27 @@ final leadDetailProvider =
 class LeadDetailNotifier extends FamilyAsyncNotifier<Lead?, String> {
   @override
   Future<Lead?> build(String arg) async {
-    return ref.watch(getLeadByIdUseCaseProvider).call(arg);
+    final result = await ref.watch(getLeadByIdUseCaseProvider).call(arg);
+    return result.fold(
+      (failure) => throw failure,
+      (lead) => lead,
+    );
   }
 
   Future<void> refresh() async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() async {
-      return ref.read(getLeadByIdUseCaseProvider).call(arg);
-    });
+    final result = await ref.read(getLeadByIdUseCaseProvider).call(arg);
+    state = result.fold(
+      (failure) => AsyncError(failure, StackTrace.current),
+      (lead) => AsyncData(lead),
+    );
   }
 
   Future<void> updateStatus(LeadStatus newStatus) async {
-    await ref.read(updateLeadStatusUseCaseProvider).call(arg, newStatus);
-    await refresh();
+    final result = await ref.read(updateLeadStatusUseCaseProvider).call(arg, newStatus);
+    result.fold(
+      (failure) => state = AsyncError(failure, StackTrace.current),
+      (_) => refresh(),
+    );
   }
 }

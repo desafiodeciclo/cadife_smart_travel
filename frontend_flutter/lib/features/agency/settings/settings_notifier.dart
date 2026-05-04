@@ -1,8 +1,8 @@
-﻿import 'package:cadife_smart_travel/features/agency/settings/domain/repositories/agency_settings_port.dart';
+import 'package:cadife_smart_travel/features/agency/settings/domain/repositories/i_agency_settings_repository.dart';
 import 'package:cadife_smart_travel/features/agency/settings/settings_models.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-final agencySettingsPortProvider = Provider<AgencySettingsPort>((ref) {
+final IAgencySettingsRepositoryProvider = Provider<IAgencySettingsRepository>((ref) {
   throw UnimplementedError('Override em ProviderScope');
 });
 
@@ -13,20 +13,30 @@ final agencySettingsProvider =
 
 class AgencySettingsNotifier extends AsyncNotifier<AgencySettings> {
   @override
-  Future<AgencySettings> build() =>
-      ref.watch(agencySettingsPortProvider).getSettings();
+  Future<AgencySettings> build() async {
+    final result = await ref.watch(IAgencySettingsRepositoryProvider).getSettings();
+    return result.fold(
+      (failure) => throw failure,
+      (settings) => settings,
+    );
+  }
 
   Future<void> _save(AgencySettings updated) async {
     final previous = state.valueOrNull;
     state = AsyncData(updated);
-    try {
-      final saved =
-          await ref.read(agencySettingsPortProvider).updateSettings(updated);
-      state = AsyncData(saved);
-    } catch (e, st) {
-      if (previous != null) state = AsyncData(previous);
-      state = AsyncError(e, st);
-    }
+    
+    final result = await ref.read(IAgencySettingsRepositoryProvider).updateSettings(updated);
+    state = result.fold(
+      (failure) {
+        if (previous != null) {
+          // Emitting AsyncData(previous) then AsyncError(failure) might be weird, 
+          // usually we just emit the error or revert.
+          return AsyncError(failure, StackTrace.current);
+        }
+        return AsyncError(failure, StackTrace.current);
+      },
+      (saved) => AsyncData(saved),
+    );
   }
 
   Future<void> toggleDay(int weekday, {required bool isOpen}) async {
@@ -79,4 +89,5 @@ class AgencySettingsNotifier extends AsyncNotifier<AgencySettings> {
     await _save(current.copyWith(templates: templates));
   }
 }
+
 

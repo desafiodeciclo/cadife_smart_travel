@@ -1,7 +1,9 @@
-﻿import 'package:cadife_smart_travel/features/agency/settings/domain/repositories/agency_settings_port.dart';
+import 'package:fpdart/fpdart.dart';
+import 'package:cadife_smart_travel/core/error/failures.dart';
+import 'package:cadife_smart_travel/features/agency/settings/domain/repositories/i_agency_settings_repository.dart';
 import 'package:cadife_smart_travel/features/agency/settings/settings_models.dart';
 
-class MockAgencySettingsRepository implements AgencySettingsPort {
+class MockAgencySettingsRepository implements IAgencySettingsRepository {
   int _idCounter = 3;
 
   AgencySettings _settings = const AgencySettings(
@@ -19,29 +21,28 @@ class MockAgencySettingsRepository implements AgencySettingsPort {
       MessageTemplate(
         id: 'tpl-001',
         title: 'Boas-vindas',
-        body: 'OlÃ¡! Sou consultor da Cadife Tour e estou aqui para ajudar com sua viagem. Quando podemos conversar?',
+        body: 'Olá! Sou consultor da Cadife Tour e estou aqui para ajudar com sua viagem. Quando podemos conversar?',
       ),
       MessageTemplate(
         id: 'tpl-002',
         title: 'Proposta enviada',
-        body: 'Sua proposta personalizada foi enviada. Fique Ã  vontade para tirar dÃºvidas!',
+        body: 'Sua proposta personalizada foi enviada. Fique à vontade para tirar dúvidas!',
       ),
     ],
   );
 
   @override
-  Future<AgencySettings> getSettings() async {
+  Future<Either<Failure, AgencySettings>> getSettings() async {
     await Future.delayed(const Duration(milliseconds: 500));
-    return _settings;
+    return Right(_settings);
   }
 
   @override
-  Future<AgencySettings> updateSettings(AgencySettings settings) async {
+  Future<Either<Failure, AgencySettings>> updateSettings(AgencySettings settings) async {
     await Future.delayed(const Duration(milliseconds: 600));
     _settings = settings;
-    return _settings;
+    return Right(_settings);
   }
 
   String nextTemplateId() => 'tpl-${_idCounter++}';
 }
-

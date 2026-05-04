@@ -1,3 +1,5 @@
+import 'package:fpdart/fpdart.dart';
+import 'package:cadife_smart_travel/core/error/failures.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/repositories/i_leads_repository.dart';
 
@@ -6,7 +8,7 @@ class GetLeadByIdUseCase {
 
   GetLeadByIdUseCase(this._repository);
 
-  Future<Lead> call(String id) {
+  Future<Either<Failure, Lead>> call(String id) {
     return _repository.getLeadById(id);
   }
 }

@@ -15,7 +15,7 @@ import 'package:intl/intl.dart';
 /// preferÃƒÂªncias de viagem via chips (tipo_viagem, preferencias),
 /// toggle de passaporte vÃƒÂ¡lido, controle de tema e logout.
 ///
-/// Integra com GET /users/me e PATCH /users/me via [ProfilePort].
+/// Integra com GET /users/me e PATCH /users/me via [IProfileRepository].
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
@@ -439,6 +439,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
   }
 }
+
 
 
 

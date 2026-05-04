@@ -5,33 +5,46 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class LeadsNotifier extends AsyncNotifier<List<Lead>> {
   @override
   Future<List<Lead>> build() async {
-    return ref.watch(getLeadsUseCaseProvider).call();
+    final result = await ref.watch(getLeadsUseCaseProvider).call();
+    return result.fold(
+      (failure) => throw failure,
+      (leads) => leads,
+    );
   }
 
   Future<void> refresh() async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() async {
-      return ref.read(getLeadsUseCaseProvider).call();
-    });
+    final result = await ref.read(getLeadsUseCaseProvider).call();
+    state = result.fold(
+      (failure) => AsyncError(failure, StackTrace.current),
+      (leads) => AsyncData(leads),
+    );
   }
 
   Future<void> filterByStatus(LeadStatus? status) async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() async {
-      return ref.read(getLeadsUseCaseProvider).call(status: status);
-    });
+    final result = await ref.read(getLeadsUseCaseProvider).call(status: status);
+    state = result.fold(
+      (failure) => AsyncError(failure, StackTrace.current),
+      (leads) => AsyncData(leads),
+    );
   }
 
   Future<void> filterByScore(LeadScore? score) async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() async {
-      return ref.read(getLeadsUseCaseProvider).call(score: score);
-    });
+    final result = await ref.read(getLeadsUseCaseProvider).call(score: score);
+    state = result.fold(
+      (failure) => AsyncError(failure, StackTrace.current),
+      (leads) => AsyncData(leads),
+    );
   }
 
   Future<void> updateStatus(String id, LeadStatus newStatus) async {
-    await ref.read(updateLeadStatusUseCaseProvider).call(id, newStatus);
-    await refresh();
+    final result = await ref.read(updateLeadStatusUseCaseProvider).call(id, newStatus);
+    result.fold(
+      (failure) => state = AsyncError(failure, StackTrace.current),
+      (_) => refresh(),
+    );
   }
 }
 

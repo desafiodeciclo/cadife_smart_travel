@@ -1,14 +1,16 @@
-﻿import 'package:cadife_smart_travel/features/agency/agenda/domain/entities/agendamento.dart';
-import 'package:cadife_smart_travel/features/agency/agenda/domain/repositories/agenda_port.dart';
+import 'package:fpdart/fpdart.dart';
+import 'package:cadife_smart_travel/core/error/failures.dart';
+import 'package:cadife_smart_travel/features/agency/agenda/domain/entities/agendamento.dart';
+import 'package:cadife_smart_travel/features/agency/agenda/domain/repositories/i_agenda_repository.dart';
 
-class MockAgendaRepository implements AgendaPort {
+class MockAgendaRepository implements IAgendaRepository {
   final List<Agendamento> _agendas = [];
 
   @override
-  Future<List<Agendamento>> getAgenda({DateTime? date}) async {
+  Future<Either<Failure, List<Agendamento>>> getAgenda({DateTime? date}) async {
     await Future.delayed(const Duration(milliseconds: 400));
-    if (date == null) return List.unmodifiable(_agendas);
-    return _agendas
+    if (date == null) return Right(List.unmodifiable(_agendas));
+    final items = _agendas
         .where(
           (a) =>
               a.dateTime.year == date.year &&
@@ -16,19 +18,24 @@ class MockAgendaRepository implements AgendaPort {
               a.dateTime.day == date.day,
         )
         .toList();
+    return Right(items);
   }
 
   @override
-  Future<Agendamento> getAgendaById(String id) async {
+  Future<Either<Failure, Agendamento>> getAgendaById(String id) async {
     await Future.delayed(const Duration(milliseconds: 200));
-    return _agendas.firstWhere(
-      (a) => a.id == id,
-      orElse: () => throw Exception('Agenda nÃƒÂ£o encontrada: $id'),
-    );
+    try {
+      final agenda = _agendas.firstWhere(
+        (a) => a.id == id,
+      );
+      return Right(agenda);
+    } catch (_) {
+      return Left(ServerFailure('Agenda não encontrada: $id'));
+    }
   }
 
   @override
-  Future<Agendamento> createAgenda(CreateAgendaRequest request) async {
+  Future<Either<Failure, Agendamento>> createAgenda(CreateAgendaRequest request) async {
     await Future.delayed(const Duration(milliseconds: 600));
     final agenda = Agendamento(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -41,14 +48,14 @@ class MockAgendaRepository implements AgendaPort {
       createdAt: DateTime.now(),
     );
     _agendas.add(agenda);
-    return agenda;
+    return Right(agenda);
   }
 
   @override
-  Future<Agendamento> updateAgenda(String id, UpdateAgendaRequest request) async {
+  Future<Either<Failure, Agendamento>> updateAgenda(String id, UpdateAgendaRequest request) async {
     await Future.delayed(const Duration(milliseconds: 400));
     final index = _agendas.indexWhere((a) => a.id == id);
-    if (index == -1) throw Exception('Agenda nÃƒÂ£o encontrada: $id');
+    if (index == -1) return Left(ServerFailure('Agenda não encontrada: $id'));
     final old = _agendas[index];
     final updated = Agendamento(
       id: old.id,
@@ -62,19 +69,20 @@ class MockAgendaRepository implements AgendaPort {
       updatedAt: DateTime.now(),
     );
     _agendas[index] = updated;
-    return updated;
+    return Right(updated);
   }
 
   @override
-  Future<void> deleteAgenda(String id) async {
+  Future<Either<Failure, void>> deleteAgenda(String id) async {
     await Future.delayed(const Duration(milliseconds: 300));
     _agendas.removeWhere((a) => a.id == id);
+    return const Right(null);
   }
 
   @override
-  Future<List<TimeSlotModel>> getAvailableSlots(DateTime date) async {
+  Future<Either<Failure, List<TimeSlotModel>>> getAvailableSlots(DateTime date) async {
     await Future.delayed(const Duration(milliseconds: 300));
-    return List.generate(9, (i) {
+    final slots = List.generate(9, (i) {
       final hour = 9 + i;
       final start = DateTime(date.year, date.month, date.day, hour);
       final isBooked = _agendas.any(
@@ -90,8 +98,10 @@ class MockAgendaRepository implements AgendaPort {
         available: !isBooked,
       );
     });
+    return Right(slots);
   }
 }
+
 
 
 

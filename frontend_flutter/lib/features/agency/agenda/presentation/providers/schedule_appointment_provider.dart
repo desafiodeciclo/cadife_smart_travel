@@ -1,5 +1,5 @@
 import 'package:cadife_smart_travel/features/agency/agenda/domain/entities/agendamento.dart';
-import 'package:cadife_smart_travel/features/agency/agenda/domain/repositories/agenda_port.dart';
+import 'package:cadife_smart_travel/features/agency/agenda/domain/repositories/i_agenda_repository.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/presentation/providers/agenda_provider.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -47,15 +47,15 @@ class ScheduleAppointmentState extends Equatable {
 
 final scheduleAppointmentProvider = StateNotifierProvider.autoDispose<
     ScheduleAppointmentNotifier, ScheduleAppointmentState>((ref) {
-  final agendaPort = ref.watch(agendaPortProvider);
-  return ScheduleAppointmentNotifier(agendaPort);
+  final IAgendaRepository = ref.watch(IAgendaRepositoryProvider);
+  return ScheduleAppointmentNotifier(IAgendaRepository);
 });
 
 class ScheduleAppointmentNotifier
     extends StateNotifier<ScheduleAppointmentState> {
-  final AgendaPort _agendaPort;
+  final IAgendaRepository _IAgendaRepository;
 
-  ScheduleAppointmentNotifier(this._agendaPort)
+  ScheduleAppointmentNotifier(this._IAgendaRepository)
       : super(ScheduleAppointmentState(
             selectedDate: DateTime.now().copyWith(
                 hour: 0, minute: 0, second: 0, millisecond: 0, microsecond: 0))) {
@@ -76,7 +76,7 @@ class ScheduleAppointmentNotifier
   Future<void> _fetchSlots(DateTime date) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final slots = await _agendaPort.getAvailableSlots(date);
+      final slots = await _IAgendaRepository.getAvailableSlots(date);
       state = state.copyWith(isLoading: false, availableSlots: slots);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
@@ -94,7 +94,7 @@ class ScheduleAppointmentNotifier
         durationMinutes: 60, // De acordo com a resposta do usuário
         notes: notes,
       );
-      await _agendaPort.createAgenda(request);
+      await _IAgendaRepository.createAgenda(request);
       state = state.copyWith(isLoading: false);
       return true;
     } catch (e) {
@@ -103,3 +103,4 @@ class ScheduleAppointmentNotifier
     }
   }
 }
+
