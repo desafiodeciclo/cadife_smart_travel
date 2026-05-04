@@ -9,8 +9,15 @@ val newBuildDir: Directory = rootProject.layout.buildDirectory.dir("../../build"
 rootProject.layout.buildDirectory.value(newBuildDir)
 
 subprojects {
-    val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
-    project.layout.buildDirectory.value(newSubprojectBuildDir)
+    if (project.name == "app") {
+        // Keep :app build dir on project path so Flutter CLI finds the APK
+        val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
+        project.layout.buildDirectory.value(newSubprojectBuildDir)
+    } else {
+        // Redirect library intermediates to local disk — macOS creates ._* files on external
+        // volumes that break AAPT2 resource linking when it scans the output directory
+        project.layout.buildDirectory.set(file("/tmp/cadife_android_intermediates/${project.name}"))
+    }
 }
 
 subprojects {

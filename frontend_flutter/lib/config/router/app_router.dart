@@ -1,8 +1,11 @@
-import 'package:cadife_smart_travel/features/agency/agenda/agenda_screen.dart';
+import 'package:cadife_smart_travel/config/router/agency_shell.dart';
+import 'package:cadife_smart_travel/config/router/client_shell.dart';
+import 'package:cadife_smart_travel/features/agency/agenda/presentation/pages/agenda_page.dart';
 import 'package:cadife_smart_travel/features/agency/dashboard/dashboard_screen.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/pages/lead_detail_page.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/pages/leads_page.dart';
+import 'package:cadife_smart_travel/features/agency/perfil/presentation/pages/profile_page.dart';
 import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/bloc/auth_state.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_bloc_provider.dart';
@@ -10,8 +13,13 @@ import 'package:cadife_smart_travel/features/auth/presentation/screens/forgot_pa
 import 'package:cadife_smart_travel/features/auth/presentation/screens/login_screen.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/screens/register_screen.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/screens/splash_screen.dart';
+import 'package:cadife_smart_travel/features/client/documentos/domain/entities/documento.dart';
+import 'package:cadife_smart_travel/features/client/documentos/presentation/pages/document_viewer_page.dart';
+import 'package:cadife_smart_travel/features/client/documentos/presentation/pages/documentos_page.dart';
+import 'package:cadife_smart_travel/features/client/documentos/presentation/pages/trip_documents_page.dart';
 import 'package:cadife_smart_travel/features/client/historico/presentation/pages/historico_page.dart';
-import 'package:cadife_smart_travel/features/client/profile/profile_screen.dart';
+import 'package:cadife_smart_travel/features/client/profile/presentation/pages/profile_page.dart'
+    as client_profile;
 import 'package:cadife_smart_travel/features/client/status/presentation/pages/status_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -78,7 +86,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Fluxo da Agência (Consultor)
       ShellRoute(
         builder: (context, state, child) {
-          return _AgencyShell(child: child);
+          return AgencyShell(location: state.matchedLocation, child: child);
         },
         routes: [
           GoRoute(
@@ -103,10 +111,8 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const AgendaScreen(),
           ),
           GoRoute(
-            path: '/agency/proposals',
-            builder: (context, state) => const Scaffold(
-              body: Center(child: Text('Propostas (Em breve)')),
-            ),
+            path: '/agency/perfil',
+            builder: (context, state) => const ConsultorProfileScreen(),
           ),
         ],
       ),
@@ -114,7 +120,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Fluxo do Cliente
       ShellRoute(
         builder: (context, state, child) {
-          return _ClientShell(child: child);
+          return ClientShell(location: state.matchedLocation, child: child);
         },
         routes: [
           GoRoute(
@@ -126,111 +132,34 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const HistoricoPage(),
           ),
           GoRoute(
-            path: '/client/profile',
-            builder: (context, state) => const ProfileScreen(),
+            path: '/client/documentos',
+            builder: (context, state) => const DocumentosPage(),
+            routes: [
+              GoRoute(
+                path: 'viewer',
+                builder: (context, state) {
+                  final doc = state.extra as Documento;
+                  return DocumentViewerPage(document: doc);
+                },
+              ),
+              GoRoute(
+                path: ':tripId',
+                builder: (context, state) {
+                  final tripId = state.pathParameters['tripId']!;
+                  return TripDocumentsPage(tripId: tripId);
+                },
+              ),
+            ],
+          ),
+          GoRoute(
+            path: '/client/perfil',
+            builder: (context, state) => const client_profile.ProfileScreen(),
           ),
         ],
       ),
     ],
   );
 });
-
-class _AgencyShell extends StatelessWidget {
-  final Widget child;
-  const _AgencyShell({required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    final location = GoRouterState.of(context).matchedLocation;
-    int currentIndex = 0;
-    if (location.startsWith('/agency/dashboard')) {
-      currentIndex = 0;
-    } else if (location.startsWith('/agency/leads')) {
-      currentIndex = 1;
-    } else if (location.startsWith('/agency/agenda')) {
-      currentIndex = 2;
-    } else if (location.startsWith('/agency/proposals')) {
-      currentIndex = 3;
-    }
-
-    return Scaffold(
-      body: child,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: currentIndex,
-        onDestinationSelected: (idx) {
-          switch (idx) {
-            case 0:
-              context.go('/agency/dashboard');
-              break;
-            case 1:
-              context.go('/agency/leads');
-              break;
-            case 2:
-              context.go('/agency/agenda');
-              break;
-            case 3:
-              context.go('/agency/proposals');
-              break;
-          }
-        },
-        destinations: const [
-          NavigationDestination(
-              icon: Icon(Icons.dashboard_outlined), label: 'Home'),
-          NavigationDestination(
-              icon: Icon(Icons.people_outline), label: 'Leads'),
-          NavigationDestination(
-              icon: Icon(Icons.calendar_month_outlined), label: 'Agenda'),
-          NavigationDestination(
-              icon: Icon(Icons.description_outlined), label: 'Propostas'),
-        ],
-      ),
-    );
-  }
-}
-
-class _ClientShell extends StatelessWidget {
-  final Widget child;
-  const _ClientShell({required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    final location = GoRouterState.of(context).matchedLocation;
-    int currentIndex = 0;
-    if (location.startsWith('/client/status')) {
-      currentIndex = 0;
-    } else if (location.startsWith('/client/historico')) {
-      currentIndex = 1;
-    } else if (location.startsWith('/client/profile')) {
-      currentIndex = 2;
-    }
-
-    return Scaffold(
-      body: child,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: currentIndex,
-        onDestinationSelected: (idx) {
-          switch (idx) {
-            case 0:
-              context.go('/client/status');
-              break;
-            case 1:
-              context.go('/client/historico');
-              break;
-            case 2:
-              context.go('/client/profile');
-              break;
-          }
-        },
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.map_outlined), label: 'Status'),
-          NavigationDestination(icon: Icon(Icons.history), label: 'Histórico'),
-          NavigationDestination(
-              icon: Icon(Icons.person_outline), label: 'Perfil'),
-        ],
-      ),
-    );
-  }
-}
 
 class _RouterNotifier extends ChangeNotifier {
   _RouterNotifier(Stream stream) {
