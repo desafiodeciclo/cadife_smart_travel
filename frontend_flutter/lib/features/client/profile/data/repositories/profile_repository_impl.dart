@@ -1,10 +1,10 @@
-import 'package:fpdart/fpdart.dart';
-import 'package:cadife_smart_travel/core/error/failures.dart';
 import 'package:cadife_smart_travel/core/constants/api_constants.dart';
+import 'package:cadife_smart_travel/core/error/failures.dart';
 import 'package:cadife_smart_travel/core/offline/offline_manager.dart';
 import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
 import 'package:cadife_smart_travel/features/client/profile/domain/repositories/i_profile_repository.dart';
 import 'package:dio/dio.dart';
+import 'package:fpdart/fpdart.dart';
 
 class ProfileRepositoryImpl implements IProfileRepository {
   ProfileRepositoryImpl({required Dio dio, required OfflineManager offlineManager})

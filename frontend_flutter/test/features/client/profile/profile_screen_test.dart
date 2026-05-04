@@ -1,36 +1,39 @@
+import 'package:cadife_smart_travel/core/error/failures.dart';
 import 'package:cadife_smart_travel/design_system/theme/theme_provider.dart';
 import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/bloc/auth_state.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_bloc_provider.dart';
-import 'package:cadife_smart_travel/features/client/profile/domain/repositories/profile_port.dart';
-import 'package:cadife_smart_travel/features/client/profile/profile.dart';
+import 'package:cadife_smart_travel/features/client/profile/domain/repositories/i_profile_repository.dart';
+import 'package:cadife_smart_travel/features/client/profile/presentation/pages/profile_page.dart';
+import 'package:cadife_smart_travel/features/client/profile/presentation/providers/profile_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:mocktail/mocktail.dart';
 
-class _FakeProfilePort implements ProfilePort {
+class _FakeProfileRepository implements IProfileRepository {
   final AuthUser? _user;
-  _FakeProfilePort({AuthUser? user}) : _user = user;
+  _FakeProfileRepository({AuthUser? user}) : _user = user;
 
   @override
-  Future<AuthUser> getCurrentUser() async => _user!;
+  Future<Either<Failure, AuthUser>> getCurrentUser() async => Right(_user!);
 
   @override
-  Future<AuthUser> updateProfile({
+  Future<Either<Failure, AuthUser>> updateProfile({
     String? name,
     List<String>? tipoViagem,
     List<String>? preferencias,
     bool? temPassaporte,
   }) async {
-    return _user!.copyWith(
+    return Right(_user!.copyWith(
       name: name,
       tipoViagem: tipoViagem,
       preferencias: preferencias,
       temPassaporte: temPassaporte,
-    );
+    ));
   }
 }
 
@@ -40,14 +43,14 @@ class MockAuthBloc extends Mock implements AuthBloc {
 }
 
 Widget _buildTestableWidget({
-  required ProfilePort profilePort,
+  required IProfileRepository profileRepository,
   required MockAuthBloc authBloc,
   ThemeMode themeMode = ThemeMode.light,
 }) {
   final isDark = themeMode == ThemeMode.dark;
   return ProviderScope(
     overrides: [
-      profilePortProvider.overrideWithValue(profilePort),
+      iProfileRepositoryProvider.overrideWithValue(profileRepository),
       authBlocProvider.overrideWithValue(authBloc),
       themeModeProvider.overrideWith((ref) => ThemeModeNotifier()..state = themeMode),
     ],
@@ -87,7 +90,7 @@ void main() {
     testWidgets('renderiza nome, email e telefone do usuário', (tester) async {
       await tester.pumpWidget(
         _buildTestableWidget(
-          profilePort: _FakeProfilePort(user: mockUser),
+          profileRepository: _FakeProfileRepository(user: mockUser),
           authBloc: authBloc,
         ),
       );
@@ -101,7 +104,7 @@ void main() {
     testWidgets('renderiza botões de logout', (tester) async {
       await tester.pumpWidget(
         _buildTestableWidget(
-          profilePort: _FakeProfilePort(user: mockUser),
+          profileRepository: _FakeProfileRepository(user: mockUser),
           authBloc: authBloc,
         ),
       );
