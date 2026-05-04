@@ -1,10 +1,10 @@
-import 'package:fpdart/fpdart.dart';
-import 'package:cadife_smart_travel/core/error/failures.dart';
 import 'package:cadife_smart_travel/core/constants/api_constants.dart';
+import 'package:cadife_smart_travel/core/error/failures.dart';
 import 'package:cadife_smart_travel/core/offline/offline_manager.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/domain/entities/agendamento.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/domain/repositories/i_agenda_repository.dart';
 import 'package:dio/dio.dart';
+import 'package:fpdart/fpdart.dart';
 
 class AgendaRepositoryImpl implements IAgendaRepository {
   AgendaRepositoryImpl({

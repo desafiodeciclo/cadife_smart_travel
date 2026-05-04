@@ -8,24 +8,28 @@ class ProcessOfflineQueueUseCase {
   ProcessOfflineQueueUseCase(this._repository);
 
   Future<void> execute() async {
-    try {
-      final pendingEvents = await _repository.getUnsyncedEvents();
-      if (pendingEvents.isEmpty) return;
+    final result = await _repository.getUnsyncedEvents();
+    final pendingEvents = result.getOrElse((_) => []);
+    if (pendingEvents.isEmpty) return;
 
-      for (var event in pendingEvents) {
-        // Here we would typically sync with the API (event.payload)
-        // For demonstration based on the task, we mark as synced and show Toast
-        await _repository.markAsSynced(event.id!);
+    for (final event in pendingEvents) {
+      if (event.id == null) continue;
 
-        developer.log('Event synced: ${event.title}', name: 'OfflineQueue');
-        Fluttertoast.showToast(
-          msg: 'Sincronizado: ${event.title}',
-          toastLength: Toast.LENGTH_LONG,
-          gravity: ToastGravity.BOTTOM,
-        );
-      }
-    } catch (e, stackTrace) {
-      developer.log('Erro ao processar fila offline', error: e, stackTrace: stackTrace, name: 'OfflineQueue');
+      final syncResult = await _repository.markAsSynced(event.id!);
+      syncResult.fold(
+        (failure) => developer.log(
+          'Falha ao sincronizar evento "${event.title}": ${failure.message}',
+          name: 'OfflineQueue',
+        ),
+        (_) {
+          developer.log('Evento sincronizado: ${event.title}', name: 'OfflineQueue');
+          Fluttertoast.showToast(
+            msg: 'Sincronizado: ${event.title}',
+            toastLength: Toast.LENGTH_LONG,
+            gravity: ToastGravity.BOTTOM,
+          );
+        },
+      );
     }
   }
 }

@@ -1,7 +1,7 @@
-import 'package:fpdart/fpdart.dart';
 import 'package:cadife_smart_travel/core/error/failures.dart';
-import 'package:cadife_smart_travel/features/agency/profile/consultor_profile_models.dart';
-import 'package:cadife_smart_travel/features/agency/profile/domain/repositories/i_consultor_repository.dart';
+import 'package:cadife_smart_travel/features/agency/perfil/domain/entities/consultor_profile_models.dart';
+import 'package:cadife_smart_travel/features/agency/perfil/domain/repositories/i_consultor_repository.dart';
+import 'package:fpdart/fpdart.dart';
 
 class MockConsultorRepository implements IConsultorRepository {
   ConsultorProfile _profile = const ConsultorProfile(

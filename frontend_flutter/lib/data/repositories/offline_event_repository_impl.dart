@@ -1,8 +1,8 @@
-import 'package:fpdart/fpdart.dart';
 import 'package:cadife_smart_travel/core/error/failures.dart';
 import 'package:cadife_smart_travel/data/local/database_helper.dart';
 import 'package:cadife_smart_travel/domain/entities/offline_event.dart';
 import 'package:cadife_smart_travel/domain/repositories/i_offline_event_repository.dart';
+import 'package:fpdart/fpdart.dart';
 
 class OfflineEventRepositoryImpl implements IOfflineEventRepository {
   final DatabaseHelper _databaseHelper;

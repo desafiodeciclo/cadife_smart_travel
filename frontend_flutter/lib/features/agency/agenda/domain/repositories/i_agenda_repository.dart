@@ -1,6 +1,6 @@
-import 'package:fpdart/fpdart.dart';
 import 'package:cadife_smart_travel/core/error/failures.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/domain/entities/agendamento.dart';
+import 'package:fpdart/fpdart.dart';
 
 abstract class IAgendaRepository {
   Future<Either<Failure, List<Agendamento>>> getAgenda({DateTime? date});

@@ -1,7 +1,7 @@
-import 'package:fpdart/fpdart.dart';
 import 'package:cadife_smart_travel/core/error/failures.dart';
 import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
 import 'package:cadife_smart_travel/features/client/profile/domain/repositories/i_profile_repository.dart';
+import 'package:fpdart/fpdart.dart';
 
 /// Mock de IProfileRepository para desenvolvimento local.
 ///

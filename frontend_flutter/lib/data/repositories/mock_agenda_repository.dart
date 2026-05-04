@@ -1,7 +1,7 @@
-import 'package:fpdart/fpdart.dart';
 import 'package:cadife_smart_travel/core/error/failures.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/domain/entities/agendamento.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/domain/repositories/i_agenda_repository.dart';
+import 'package:fpdart/fpdart.dart';
 
 class MockAgendaRepository implements IAgendaRepository {
   final List<Agendamento> _agendas = [];
