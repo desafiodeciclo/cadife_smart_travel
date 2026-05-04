@@ -1,6 +1,4 @@
-
-import 'package:cadife_smart_travel/core/theme/app_colors.dart';
-import 'package:cadife_smart_travel/core/widgets/cadife_app_bar.dart';
+import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/client/documentos/presentation/providers/documentos_notifier.dart';
 import 'package:cadife_smart_travel/features/client/documentos/presentation/widgets/widgets.dart';
 import 'package:flutter/material.dart';
@@ -25,7 +23,11 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          const CadifeAppBar(title: 'Documentos'),
+          const SliverAppBar(
+            title: Text('Documentos'),
+            floating: true,
+            centerTitle: true,
+          ),
           // Principais Documentos Section
           SliverToBoxAdapter(
             child: Padding(
@@ -205,7 +207,7 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
                                 style: TextStyle(
                                   color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
                                 ),
-                              ),
+                               ),
                             ),
                           )
                         : Column(

@@ -248,7 +248,7 @@
       "id": "E4",
       "titulo": "Eliminação de Duplicatas — Client Features",
       "descricao": "Resolver os três pares de features duplicadas na pasta client/ (status, historico, documentos), unificando em uma estrutura canônica com data/domain/presentation.",
-      "status": "in-progress",
+      "status": "done",
       "arquivos_afetados": [
         "frontend_flutter/lib/features/client/status/",
         "frontend_flutter/lib/features/client/trip_status/",
@@ -305,17 +305,17 @@
             "client/home/providers/ → redistribuir para as features corretas",
             "Deletar client/home/ após redistribuição completa"
           ],
-          "status": "pending"
+          "status": "done"
         },
         {
           "id": "E4.5",
           "acao": "Atualizar rotas no GoRouter para apontar para os canônicos",
-          "status": "pending"
+          "status": "done"
         },
         {
           "id": "E4.6",
           "acao": "Validar navegação do perfil cliente ponta a ponta",
-          "status": "pending"
+          "status": "done"
         }
       ],
       "criterio_conclusao": "Cada feature client/ existe exatamente uma vez. Três pastas deletadas. Navegação cliente funcional sem erros."

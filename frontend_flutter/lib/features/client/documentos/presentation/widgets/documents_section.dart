@@ -1,10 +1,11 @@
+import 'package:cadife_smart_travel/features/client/documentos/domain/entities/documento.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 class DocumentsSection extends StatelessWidget {
   const DocumentsSection({super.key, this.documents = const []});
 
-  final List<DocumentItem> documents;
+  final List<Documento> documents;
 
 
   @override
@@ -79,17 +80,9 @@ class DocumentsSection extends StatelessWidget {
   }
 }
 
-class DocumentItem {
-  const DocumentItem({required this.name, required this.sizeMb, this.url});
-
-  final String name;
-  final String sizeMb;
-  final String? url;
-}
-
 class _DocumentCard extends StatelessWidget {
   const _DocumentCard({required this.item});
-  final DocumentItem item;
+  final Documento item;
 
   @override
   Widget build(BuildContext context) {
@@ -140,7 +133,7 @@ class _DocumentCard extends StatelessWidget {
           ),
           const SizedBox(height: 2),
           Text(
-            'PDF • ${item.sizeMb}',
+            'PDF • ${item.sizeFormatted}',
             style: TextStyle(
               fontSize: 10,
               color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
