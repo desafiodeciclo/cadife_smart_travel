@@ -1,5 +1,5 @@
 
-import 'package:cadife_smart_travel/core/widgets/cadife_app_bar.dart';
+import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/agency/dashboard/dashboard_provider.dart';
 import 'package:cadife_smart_travel/features/agency/dashboard/widgets/funnel_section.dart';
 import 'package:cadife_smart_travel/features/agency/dashboard/widgets/notification_card.dart';

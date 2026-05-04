@@ -1,3 +1,4 @@
+import 'package:cadife_smart_travel/core/cache/database_helper.dart';
 import 'package:cadife_smart_travel/core/cache/isar_cache_manager.dart';
 import 'package:cadife_smart_travel/core/config/env_config.dart';
 import 'package:cadife_smart_travel/core/config/firebase_options_prod.dart';
@@ -9,40 +10,44 @@ import 'package:cadife_smart_travel/core/network/interceptors/error_interceptor.
 import 'package:cadife_smart_travel/core/network/network_info.dart';
 import 'package:cadife_smart_travel/core/notifications/fcm_manager.dart';
 import 'package:cadife_smart_travel/core/notifications/local_notification_manager.dart';
+import 'package:cadife_smart_travel/core/offline/i_offline_event_repository.dart';
+import 'package:cadife_smart_travel/core/offline/offline_event_repository_impl.dart';
 import 'package:cadife_smart_travel/core/offline/offline_interceptor.dart';
 import 'package:cadife_smart_travel/core/offline/offline_manager.dart';
 import 'package:cadife_smart_travel/core/offline/offline_sync_queue.dart';
-import 'package:cadife_smart_travel/core/ports/agenda_port.dart';
-import 'package:cadife_smart_travel/core/ports/auth_port.dart';
-import 'package:cadife_smart_travel/core/ports/lead_port.dart';
-import 'package:cadife_smart_travel/core/ports/profile_port.dart';
-import 'package:cadife_smart_travel/core/ports/proposal_port.dart';
+import 'package:cadife_smart_travel/core/offline/process_offline_queue_usecase.dart';
 import 'package:cadife_smart_travel/core/security/secure_config.dart';
-import 'package:cadife_smart_travel/data/local/database_helper.dart';
-import 'package:cadife_smart_travel/data/repositories/mock_agenda_repository.dart';
-import 'package:cadife_smart_travel/data/repositories/mock_auth_repository.dart';
-import 'package:cadife_smart_travel/data/repositories/mock_lead_repository.dart';
-import 'package:cadife_smart_travel/data/repositories/mock_profile_repository.dart';
-import 'package:cadife_smart_travel/data/repositories/offline_event_repository_impl.dart';
-import 'package:cadife_smart_travel/data/repositories/proposal_repository_impl.dart';
-import 'package:cadife_smart_travel/domain/repositories/i_offline_event_repository.dart';
-import 'package:cadife_smart_travel/domain/usecases/process_offline_queue_usecase.dart';
+import 'package:cadife_smart_travel/features/agency/agenda/data/datasources/mock_agenda_repository.dart';
+import 'package:cadife_smart_travel/features/agency/agenda/domain/repositories/i_agenda_repository.dart';
+import 'package:cadife_smart_travel/features/agency/leads/data/datasources/leads_remote_mock_datasource.dart';
+import 'package:cadife_smart_travel/features/agency/leads/data/repositories/leads_repository_impl.dart';
+import 'package:cadife_smart_travel/features/agency/leads/domain/repositories/i_leads_repository.dart';
+import 'package:cadife_smart_travel/features/agency/perfil/data/datasources/mock_consultor_repository.dart';
+import 'package:cadife_smart_travel/features/agency/perfil/domain/repositories/i_consultor_repository.dart';
+import 'package:cadife_smart_travel/features/agency/propostas/data/repositories/proposal_repository_impl.dart';
+import 'package:cadife_smart_travel/features/agency/propostas/domain/repositories/i_proposals_repository.dart';
+import 'package:cadife_smart_travel/features/agency/settings/data/datasources/mock_agency_settings_repository.dart';
+import 'package:cadife_smart_travel/features/agency/settings/domain/repositories/i_agency_settings_repository.dart';
+import 'package:cadife_smart_travel/features/auth/data/datasources/auth_remote_mock_datasource.dart';
+import 'package:cadife_smart_travel/features/auth/data/datasources/i_auth_datasource.dart';
+import 'package:cadife_smart_travel/features/auth/data/repositories/auth_repository_impl.dart';
+import 'package:cadife_smart_travel/features/auth/domain/repositories/i_auth_repository.dart';
+import 'package:cadife_smart_travel/features/client/notifications/data/repositories/notifications_repository_impl.dart';
+import 'package:cadife_smart_travel/features/client/notifications/domain/repositories/i_notifications_repository.dart';
+import 'package:cadife_smart_travel/features/client/profile/data/datasources/mock_profile_repository.dart';
+import 'package:cadife_smart_travel/features/client/profile/domain/repositories/i_profile_repository.dart';
+import 'package:cadife_smart_travel/features/client/status/data/datasources/status_datasource.dart';
+import 'package:cadife_smart_travel/features/client/status/data/repositories/status_repository_impl.dart';
+import 'package:cadife_smart_travel/features/client/status/domain/repositories/i_status_repository.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 
 /// Service Locator global — get_it com registro explícito e lifecycle controlado.
-///
-/// REGRA: Singletons APENAS para serviços performance-critical (network, DB, security).
-/// Repositories são lazySingletons pois encapsulam Dio (singleton) — sem state próprio.
 final sl = GetIt.instance;
 
 /// Registra TODOS os serviços core e ports por módulo.
-///
-/// [onTokenExpired] — callback acionado quando o refresh de token falha.
-/// Tipicamente chama `authProvider.notifier.logout()` para disparar o redirect do GoRouter.
-/// Chamado uma vez no `main()` antes de `runApp()`.
 Future<void> setupServiceLocator({
   EnvConfig? config,
   List<String>? pinnedCertificates,
@@ -72,10 +77,8 @@ Future<void> setupServiceLocator({
     () => ProcessOfflineQueueUseCase(sl<IOfflineEventRepository>()),
   );
 
-  // ── 2. Network Layer ──────────────────────────────────
+  // ── 2. Network Layer ─────────────────────────────────
 
-  // Lightweight Dio used only by AuthInterceptor (no auth/error interceptors).
-  // Named instance to avoid collision with the main Dio registration.
   sl.registerLazySingleton<Dio>(
     () => DioClientFactory.createForRefresh(
       pinnedSha256: pinnedCertificates ?? [],
@@ -90,8 +93,6 @@ Future<void> setupServiceLocator({
     () => OfflineInterceptor(sl<OfflineManager>()),
   );
 
-  // AuthInterceptor must be a singleton — its Completer<bool> field deduplicates
-  // concurrent 401s across the lifetime of the app.
   sl.registerLazySingleton<AuthInterceptor>(
     () => AuthInterceptor(
       secureConfig: sl<SecureConfig>(),
@@ -100,15 +101,12 @@ Future<void> setupServiceLocator({
     ),
   );
 
-  // Main authenticated Dio (unnamed — default instance used by all repositories).
   sl.registerLazySingleton<Dio>(() {
     const isRelease = bool.fromEnvironment('dart.vm.product');
     if (isRelease) {
-      // Fail-closed: em release SEMPRE exige pinning configurado.
       if (pinnedCertificates == null || pinnedCertificates.isEmpty) {
         throw StateError(
-          'Certificate pinning é obrigatório em builds de release. '
-          'Forneça pinnedCertificates no setupServiceLocator().',
+          'Certificate pinning é obrigatório em builds de release.',
         );
       }
       return DioClientFactory.createPinned(
@@ -119,7 +117,6 @@ Future<void> setupServiceLocator({
         offlineInterceptor: sl<OfflineInterceptor>(),
       );
     }
-    // Debug/dev: permite unpinned para facilitar desenvolvimento local.
     if (pinnedCertificates == null || pinnedCertificates.isEmpty) {
       return DioClientFactory.createUnpinned();
     }
@@ -133,53 +130,51 @@ Future<void> setupServiceLocator({
   });
 
   // ── 3. Ports (interfaces) → Implementations ──────────
-  // Features importam apenas a PORT (interface), nunca a impl.
 
   _registerAuthModule();
   _registerLeadModule();
   _registerAgendaModule();
   _registerProposalModule();
   _registerProfileModule();
+  _registerNotificationsModule();
+  _registerSettingsModule();
+  _registerStatusModule();
+}
+
+void _registerStatusModule() {
+  sl.registerLazySingleton<IStatusDatasource>(StatusMockDatasource.new);
+  sl.registerLazySingleton<IStatusRepository>(
+    () => StatusRepositoryImpl(sl<IStatusDatasource>()),
+  );
 }
 
 void _registerAuthModule() {
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  // MOCK LOGIN ATIVADO — COMENTE A LINHA ABAIXO E DESCOMENTE A SEGUINTE PARA PROD
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  sl.registerLazySingleton<AuthPort>(() => MockAuthRepository(secureConfig: sl<SecureConfig>()));
-  // sl.registerLazySingleton<AuthPort>(
-  //   () => AuthRepositoryImpl(dio: sl<Dio>(), secureConfig: sl<SecureConfig>()),
-  // );
+  sl.registerLazySingleton<IAuthDatasource>(
+    AuthRemoteMockDatasource.new,
+  );
+
+  sl.registerLazySingleton<IAuthRepository>(
+    () => AuthRepositoryImpl(
+      remoteDatasource: sl<IAuthDatasource>(),
+      secureConfig: sl<SecureConfig>(),
+    ),
+  );
 }
 
 void _registerLeadModule() {
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  // MOCK LEAD ATIVADO — COMENTE A LINHA ABAIXO E DESCOMENTE A SEGUINTE PARA PROD
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  sl.registerLazySingleton<LeadPort>(MockLeadRepository.new);
-  // sl.registerLazySingleton<LeadPort>(
-  //   () => LeadRepositoryImpl(
-  //     dio: sl<Dio>(),
-  //     offlineManager: sl<OfflineManager>(),
-  //   ),
-  // );
+  sl.registerLazySingleton<ILeadsRepository>(
+    () => LeadsRepositoryImpl(
+      remoteDatasource: LeadsRemoteMockDatasource(),
+    ),
+  );
 }
 
 void _registerAgendaModule() {
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  // MOCK AGENDA ATIVADO — COMENTE A LINHA ABAIXO E DESCOMENTE A SEGUINTE PARA PROD
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  sl.registerLazySingleton<AgendaPort>(MockAgendaRepository.new);
-  // sl.registerLazySingleton<AgendaPort>(
-  //   () => AgendaRepositoryImpl(
-  //     dio: sl<Dio>(),
-  //     offlineManager: sl<OfflineManager>(),
-  //   ),
-  // );
+  sl.registerLazySingleton<IAgendaRepository>(MockAgendaRepository.new);
 }
 
 void _registerProposalModule() {
-  sl.registerLazySingleton<ProposalPort>(
+  sl.registerLazySingleton<IProposalsRepository>(
     () => ProposalRepositoryImpl(
       dio: sl<Dio>(),
       offlineManager: sl<OfflineManager>(),
@@ -188,19 +183,18 @@ void _registerProposalModule() {
 }
 
 void _registerProfileModule() {
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  // MOCK PROFILE ATIVADO — COMENTE A LINHA ABAIXO E DESCOMENTE A SEGUINTE PARA PROD
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  sl.registerLazySingleton<ProfilePort>(MockProfileRepository.new);
-  // sl.registerLazySingleton<ProfilePort>(
-  //   () => ProfileRepositoryImpl(
-  //     dio: sl<Dio>(),
-  //     offlineManager: sl<OfflineManager>(),
-  //   ),
-  // );
+  sl.registerLazySingleton<IProfileRepository>(MockProfileRepository.new);
+  sl.registerLazySingleton<IConsultorRepository>(MockConsultorRepository.new);
 }
 
-/// Inicializa infra offline (Hive + Isar + SyncQueue).
+void _registerNotificationsModule() {
+  sl.registerLazySingleton<INotificationsRepository>(NotificationsRepositoryImpl.new);
+}
+
+void _registerSettingsModule() {
+  sl.registerLazySingleton<IAgencySettingsRepository>(MockAgencySettingsRepository.new);
+}
+
 Future<void> initDependencies() async {
   final env = sl<EnvConfig>().environment;
   
@@ -222,7 +216,6 @@ Future<void> initDependencies() async {
   ConnectivityService.init();
 }
 
-/// Limpa dados do usuário (logout). NÃO descarta infra singletons.
 Future<void> resetDependencies() async {
   await sl<OfflineManager>().clearUserData();
   await sl<SecureConfig>().clearTokens();
@@ -230,7 +223,6 @@ Future<void> resetDependencies() async {
   await sl<OfflineSyncQueue>().clear();
 }
 
-/// Descarta completamente o DI (dispose).
 Future<void> disposeDependencies() async {
   await sl<OfflineSyncQueue>().dispose();
   await sl<OfflineManager>().dispose();
@@ -238,3 +230,4 @@ Future<void> disposeDependencies() async {
   await sl<DatabaseHelper>().close();
   await sl.reset(dispose: true);
 }
+

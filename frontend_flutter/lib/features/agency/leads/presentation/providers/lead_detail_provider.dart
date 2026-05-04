@@ -1,0 +1,36 @@
+import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
+import 'package:cadife_smart_travel/features/agency/leads/presentation/providers/leads_usecases_providers.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+final leadDetailProvider =
+    AsyncNotifierProvider.family<LeadDetailNotifier, Lead?, String>(
+      LeadDetailNotifier.new,
+    );
+
+class LeadDetailNotifier extends FamilyAsyncNotifier<Lead?, String> {
+  @override
+  Future<Lead?> build(String arg) async {
+    final result = await ref.watch(getLeadByIdUseCaseProvider).call(arg);
+    return result.fold(
+      (failure) => throw failure,
+      (lead) => lead,
+    );
+  }
+
+  Future<void> refresh() async {
+    state = const AsyncLoading();
+    final result = await ref.read(getLeadByIdUseCaseProvider).call(arg);
+    state = result.fold(
+      (failure) => AsyncError(failure, StackTrace.current),
+      AsyncData.new,
+    );
+  }
+
+  Future<void> updateStatus(LeadStatus newStatus) async {
+    final result = await ref.read(updateLeadStatusUseCaseProvider).call(arg, newStatus);
+    result.fold(
+      (failure) => state = AsyncError(failure, StackTrace.current),
+      (_) => refresh(),
+    );
+  }
+}

@@ -1,7 +1,8 @@
 import 'dart:convert';
 
+import 'package:cadife_smart_travel/core/error/failures.dart';
 import 'package:cadife_smart_travel/core/network/network_info.dart';
-import 'package:cadife_smart_travel/core/utils/result.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 enum SyncQueueStatus { pending, syncing, failed }
@@ -69,7 +70,7 @@ class OfflineSyncQueue {
     });
   }
 
-  Future<Result<void>> enqueue({
+  Future<Either<Failure, void>> enqueue({
     required String method,
     required String path,
     required Map<String, dynamic> body,
@@ -80,7 +81,7 @@ class OfflineSyncQueue {
 
     final isOnline = await _networkInfo.isConnected;
     if (isOnline) {
-      return const Success(null);
+      return const Right(null);
     }
 
     final entry = SyncQueueEntry(
@@ -92,7 +93,7 @@ class OfflineSyncQueue {
     );
 
     await _syncBox.put(entry.id, entry.toMap());
-    return const Success(null);
+    return const Right(null);
   }
 
   Future<void> flush() async {

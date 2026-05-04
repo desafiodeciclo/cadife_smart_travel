@@ -1,7 +1,7 @@
 import 'dart:developer' as developer;
 
 import 'package:cadife_smart_travel/core/notifications/local_notification_manager.dart';
-import 'package:cadife_smart_travel/core/ports/auth_port.dart';
+import 'package:cadife_smart_travel/features/auth/domain/repositories/i_auth_repository.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:get_it/get_it.dart';
 
@@ -9,7 +9,7 @@ class FCMManager {
   static final FirebaseMessaging _messaging = FirebaseMessaging.instance;
 
   static Future<void> init() async {
-    // Solicitar permissões
+    // Solicitar permissÃµes
     final settings = await _messaging.requestPermission(
       alert: true,
       badge: true,
@@ -27,11 +27,11 @@ class FCMManager {
         name: 'FCMManager',
       );
       if (message.notification != null) {
-        // Usa messageId (quando disponível) para evitar colisões de hashCode.
+        // Usa messageId (quando disponÃ­vel) para evitar colisÃµes de hashCode.
         final id = message.messageId?.hashCode ?? message.hashCode;
         LocalNotificationManager.showNotification(
           id: id,
-          title: message.notification!.title ?? 'Notificação',
+          title: message.notification!.title ?? 'NotificaÃ§Ã£o',
           body: message.notification!.body ?? '',
         );
       }
@@ -44,8 +44,8 @@ class FCMManager {
     });
   }
 
-  /// Envia o token FCM para o backend **apenas se o usuário estiver autenticado**.
-  /// Deve ser chamado após o login bem-sucedido.
+  /// Envia o token FCM para o backend **apenas se o usuÃ¡rio estiver autenticado**.
+  /// Deve ser chamado apÃ³s o login bem-sucedido.
   static Future<void> sendTokenToBackend() async {
     try {
       final token = await _messaging.getToken();
@@ -64,8 +64,9 @@ class FCMManager {
 
   static Future<void> _sendTokenIfAuthenticated(String token) async {
     try {
-      final authPort = GetIt.instance<AuthPort>();
-      final isLoggedIn = await authPort.isLoggedIn();
+      final authRepository = GetIt.instance<IAuthRepository>();
+      final isLoggedInResult = await authRepository.isLoggedIn();
+      final isLoggedIn = isLoggedInResult.getOrElse((_) => false);
       if (!isLoggedIn) {
         developer.log(
           'Usuário não autenticado — token FCM não enviado.',
@@ -73,7 +74,7 @@ class FCMManager {
         );
         return;
       }
-      await authPort.saveFcmToken(token);
+      await authRepository.saveFcmToken(token);
       developer.log('FCM Token registrado no backend.', name: 'FCMManager');
     } catch (e, stackTrace) {
       developer.log(
@@ -85,3 +86,5 @@ class FCMManager {
     }
   }
 }
+
+
