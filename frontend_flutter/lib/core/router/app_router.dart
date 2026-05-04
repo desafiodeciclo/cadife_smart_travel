@@ -27,7 +27,10 @@ import 'package:go_router/go_router.dart';
 // Bridges Riverpod auth state to GoRouter's refreshListenable
 class _RouterNotifier extends ChangeNotifier {
   _RouterNotifier(Ref ref) {
-    ref.listen<AsyncValue<AuthState>>(authProvider, (_, _) => notifyListeners());
+    ref.listen<AsyncValue<AuthState>>(
+      authProvider,
+      (_, _) => notifyListeners(),
+    );
   }
 }
 
@@ -96,10 +99,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/auth/register',
-        pageBuilder: (_, state) => MaterialPage(
-          key: state.pageKey,
-          child: const RegisterScreen(),
-        ),
+        pageBuilder: (_, state) =>
+            MaterialPage(key: state.pageKey, child: const RegisterScreen()),
       ),
 
       // Agency shell — persistent BottomNavBar with SharedAxis tab transitions
@@ -193,10 +194,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(
             path: '/client/status',
-            pageBuilder: (_, state) => NoTransitionPage(
-              key: state.pageKey,
-              child: const HomeScreen(),
-            ),
+            pageBuilder: (_, state) =>
+                NoTransitionPage(key: state.pageKey, child: const HomeScreen()),
           ),
           GoRoute(
             path: '/client/historico',
