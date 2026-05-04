@@ -37,7 +37,11 @@ class DashboardStatsNotifier extends AsyncNotifier<DashboardStats> {
   @override
   Future<DashboardStats> build() async {
     final leadRepository = ref.watch(leadsRepositoryProvider);
-    final allLeads = await leadRepository.getLeads();
+    final allLeadsResult = await leadRepository.getLeads();
+    final allLeads = allLeadsResult.fold(
+      (failure) => throw failure,
+      (leads) => leads,
+    );
 
     final qualificados = allLeads.where((l) => l.status == LeadStatus.qualificado).length;
     final proposta = allLeads.where((l) => l.status == LeadStatus.proposta).length;

@@ -17,7 +17,7 @@ class LeadsNotifier extends AsyncNotifier<List<Lead>> {
     final result = await ref.read(getLeadsUseCaseProvider).call();
     state = result.fold(
       (failure) => AsyncError(failure, StackTrace.current),
-      (leads) => AsyncData(leads),
+      AsyncData.new,
     );
   }
 
@@ -26,7 +26,7 @@ class LeadsNotifier extends AsyncNotifier<List<Lead>> {
     final result = await ref.read(getLeadsUseCaseProvider).call(status: status);
     state = result.fold(
       (failure) => AsyncError(failure, StackTrace.current),
-      (leads) => AsyncData(leads),
+      AsyncData.new,
     );
   }
 
@@ -35,7 +35,7 @@ class LeadsNotifier extends AsyncNotifier<List<Lead>> {
     final result = await ref.read(getLeadsUseCaseProvider).call(score: score);
     state = result.fold(
       (failure) => AsyncError(failure, StackTrace.current),
-      (leads) => AsyncData(leads),
+      AsyncData.new,
     );
   }
 

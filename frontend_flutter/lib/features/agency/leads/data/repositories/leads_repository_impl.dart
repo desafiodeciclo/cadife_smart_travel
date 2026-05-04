@@ -1,10 +1,10 @@
-import 'package:fpdart/fpdart.dart';
 import 'package:cadife_smart_travel/core/error/failures.dart';
 import 'package:cadife_smart_travel/features/agency/leads/data/datasources/i_leads_datasource.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/briefing.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/repositories/i_leads_repository.dart';
 import 'package:cadife_smart_travel/features/client/historico/domain/entities/interacao.dart';
+import 'package:fpdart/fpdart.dart';
 
 class LeadsRepositoryImpl implements ILeadsRepository {
   final ILeadsDatasource _remoteDatasource;

@@ -47,15 +47,15 @@ class ScheduleAppointmentState extends Equatable {
 
 final scheduleAppointmentProvider = StateNotifierProvider.autoDispose<
     ScheduleAppointmentNotifier, ScheduleAppointmentState>((ref) {
-  final IAgendaRepository = ref.watch(IAgendaRepositoryProvider);
-  return ScheduleAppointmentNotifier(IAgendaRepository);
+  final agendaRepository = ref.watch(iAgendaRepositoryProvider);
+  return ScheduleAppointmentNotifier(agendaRepository);
 });
 
 class ScheduleAppointmentNotifier
     extends StateNotifier<ScheduleAppointmentState> {
-  final IAgendaRepository _IAgendaRepository;
+  final IAgendaRepository _agendaRepository;
 
-  ScheduleAppointmentNotifier(this._IAgendaRepository)
+  ScheduleAppointmentNotifier(this._agendaRepository)
       : super(ScheduleAppointmentState(
             selectedDate: DateTime.now().copyWith(
                 hour: 0, minute: 0, second: 0, millisecond: 0, microsecond: 0))) {
@@ -75,32 +75,35 @@ class ScheduleAppointmentNotifier
 
   Future<void> _fetchSlots(DateTime date) async {
     state = state.copyWith(isLoading: true, error: null);
-    try {
-      final slots = await _IAgendaRepository.getAvailableSlots(date);
-      state = state.copyWith(isLoading: false, availableSlots: slots);
-    } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
-    }
+    final result = await _agendaRepository.getAvailableSlots(date);
+    result.fold(
+      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
+      (slots) => state = state.copyWith(isLoading: false, availableSlots: slots),
+    );
   }
 
   Future<bool> confirmAppointment(String leadId, {String? notes}) async {
     if (state.selectedSlot == null) return false;
 
     state = state.copyWith(isLoading: true, error: null);
-    try {
-      final request = CreateAgendaRequest(
-        leadId: leadId,
-        dateTime: state.selectedSlot!.startTime,
-        durationMinutes: 60, // De acordo com a resposta do usuário
-        notes: notes,
-      );
-      await _IAgendaRepository.createAgenda(request);
-      state = state.copyWith(isLoading: false);
-      return true;
-    } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
-      return false;
-    }
+    final request = CreateAgendaRequest(
+      leadId: leadId,
+      dateTime: state.selectedSlot!.startTime,
+      durationMinutes: 60, // De acordo com a resposta do usuário
+      notes: notes,
+    );
+    
+    final result = await _agendaRepository.createAgenda(request);
+    return result.fold(
+      (failure) {
+        state = state.copyWith(isLoading: false, error: failure.message);
+        return false;
+      },
+      (_) {
+        state = state.copyWith(isLoading: false);
+        return true;
+      },
+    );
   }
 }
 

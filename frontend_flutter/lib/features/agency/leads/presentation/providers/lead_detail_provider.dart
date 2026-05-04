@@ -22,7 +22,7 @@ class LeadDetailNotifier extends FamilyAsyncNotifier<Lead?, String> {
     final result = await ref.read(getLeadByIdUseCaseProvider).call(arg);
     state = result.fold(
       (failure) => AsyncError(failure, StackTrace.current),
-      (lead) => AsyncData(lead),
+      AsyncData.new,
     );
   }
 
