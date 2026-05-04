@@ -1,0 +1,628 @@
+{
+  "id": "flutter_lib_refactor",
+  "title": "Refactor: Reestruturação da lib/ Flutter — Clean Architecture",
+  "description": "Migração da estrutura atual da lib/ (híbrida/flat) para Clean Architecture completa conforme frontarquiteture.md. Sete etapas sequenciais e independentes. Sem perda de funcionalidade.",
+  "created_at": "2026-05-04",
+  "status": "pending",
+  "owner": "Nikolas Tesch",
+  "branch": "feat/front-refactor",
+  "estimated_effort": "3–5 sessões",
+
+  "pre_conditions": [
+    "frontarquiteture.md atualizado com dados do Cadife Smart Travel",
+    "TUTORIAL_ARQUITETURA.md atualizado com estrutura alvo",
+    "Diagnóstico da lib/ atual concluído",
+    "Branch feat/front-refactor ativa"
+  ],
+
+  "etapas": [
+    {
+      "id": "E1",
+      "titulo": "Dependências e Bootstrap",
+      "descricao": "Adicionar pacotes ausentes ao pubspec.yaml e separar o ponto de entrada da aplicação em main.dart + app.dart.",
+      "status": "pending",
+      "arquivos_afetados": [
+        "frontend_flutter/pubspec.yaml",
+        "frontend_flutter/lib/main.dart",
+        "frontend_flutter/lib/app.dart (criar)"
+      ],
+      "steps": [
+        {
+          "id": "E1.1",
+          "acao": "Adicionar ao pubspec.yaml as dependências ausentes",
+          "detalhes": [
+            "flutter_bloc: ^8.1.6",
+            "freezed_annotation: ^2.4.4",
+            "fpdart: ^1.1.0",
+            "equatable: ^2.0.5"
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "E1.2",
+          "acao": "Adicionar dev_dependencies ausentes",
+          "detalhes": [
+            "freezed: ^2.5.7"
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "E1.3",
+          "acao": "Criar lib/app.dart com CadifeApp (ConsumerWidget)",
+          "detalhes": [
+            "Mover MaterialApp.router para app.dart",
+            "Adicionar MultiBlocProvider wrapper (para AuthBloc futuro — E6)",
+            "Conectar GoRouter via ref.watch(appRouterProvider)",
+            "Aplicar AppTheme.light"
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "E1.4",
+          "acao": "Reduzir main.dart ao mínimo absoluto",
+          "detalhes": [
+            "Manter apenas: Firebase.initializeApp + ProviderScope(child: CadifeApp())",
+            "Remover configurações de tema, router e providers do main.dart"
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "E1.5",
+          "acao": "Rodar flutter pub get e confirmar build sem erros",
+          "status": "pending"
+        }
+      ],
+      "criterio_conclusao": "flutter pub get e flutter build apk --debug sem erros de compilação."
+    },
+
+    {
+      "id": "E2",
+      "titulo": "Design System",
+      "descricao": "Extrair tokens visuais, tema e componentes globais de core/theme/ e core/widgets/ para uma pasta design_system/ dedicada com barrel file único.",
+      "status": "pending",
+      "arquivos_afetados": [
+        "frontend_flutter/lib/design_system/ (criar)",
+        "frontend_flutter/lib/core/theme/ (dissolver)",
+        "frontend_flutter/lib/core/widgets/ (dissolver)"
+      ],
+      "steps": [
+        {
+          "id": "E2.1",
+          "acao": "Criar estrutura de pastas design_system/",
+          "detalhes": [
+            "design_system/tokens/ — app_colors.dart, app_typography.dart, app_spacing.dart, app_radius.dart, app_shadows.dart, app_durations.dart, index.dart",
+            "design_system/theme/ — app_theme.dart, index.dart",
+            "design_system/components/ — index.dart",
+            "design_system/effects/ — transitions.dart, index.dart",
+            "design_system/utils/ — extensions.dart, index.dart",
+            "design_system/design_system.dart (barrel file)"
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "E2.2",
+          "acao": "Migrar core/theme/ → design_system/",
+          "detalhes": [
+            "app_colors.dart → design_system/tokens/app_colors.dart (preencher com valores reais Cadife: #dd0b0e, #393532, etc.)",
+            "app_text_styles.dart → design_system/tokens/app_typography.dart",
+            "app_theme.dart → design_system/theme/app_theme.dart",
+            "cadife_theme_extension.dart → absorver em app_theme.dart",
+            "theme_mode_provider.dart → mover para core/providers/theme_provider.dart"
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "E2.3",
+          "acao": "Migrar core/widgets/ → design_system/components/",
+          "detalhes": [
+            "app_text_field.dart → design_system/components/app_text_field.dart",
+            "cadife_button.dart → design_system/components/app_button.dart",
+            "cadife_card.dart → design_system/components/app_card.dart",
+            "cadife_bottom_nav.dart → design_system/components/app_bottom_nav.dart",
+            "cadife_input.dart → absorver em app_text_field.dart (duplicata)",
+            "cadife_app_bar.dart → design_system/components/cadife_app_bar.dart",
+            "shimmer_loading.dart → design_system/components/shimmer_loading.dart",
+            "app_shell.dart → mover para features/shell/ (é lógica de feature)"
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "E2.4",
+          "acao": "Criar design_system/design_system.dart (barrel file)",
+          "detalhes": [
+            "Exportar todos os tokens, tema, componentes, efeitos e utils",
+            "Substituir todos os imports antigos (core/theme, core/widgets) pelo novo barrel file em todo o projeto"
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "E2.5",
+          "acao": "Adicionar ao design_system componentes específicos do Cadife",
+          "detalhes": [
+            "design_system/components/app_badge.dart — score badge (quente/morno/frio) com AppColors.scoreHot/scoreWarm/scoreCold",
+            "design_system/components/lead_status_stepper.dart — stepper visual do ciclo NOVO→FECHADO"
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "E2.6",
+          "acao": "Remover core/theme/ e core/widgets/ (agora vazias)",
+          "status": "pending"
+        },
+        {
+          "id": "E2.7",
+          "acao": "Confirmar build e hot reload sem erros de import",
+          "status": "pending"
+        }
+      ],
+      "criterio_conclusao": "Nenhum import de core/theme/ ou core/widgets/ restante no projeto. flutter analyze sem erros."
+    },
+
+    {
+      "id": "E3",
+      "titulo": "Config, Router e Core Cleanup",
+      "descricao": "Mover o router para config/router/, absorver services/ no core/, e remover shared/models/ migrando modelos para as features corretas.",
+      "status": "pending",
+      "arquivos_afetados": [
+        "frontend_flutter/lib/config/ (criar)",
+        "frontend_flutter/lib/core/router/ (mover)",
+        "frontend_flutter/lib/services/ (dissolver)",
+        "frontend_flutter/lib/shared/ (dissolver progressivamente)"
+      ],
+      "steps": [
+        {
+          "id": "E3.1",
+          "acao": "Criar lib/config/router/ e mover arquivos de core/router/",
+          "detalhes": [
+            "core/router/app_router.dart → config/router/app_router.dart",
+            "core/router/agency_shell.dart → config/router/agency_shell.dart",
+            "core/router/client_shell.dart → config/router/client_shell.dart",
+            "Atualizar import em app.dart",
+            "Deletar core/router/"
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "E3.2",
+          "acao": "Absorver services/ no core/",
+          "detalhes": [
+            "services/api_service.dart → avaliar se duplica DioClient; se sim, deletar e unificar em core/network/dio_client.dart",
+            "services/notification_service.dart → mover para core/notifications/ (já existe fcm_manager.dart — verificar duplicata)",
+            "Deletar services/"
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "E3.3",
+          "acao": "Migrar shared/extensions/ para core/utils/",
+          "detalhes": [
+            "shared/extensions/date_extensions.dart → core/utils/date_extensions.dart",
+            "shared/extensions/string_extensions.dart → core/utils/string_extensions.dart"
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "E3.4",
+          "acao": "Migrar shared/widgets/ para design_system/components/",
+          "detalhes": [
+            "shared/widgets/feedback_widgets.dart → design_system/components/feedback_widgets.dart"
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "E3.5",
+          "acao": "Migrar shared/models/ para entidades dentro de cada feature (preparação para E4 e E5)",
+          "detalhes": [
+            "shared/models/lead_model.dart → features/agency/leads/domain/entities/lead.dart",
+            "shared/models/briefing_model.dart → features/agency/leads/domain/entities/briefing.dart",
+            "shared/models/agenda_model.dart → features/agency/agenda/domain/entities/agendamento.dart",
+            "shared/models/proposal_model.dart → features/agency/propostas/domain/entities/proposta.dart",
+            "shared/models/interaction_model.dart → features/client/historico/domain/entities/interacao.dart",
+            "shared/models/document_model.dart → features/client/documentos/domain/entities/documento.dart",
+            "shared/models/user_model.dart → features/auth/domain/entities/auth_user.dart",
+            "Atualizar todos os imports afetados antes de deletar shared/models/"
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "E3.6",
+          "acao": "Deletar shared/ (após migrar tudo)",
+          "status": "pending"
+        },
+        {
+          "id": "E3.7",
+          "acao": "Avaliar core/ports/ — manter ou dissolver",
+          "detalhes": [
+            "Os ports são interfaces de repositório. Mover cada um para domain/repositories/ da feature correspondente:",
+            "core/ports/lead_port.dart → features/agency/leads/domain/repositories/i_leads_repository.dart",
+            "core/ports/agenda_port.dart → features/agency/agenda/domain/repositories/i_agenda_repository.dart",
+            "core/ports/proposal_port.dart → features/agency/propostas/domain/repositories/i_propostas_repository.dart",
+            "core/ports/auth_port.dart → features/auth/domain/repositories/i_auth_repository.dart",
+            "core/ports/profile_port.dart → features/agency/perfil/domain/repositories/i_profile_repository.dart",
+            "core/ports/notification_port.dart → manter em core/notifications/ (é infra, não domínio de feature)",
+            "Deletar core/ports/"
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "E3.8",
+          "acao": "Confirmar flutter analyze sem warnings de imports não utilizados",
+          "status": "pending"
+        }
+      ],
+      "criterio_conclusao": "Sem pasta services/, sem pasta shared/, core/ports/ vazio ou removido. Roteamento funcionando via config/router/."
+    },
+
+    {
+      "id": "E4",
+      "titulo": "Eliminação de Duplicatas — Client Features",
+      "descricao": "Resolver os três pares de features duplicadas na pasta client/ (status, historico, documentos), unificando em uma estrutura canônica com data/domain/presentation.",
+      "status": "pending",
+      "arquivos_afetados": [
+        "frontend_flutter/lib/features/client/status/",
+        "frontend_flutter/lib/features/client/trip_status/",
+        "frontend_flutter/lib/features/client/historico/",
+        "frontend_flutter/lib/features/client/interactions/",
+        "frontend_flutter/lib/features/client/documentos/",
+        "frontend_flutter/lib/features/client/documents/",
+        "frontend_flutter/lib/features/client/home/"
+      ],
+      "steps": [
+        {
+          "id": "E4.1",
+          "acao": "Unificar client/status/ + client/trip_status/ → client/status/ canônico",
+          "detalhes": [
+            "Comparar client/status/status_screen.dart e client/trip_status/trip_status.dart — manter a versão mais completa",
+            "Consolidar providers em client/status/presentation/providers/status_notifier.dart",
+            "Criar estrutura interna: client/status/domain/entities/, client/status/presentation/",
+            "Deletar client/trip_status/"
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "E4.2",
+          "acao": "Unificar client/historico/ + client/interactions/ → client/historico/ canônico",
+          "detalhes": [
+            "Comparar historico_screen.dart e interactions_provider.dart — manter lógica de ambos",
+            "Criar client/historico/presentation/pages/historico_page.dart",
+            "Criar client/historico/presentation/providers/historico_notifier.dart",
+            "Entidade Interacao (migrada de shared/ na E3) → client/historico/domain/entities/",
+            "Deletar client/interactions/"
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "E4.3",
+          "acao": "Unificar client/documentos/ + client/documents/ → client/documentos/ canônico",
+          "detalhes": [
+            "client/documentos/ já tem a versão mais completa (widgets, viewer, trip_documents)",
+            "Verificar se client/documents/ tem lógica adicional não duplicada",
+            "Migrar qualquer provider de client/documents/ para client/documentos/presentation/providers/",
+            "Entidade Documento (migrada de shared/ na E3) → client/documentos/domain/entities/",
+            "Deletar client/documents/"
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "E4.4",
+          "acao": "Resolver client/home/ — redistribuir ou manter como shell",
+          "detalhes": [
+            "client/home/widgets/status_stepper_widget.dart → mover para client/status/presentation/widgets/",
+            "client/home/widgets/ongoing_trip_card.dart → mover para client/status/presentation/widgets/",
+            "client/home/widgets/consultant_card.dart → mover para design_system/components/ (reutilizável)",
+            "client/home/widgets/documents_section.dart → mover para client/documentos/presentation/widgets/",
+            "client/home/providers/ → redistribuir para as features corretas",
+            "Deletar client/home/ após redistribuição completa"
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "E4.5",
+          "acao": "Atualizar rotas no GoRouter para apontar para os canônicos",
+          "status": "pending"
+        },
+        {
+          "id": "E4.6",
+          "acao": "Validar navegação do perfil cliente ponta a ponta",
+          "status": "pending"
+        }
+      ],
+      "criterio_conclusao": "Cada feature client/ existe exatamente uma vez. Três pastas deletadas. Navegação cliente funcional sem erros."
+    },
+
+    {
+      "id": "E5",
+      "titulo": "Clean Architecture nas Features Agency",
+      "descricao": "Reorganizar as features da agência introduzindo as três camadas (data/domain/presentation) internamente. Mover repositórios globais de data/ para dentro de cada feature.",
+      "status": "pending",
+      "arquivos_afetados": [
+        "frontend_flutter/lib/features/agency/leads/",
+        "frontend_flutter/lib/features/agency/agenda/",
+        "frontend_flutter/lib/features/agency/propostas/",
+        "frontend_flutter/lib/features/agency/dashboard/",
+        "frontend_flutter/lib/features/agency/perfil/",
+        "frontend_flutter/lib/data/repositories/ (dissolver)"
+      ],
+      "steps": [
+        {
+          "id": "E5.1",
+          "acao": "Reestruturar agency/leads/ com data/domain/presentation",
+          "detalhes": [
+            "Criar agency/leads/domain/entities/ — Lead, Briefing (vindos de E3)",
+            "Criar agency/leads/domain/repositories/i_leads_repository.dart (vindo de core/ports/lead_port.dart — E3)",
+            "Criar agency/leads/domain/usecases/ — GetLeadsUseCase, GetLeadByIdUseCase, UpdateLeadStatusUseCase, GetBriefingUseCase",
+            "Criar agency/leads/data/datasources/ — ILeadsDatasource, LeadsRemoteApiDatasource, LeadsRemoteMockDatasource",
+            "Criar agency/leads/data/models/lead_api_model.dart (fromJson / toEntity)",
+            "Mover data/repositories/lead_repository_impl.dart → agency/leads/data/repositories/leads_repository_impl.dart",
+            "Mover data/repositories/mock_lead_repository.dart → agency/leads/data/datasources/leads_remote_mock_datasource.dart",
+            "Criar agency/leads/data/providers/leads_data_providers.dart (Riverpod)",
+            "Reorganizar agency/leads/presentation/: pages/, providers/ (leads_notifier.dart, lead_detail_provider.dart), widgets/",
+            "Mover lead_detail/ para agency/leads/presentation/pages/lead_detail_page.dart"
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "E5.2",
+          "acao": "Reestruturar agency/agenda/ com data/domain/presentation",
+          "detalhes": [
+            "Criar agency/agenda/domain/entities/agendamento.dart (vindo de E3)",
+            "Criar agency/agenda/domain/repositories/i_agenda_repository.dart (vindo de core/ports/agenda_port.dart)",
+            "Criar agency/agenda/domain/usecases/ — GetAgendaUseCase, CreateAgendamentoUseCase, UpdateAgendamentoUseCase",
+            "Criar agency/agenda/data/datasources/ com Api e Mock",
+            "Mover data/repositories/agenda_repository_impl.dart → agency/agenda/data/repositories/",
+            "Mover data/repositories/mock_agenda_repository.dart → agency/agenda/data/datasources/",
+            "Reorganizar agency/agenda/presentation/: pages/, providers/ (agenda_provider.dart, schedule_appointment_provider.dart), widgets/"
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "E5.3",
+          "acao": "Reestruturar agency/propostas/ com data/domain/presentation",
+          "detalhes": [
+            "Criar agency/propostas/domain/entities/proposta.dart (vindo de E3)",
+            "Criar agency/propostas/domain/repositories/i_propostas_repository.dart (vindo de core/ports/proposal_port.dart)",
+            "Criar agency/propostas/domain/usecases/ — CreatePropostaUseCase, UpdatePropostaStatusUseCase",
+            "Criar agency/propostas/data/datasources/ com Api e Mock",
+            "Mover data/repositories/proposal_repository_impl.dart → agency/propostas/data/repositories/",
+            "Reorganizar agency/propostas/presentation/: pages/, providers/ (proposals_provider.dart), widgets/"
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "E5.4",
+          "acao": "Reestruturar agency/perfil/ e agency/settings/",
+          "detalhes": [
+            "Renomear agency/profile/ → agency/perfil/ (padrão PT-BR do projeto)",
+            "Criar agency/perfil/domain/entities/ e domain/repositories/",
+            "Criar agency/perfil/data/ com Api e Mock (vindos de mock_profile_repository, mock_consultor_repository)",
+            "Mover data/repositories/profile_repository_impl.dart → agency/perfil/data/repositories/",
+            "Criar agency/settings/domain/entities/ e data/ (vindo de mock_agency_settings_repository)"
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "E5.5",
+          "acao": "Deletar data/ global (root) após migrar todos os repositórios",
+          "detalhes": [
+            "Verificar que data/repositories/ está vazio",
+            "Verificar que data/local/database_helper.dart foi absorvido pelo core/cache/",
+            "Deletar pasta data/"
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "E5.6",
+          "acao": "Deletar domain/ global (root) — mover offline para core/offline/",
+          "detalhes": [
+            "domain/entities/offline_event.dart → core/offline/offline_event.dart",
+            "domain/repositories/i_offline_event_repository.dart → core/offline/i_offline_event_repository.dart",
+            "domain/usecases/process_offline_queue_usecase.dart → core/offline/process_offline_queue_usecase.dart",
+            "Deletar pasta domain/"
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "E5.7",
+          "acao": "Validar flutter analyze e hot reload do fluxo de leads completo",
+          "status": "pending"
+        }
+      ],
+      "criterio_conclusao": "Sem pastas data/ e domain/ no root. Cada feature agency tem data/domain/presentation internos. flutter analyze sem erros."
+    },
+
+    {
+      "id": "E6",
+      "titulo": "Auth — Migração Riverpod → BLoC + Freezed",
+      "descricao": "Migrar o gerenciamento de estado de autenticação de Riverpod puro para BLoC + Freezed, habilitando broadcast global de estado de auth para o GoRouter e para o shell de navegação.",
+      "status": "pending",
+      "arquivos_afetados": [
+        "frontend_flutter/lib/features/auth/",
+        "frontend_flutter/lib/config/router/app_router.dart",
+        "frontend_flutter/lib/app.dart"
+      ],
+      "steps": [
+        {
+          "id": "E6.1",
+          "acao": "Criar features/auth/domain/entities/auth_user.dart",
+          "detalhes": [
+            "Classe AuthUser com: id, email, nome, role (UserRole enum: agency | client), fcmToken",
+            "Migrar de shared/models/user_model.dart (feito em E3)"
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "E6.2",
+          "acao": "Criar features/auth/domain/repositories/i_auth_repository.dart",
+          "detalhes": [
+            "Mover de core/ports/auth_port.dart (feito em E3)",
+            "Métodos: login, logout, register, getCurrentUser, refreshToken, saveFcmToken"
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "E6.3",
+          "acao": "Criar features/auth/presentation/bloc/ com Freezed",
+          "detalhes": [
+            "auth_event.dart — @freezed: AuthCheckRequested, AuthLoginRequested(email, pass), AuthLogoutRequested",
+            "auth_state.dart — @freezed: AuthInitial, AuthLoading, AuthAuthenticated(AuthUser), AuthUnauthenticated, AuthFailure(message)",
+            "auth_bloc.dart — mapeia eventos para estados via IAuthRepository",
+            "Rodar build_runner para gerar .g.dart e .freezed.dart"
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "E6.4",
+          "acao": "Migrar data/repositories/auth_repository_impl.dart para feature/auth/data/",
+          "detalhes": [
+            "features/auth/data/repositories/auth_repository_impl.dart",
+            "features/auth/data/datasources/ — AuthRemoteApiDatasource (JWT + Firebase Auth), AuthRemoteMockDatasource",
+            "features/auth/data/providers/auth_data_providers.dart"
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "E6.5",
+          "acao": "Atualizar app.dart — adicionar MultiBlocProvider com AuthBloc",
+          "detalhes": [
+            "BlocProvider(create: (_) => AuthBloc(ref.read(authRepositoryProvider))..add(const AuthCheckRequested()))",
+            "Adicionar BlocListener para redirecionar após login/logout via context.go()"
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "E6.6",
+          "acao": "Atualizar GoRouter — usar AuthBloc para redirect",
+          "detalhes": [
+            "Substituir ref.watch(authProvider) por acesso ao AuthBloc via BlocProvider.of",
+            "Redirect por role: AuthAuthenticated com user.role == UserRole.agency → /agency/dashboard",
+            "Redirect por role: AuthAuthenticated com user.role == UserRole.client → /client/status",
+            "Unauthenticated → /auth/login"
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "E6.7",
+          "acao": "Adaptar telas de auth (login_screen, register_screen) para disparar AuthBloc events",
+          "detalhes": [
+            "Substituir ref.read(authProvider.notifier).login() por context.read<AuthBloc>().add(AuthLoginRequested(...))",
+            "Manter feedback visual (loading, error) via BlocBuilder"
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "E6.8",
+          "acao": "Manter app_lock_provider.dart (biometria) — compatível com Riverpod, não precisa migrar",
+          "status": "pending"
+        },
+        {
+          "id": "E6.9",
+          "acao": "Deletar features/auth/providers/auth_provider.dart (substituído pelo BLoC)",
+          "status": "pending"
+        },
+        {
+          "id": "E6.10",
+          "acao": "Validar fluxo completo: cold start → splash → login → redirect por role → logout",
+          "status": "pending"
+        }
+      ],
+      "criterio_conclusao": "Login, logout e redirect por role funcionando via BLoC. auth_provider.dart Riverpod removido. flutter analyze limpo."
+    },
+
+    {
+      "id": "E7",
+      "titulo": "Either Pattern e Validação Final",
+      "descricao": "Adotar Either<Failure, T> nos repositórios, garantir que nenhum repositório lança exceção para cima, e executar validação final de todo o fluxo ponta a ponta.",
+      "status": "pending",
+      "arquivos_afetados": [
+        "Todos os *_repository_impl.dart de todas as features",
+        "Todos os *_usecase.dart",
+        "Todos os *_notifier.dart que consomem usecases"
+      ],
+      "steps": [
+        {
+          "id": "E7.1",
+          "acao": "Atualizar interfaces (i_*_repository.dart) para retornar Either<Failure, T>",
+          "detalhes": [
+            "Usar fpdart: import 'package:fpdart/fpdart.dart'",
+            "Substituir Future<T> por Future<Either<Failure, T>> em todos os métodos",
+            "Failures já definidos em core/error/failures.dart (E2)"
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "E7.2",
+          "acao": "Atualizar implementações dos repositórios com try/catch → Left/Right",
+          "detalhes": [
+            "DioException → Left(ServerFailure(e.message))",
+            "SocketException → Left(NetworkFailure())",
+            "401 / UnauthorizedException → Left(UnauthorizedFailure())",
+            "Sucesso → Right(result)"
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "E7.3",
+          "acao": "Atualizar UseCases para propagar Either sem modificar",
+          "detalhes": [
+            "UseCases apenas chamam repository.method() e retornam o Either diretamente",
+            "Nenhuma exceção é capturada no UseCase — só no repositório"
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "E7.4",
+          "acao": "Atualizar Notifiers para consumir Either via fold()",
+          "detalhes": [
+            "result.fold((failure) => throw failure, (data) => data)",
+            "AsyncValue.guard() já captura o throw e expõe no state.error"
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "E7.5",
+          "acao": "Revisar core/utils/result.dart — verificar se era um Either caseiro; se sim, substituir por fpdart e deletar",
+          "status": "pending"
+        },
+        {
+          "id": "E7.6",
+          "acao": "Rodar flutter analyze — zero erros e zero warnings",
+          "status": "pending"
+        },
+        {
+          "id": "E7.7",
+          "acao": "Testar fluxo ponta a ponta: login agência → listar leads → ver detalhe → agendar curadoria",
+          "status": "pending"
+        },
+        {
+          "id": "E7.8",
+          "acao": "Testar fluxo cliente: login → status da viagem → histórico → documentos",
+          "status": "pending"
+        },
+        {
+          "id": "E7.9",
+          "acao": "Mover specs/pending/flutter_lib_refactor_spec.json → specs/done/",
+          "status": "pending"
+        }
+      ],
+      "criterio_conclusao": "flutter analyze zerado. Nenhum repositório com throw direto. Fluxos agência e cliente funcionando. Spec movida para done/."
+    }
+  ],
+
+  "ordem_execucao": "E1 → E2 → E3 → E4 → E5 → E6 → E7",
+  "dependencias": {
+    "E2": ["E1"],
+    "E3": ["E2"],
+    "E4": ["E3"],
+    "E5": ["E3", "E4"],
+    "E6": ["E5"],
+    "E7": ["E6"]
+  },
+  "notas": [
+    "Cada etapa deve terminar com build funcionando antes de avançar.",
+    "Não misturar etapas na mesma sessão — risco de estado inconsistente.",
+    "core/cache/isar_schemas/ não é movido — Isar é infraestrutura, fica em core/.",
+    "core/security/ não é movido — também é infraestrutura transversal.",
+    "core/offline/ não é movido — infraestrutura transversal.",
+    "A Etapa 6 (BLoC auth) é a mais arriscada — reservar sessão exclusiva."
+  ]
+}
