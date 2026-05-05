@@ -14,6 +14,7 @@ Spec references:
 from contextlib import asynccontextmanager
 
 import structlog
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
@@ -25,6 +26,9 @@ from app.infrastructure.persistence.database import create_tables
 from app.infrastructure.adapters.firebase import init_firebase
 from app.infrastructure.security.rate_limiter import limiter
 from app.services.ingestion_pipeline import get_ingestion_pipeline
+
+# Scheduled Jobs
+from app.jobs.lead_expiration_job import expire_stale_leads
 
 # Routers
 from app.routes import agenda, auth, ia, leads, propostas, webhook
@@ -41,6 +45,9 @@ from app.presentation.middlewares.security_headers import SecurityHeadersMiddlew
 
 settings = get_settings()
 logger = structlog.get_logger()
+
+# Scheduler instance — configured at module level, started/stopped in lifespan
+_scheduler = AsyncIOScheduler(timezone="UTC")
 
 
 # -------------------------------------------------------------------
@@ -71,10 +78,24 @@ async def lifespan(app: FastAPI):
     except Exception as exc:
         logger.warning("rag_indexing_failed_on_startup", error=str(exc))
 
+    # Scheduled Jobs
+    # Runs daily at 02:00 UTC — low-traffic window, safe for DB batch writes
+    _scheduler.add_job(
+        expire_stale_leads,
+        trigger="cron",
+        hour=2,
+        minute=0,
+        id="lead_expiration",
+        replace_existing=True,
+    )
+    _scheduler.start()
+    logger.info("scheduler_started", jobs=["lead_expiration"])
+
     logger.info("startup_complete", version="1.0.0")
 
     yield
 
+    _scheduler.shutdown(wait=False)
     logger.info("shutdown_complete")
 
 
