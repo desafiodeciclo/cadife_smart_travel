@@ -17,9 +17,7 @@ pytest-asyncio
 langchain
 langchain-community
 langchain-classic
-langchain-google-genai
-langchain-text-splitters
-google-generativeai
+langchain-openai
 chromadb
 langchain-chroma
 firebase-admin
@@ -29,3 +27,4 @@ python-dotenv
 structlog
 slowapi
 tiktoken
+apscheduler>=3.10,<4.0

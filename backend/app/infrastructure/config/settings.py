@@ -47,8 +47,9 @@ class Settings(BaseSettings):
     META_APP_SECRET: str = Field(default="", description="Meta App Secret for X-Hub-Signature-256 validation")
     META_APP_ID: str = Field(default="", description="Meta App ID — required for token exchange")
 
-    # ── Google Gemini (exclusivo — não usa OpenAI) ─────────────────────────
-    GEMINI_API_KEY: str = Field(default="", description="Gemini API key para LLM + embeddings")
+    # ── OpenAI / LangChain (spec.md) ─────────────────────────
+    OPENAI_API_KEY: str = Field(default="", description="OpenAI API key para LLM + embeddings")
+    GEMINI_API_KEY: str = Field(default="", description="Google Gemini API key para LLM (fallback/alternativo)")
     LANGCHAIN_API_KEY: str = Field(default="", description="LangSmith observability key (optional)")
 
     # ── Langfuse Observability ────────────────────────────────────────────
@@ -105,6 +106,13 @@ class Settings(BaseSettings):
     # ── PII Encryption at-rest (Fernet/AES-128) ───────────────────────────
     ENCRYPTION_KEY: str = Field(default="", description="Fernet key for PII encryption")
     HASH_KEY: str = Field(default="", description="HMAC-SHA256 key for searchable phone hash")
+
+    # ── Business Rules (spec.md §8.4) ─────────────────────────────────────
+    LEAD_EXPIRATION_DAYS: int = Field(
+        default=30,
+        ge=1,
+        description="Days of inactivity before a lead is automatically transitioned to PERDIDO",
+    )
 
     # ── Request Timeout (spec.md §12.3 — webhook must respond in < 5s) ────
     REQUEST_TIMEOUT_SECONDS: float = Field(
