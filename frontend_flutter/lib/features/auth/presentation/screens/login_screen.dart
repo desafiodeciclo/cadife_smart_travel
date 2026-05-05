@@ -1,15 +1,14 @@
 import 'dart:async';
 import 'dart:math' as math;
 
-import 'package:cadife_smart_travel/core/theme/app_colors.dart';
-import 'package:cadife_smart_travel/core/theme/app_text_styles.dart';
-import 'package:cadife_smart_travel/core/theme/cadife_theme_extension.dart';
-import 'package:cadife_smart_travel/core/theme/theme_mode_provider.dart';
-import 'package:cadife_smart_travel/features/auth/providers/auth_provider.dart';
-import 'package:cadife_smart_travel/shared/extensions/string_extensions.dart';
+import 'package:cadife_smart_travel/core/utils/extensions/string_extensions.dart';
+import 'package:cadife_smart_travel/design_system/design_system.dart';
+import 'package:cadife_smart_travel/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:cadife_smart_travel/features/auth/presentation/bloc/auth_event.dart';
+import 'package:cadife_smart_travel/features/auth/presentation/bloc/auth_state.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 enum _EmailState { idle, validating, valid, invalid }
@@ -26,8 +25,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  bool _obscurePassword = true;
-  bool _isLoggingIn = false;
   _EmailState _emailState = _EmailState.idle;
   Timer? _emailDebounce;
 
@@ -57,42 +54,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _handleLogin() async {
-    if (_isLoggingIn) return;
+    final authBloc = context.read<AuthBloc>();
+    if (authBloc.state is AuthLoading) return;
     if (!_formKey.currentState!.validate()) return;
     if (_emailState == _EmailState.invalid) return;
 
-    setState(() => _isLoggingIn = true);
-    try {
-      await ref.read(authProvider.notifier).login(
-            _emailController.text.trim(),
-            _passwordController.text,
-          );
-    } finally {
-      if (mounted) setState(() => _isLoggingIn = false);
-    }
+    context.read<AuthBloc>().add(AuthEvent.loginRequested(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        ));
   }
 
-  Widget _emailSuffix() => switch (_emailState) {
-        _EmailState.validating => const SizedBox(
-            width: 20,
-            height: 20,
-            child: Padding(
-              padding: EdgeInsets.all(12),
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-          ),
-        _EmailState.valid =>
-          const Icon(Icons.check_circle, color: AppColors.success, size: 20),
-        _EmailState.invalid =>
-          const Icon(Icons.cancel, color: AppColors.error, size: 20),
-        _EmailState.idle => const SizedBox.shrink(),
-      };
 
-  OutlineInputBorder _border(Color color, {double width = 1.0}) =>
-      OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: color, width: width),
-      );
+
 
   @override
   Widget build(BuildContext context) {
@@ -102,15 +76,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             MediaQuery.platformBrightnessOf(context) == Brightness.dark);
 
     final cadife = context.cadife;
-    final hasLoginError = ref.watch(authProvider).hasError;
+    
+    return BlocListener<AuthBloc, AuthState>(
+      listener: (context, state) {
+        state.maybeWhen(
+          authenticated: (user) {
+            // GoRouter handles redirection automatically via refreshListenable
+          },
+          failure: (message) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(message)),
+            );
+          },
+          orElse: () {},
+        );
+      },
+      child: BlocBuilder<AuthBloc, AuthState>(
+        builder: (context, state) {
+          final isLoggingIn = state is AuthLoading;
+          final hasLoginError = state is AuthFailure;
 
-    final textSecondary = isDark ? Colors.white60 : AppColors.textSecondary;
-    final borderColor = isDark ? Colors.white24 : AppColors.border;
-    final dividerColor = isDark ? Colors.white12 : AppColors.border;
-    final labelStyle = AppTextStyles.labelSmall.copyWith(
-      letterSpacing: 1.2,
-      color: textSecondary,
-    );
+          final textSecondary = isDark ? Colors.white60 : context.cadife.textSecondary;
+          final dividerColor = isDark ? Colors.white12 : context.cadife.cardBorder;
 
     // ── FIX: Column layout instead of Stack — avoids unbounded constraints
     //         and hit-testing issues that blocked all interactions.
@@ -157,38 +144,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                         const SizedBox(height: 32),
 
-                        // ── E-mail label ──────────────────────────────────
-                        Text('E-MAIL', style: labelStyle),
-                        const SizedBox(height: 6),
-
                         // ── E-mail field ──────────────────────────────────
-                        TextFormField(
+                        CadifeInput(
                           key: const ValueKey('email_field'),
+                          label: 'E-mail',
+                          hint: 'seu@email.com',
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
-                          autofillHints: const [AutofillHints.email],
-                          textInputAction: TextInputAction.next,
                           onChanged: _onEmailChanged,
-                          decoration: InputDecoration(
-                            hintText: 'seu@email.com',
-                            suffixIcon: _emailSuffix(),
-                            enabledBorder: _border(
-                              _emailState == _EmailState.valid
-                                  ? AppColors.success
-                                  : _emailState == _EmailState.invalid
-                                      ? AppColors.error
-                                      : borderColor,
-                            ),
-                            focusedBorder: _border(
-                              _emailState == _EmailState.invalid
-                                  ? AppColors.error
-                                  : cadife.primary,
-                              width: 2,
-                            ),
-                            errorBorder: _border(AppColors.error),
-                            focusedErrorBorder:
-                                _border(AppColors.error, width: 2),
-                          ),
                           validator: (v) {
                             if (v == null || v.trim().isEmpty) {
                               return 'Informe o e-mail';
@@ -201,53 +164,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                         const SizedBox(height: 20),
 
-                        // ── Senha label + Esqueci a senha ─────────────────
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text('SENHA', style: labelStyle),
-                            GestureDetector(
-                              onTap: () =>
-                                  context.push('/auth/forgot-password'),
-                              child: Text(
-                                'Esqueci a senha',
-                                style: AppTextStyles.labelSmall.copyWith(
-                                  color: cadife.primary,
-                                  decoration: TextDecoration.underline,
-                                  decorationColor: cadife.primary,
-                                ),
+                        // ── Esqueci a senha ─────────────────
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: GestureDetector(
+                            onTap: () =>
+                                context.push('/auth/forgot-password'),
+                            child: Text(
+                              'Esqueci a senha',
+                              style: AppTextStyles.labelSmall.copyWith(
+                                color: cadife.primary,
+                                decoration: TextDecoration.underline,
+                                decorationColor: cadife.primary,
                               ),
                             ),
-                          ],
+                          ),
                         ),
                         const SizedBox(height: 6),
 
                         // ── Senha field ───────────────────────────────────
-                        TextFormField(
+                        CadifeInput(
                           key: const ValueKey('password_field'),
+                          label: 'Senha',
+                          hint: '••••••••',
                           controller: _passwordController,
-                          obscureText: _obscurePassword,
-                          autofillHints: const [AutofillHints.password],
-                          textInputAction: TextInputAction.done,
-                          onEditingComplete: _handleLogin,
-                          decoration: InputDecoration(
-                            hintText: '••••••••',
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscurePassword
-                                    ? Icons.visibility_off_outlined
-                                    : Icons.visibility_outlined,
-                              ),
-                              onPressed: () => setState(
-                                () => _obscurePassword = !_obscurePassword,
-                              ),
-                            ),
-                            enabledBorder: _border(borderColor),
-                            focusedBorder: _border(cadife.primary, width: 2),
-                            errorBorder: _border(AppColors.error),
-                            focusedErrorBorder:
-                                _border(AppColors.error, width: 2),
-                          ),
+                          isPassword: true,
                           validator: (v) {
                             if (v == null || v.isEmpty) {
                               return 'Informe a senha';
@@ -258,60 +199,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                         const SizedBox(height: 28),
 
-                        // ── ENTRAR button — explicit brand color ──────────
-                        // FIX: use local _isLoggingIn, not authAsync.isLoading
-                        // (isLoading is true during provider init, keeping the
-                        //  button disabled before the user ever touches it)
-                        SizedBox(
-                          width: double.infinity,
-                          height: 50,
-                          child: ElevatedButton(
-                            // Keep onPressed always active — _handleLogin guards
-                            // against double-submission via _isLoggingIn. This
-                            // avoids Flutter's disabled-button opacity washing
-                            // out the spinner against the scaffold background.
-                            onPressed: _handleLogin,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: cadife.primary,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              elevation: 0,
-                            ),
-                            child: _isLoggingIn
-                                ? const SizedBox(
-                                    height: 22,
-                                    width: 22,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2.5,
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                : Text(
-                                    'ENTRAR',
-                                    style: TextStyle(
-                                      fontFamily: AppTextStyles.fontFamily,
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: 1.2,
-                                    ),
-                                  ),
-                          ),
+                        // ── ENTRAR button ──────────────────
+                        CadifeButton(
+                          text: 'ENTRAR',
+                          isLoading: isLoggingIn,
+                          onPressed: _handleLogin,
                         ),
 
                         // ── Error message ─────────────────────────────────
                         if (hasLoginError) ...[
                           const SizedBox(height: 14),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 10),
-                            decoration: BoxDecoration(
-                              color: AppColors.error.withValues(alpha: 0.08),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: AppColors.error.withValues(alpha: 0.3),
-                              ),
+                          ShadCard(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            backgroundColor: AppColors.error.withValues(alpha: 0.08),
+                            radius: BorderRadius.circular(8),
+                            border: ShadBorder.all(
+                              color: AppColors.error.withValues(alpha: 0.3),
                             ),
                             child: Row(
                               children: [
@@ -353,30 +256,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         Row(
                           children: [
                             Expanded(
-                              child: _SocialButton(
-                                label: 'Google',
-                                icon: const _GoogleIcon(),
-                                isDark: isDark,
-                                onTap: () => ScaffoldMessenger.of(context)
-                                    .showSnackBar(const SnackBar(
-                                        content: Text('Login social em breve'))),
+                              child: ShadButton.outline(
+                                onPressed: () => ShadToaster.of(context).show(
+                                  const ShadToast(description: Text('Login social em breve')),
+                                ),
+                                leading: const _GoogleIcon(),
+                                child: const Text('Google'),
                               ),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
-                              child: _SocialButton(
-                                label: 'Apple',
-                                icon: Icon(
-                                  Icons.apple,
-                                  size: 22,
-                                  color: isDark
-                                      ? Colors.white
-                                      : AppColors.textPrimary,
+                              child: ShadButton.outline(
+                                onPressed: () => ShadToaster.of(context).show(
+                                  const ShadToast(description: Text('Login social em breve')),
                                 ),
-                                isDark: isDark,
-                                onTap: () => ScaffoldMessenger.of(context)
-                                    .showSnackBar(const SnackBar(
-                                        content: Text('Login social em breve'))),
+                                leading: Icon(
+                                  Icons.apple,
+                                  size: 20,
+                                  color: isDark ? Colors.white : context.cadife.textPrimary,
+                                ),
+                                child: const Text('Apple'),
                               ),
                             ),
                           ],
@@ -422,6 +321,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ),
       ),
     );
+        },
+      ),
+    );
   }
 }
 
@@ -444,10 +346,10 @@ class _ThemeToggle extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: isDark ? Colors.white12 : AppColors.surface,
+          color: isDark ? Colors.white12 : context.cadife.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isDark ? Colors.white24 : AppColors.border,
+            color: isDark ? Colors.white24 : context.cadife.cardBorder,
           ),
         ),
         child: Row(
@@ -462,7 +364,7 @@ class _ThemeToggle extends ConsumerWidget {
             Icon(
               Icons.nightlight_round,
               size: 16,
-              color: isDark ? Colors.white : AppColors.textSecondary,
+              color: isDark ? Colors.white : context.cadife.textSecondary,
             ),
           ],
         ),
@@ -490,51 +392,7 @@ class _CadifeLogo extends StatelessWidget {
   }
 }
 
-class _SocialButton extends StatelessWidget {
-  const _SocialButton({
-    required this.label,
-    required this.icon,
-    required this.isDark,
-    required this.onTap,
-  });
 
-  final String label;
-  final Widget icon;
-  final bool isDark;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return OutlinedButton(
-      onPressed: onTap,
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 13),
-        side: BorderSide(
-          color: isDark ? Colors.white24 : AppColors.border,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-        foregroundColor: isDark ? Colors.white : AppColors.textPrimary,
-        backgroundColor: Colors.transparent,
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          icon,
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: AppTextStyles.labelLarge.copyWith(
-              color: isDark ? Colors.white : AppColors.textPrimary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _GoogleIcon extends StatelessWidget {
   const _GoogleIcon();
@@ -553,10 +411,10 @@ class _GoogleIcon extends StatelessWidget {
 class _GoogleIconPainter extends CustomPainter {
   const _GoogleIconPainter();
 
-  static const _blue = Color(0xFF4285F4);
-  static const _green = Color(0xFF34A853);
-  static const _yellow = Color(0xFFFBBC05);
-  static const _red = Color(0xFFEA4335);
+  static const _blue   = AppColors.googleBlue;
+  static const _green  = AppColors.googleGreen;
+  static const _yellow = AppColors.googleYellow;
+  static const _red    = AppColors.googleRed;
 
   @override
   void paint(Canvas canvas, Size size) {

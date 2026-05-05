@@ -1,2 +1,2 @@
-export 'profile_provider.dart';
-export 'profile_screen.dart';
+export 'presentation/pages/profile_page.dart';
+export 'presentation/providers/profile_provider.dart';

@@ -1,8 +1,7 @@
-import 'package:cadife_smart_travel/core/theme/app_colors.dart';
-import 'package:cadife_smart_travel/core/theme/app_text_styles.dart';
-import 'package:cadife_smart_travel/core/theme/cadife_theme_extension.dart';
-import 'package:cadife_smart_travel/features/auth/providers/auth_provider.dart';
-import 'package:cadife_smart_travel/shared/extensions/string_extensions.dart';
+import 'package:cadife_smart_travel/core/utils/extensions/string_extensions.dart';
+import 'package:cadife_smart_travel/design_system/design_system.dart';
+import 'package:cadife_smart_travel/features/auth/presentation/bloc/auth_event.dart';
+import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_bloc_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -38,9 +37,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       _errorMessage = null;
     });
     try {
-      await ref
-          .read(authProvider.notifier)
-          .forgotPassword(_emailController.text.trim());
+      ref.read(authBlocProvider).add(AuthEvent.forgotPasswordRequested(
+            email: _emailController.text.trim(),
+          ));
       if (mounted) setState(() => _step = _ForgotStep.confirmation);
     } catch (_) {
       if (mounted) {
@@ -52,32 +51,16 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     }
   }
 
-  OutlineInputBorder _border(Color color, {double width = 1.0}) =>
-      OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: color, width: width),
-      );
 
   @override
   Widget build(BuildContext context) {
     final cadife = context.cadife;
 
     return Scaffold(
-      appBar: AppBar(
-        leading: BackButton(
-          onPressed: () {
-            if (_step != _ForgotStep.email) {
-              setState(() {
-                _step = _ForgotStep.email;
-                _errorMessage = null;
-              });
-            } else {
-              context.pop();
-            }
-          },
-        ),
-        title: const Text('Recuperar senha'),
-        centerTitle: false,
+      appBar: const CadifeAppBar(
+        title: 'Recuperar senha',
+        showProfile: false,
+        actions: [], // Empty list to override default notifications if needed
       ),
       body: SafeArea(
         child: AnimatedSwitcher(
@@ -104,7 +87,6 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 errorMessage: _errorMessage,
                 primaryColor: cadife.primary,
                 onSubmit: _sendReset,
-                borderFn: _border,
               ),
             _ForgotStep.confirmation => _ConfirmationStep(
                 key: const ValueKey('confirmation-step'),
@@ -134,7 +116,6 @@ class _EmailStep extends StatelessWidget {
     required this.errorMessage,
     required this.primaryColor,
     required this.onSubmit,
-    required this.borderFn,
   });
 
   final GlobalKey<FormState> formKey;
@@ -143,7 +124,6 @@ class _EmailStep extends StatelessWidget {
   final String? errorMessage;
   final Color primaryColor;
   final VoidCallback onSubmit;
-  final OutlineInputBorder Function(Color, {double width}) borderFn;
 
   @override
   Widget build(BuildContext context) {
@@ -172,31 +152,14 @@ class _EmailStep extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               'Informe o e-mail da sua conta. Enviaremos um link para criar uma nova senha.',
-              style: AppTextStyles.bodyMedium
-                  .copyWith(color: AppColors.textSecondary),
+              style: AppTextStyles.bodyMedium,
             ),
             const SizedBox(height: 32),
-            Text(
-              'E-MAIL',
-              style: AppTextStyles.labelSmall.copyWith(
-                letterSpacing: 1.2,
-                color: AppColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 6),
-            TextFormField(
+            CadifeInput(
+              label: 'E-mail',
+              hint: 'seu@email.com',
               controller: controller,
               keyboardType: TextInputType.emailAddress,
-              autofillHints: const [AutofillHints.email],
-              textInputAction: TextInputAction.done,
-              onEditingComplete: onSubmit,
-              decoration: InputDecoration(
-                hintText: 'seu@email.com',
-                enabledBorder: borderFn(AppColors.border),
-                focusedBorder: borderFn(primaryColor, width: 2),
-                errorBorder: borderFn(AppColors.error),
-                focusedErrorBorder: borderFn(AppColors.error, width: 2),
-              ),
               validator: (v) {
                 if (v == null || v.trim().isEmpty) return 'Informe o e-mail';
                 if (!v.trim().isValidEmail) return 'E-mail inválido';
@@ -208,35 +171,10 @@ class _EmailStep extends StatelessWidget {
               _ErrorBanner(message: errorMessage!),
             ],
             const SizedBox(height: 28),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: isLoading ? null : onSubmit,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8)),
-                  elevation: 0,
-                ),
-                child: isLoading
-                    ? const SizedBox(
-                        height: 22,
-                        width: 22,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2.5, color: Colors.white),
-                      )
-                    : Text(
-                        'ENVIAR LINK',
-                        style: TextStyle(
-                          fontFamily: AppTextStyles.fontFamily,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-              ),
+            CadifeButton(
+              text: 'ENVIAR LINK',
+              isLoading: isLoading,
+              onPressed: onSubmit,
             ),
           ],
         ),
@@ -289,14 +227,14 @@ class _ConfirmationStep extends StatelessWidget {
                 RichText(
                   text: TextSpan(
                     style: AppTextStyles.bodyMedium
-                        .copyWith(color: AppColors.textSecondary),
+                        .copyWith(color: context.cadife.textSecondary),
                     children: [
                       const TextSpan(
                           text: 'Enviamos um link de recuperação para '),
                       TextSpan(
                         text: email,
                         style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.textPrimary,
+                          color: context.cadife.textPrimary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -306,25 +244,25 @@ class _ConfirmationStep extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 32),
-                Container(
+                ShadCard(
                   padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  backgroundColor: Theme.of(context).brightness == Brightness.dark 
+                      ? context.cadife.cardBackground 
+                      : context.cadife.surface,
+                  radius: BorderRadius.circular(12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'Não recebeu o e-mail?',
                         style: AppTextStyles.labelLarge
-                            .copyWith(color: AppColors.textPrimary),
+                            .copyWith(color: context.cadife.textPrimary),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'Aguarde alguns minutos e verifique a caixa de spam antes de reenviar.',
                         style: AppTextStyles.bodySmall
-                            .copyWith(color: AppColors.textSecondary),
+                            .copyWith(color: context.cadife.textSecondary),
                       ),
                       const SizedBox(height: 12),
                       GestureDetector(
@@ -333,7 +271,7 @@ class _ConfirmationStep extends StatelessWidget {
                           isResending ? 'Reenviando…' : 'Reenviar link',
                           style: AppTextStyles.labelLarge.copyWith(
                             color: isResending
-                                ? AppColors.textSecondary
+                                ? context.cadife.textSecondary
                                 : AppColors.primary,
                             decoration:
                                 isResending ? null : TextDecoration.underline,
@@ -345,27 +283,10 @@ class _ConfirmationStep extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: OutlinedButton(
-                    onPressed: () => context.go('/auth/login'),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: AppColors.border),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                    ),
-                    child: Text(
-                      'VOLTAR AO LOGIN',
-                      style: TextStyle(
-                        fontFamily: AppTextStyles.fontFamily,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.2,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                  ),
+                CadifeButton(
+                  text: 'VOLTAR AO LOGIN',
+                  isOutline: true,
+                  onPressed: () => context.go('/auth/login'),
                 ),
               ],
             ),
@@ -403,32 +324,13 @@ class _SuccessStep extends StatelessWidget {
                 Text(
                   'Sua senha foi alterada com sucesso. Faça login com a nova senha.',
                   style: AppTextStyles.bodyMedium
-                      .copyWith(color: AppColors.textSecondary),
+                      .copyWith(color: context.cadife.textSecondary),
                   textAlign: TextAlign.center,
                 ),
                 const Spacer(),
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: onBackToLogin,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                      elevation: 0,
-                    ),
-                    child: Text(
-                      'IR PARA O LOGIN',
-                      style: TextStyle(
-                        fontFamily: AppTextStyles.fontFamily,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                  ),
+                CadifeButton(
+                  text: 'IR PARA O LOGIN',
+                  onPressed: onBackToLogin,
                 ),
               ],
             ),
@@ -447,13 +349,11 @@ class _ErrorBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return ShadCard(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppColors.error.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
-      ),
+      backgroundColor: AppColors.error.withValues(alpha: 0.08),
+      radius: BorderRadius.circular(8),
+      border: ShadBorder.all(color: AppColors.error.withValues(alpha: 0.3)),
       child: Row(
         children: [
           const Icon(Icons.error_outline, color: AppColors.error, size: 18),

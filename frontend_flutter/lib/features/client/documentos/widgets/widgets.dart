@@ -1,3 +1,2 @@
-export 'cadife_document_card.dart';
-export 'document_card_skeleton.dart';
-export 'trip_selection_card.dart';
+// Re-export from canonical location in presentation/widgets
+export 'package:cadife_smart_travel/features/client/documentos/presentation/widgets/widgets.dart';

@@ -1,4 +1,4 @@
-import 'package:cadife_smart_travel/core/theme/app_colors.dart';
+import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/agency/dashboard/dashboard_provider.dart';
 import 'package:flutter/material.dart';
 
@@ -75,46 +75,44 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
+    return ShadCard(
+      padding: const EdgeInsets.all(12),
+      radius: BorderRadius.circular(12),
+      border: ShadBorder.all(color: context.cadife.cardBorder),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: color, size: 24),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: color,
             ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 11,
+              color: context.cadife.textSecondary,
+            ),
+          ),
+          if (variation != null) ...[
             const SizedBox(height: 4),
             Text(
-              label,
-              textAlign: TextAlign.center,
+              variation!,
               style: const TextStyle(
-                fontSize: 11,
-                color: AppColors.textSecondary,
+                fontSize: 10,
+                color: AppColors.success,
+                fontWeight: FontWeight.w600,
               ),
             ),
-            if (variation != null) ...[
-              const SizedBox(height: 4),
-              Text(
-                variation!,
-                style: const TextStyle(
-                  fontSize: 10,
-                  color: AppColors.success,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
           ],
-        ),
+        ],
       ),
     );
   }

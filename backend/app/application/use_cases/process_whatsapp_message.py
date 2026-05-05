@@ -22,7 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.domain.entities.enums import LeadStatus, TipoMensagem
 from app.models.lead import Lead
 from app.models.user import User
-from app.services import ai_service, fcm_service, lead_service, whatsapp_service
+from app.services import ai_service, curadoria_service, fcm_service, lead_service, whatsapp_service
 from app.services.domain_validator import BriefingValidator
 
 logger = structlog.get_logger()
@@ -86,12 +86,33 @@ async def execute(payload: dict, db: AsyncSession) -> None:
 
         try:
             # ── Step 4: Extract briefing & update score ───────────────────
+            status_antes = lead.status
             extracted = await ai_service.extract_briefing([{"role": "user", "content": text}])
             briefing = await lead_service.update_briefing_from_extraction(db, lead, extracted)
 
             # ── Step 5: FCM notification when lead qualifies ──────────────
             if briefing.completude_pct >= 60 and lead.status == LeadStatus.qualificado:
                 await _notify_consultants(db, lead, briefing)
+
+            # ── Step 5b: Offer curation appointment when freshly qualified ─
+            if curadoria_service.deve_oferecer_curadoria(
+                status_antes, lead.status, briefing.completude_pct
+            ):
+                if not await curadoria_service.lead_tem_agendamento_ativo(db, lead.id):
+                    slots = await curadoria_service.get_proximos_slots_disponiveis(db, quantidade=3)
+                    reply = curadoria_service.gerar_mensagem_oferta_curadoria(
+                        slots, nome_cliente=lead.nome
+                    )
+                    logger.info(
+                        "curadoria_offered",
+                        lead_id=str(lead.id),
+                        slots_count=len(slots),
+                    )
+                else:
+                    logger.info(
+                        "curadoria_skipped_already_scheduled",
+                        lead_id=str(lead.id),
+                    )
         except Exception as exc:
             logger.error("briefing_update_error", lead_id=str(lead.id), error=str(exc))
 

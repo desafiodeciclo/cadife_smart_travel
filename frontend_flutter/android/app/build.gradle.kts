@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.cadife.cadife_smart_travel"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 35
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -22,10 +22,33 @@ android {
 
     defaultConfig {
         applicationId = "com.cadife.cadife_smart_travel"
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        minSdk = 24
+        targetSdk = 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+    }
+
+    flavorDimensions.add("environment")
+    productFlavors {
+        create("dev") {
+            dimension = "environment"
+            applicationIdSuffix = ".dev"
+            versionNameSuffix = "-dev"
+            manifestPlaceholders["appName"] = "Cadife Dev"
+            manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher" // TODO: Update to ic_launcher_dev when available
+        }
+        create("staging") {
+            dimension = "environment"
+            applicationIdSuffix = ".staging"
+            versionNameSuffix = "-staging"
+            manifestPlaceholders["appName"] = "Cadife Staging"
+            manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher" // TODO: Update to ic_launcher_staging when available
+        }
+        create("prod") {
+            dimension = "environment"
+            manifestPlaceholders["appName"] = "Cadife"
+            manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher"
+        }
     }
 
     buildTypes {

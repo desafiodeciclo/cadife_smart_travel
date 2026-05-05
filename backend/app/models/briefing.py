@@ -3,7 +3,7 @@ from datetime import date
 from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import Boolean, Date, ForeignKey, Integer, String, Text
-from sqlalchemy.dialects.postgresql import ARRAY, UUID
+from sqlalchemy.dialects.postgresql import ARRAY, ENUM as PgEnum, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from pydantic import BaseModel, Field
 
@@ -32,10 +32,10 @@ class Briefing(Base):
     data_volta: Mapped[Optional[date]] = mapped_column(Date)
     duracao_dias: Mapped[Optional[int]] = mapped_column(Integer)
     qtd_pessoas: Mapped[Optional[int]] = mapped_column(Integer)
-    perfil: Mapped[Optional[str]] = mapped_column(String(50))
+    perfil: Mapped[Optional[PerfilViagem]] = mapped_column(PgEnum(PerfilViagem, name="perfil_viagem_enum", create_type=False), nullable=True)
     tipo_viagem: Mapped[Optional[list[str]]] = mapped_column(ARRAY(String))
     preferencias: Mapped[Optional[list[str]]] = mapped_column(ARRAY(String))
-    orcamento: Mapped[Optional[str]] = mapped_column(String(20))
+    orcamento: Mapped[Optional[OrcamentoNivel]] = mapped_column(PgEnum(OrcamentoNivel, name="orcamento_perfil_enum", create_type=False), nullable=True)
     tem_passaporte: Mapped[Optional[bool]] = mapped_column(Boolean)
     observacoes: Mapped[Optional[str]] = mapped_column(Text)
     completude_pct: Mapped[int] = mapped_column(Integer, default=0)
@@ -76,16 +76,16 @@ def calculate_completude(briefing_data: dict) -> int:
 
 class BriefingExtracted(BaseModel):
     """Schema para Structured Outputs API — extração automática pela IA."""
-    destino: Optional[str] = Field(None, description="Cidade ou país de destino da viagem mencionado pelo cliente")
-    data_ida: Optional[date] = Field(None, description="Data de ida no formato YYYY-MM-DD, apenas se o cliente mencionou explicitamente")
-    data_volta: Optional[date] = Field(None, description="Data de volta no formato YYYY-MM-DD, apenas se o cliente mencionou explicitamente")
-    qtd_pessoas: Optional[int] = Field(None, description="Quantidade total de viajantes")
-    perfil: Optional[PerfilViagem] = Field(None, description="Perfil do grupo: casal, família, solo, grupo ou amigos")
-    tipo_viagem: list[str] = Field(default_factory=list, description="Tipos de viagem desejados: aventura, cultural, romântica, negócios, etc.")
-    preferencias: list[str] = Field(default_factory=list, description="Preferências específicas: praias, gastronomia, museus, compras, etc.")
-    orcamento: Optional[OrcamentoNivel] = Field(None, description="Nível de orçamento informado: baixo, médio, alto ou premium")
-    tem_passaporte: Optional[bool] = Field(None, description="Se o cliente informou que possui passaporte válido")
-    observacoes: Optional[str] = Field(None, description="Qualquer outra informação relevante mencionada pelo cliente")
+    destino: Optional[str] = Field(None, description="Cidade, país ou região de destino. Extraia APENAS se mencionado explicitamente pelo cliente.")
+    data_ida: Optional[date] = Field(None, description="Data de início da viagem (YYYY-MM-DD). Extraia APENAS se houver uma data ou mês/ano claro. NÃO infira.")
+    data_volta: Optional[date] = Field(None, description="Data de retorno da viagem (YYYY-MM-DD). Extraia APENAS se mencionada explicitamente.")
+    qtd_pessoas: Optional[int] = Field(None, description="Número total de passageiros (adultos + crianças).")
+    perfil: Optional[PerfilViagem] = Field(None, description="Composição do grupo: casal, família, solo, grupo ou amigos.")
+    tipo_viagem: list[str] = Field(default_factory=list, description="Estilo da viagem: aventura, luxo, romântica, gastronômica, etc.")
+    preferencias: list[str] = Field(default_factory=list, description="Interesses específicos: praias, museus, compras, resorts, neve, etc.")
+    orcamento: Optional[OrcamentoNivel] = Field(None, description="Nível de investimento: baixo (econômico), médio (padrão), alto (conforto) ou premium (luxo).")
+    tem_passaporte: Optional[bool] = Field(None, description="True se o cliente confirmou que possui passaporte válido, False se disse que não tem.")
+    observacoes: Optional[str] = Field(None, description="Notas adicionais, restrições alimentares, celebrações ou pedidos especiais.")
 
 
 class BriefingUpdate(BaseModel):

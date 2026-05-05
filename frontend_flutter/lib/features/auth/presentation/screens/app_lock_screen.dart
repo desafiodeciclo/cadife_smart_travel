@@ -1,5 +1,4 @@
-import 'package:cadife_smart_travel/core/theme/app_colors.dart';
-import 'package:cadife_smart_travel/core/theme/app_text_styles.dart';
+import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/auth/providers/app_lock_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,7 +11,7 @@ class AppLockScreen extends ConsumerWidget {
     final lock = ref.watch(appLockProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.cadife.background,
       body: SafeArea(
         child: Center(
           child: Padding(
@@ -65,17 +64,11 @@ class AppLockScreen extends ConsumerWidget {
                     ),
                   SizedBox(
                     width: double.infinity,
-                    child: ElevatedButton.icon(
+                    child: CadifeButton(
+                      text: 'Usar biometria / PIN',
+                      icon: Icons.fingerprint_rounded,
                       onPressed: () =>
                           ref.read(appLockProvider.notifier).authenticate(),
-                      icon: const Icon(Icons.fingerprint_rounded),
-                      label: const Text('Usar biometria / PIN'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: AppColors.textOnPrimary,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        textStyle: AppTextStyles.button,
-                      ),
                     ),
                   ),
                 ],

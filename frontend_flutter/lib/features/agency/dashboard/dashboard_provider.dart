@@ -1,6 +1,5 @@
-import 'package:cadife_smart_travel/core/ports/lead_port.dart';
-import 'package:cadife_smart_travel/shared/models/lead_model.dart';
-import 'package:cadife_smart_travel/shared/models/models.dart';
+import 'package:cadife_smart_travel/features/agency/leads/data/providers/leads_data_providers.dart';
+import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class DashboardStats {
@@ -27,9 +26,7 @@ class DashboardStats {
   final Map<String, int> leadsPorStatus;
 }
 
-final dashboardLeadPortProvider = Provider<LeadPort>((ref) {
-  throw UnimplementedError('Override em ProviderScope');
-});
+// Usamos o leadsRepositoryProvider definido na feature de leads
 
 final dashboardStatsProvider =
     AsyncNotifierProvider<DashboardStatsNotifier, DashboardStats>(
@@ -39,8 +36,12 @@ final dashboardStatsProvider =
 class DashboardStatsNotifier extends AsyncNotifier<DashboardStats> {
   @override
   Future<DashboardStats> build() async {
-    final leadPort = ref.watch(dashboardLeadPortProvider);
-    final allLeads = await leadPort.getLeads();
+    final leadRepository = ref.watch(leadsRepositoryProvider);
+    final allLeadsResult = await leadRepository.getLeads();
+    final allLeads = allLeadsResult.fold(
+      (failure) => throw failure,
+      (leads) => leads,
+    );
 
     final qualificados = allLeads.where((l) => l.status == LeadStatus.qualificado).length;
     final proposta = allLeads.where((l) => l.status == LeadStatus.proposta).length;
@@ -79,3 +80,7 @@ class DashboardStatsNotifier extends AsyncNotifier<DashboardStats> {
     state = await AsyncValue.guard(build);
   }
 }
+
+
+
+
