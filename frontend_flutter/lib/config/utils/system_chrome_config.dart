@@ -12,7 +12,7 @@ Future<void> configureSystemChrome(ThemePreference theme) async {
       statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
       statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
       systemNavigationBarColor: isDark
-          ? const Color(0xFF393532)  // Deep Graphite
+          ? const Color(0xFF1C1B1F)  // Deep Black
           : const Color(0xFFFAFAFA), // Almost white
       systemNavigationBarIconBrightness: isDark
           ? Brightness.light

@@ -17,7 +17,7 @@ class AppTheme {
       brightness: brightness,
       colorScheme: isDark 
         ? const ShadZincColorScheme.dark(
-            background: Color(0xFF393532), // Cadife Dark Surface
+            background: Color(0xFF1C1B1F), // Deep Black Surface
             primary: Color(0xFFDD0B0E),    // Red Cadife
           )
         : const ShadZincColorScheme.light(

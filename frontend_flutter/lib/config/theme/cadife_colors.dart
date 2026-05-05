@@ -30,8 +30,8 @@ class CadifeColors {
     secondary: Color(0xFFCCC7D8),         // Mauve light
     onSecondary: Color(0xFF332D41),       // Dark mauve
     
-    // Superfícies (Deep Graphite base)
-    surface: Color(0xFF393532),           // Deep Graphite base
+    // Superfícies (Deep Black base)
+    surface: Color(0xFF1C1B1F),           // Deep Black base
     onSurface: Color(0xFFE8E8E8),         // Almost white
     
     // Erro

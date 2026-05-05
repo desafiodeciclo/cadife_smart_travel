@@ -1,7 +1,7 @@
 import 'package:cadife_smart_travel/config/providers/app_config_provider.dart';
 import 'package:cadife_smart_travel/config/router/app_router.dart';
-import 'package:cadife_smart_travel/config/theme/cadife_theme.dart';
-import 'package:cadife_smart_travel/config/utils/system_chrome_config.dart';
+
+
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/bloc/auth_event.dart';
@@ -30,8 +30,8 @@ class CadifeApp extends ConsumerWidget {
           ThemePreference.system => ThemeMode.system,
         };
 
-        // Configurar SystemChrome
-        configureSystemChrome(theme);
+        // Configurar SystemChrome (Removido daqui para evitar side-effects no build)
+        // Idealmente isso deveria estar em um listener ou no initState de um StatefulWidget superior.
 
         return MultiBlocProvider(
           providers: [
@@ -42,8 +42,8 @@ class CadifeApp extends ConsumerWidget {
           child: AnimatedTheme(
             duration: const Duration(milliseconds: 200),
             data: themeMode == ThemeMode.dark
-                ? CadifeTheme.dark
-                : CadifeTheme.light,
+                ? AppTheme.dark
+                : AppTheme.light,
             child: ShadApp.router(
               title: config.appName,
               debugShowCheckedModeBanner: false,
@@ -53,22 +53,22 @@ class CadifeApp extends ConsumerWidget {
               routerConfig: ref.watch(routerProvider),
               materialThemeBuilder: (context, theme) => 
                   theme.brightness == Brightness.light 
-                      ? CadifeTheme.light 
-                      : CadifeTheme.dark,
+                      ? AppTheme.light 
+                      : AppTheme.dark,
             ),
           ),
         );
       },
       loading: () => MaterialApp(
         debugShowCheckedModeBanner: false,
-        theme: CadifeTheme.light,
+        theme: AppTheme.light,
         home: const Scaffold(
           body: Center(child: CircularProgressIndicator()),
         ),
       ),
       error: (err, stack) => MaterialApp(
         debugShowCheckedModeBanner: false,
-        theme: CadifeTheme.light,
+        theme: AppTheme.light,
         home: Scaffold(
           body: Center(child: Text('Erro ao carregar preferências: $err')),
         ),

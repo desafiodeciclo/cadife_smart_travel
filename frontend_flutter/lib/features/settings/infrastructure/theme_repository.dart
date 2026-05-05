@@ -2,11 +2,13 @@ import 'package:cadife_smart_travel/features/settings/domain/entities/user_prefe
 import 'package:isar/isar.dart';
 
 class ThemeRepository {
-  final Isar _isar;
+  final Isar? _isar;
   
   const ThemeRepository(this._isar);
   
   Future<ThemePreference> getThemePreference() async {
+    if (_isar == null) return ThemePreference.system;
+    
     final prefs = await _isar.userPreferencesIsars.get(1);
     
     if (prefs == null) {
@@ -18,6 +20,8 @@ class ThemeRepository {
   }
   
   Future<void> setThemePreference(ThemePreference preference) async {
+    if (_isar == null) return;
+
     final isarModel = UserPreferencesIsar()
       ..themePreference = preference
       ..updatedAt = DateTime.now();
@@ -28,6 +32,8 @@ class ThemeRepository {
   }
   
   Stream<ThemePreference> watchThemePreference() {
+    if (_isar == null) return Stream.value(ThemePreference.system);
+
     return _isar.userPreferencesIsars
       .watchObject(1, fireImmediately: true)
       .map((prefs) {

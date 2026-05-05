@@ -28,7 +28,7 @@ void main() {
     
     test('Text on surface em modo dark tem contraste >= 4.5 (AA)', () {
       const onSurface = Color(0xFFE8E8E8);
-      const surface = Color(0xFF393532);
+      const surface = Color(0xFF1C1B1F);
       
       final contrast = getContrastRatio(onSurface, surface);
       expect(contrast, greaterThanOrEqualTo(4.5));
