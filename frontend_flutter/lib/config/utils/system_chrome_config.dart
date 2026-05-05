@@ -1,6 +1,6 @@
+import 'package:cadife_smart_travel/features/settings/domain/entities/user_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:cadife_smart_travel/features/settings/domain/entities/user_preferences.dart';
 
 Future<void> configureSystemChrome(ThemePreference theme) async {
   final isDark = theme == ThemePreference.dark;

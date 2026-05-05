@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cadife_smart_travel/config/providers/isar_provider.dart';
 import 'package:cadife_smart_travel/features/settings/domain/entities/user_preferences.dart';
 import 'package:cadife_smart_travel/features/settings/infrastructure/theme_repository.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class ThemeNotifier extends StreamNotifier<ThemePreference> {
   @override

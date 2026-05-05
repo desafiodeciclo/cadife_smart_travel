@@ -1,6 +1,5 @@
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
-import 'package:cadife_smart_travel/features/settings/application/theme_notifier.dart';
 import 'package:cadife_smart_travel/features/settings/domain/entities/user_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';

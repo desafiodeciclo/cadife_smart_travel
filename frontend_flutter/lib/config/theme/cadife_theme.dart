@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:cadife_smart_travel/config/theme/cadife_colors.dart';
+import 'package:flutter/material.dart';
 
 class CadifeTheme {
   static ThemeData get light {

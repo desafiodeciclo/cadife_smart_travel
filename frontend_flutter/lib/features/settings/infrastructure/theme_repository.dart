@@ -1,5 +1,5 @@
-import 'package:isar/isar.dart';
 import 'package:cadife_smart_travel/features/settings/domain/entities/user_preferences.dart';
+import 'package:isar/isar.dart';
 
 class ThemeRepository {
   final Isar _isar;

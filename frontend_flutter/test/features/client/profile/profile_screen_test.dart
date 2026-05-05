@@ -1,6 +1,4 @@
 import 'package:cadife_smart_travel/core/error/failures.dart';
-import 'package:cadife_smart_travel/features/settings/application/theme_notifier.dart';
-import 'package:cadife_smart_travel/features/settings/domain/entities/user_preferences.dart';
 import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/bloc/auth_state.dart';
@@ -8,6 +6,8 @@ import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_bl
 import 'package:cadife_smart_travel/features/client/profile/domain/repositories/i_profile_repository.dart';
 import 'package:cadife_smart_travel/features/client/profile/presentation/pages/profile_page.dart';
 import 'package:cadife_smart_travel/features/client/profile/presentation/providers/profile_provider.dart';
+import 'package:cadife_smart_travel/features/settings/application/theme_notifier.dart';
+import 'package:cadife_smart_travel/features/settings/domain/entities/user_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
