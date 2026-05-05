@@ -1,6 +1,6 @@
 import 'package:cadife_smart_travel/core/cache/database_helper.dart';
 import 'package:cadife_smart_travel/core/cache/isar_cache_manager.dart';
-import 'package:cadife_smart_travel/core/config/env_config.dart';
+import 'package:cadife_smart_travel/config/app_config.dart';
 import 'package:cadife_smart_travel/core/config/firebase_options_prod.dart';
 import 'package:cadife_smart_travel/core/config/firebase_options_stg.dart';
 import 'package:cadife_smart_travel/core/network/connectivity_service.dart';
@@ -49,14 +49,14 @@ final sl = GetIt.instance;
 
 /// Registra TODOS os serviços core e ports por módulo.
 Future<void> setupServiceLocator({
-  EnvConfig? config,
+  AppConfig? appConfig,
   List<String>? pinnedCertificates,
   List<String>? backupCertificates,
   VoidCallback? onTokenExpired,
 }) async {
-  // Registrar o EnvConfig no Service Locator para uso global
-  final env = config ?? EnvConfig.dev;
-  sl.registerSingleton<EnvConfig>(env);
+  // Registrar o AppConfig no Service Locator para uso global
+  final config = appConfig ?? AppConfig.dev;
+  sl.registerSingleton<AppConfig>(config);
   // ── 1. Infra Layer (singletons — performance-critical) ──
 
   sl.registerLazySingleton<NetworkInfo>(NetworkInfo.new);
@@ -196,7 +196,7 @@ void _registerSettingsModule() {
 }
 
 Future<void> initDependencies() async {
-  final env = sl<EnvConfig>().environment;
+  final env = sl<AppConfig>().environment;
   
   FirebaseOptions? options;
   if (env == AppEnvironment.staging) {

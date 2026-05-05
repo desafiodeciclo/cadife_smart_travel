@@ -1,7 +1,7 @@
 import 'dart:developer' as dev;
-
 import 'package:cadife_smart_travel/app.dart';
-import 'package:cadife_smart_travel/core/config/env_config.dart';
+import 'package:cadife_smart_travel/config/app_config.dart';
+import 'package:cadife_smart_travel/config/providers/app_config_provider.dart';
 import 'package:cadife_smart_travel/core/di/provider_overrides.dart';
 import 'package:cadife_smart_travel/core/di/service_locator.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/bloc/auth_event.dart';
@@ -10,24 +10,35 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
-Future<void> main({EnvConfig? config}) async {
+late AppConfig _appConfig;
+
+Future<void> initializeApp(AppConfig config) async {
+  _appConfig = config;
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('pt_BR', null);
 
-  late final ProviderContainer container;
-
   try {
+    // Passar AppConfig para o setupServiceLocator (atualizaremos o sl depois)
     await setupServiceLocator(
-      onTokenExpired: () => container.read(authBlocProvider).add(const AuthEvent.logoutRequested()),
+      appConfig: config,
     );
     await initDependencies();
   } catch (e, stack) {
     dev.log('Initialization Error', error: e, stackTrace: stack, name: 'main');
   }
+}
 
-  container = ProviderContainer(overrides: getProviderOverrides());
+class CadifeAppWrapper extends StatelessWidget {
+  const CadifeAppWrapper({super.key});
 
-  runApp(
-    UncontrolledProviderScope(container: container, child: const CadifeApp()),
-  );
+  @override
+  Widget build(BuildContext context) {
+    return ProviderScope(
+      overrides: [
+        appConfigProvider.overrideWithValue(_appConfig),
+        ...getProviderOverrides(),
+      ],
+      child: const CadifeApp(),
+    );
+  }
 }

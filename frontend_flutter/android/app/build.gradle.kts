@@ -34,14 +34,20 @@ android {
             dimension = "environment"
             applicationIdSuffix = ".dev"
             versionNameSuffix = "-dev"
+            manifestPlaceholders["appName"] = "Cadife Dev"
+            manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher" // TODO: Update to ic_launcher_dev when available
         }
         create("staging") {
             dimension = "environment"
-            applicationIdSuffix = ".stg"
-            versionNameSuffix = "-stg"
+            applicationIdSuffix = ".staging"
+            versionNameSuffix = "-staging"
+            manifestPlaceholders["appName"] = "Cadife Staging"
+            manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher" // TODO: Update to ic_launcher_staging when available
         }
         create("prod") {
             dimension = "environment"
+            manifestPlaceholders["appName"] = "Cadife"
+            manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher"
         }
     }
 
