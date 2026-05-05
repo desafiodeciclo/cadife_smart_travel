@@ -1,3 +1,4 @@
+import 'package:cadife_smart_travel/config/dev/component_library_page.dart';
 import 'package:cadife_smart_travel/config/router/agency_shell.dart';
 import 'package:cadife_smart_travel/config/router/client_shell.dart';
 import 'package:cadife_smart_travel/config/router/transitions/custom_page_route.dart';
@@ -23,6 +24,7 @@ import 'package:cadife_smart_travel/features/client/historico/presentation/pages
 import 'package:cadife_smart_travel/features/client/profile/presentation/pages/profile_page.dart' as client_profile;
 import 'package:cadife_smart_travel/features/client/status/presentation/pages/status_page.dart';
 import 'package:cadife_smart_travel/features/notifications/presentation/screens/notification_center_screen.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -219,6 +221,16 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
+
+      // DEV ROUTES (apenas em debug)
+      if (kDebugMode)
+        GoRoute(
+          path: '/dev/components',
+          name: 'componentLibrary',
+          pageBuilder: (context, state) => const MaterialPage(
+            child: ComponentLibraryPage(),
+          ),
+        ),
     ],
   );
 });
