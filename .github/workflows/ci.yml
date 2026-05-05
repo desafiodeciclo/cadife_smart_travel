@@ -4,7 +4,7 @@ on:
   push:
     branches: [ "chore/unit-integration-tests-ci" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "developer" ]
 
 jobs:
   static-analysis:
