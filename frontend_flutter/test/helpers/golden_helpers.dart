@@ -1,5 +1,4 @@
-import 'package:alchemist/alchemist.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Helper para carregar fontes para os testes de golden.
@@ -14,9 +13,24 @@ Future<void> loadGoldenFonts() async {
   */
 }
 
+/// Representação de um dispositivo para testes de golden no Cadife.
+class CadifeTestDevice {
+  final String name;
+  final Size size;
+  final double devicePixelRatio;
+
+  const CadifeTestDevice({
+    required this.name,
+    required this.size,
+    this.devicePixelRatio = 1.0,
+  });
+
+  BoxConstraints get constraints => BoxConstraints.tight(size);
+}
+
 /// Configurações de dispositivos comuns para testes de golden.
 const deviceConfigs = [
-  DeviceConfig(name: 'iphone_se', size: Size(375, 667), devicePixelRatio: 2.0),
-  DeviceConfig(name: 'iphone_14', size: Size(390, 844), devicePixelRatio: 3.0),
-  DeviceConfig(name: 'pixel_5', size: Size(393, 851), devicePixelRatio: 2.75),
+  CadifeTestDevice(name: 'iphone_se', size: Size(375, 667), devicePixelRatio: 2.0),
+  CadifeTestDevice(name: 'iphone_14', size: Size(390, 844), devicePixelRatio: 3.0),
+  CadifeTestDevice(name: 'pixel_5', size: Size(393, 851), devicePixelRatio: 2.75),
 ];

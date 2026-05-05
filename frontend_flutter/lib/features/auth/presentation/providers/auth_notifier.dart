@@ -4,9 +4,7 @@ import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_re
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Provider para gerenciar o estado de autenticação global.
-final authNotifierProvider = AsyncNotifierProvider<AuthNotifier, AuthUser?>(() {
-  return AuthNotifier();
-});
+final authNotifierProvider = AsyncNotifierProvider<AuthNotifier, AuthUser?>(AuthNotifier.new);
 
 class AuthNotifier extends AsyncNotifier<AuthUser?> {
   late IAuthRepository _repository;
@@ -31,7 +29,7 @@ class AuthNotifier extends AsyncNotifier<AuthUser?> {
     final result = await _repository.login(email, password);
     state = await result.fold(
       (failure) => AsyncValue.error(failure.message, StackTrace.current),
-      (user) => AsyncValue.data(user),
+      AsyncValue.data,
     );
   }
 

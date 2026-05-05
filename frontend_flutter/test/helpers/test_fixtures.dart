@@ -1,5 +1,5 @@
-import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/briefing.dart';
+import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/agency/propostas/domain/entities/proposta.dart';
 import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
 

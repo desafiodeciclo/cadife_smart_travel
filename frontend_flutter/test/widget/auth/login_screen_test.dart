@@ -1,11 +1,12 @@
-import 'package:cadife_smart_travel/features/auth/presentation/screens/login_screen.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_repository_provider.dart';
+import 'package:cadife_smart_travel/features/auth/presentation/screens/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:fpdart/fpdart.dart';
-import '../../helpers/pump_app.dart';
+import 'package:mocktail/mocktail.dart';
+
 import '../../helpers/mock_repositories.dart';
+import '../../helpers/pump_app.dart';
 
 void main() {
   late MockAuthRepository authRepository;

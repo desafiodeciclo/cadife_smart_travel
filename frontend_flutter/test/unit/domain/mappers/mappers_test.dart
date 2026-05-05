@@ -1,6 +1,7 @@
-import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/briefing.dart';
+import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:flutter_test/flutter_test.dart';
+
 import '../../../helpers/test_fixtures.dart';
 
 void main() {

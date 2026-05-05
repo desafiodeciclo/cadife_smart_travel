@@ -1,10 +1,10 @@
-import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_repository_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:fpdart/fpdart.dart';
+import 'package:mocktail/mocktail.dart';
+
 import '../../../helpers/mock_repositories.dart';
 import '../../../helpers/test_fixtures.dart';
 
@@ -58,7 +58,7 @@ void main() {
 
     test('logout limpa o estado para null', () async {
       final user = UserFixture.consultor();
-      when(() => authRepository.isLoggedIn()).thenAnswer((_) async => Right(true));
+      when(() => authRepository.isLoggedIn()).thenAnswer((_) async => const Right(true));
       when(() => authRepository.getCurrentUser()).thenAnswer((_) async => Right(user));
       when(() => authRepository.logout()).thenAnswer((_) async => const Right(null));
 
