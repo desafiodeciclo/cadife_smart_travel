@@ -15,7 +15,7 @@ extension GetLeadCacheCollection on Isar {
 
 const LeadCacheSchema = CollectionSchema(
   name: r'le',
-  id: -7792545090855442432,
+  id: -7792545090855442825,
   properties: {
     r'assignedTo': PropertySchema(
       id: 0,
@@ -130,7 +130,7 @@ const LeadCacheSchema = CollectionSchema(
   idName: r'id',
   indexes: {
     r's2': IndexSchema(
-      id: -4086159516491363840,
+      id: -4086159516491363654,
       name: r's2',
       unique: true,
       replace: false,

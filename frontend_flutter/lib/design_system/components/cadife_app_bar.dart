@@ -14,6 +14,7 @@ class CadifeAppBar extends ConsumerWidget implements PreferredSizeWidget {
     this.actions,
     this.centerTitle = true,
     this.transparent = true,
+    this.showNotificationBell = true,
   });
 
   final String title;
@@ -21,6 +22,7 @@ class CadifeAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final List<Widget>? actions;
   final bool centerTitle;
   final bool transparent;
+  final bool showNotificationBell;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -68,56 +70,57 @@ class CadifeAppBar extends ConsumerWidget implements PreferredSizeWidget {
       ),
       actions: [
         if (actions != null) ...actions!,
-        Padding(
-          padding: const EdgeInsets.only(right: 8.0),
-          child: Badge(
-            isLabelVisible: notifications.isNotEmpty,
-            backgroundColor: theme.primary,
-            label: Text(
-              '${notifications.length}',
-              style: const TextStyle(color: Colors.white, fontSize: 10),
-            ),
-            child: PopupMenuButton<String>(
-              tooltip: '',
-              icon: Icon(
-                LucideIcons.bell, 
-                color: theme.textPrimary
+        if (showNotificationBell)
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: Badge(
+              isLabelVisible: notifications.isNotEmpty,
+              backgroundColor: theme.primary,
+              label: Text(
+                '${notifications.length}',
+                style: const TextStyle(color: Colors.white, fontSize: 10),
               ),
-              offset: const Offset(0, 45),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: theme.cardBorder),
-              ),
-              color: theme.cardBackground,
-              itemBuilder: (context) {
-                if (notifications.isEmpty) {
-                  return [
-                    PopupMenuItem<String>(
-                      enabled: false,
-                      child: Text(
-                        'Sem notificações',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: theme.textSecondary,
+              child: PopupMenuButton<String>(
+                tooltip: '',
+                icon: Icon(
+                  LucideIcons.bell, 
+                  color: theme.textPrimary
+                ),
+                offset: const Offset(0, 45),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(color: theme.cardBorder),
+                ),
+                color: theme.cardBackground,
+                itemBuilder: (context) {
+                  if (notifications.isEmpty) {
+                    return [
+                      PopupMenuItem<String>(
+                        enabled: false,
+                        child: Text(
+                          'Sem notificações',
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: theme.textSecondary,
+                          ),
                         ),
                       ),
-                    ),
-                  ];
-                }
-                return notifications.map((n) {
-                  return PopupMenuItem<String>(
-                    value: n.id,
-                    child: Text(
-                      n.title,
-                      style: GoogleFonts.inter(color: theme.textPrimary),
-                    ),
-                  );
-                }).toList();
-              },
+                    ];
+                  }
+                  return notifications.map((n) {
+                    return PopupMenuItem<String>(
+                      value: n.id,
+                      child: Text(
+                        n.title,
+                        style: GoogleFonts.inter(color: theme.textPrimary),
+                      ),
+                    );
+                  }).toList();
+                },
+              ),
             ),
           ),
-        ),
       ],
     );
   }
