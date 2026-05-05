@@ -1,5 +1,7 @@
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
+import 'package:cadife_smart_travel/features/settings/application/theme_notifier.dart';
+import 'package:cadife_smart_travel/features/settings/domain/entities/user_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -485,17 +487,17 @@ class ProfileThemeSelector extends StatelessWidget {
     required this.onChanged,
   });
 
-  final ThemeMode themeMode;
-  final ValueChanged<ThemeMode> onChanged;
+  final ThemePreference themePreference;
+  final ValueChanged<ThemePreference> onChanged;
 
   @override
   Widget build(BuildContext context) {
     return Column(
-      children: ThemeMode.values
-          .map((mode) => _ProfileThemeOption(
-                mode: mode,
-                isSelected: themeMode == mode,
-                onTap: () => onChanged(mode),
+      children: ThemePreference.values
+          .map((pref) => _ProfileThemeOption(
+                pref: pref,
+                isSelected: themePreference == pref,
+                onTap: () => onChanged(pref),
               ))
           .toList(),
     );
@@ -504,25 +506,25 @@ class ProfileThemeSelector extends StatelessWidget {
 
 class _ProfileThemeOption extends StatelessWidget {
   const _ProfileThemeOption({
-    required this.mode,
+    required this.pref,
     required this.isSelected,
     required this.onTap,
   });
 
-  final ThemeMode mode;
+  final ThemePreference pref;
   final bool isSelected;
   final VoidCallback onTap;
 
-  String get _label => switch (mode) {
-        ThemeMode.system => 'Padrão do sistema',
-        ThemeMode.light => 'Modo Claro',
-        ThemeMode.dark => 'Modo Escuro',
+  String get _label => switch (pref) {
+        ThemePreference.system => 'Padrão do sistema',
+        ThemePreference.light => 'Modo Claro',
+        ThemePreference.dark => 'Modo Escuro',
       };
 
-  IconData get _icon => switch (mode) {
-        ThemeMode.system => Icons.settings_brightness_rounded,
-        ThemeMode.light => Icons.light_mode_rounded,
-        ThemeMode.dark => Icons.dark_mode_rounded,
+  IconData get _icon => switch (pref) {
+        ThemePreference.system => Icons.settings_brightness_rounded,
+        ThemePreference.light => Icons.light_mode_rounded,
+        ThemePreference.dark => Icons.dark_mode_rounded,
       };
 
   @override

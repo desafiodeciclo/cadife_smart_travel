@@ -9,6 +9,8 @@ import 'package:cadife_smart_travel/features/auth/presentation/bloc/auth_state.d
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cadife_smart_travel/features/settings/application/theme_notifier.dart';
+import 'package:cadife_smart_travel/features/settings/domain/entities/user_preferences.dart';
 import 'package:go_router/go_router.dart';
 
 enum _EmailState { idle, validating, valid, invalid }
@@ -70,9 +72,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final themeMode = ref.watch(themeModeProvider);
-    final isDark = themeMode == ThemeMode.dark ||
-        (themeMode == ThemeMode.system &&
+    final themePreference = ref.watch(themeNotifierProvider).valueOrNull ?? ThemePreference.system;
+    final isDark = themePreference == ThemePreference.dark ||
+        (themePreference == ThemePreference.system &&
             MediaQuery.platformBrightnessOf(context) == Brightness.dark);
 
     final cadife = context.cadife;
@@ -337,11 +339,7 @@ class _ThemeToggle extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return GestureDetector(
       onTap: () {
-        if (isDark) {
-          ref.read(themeModeProvider.notifier).setLight();
-        } else {
-          ref.read(themeModeProvider.notifier).setDark();
-        }
+        ref.read(themeNotifierProvider.notifier).toggleDarkMode(context);
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
