@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     )
 
     # ── Application Behaviour ─────────────────────────────────────────────
-    APP_ENV: Literal["development", "staging", "production"] = Field(
+    APP_ENV: Literal["development", "staging", "production","test"] = Field(
         default="development",
         description="Current environment — controls secret loading strategy",
     )
