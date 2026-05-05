@@ -11,7 +11,7 @@ class JwtUtils {
       final padded = payload.padRight((payload.length + 3) & ~3, '=');
       final bytes = base64Url.decode(padded);
       return json.decode(utf8.decode(bytes)) as Map<String, dynamic>;
-    } catch (_) {
+    } on Object catch (_) {
       return null;
     }
   }

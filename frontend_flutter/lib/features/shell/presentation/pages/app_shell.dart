@@ -7,10 +7,10 @@ class AppShell extends StatelessWidget {
   final Function(int) onNavTap;
 
   const AppShell({
-    super.key,
     required this.child,
     required this.currentIndex,
     required this.onNavTap,
+    super.key,
   });
 
   @override

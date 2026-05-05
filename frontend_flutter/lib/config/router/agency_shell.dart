@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 class AgencyShell extends StatefulWidget {
-  const AgencyShell({super.key, required this.child, required this.location});
+  const AgencyShell({required this.child, required this.location, super.key});
 
   final Widget child;
   final String location;
@@ -14,7 +14,7 @@ class AgencyShell extends StatefulWidget {
 }
 
 class _AgencyShellState extends State<AgencyShell> {
-  static const _tabs = ['/agency/dashboard', '/agency/leads', '/agency/agenda', '/agency/perfil'];
+  static const _tabs = ['/agency/dashboard', '/agency/leads', '/agency/agenda', '/agency/profile'];
 
   int _currentIndex = 0;
   int _previousIndex = 0;

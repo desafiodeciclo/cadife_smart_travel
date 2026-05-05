@@ -9,8 +9,8 @@ class DocumentIcon extends StatelessWidget {
   final Color? backgroundColor;
 
   const DocumentIcon({
-    super.key,
     required this.type,
+    super.key,
     this.size = 24,
     this.color,
     this.backgroundColor,

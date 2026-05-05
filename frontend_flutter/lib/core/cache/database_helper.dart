@@ -30,7 +30,7 @@ class DatabaseHelper {
   }
 
   /// Fecha a conexão com o banco de dados e libera a referência.
-  /// Deve ser chamado em [disposeDependencies] ou em testes.
+  /// Deve ser chamado em disposeDependencies ou em testes.
   Future<void> close() async {
     if (_db != null) {
       await _db!.close();

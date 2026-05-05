@@ -7,7 +7,7 @@ import 'package:fpdart/fpdart.dart';
 
 class NotificationsRepositoryImpl implements INotificationsRepository {
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
-  
+
   final _notificationController = StreamController<NotificationPayload>.broadcast();
 
   @override
@@ -27,8 +27,8 @@ class NotificationsRepositoryImpl implements INotificationsRepository {
         }
       });
       return const Right(null);
-    } catch (e) {
-      return Left(ServerFailure(e.toString()));
+    } on Exception catch (e) {
+      return Left(Failure.fromException(e));
     }
   }
 
@@ -37,8 +37,8 @@ class NotificationsRepositoryImpl implements INotificationsRepository {
     try {
       final token = await _messaging.getToken();
       return Right(token);
-    } catch (e) {
-      return Left(ServerFailure(e.toString()));
+    } on Exception catch (e) {
+      return Left(Failure.fromException(e));
     }
   }
 
@@ -47,8 +47,8 @@ class NotificationsRepositoryImpl implements INotificationsRepository {
     try {
       await _messaging.subscribeToTopic(topic);
       return const Right(null);
-    } catch (e) {
-      return Left(ServerFailure(e.toString()));
+    } on Exception catch (e) {
+      return Left(Failure.fromException(e));
     }
   }
 
@@ -57,8 +57,8 @@ class NotificationsRepositoryImpl implements INotificationsRepository {
     try {
       await _messaging.unsubscribeFromTopic(topic);
       return const Right(null);
-    } catch (e) {
-      return Left(ServerFailure(e.toString()));
+    } on Exception catch (e) {
+      return Left(Failure.fromException(e));
     }
   }
 
@@ -71,11 +71,11 @@ class NotificationsRepositoryImpl implements INotificationsRepository {
         sound: true,
       );
       return const Right(null);
-    } catch (e) {
-      return Left(ServerFailure(e.toString()));
+    } on Exception catch (e) {
+      return Left(Failure.fromException(e));
     }
   }
-  
+
   void dispose() {
     _notificationController.close();
   }

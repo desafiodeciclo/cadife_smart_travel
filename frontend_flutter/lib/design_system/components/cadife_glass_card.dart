@@ -12,8 +12,8 @@ class CadifeGlassCard extends StatelessWidget {
   final double? height;
 
   const CadifeGlassCard({
-    super.key,
     required this.child,
+    super.key,
     this.blur = 10,
     this.opacity = 0.1,
     this.borderRadius,

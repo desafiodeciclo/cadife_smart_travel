@@ -6,7 +6,6 @@ part 'briefing_cache.g.dart';
 @Collection()
 class BriefingCache {
   BriefingCache({
-    this.id,
     required this.leadId,
     required this.destino,
     required this.dataIda,
@@ -20,6 +19,7 @@ class BriefingCache {
     required this.experienciaInternacional,
     required this.resumoConversa,
     required this.completudePct,
+    this.id,
     this.cachedAt,
   });
 

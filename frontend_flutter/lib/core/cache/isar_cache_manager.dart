@@ -7,7 +7,7 @@ import 'package:path_provider/path_provider.dart';
 
 /// Gerenciador de pre-cache estruturado usando Isar.
 ///
-/// Complementa o [OfflineManager] (Hive) fornecendo queries tipadas
+/// Complementa o OfflineManager (Hive) fornecendo queries tipadas
 /// e performance para objetos complexos: leads, briefings, agenda, propostas.
 class IsarCacheManager {
   IsarCacheManager({Isar? isar}) : _isar = isar {
@@ -59,7 +59,7 @@ class IsarCacheManager {
         name: 'cadife_cache_v3',
       );
       debugPrint('Isar initialized successfully (v3)');
-    } catch (e, stack) {
+    } on Exception catch (e, stack) {
       debugPrint('CRITICAL: Isar failed to open: $e');
       debugPrint(stack.toString());
       // On failure, we don't set _isar, but we mark as initialized

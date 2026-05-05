@@ -6,10 +6,10 @@ class OfflineEvent {
   final bool isSynced;
 
   OfflineEvent({
-    this.id,
     required this.title,
     required this.payload,
     required this.createdAt,
+    this.id,
     this.isSynced = false,
   });
 

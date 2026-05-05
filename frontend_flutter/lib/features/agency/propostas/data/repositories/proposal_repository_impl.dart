@@ -50,7 +50,7 @@ class ProposalRepositoryImpl implements IProposalsRepository {
             .toList());
       }
       return Left(_handleDioError(e));
-    } catch (e) {
+    } on Exception catch (e) {
       return Left(GenericFailure(e.toString()));
     }
   }
@@ -76,7 +76,7 @@ class ProposalRepositoryImpl implements IProposalsRepository {
         return Right(Proposta.fromJson(cached as Map<String, dynamic>));
       }
       return Left(_handleDioError(e));
-    } catch (e) {
+    } on Exception catch (e) {
       return Left(GenericFailure(e.toString()));
     }
   }
@@ -96,7 +96,7 @@ class ProposalRepositoryImpl implements IProposalsRepository {
       return Right(proposal);
     } on DioException catch (e) {
       return Left(_handleDioError(e));
-    } catch (e) {
+    } on Exception catch (e) {
       return Left(GenericFailure(e.toString()));
     }
   }
@@ -123,7 +123,7 @@ class ProposalRepositoryImpl implements IProposalsRepository {
       return Right(proposal);
     } on DioException catch (e) {
       return Left(_handleDioError(e));
-    } catch (e) {
+    } on Exception catch (e) {
       return Left(GenericFailure(e.toString()));
     }
   }
@@ -137,7 +137,7 @@ class ProposalRepositoryImpl implements IProposalsRepository {
       return const Right(null);
     } on DioException catch (e) {
       return Left(_handleDioError(e));
-    } catch (e) {
+    } on Exception catch (e) {
       return Left(GenericFailure(e.toString()));
     }
   }
