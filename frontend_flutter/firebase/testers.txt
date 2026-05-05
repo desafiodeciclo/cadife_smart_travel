@@ -1,0 +1,6 @@
+# firebase/testers.txt
+diego@cadife.com
+nikolas@cadife.com
+jakeline@cadife.com
+ana@cadife.com
+dev-team@cadife.com

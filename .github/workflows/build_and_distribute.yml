@@ -1,0 +1,218 @@
+name: Build & Distribute
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend_flutter
+    strategy:
+      matrix:
+        flavor: [staging, prod]
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.x'
+          channel: 'stable'
+          cache: true
+      
+      - name: Install dependencies
+        run: flutter pub get
+      
+      - name: Decode Android Keystore
+        env:
+          ENCODED_KEYSTORE: ${{ secrets.ENCODED_ANDROID_KEYSTORE }}
+        run: |
+          mkdir -p android/app/keystore
+          echo "$ENCODED_KEYSTORE" | base64 -d > android/app/keystore/cadife-tour.jks
+          cp android/app/keystore/cadife-tour.jks android/app/keystore/cadife-tour-staging.jks
+          cp android/app/keystore/cadife-tour.jks android/app/keystore/cadife-tour-dev.jks
+      
+      - name: Build Android Release (${{ matrix.flavor }})
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEYSTORE_PASSWORD_STAGING: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS_STAGING: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD_STAGING: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          TARGET_FILE="lib/main_${{ matrix.flavor == 'prod' && 'production' || 'staging' }}.dart"
+          flutter build apk \
+            --flavor ${{ matrix.flavor }} \
+            -t $TARGET_FILE \
+            --release
+      
+      - name: Build Android App Bundle (${{ matrix.flavor }})
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEYSTORE_PASSWORD_STAGING: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS_STAGING: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD_STAGING: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          TARGET_FILE="lib/main_${{ matrix.flavor == 'prod' && 'production' || 'staging' }}.dart"
+          flutter build appbundle \
+            --flavor ${{ matrix.flavor }} \
+            -t $TARGET_FILE \
+            --release
+      
+      - name: Upload to Firebase App Distribution
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if ! command -v firebase &> /dev/null; then
+            curl -sL https://firebase.tools | bash
+          fi
+          
+          echo "$FIREBASE_SERVICE_ACCOUNT" > /tmp/firebase-key.json
+          
+          # App IDs should be provided as secrets or fallback to placeholders
+          APP_ID="${{ matrix.flavor == 'prod' && secrets.FIREBASE_APP_ID_ANDROID_PROD || secrets.FIREBASE_APP_ID_ANDROID_STAGING }}"
+          
+          if [ -z "$APP_ID" ]; then
+            echo "⚠️ FIREBASE_APP_ID_ANDROID_${{ matrix.flavor }} not found. Using placeholder."
+            APP_ID="1:234567890:android:abcd1234"
+          fi
+
+          firebase appdistribution:distribute \
+            build/app/outputs/flutter-apk/app-${{ matrix.flavor }}-release.apk \
+            --app "$APP_ID" \
+            --release-notes "MVP Build - ${{ matrix.flavor }} - $(date +%Y-%m-%d)" \
+            --testers-file firebase/testers.txt \
+            --credentials-file /tmp/firebase-key.json
+      
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-${{ matrix.flavor }}-apk
+          path: frontend_flutter/build/app/outputs/flutter-apk/app-${{ matrix.flavor }}-release.apk
+      
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-${{ matrix.flavor }}-aab
+          path: frontend_flutter/build/app/outputs/bundle/${{ matrix.flavor }}release/app-${{ matrix.flavor }}-release.aab
+
+  build-ios:
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: frontend_flutter
+    strategy:
+      matrix:
+        flavor: [staging, prod]
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.x'
+          channel: 'stable'
+          cache: true
+      
+      - name: Install dependencies
+        run: |
+          flutter pub get
+          cd ios && pod repo update && pod install
+      
+      - name: Import provisioning profile
+        env:
+          PROVISIONING_PROFILE_B64: ${{ secrets.IOS_PROVISIONING_PROFILE }}
+        run: |
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles/
+          echo "$PROVISIONING_PROFILE_B64" | base64 -d > ~/Library/MobileDevice/Provisioning\ Profiles/cadife-dist.mobileprovision
+      
+      - name: Build iOS Archive
+        run: |
+          TARGET_FILE="lib/main_${{ matrix.flavor == 'prod' && 'production' || 'staging' }}.dart"
+          flutter build ipa \
+            --flavor ${{ matrix.flavor }} \
+            -t $TARGET_FILE \
+            --release \
+            --export-options-template=ios/ExportOptions.plist
+      
+      - name: Upload to Firebase App Distribution (iOS)
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+        run: |
+          curl -sL https://firebase.tools | bash
+          
+          echo "$FIREBASE_SERVICE_ACCOUNT" > /tmp/firebase-key.json
+          
+          APP_ID="${{ matrix.flavor == 'prod' && secrets.FIREBASE_APP_ID_IOS_PROD || secrets.FIREBASE_APP_ID_IOS_STAGING }}"
+          
+          if [ -z "$APP_ID" ]; then
+            echo "⚠️ FIREBASE_APP_ID_IOS_${{ matrix.flavor }} not found. Using placeholder."
+            APP_ID="1:234567890:ios:1234abcd"
+          fi
+
+          firebase appdistribution:distribute \
+            build/ios/ipa/*.ipa \
+            --app "$APP_ID" \
+            --release-notes "MVP Build - ${{ matrix.flavor }} iOS - $(date +%Y-%m-%d)" \
+            --testers-file firebase/testers.txt \
+            --credentials-file /tmp/firebase-key.json
+      
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-${{ matrix.flavor }}-ipa
+          path: frontend_flutter/build/ios/ipa/*.ipa
+      
+      - name: Clean up provisioning profile
+        if: always()
+        run: |
+          rm -f ~/Library/MobileDevice/Provisioning\ Profiles/cadife-dist.mobileprovision
+
+  notify:
+    needs: [build-android, build-ios]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Slack Notification
+        if: env.SLACK_WEBHOOK != ''
+        uses: slackapi/slack-github-action@v1
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK }}
+          payload: |
+            {
+              "text": "🚀 MVP Build Completed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "Build: ${{ github.ref }}\nAuthor: ${{ github.actor }}\nStatus: ${{ job.status }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "Artifacts:\n• Android APK/AAB\n• iOS IPA (via TestFlight)\n\nTesters receberam link de download"
+                  }
+                }
+              ]
+            }
