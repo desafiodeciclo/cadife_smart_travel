@@ -1,9 +1,9 @@
+import 'package:cadife_smart_travel/config/responsive/adaptive_modal.dart';
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/presentation/providers/schedule_appointment_provider.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 
 class ScheduleAppointmentModal extends ConsumerStatefulWidget {
   final Lead lead;
@@ -11,11 +11,10 @@ class ScheduleAppointmentModal extends ConsumerStatefulWidget {
   const ScheduleAppointmentModal({required this.lead, super.key});
 
   static Future<bool?> show(BuildContext context, Lead lead) {
-    return showModalBottomSheet<bool>(
+    return showAdaptiveModal<bool>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => ScheduleAppointmentModal(lead: lead),
+      title: 'SCHEDULE APPOINTMENT',
+      child: ScheduleAppointmentModal(lead: lead),
     );
   }
 
@@ -78,46 +77,13 @@ class _ScheduleAppointmentModalState
     // Para facilitar, focar no dia de hoje se o mês atual for o mês de hoje
     final today = DateTime.now();
 
-    return Container(
-      margin: const EdgeInsets.only(top: 60),
-      decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(24, 16, 24, 24 + bottomInset),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Header
-            Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.close, color: AppColors.primary),
-                  onPressed: () => Navigator.of(context).pop(),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-                const SizedBox(width: 16),
-                const Expanded(
-                  child: Text(
-                    'SCHEDULE APPOINTMENT',
-                    style: TextStyle(
-                      color: AppColors.primary,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Divider(color: context.cadife.cardBorder, height: 1),
-            const SizedBox(height: 24),
-
-            // Lead Info Card
+    return SingleChildScrollView(
+      padding: EdgeInsets.fromLTRB(24, 16, 24, 24 + bottomInset),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Lead Info Card
             ShadCard(
               padding: const EdgeInsets.all(16),
               backgroundColor: AppColors.primary.withValues(alpha: 0.05),

@@ -51,3 +51,5 @@ class LeadsNotifier extends AsyncNotifier<List<Lead>> {
 final leadsNotifierProvider = AsyncNotifierProvider<LeadsNotifier, List<Lead>>(
   LeadsNotifier.new,
 );
+
+final selectedLeadIdProvider = StateProvider<String?>((ref) => null);

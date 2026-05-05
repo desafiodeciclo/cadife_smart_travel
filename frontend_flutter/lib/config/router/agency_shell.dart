@@ -1,4 +1,5 @@
 import 'package:animations/animations.dart';
+import 'package:cadife_smart_travel/config/responsive/adaptive_layout.dart';
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -47,8 +48,16 @@ class _AgencyShellState extends State<AgencyShell> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: PageTransitionSwitcher(
+    return AdaptiveScaffold(
+      selectedIndex: _currentIndex,
+      onNavigationChanged: (i) => context.go(_tabs[i]),
+      navigationDestinations: const [
+        NavigationDestination(icon: Icon(LucideIcons.layoutDashboard), label: 'Dashboard'),
+        NavigationDestination(icon: Icon(LucideIcons.users), label: 'Leads'),
+        NavigationDestination(icon: Icon(LucideIcons.calendarDays), label: 'Agenda'),
+        NavigationDestination(icon: Icon(LucideIcons.circleUser), label: 'Perfil'),
+      ],
+      body: (context, deviceType) => PageTransitionSwitcher(
         duration: const Duration(milliseconds: 280),
         reverse: _currentIndex < _previousIndex,
         transitionBuilder: (child, primaryAnimation, secondaryAnimation) =>
@@ -60,16 +69,6 @@ class _AgencyShellState extends State<AgencyShell> {
               child: child,
             ),
         child: widget.child,
-      ),
-      bottomNavigationBar: CadifeBottomNav(
-        currentIndex: _currentIndex,
-        onTap: (i) => context.go(_tabs[i]),
-        items: const [
-          CadifeBottomNavItem(icon: LucideIcons.layoutDashboard, label: 'Dashboard'),
-          CadifeBottomNavItem(icon: LucideIcons.users, label: 'Leads'),
-          CadifeBottomNavItem(icon: LucideIcons.calendarDays, label: 'Agenda'),
-          CadifeBottomNavItem(icon: LucideIcons.circleUser, label: 'Perfil'),
-        ],
       ),
     );
   }

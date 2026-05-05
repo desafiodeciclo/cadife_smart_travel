@@ -18,7 +18,7 @@ import 'package:cadife_smart_travel/features/client/documentos/domain/entities/d
 import 'package:cadife_smart_travel/features/client/documentos/presentation/pages/document_viewer_page.dart';
 import 'package:cadife_smart_travel/features/client/documentos/presentation/pages/documentos_page.dart';
 import 'package:cadife_smart_travel/features/client/documentos/presentation/pages/trip_documents_page.dart';
-import 'package:cadife_smart_travel/features/client/historico/presentation/pages/historico_page.dart';
+import 'package:cadife_smart_travel/features/client/historico/presentation/pages/travel_briefing_screen.dart';
 import 'package:cadife_smart_travel/features/client/profile/presentation/pages/profile_page.dart' as client_profile;
 import 'package:cadife_smart_travel/features/client/status/presentation/pages/status_page.dart';
 import 'package:cadife_smart_travel/features/notifications/presentation/screens/notification_center_screen.dart';
@@ -185,8 +185,21 @@ final routerProvider = Provider<GoRouter>((ref) {
             name: 'client_history',
             pageBuilder: (context, state) => SlideTransitionPage(
               name: state.name,
-              child: const HistoricoPage(),
+              child: const TravelBriefingScreen(),
             ),
+            routes: [
+              GoRoute(
+                path: ':tripId',
+                name: 'client_trip_details',
+                pageBuilder: (context, state) {
+                  final tripId = state.pathParameters['tripId']!;
+                  return SlideTransitionPage(
+                    name: state.name,
+                    child: TravelBriefingScreen(tripId: tripId),
+                  );
+                },
+              ),
+            ],
           ),
           GoRoute(
             path: '/client/documents',

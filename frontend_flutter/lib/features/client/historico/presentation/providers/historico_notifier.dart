@@ -6,6 +6,8 @@ final historicoProvider = AsyncNotifierProvider<HistoricoNotifier, List<TripSumm
   HistoricoNotifier.new,
 );
 
+final selectedClientTripProvider = StateProvider<String?>((ref) => null);
+
 class HistoricoNotifier extends AsyncNotifier<List<TripSummary>> {
   @override
   Future<List<TripSummary>> build() async {

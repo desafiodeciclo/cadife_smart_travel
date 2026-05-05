@@ -1,3 +1,4 @@
+import 'package:cadife_smart_travel/config/responsive/responsive_breakpoints.dart';
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/domain/entities/agendamento.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/presentation/providers/agenda_provider.dart';
@@ -5,7 +6,6 @@ import 'package:cadife_smart_travel/shared/presentation/widgets/state_container.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
 
 part 'agenda_month_view.dart';
 part 'agenda_daily_view.dart';
@@ -20,8 +20,6 @@ const _diasSemana = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 
 String _monthLabel(DateTime d) => '${_meses[d.month - 1]} ${d.year}';
 
-// ─── Screen ───────────────────────────────────────────────────────────────────
-
 class AgendaScreen extends ConsumerWidget {
   const AgendaScreen({super.key});
 
@@ -30,47 +28,87 @@ class AgendaScreen extends ConsumerWidget {
     final viewMode = ref.watch(agendaViewModeProvider);
     final allAsync = ref.watch(agendaProvider);
 
-    return Scaffold(
-      backgroundColor: context.cadife.background,
-      appBar: CadifeAppBar(
-        title: 'Agenda',
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
-            onPressed: () => ref.read(agendaProvider.notifier).refresh(),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          _ViewToggleBar(viewMode: viewMode),
-          const Divider(height: 1),
-          Expanded(
-            child: StateContainer<List<Agendamento>>(
-              state: allAsync,
-              onRetry: () => ref.read(agendaProvider.notifier).refresh(),
-              loadingWidget: ShimmerLoading(
-                isLoading: true,
-                child: AppSkeletons.listPage(),
-              ),
-              dataBuilder: (items) => viewMode == 0
-                  ? _MonthView(items: items)
-                  : _DailyView(items: items),
+    if (context.isMobile) {
+      return Scaffold(
+        backgroundColor: context.cadife.background,
+        appBar: CadifeAppBar(
+          title: 'Agenda',
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh, color: Colors.white),
+              onPressed: () => ref.read(agendaProvider.notifier).refresh(),
             ),
-          ),
-        ],
-      ),
-
-      floatingActionButton: viewMode == 1
-          ? ShadButton(
-              onPressed: () => ShadToaster.of(context).show(
-                const ShadToast(description: Text('Selecione um slot vazio na timeline para agendar.')),
+          ],
+        ),
+        body: Column(
+          children: [
+            _ViewToggleBar(viewMode: viewMode),
+            const Divider(height: 1),
+            Expanded(
+              child: StateContainer<List<Agendamento>>(
+                state: allAsync,
+                onRetry: () => ref.read(agendaProvider.notifier).refresh(),
+                loadingWidget: ShimmerLoading(
+                  isLoading: true,
+                  child: AppSkeletons.listPage(),
+                ),
+                dataBuilder: (items) => viewMode == 0
+                    ? _MonthView(items: items)
+                    : _DailyView(items: items),
               ),
-              leading: const Icon(Icons.add, size: 20),
-              child: const Text('Novo agendamento'),
-            )
-          : null,
-    );
+            ),
+          ],
+        ),
+        floatingActionButton: viewMode == 1
+            ? ShadButton(
+                onPressed: () => ShadToaster.of(context).show(
+                  const ShadToast(description: Text('Selecione um slot vazio na timeline para agendar.')),
+                ),
+                leading: const Icon(Icons.add, size: 20),
+                child: const Text('Novo agendamento'),
+              )
+            : null,
+      );
+    } else {
+      // Tablet/Desktop: Lado a lado
+      return Scaffold(
+        backgroundColor: context.cadife.background,
+        appBar: CadifeAppBar(
+          title: 'Agenda',
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh, color: Colors.white),
+              onPressed: () => ref.read(agendaProvider.notifier).refresh(),
+            ),
+          ],
+        ),
+        body: StateContainer<List<Agendamento>>(
+          state: allAsync,
+          onRetry: () => ref.read(agendaProvider.notifier).refresh(),
+          loadingWidget: ShimmerLoading(
+            isLoading: true,
+            child: AppSkeletons.listPage(),
+          ),
+          dataBuilder: (items) => Row(
+            children: [
+              // Monthly (esquerda)
+              SizedBox(
+                width: MediaQuery.sizeOf(context).width * 0.4,
+                child: _MonthView(items: items),
+              ),
+              VerticalDivider(
+                width: 1,
+                color: context.cadife.cardBorder,
+              ),
+              // Daily (direita)
+              Expanded(
+                child: _DailyView(items: items),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
   }
 }
 

@@ -1,4 +1,5 @@
 import 'package:animations/animations.dart';
+import 'package:cadife_smart_travel/config/responsive/adaptive_layout.dart';
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -52,8 +53,16 @@ class _ClientShellState extends State<ClientShell> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: PageTransitionSwitcher(
+    return AdaptiveScaffold(
+      selectedIndex: _currentIndex,
+      onNavigationChanged: (i) => context.go(_tabs[i]),
+      navigationDestinations: const [
+        NavigationDestination(icon: Icon(LucideIcons.house), label: 'Início'),
+        NavigationDestination(icon: Icon(LucideIcons.history), label: 'Histórico'),
+        NavigationDestination(icon: Icon(LucideIcons.fileText), label: 'Docs'),
+        NavigationDestination(icon: Icon(LucideIcons.user), label: 'Perfil'),
+      ],
+      body: (context, deviceType) => PageTransitionSwitcher(
         duration: const Duration(milliseconds: 280),
         reverse: _currentIndex < _previousIndex,
         transitionBuilder: (child, primaryAnimation, secondaryAnimation) =>
@@ -65,16 +74,6 @@ class _ClientShellState extends State<ClientShell> {
               child: child,
             ),
         child: widget.child,
-      ),
-      bottomNavigationBar: CadifeBottomNav(
-        currentIndex: _currentIndex,
-        onTap: (i) => context.go(_tabs[i]),
-        items: const [
-          CadifeBottomNavItem(icon: LucideIcons.house, label: 'Início'),
-          CadifeBottomNavItem(icon: LucideIcons.history, label: 'Histórico'),
-          CadifeBottomNavItem(icon: LucideIcons.fileText, label: 'Docs'),
-          CadifeBottomNavItem(icon: LucideIcons.user, label: 'Perfil'),
-        ],
       ),
     );
   }
