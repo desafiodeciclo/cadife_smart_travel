@@ -16,12 +16,16 @@ Este guia explica como executar o backend do **Cadife Smart Travel** (FastAPI) d
 cd backend
 ```
 
+### Opção A — venv dentro do projeto (padrão original)
+
 Crie o ambiente virtual:
+
 ```bash
 python3 -m venv venv
 ```
 
 Ative o ambiente virtual:
+
 - No **macOS / Linux**:
   ```bash
   source venv/bin/activate
@@ -32,6 +36,27 @@ Ative o ambiente virtual:
   ```
 
 > Você saberá que deu certo porque o prompt do terminal ficará com o prefixo `(venv)`.
+
+### Opção B — venv global com Python 3.14 (recomendado para desenvolvimento local)
+
+Crie o ambiente virtual em `~/python_envs/` (apenas na primeira vez):
+
+```bash
+python3.14 -m venv ~/python_envs/cadife_smart_travel
+```
+
+Ative o ambiente virtual:
+
+- No **macOS / Linux**:
+  ```bash
+  source ~/python_envs/cadife_smart_travel/bin/activate
+  ```
+- No **Windows** (PowerShell):
+  ```powershell
+  ~\python_envs\cadife_smart_travel\Scripts\Activate.ps1
+  ```
+
+> O prompt do terminal ficará com o prefixo `(cadife_smart_travel)`.
 
 ## 3. Instalando as Dependências
 
@@ -74,8 +99,10 @@ alembic upgrade head
 Agora você pode iniciar a aplicação! Como o projeto utiliza `uvicorn` e a instância da aplicação está no arquivo `main.py` com o nome `app`, execute:
 
 ```bash
-uvicorn main:app --reload
+python -m uvicorn main:app --reload
 ```
+
+> **Importante (Opção B — pyenv + venv global):** Use sempre `python -m uvicorn` em vez de `uvicorn` diretamente. O pyenv instala shims que podem interceptar o comando `uvicorn` e apontar para a instalação global do pyenv (sem os pacotes do venv), causando `ModuleNotFoundError`. O `python -m uvicorn` garante que o Python do venv ativo seja usado.
 
 > A flag `--reload` faz o servidor reiniciar automaticamente toda vez que você salvar uma alteração no código.
 
@@ -98,13 +125,15 @@ Se tudo estiver correto, você verá no terminal uma mensagem indicando que a ap
   ```
 
 ### Conexão com o Banco de Dados
-| Campo | Valor |
-| :--- | :--- |
-| **Host** | `localhost` |
-| **Porta** | `5433` *(mapeada para 5432 dentro do container)* |
-| **Usuário** | `cadife` |
-| **Senha** | `cadife` |
-| **Banco** | `cadife_db` |
+
+| Campo       | Valor                                            |
+| :---------- | :----------------------------------------------- |
+| **Host**    | `localhost`                                      |
+| **Porta**   | `5433` _(mapeada para 5432 dentro do container)_ |
+| **Usuário** | `cadife`                                         |
+| **Senha**   | `cadife`                                         |
+| **Banco**   | `cadife_db`                                      |
+
 #### Opção 1 — Via terminal (psql dentro do container)
 
 ```bash
@@ -119,12 +148,12 @@ docker exec -it cadife_smart_travel-db-1 psql -U cadife -d cadife_db
 psql -h localhost -p 5433 -U cadife -d cadife_db
 ```
 
-  > Vai pedir a senha: `cadife`
+> Vai pedir a senha: `cadife`
 
 #### Opção 3 — Via GUI (DBeaver, TablePlus, pgAdmin)
 
-*   **Host:** `localhost`
-*   **Port:** `5433`
-*   **Database:** `cadife_db`
-*   **User:** `cadife`
-*   **Password:** `cadife`
+- **Host:** `localhost`
+- **Port:** `5433`
+- **Database:** `cadife_db`
+- **User:** `cadife`
+- **Password:** `cadife`

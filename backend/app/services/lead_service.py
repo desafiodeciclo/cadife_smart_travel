@@ -171,6 +171,29 @@ async def update_interacao_send_result(
     await db.commit()
 
 
+async def get_recent_interacoes(
+    db: AsyncSession,
+    lead_id: uuid.UUID,
+    limit: int = 20,
+) -> list[dict]:
+    """Return the most recent interactions for a lead as plain dicts (oldest-first).
+
+    Used to hydrate conversation memory after a server restart.
+    """
+    stmt = (
+        select(Interacao)
+        .where(Interacao.lead_id == lead_id)
+        .order_by(Interacao.timestamp.desc())
+        .limit(limit)
+    )
+    result = await db.execute(stmt)
+    rows = list(result.scalars().all())
+    return [
+        {"mensagem_cliente": r.mensagem_cliente, "mensagem_ia": r.mensagem_ia}
+        for r in reversed(rows)
+    ]
+
+
 async def get_user_by_id(db: AsyncSession, user_id: str):
     from app.models.user import User
     result = await db.execute(select(User).where(User.id == uuid.UUID(user_id)))

@@ -1,5 +1,5 @@
 import 'package:cadife_smart_travel/core/di/service_locator.dart';
-import 'package:cadife_smart_travel/domain/usecases/process_offline_queue_usecase.dart';
+import 'package:cadife_smart_travel/core/offline/process_offline_queue_usecase.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 class ConnectivityService {

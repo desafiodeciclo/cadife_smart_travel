@@ -187,12 +187,15 @@ class TestIngestionPipeline:
         mock_vs.add_documents.return_value = ["id1"]
         mock_collection = MagicMock()
         mock_vs._collection = mock_collection
-        pipeline._vectorstore = mock_vs
 
-        await pipeline.ingest_all()
-        mock_vs.add_documents.reset_mock()
+        # Patch _get_vectorstore so the mock survives _invalidate_vectorstore()
+        # calls inside _remove_document (which resets self._vectorstore = None).
+        with patch.object(pipeline, "_get_vectorstore", return_value=mock_vs):
+            await pipeline.ingest_all()
+            mock_vs.add_documents.reset_mock()
 
-        result = await pipeline.ingest_all(force=True)
+            result = await pipeline.ingest_all(force=True)
+
         assert result["processed"] == 1
         mock_vs.add_documents.assert_called_once()
 
@@ -201,6 +204,40 @@ class TestIngestionPipeline:
         status = pipeline.get_status()
         assert "indexed_documents" in status
         assert "total_chunks" in status
+
+    # ------------------------------------------------------------------
+    # Splitter configuration tests
+    # ------------------------------------------------------------------
+
+    def test_splitter_chunk_size_is_500(self):
+        from app.services.ingestion_pipeline import _splitter
+        assert _splitter._chunk_size == 500
+
+    def test_splitter_overlap_is_50(self):
+        from app.services.ingestion_pipeline import _splitter
+        assert _splitter._chunk_overlap == 50
+
+    def test_splitter_uses_token_length_function(self):
+        from app.services.ingestion_pipeline import _token_length, _splitter
+        assert _splitter._length_function is _token_length
+
+    def test_token_length_counts_tokens_not_chars(self):
+        from app.services.ingestion_pipeline import _token_length
+        # "hello world" = 2 tokens but 11 characters
+        assert _token_length("hello world") < 11
+
+    def test_splitter_version_in_hash_differs_from_raw(self):
+        import hashlib
+        from app.services.ingestion_pipeline import _compute_hash
+        content = "Natal é um destino do Nordeste."
+        versioned_hash = _compute_hash(content)
+        raw_hash = "sha256:" + hashlib.sha256(content.encode("utf-8")).hexdigest()
+        assert versioned_hash != raw_hash
+
+    def test_hash_is_deterministic(self):
+        from app.services.ingestion_pipeline import _compute_hash
+        content = "Natal é um destino do Nordeste."
+        assert _compute_hash(content) == _compute_hash(content)
 
     @pytest.mark.asyncio
     async def test_unsupported_extension_ignored(self, pipeline_with_kb):

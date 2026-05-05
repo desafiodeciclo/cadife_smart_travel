@@ -3,7 +3,7 @@ from datetime import date
 from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import Boolean, Date, ForeignKey, Integer, String, Text
-from sqlalchemy.dialects.postgresql import ARRAY, UUID
+from sqlalchemy.dialects.postgresql import ARRAY, ENUM as PgEnum, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from pydantic import BaseModel, Field
 
@@ -32,10 +32,10 @@ class Briefing(Base):
     data_volta: Mapped[Optional[date]] = mapped_column(Date)
     duracao_dias: Mapped[Optional[int]] = mapped_column(Integer)
     qtd_pessoas: Mapped[Optional[int]] = mapped_column(Integer)
-    perfil: Mapped[Optional[str]] = mapped_column(String(50))
+    perfil: Mapped[Optional[PerfilViagem]] = mapped_column(PgEnum(PerfilViagem, name="perfil_viagem_enum", create_type=False), nullable=True)
     tipo_viagem: Mapped[Optional[list[str]]] = mapped_column(ARRAY(String))
     preferencias: Mapped[Optional[list[str]]] = mapped_column(ARRAY(String))
-    orcamento: Mapped[Optional[str]] = mapped_column(String(20))
+    orcamento: Mapped[Optional[OrcamentoNivel]] = mapped_column(PgEnum(OrcamentoNivel, name="orcamento_perfil_enum", create_type=False), nullable=True)
     tem_passaporte: Mapped[Optional[bool]] = mapped_column(Boolean)
     observacoes: Mapped[Optional[str]] = mapped_column(Text)
     completude_pct: Mapped[int] = mapped_column(Integer, default=0)

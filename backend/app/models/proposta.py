@@ -3,8 +3,8 @@ from datetime import datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import DateTime, ForeignKey, Numeric, String, Text, func
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import DateTime, ForeignKey, Numeric, Text, func
+from sqlalchemy.dialects.postgresql import ENUM as PgEnum, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from pydantic import BaseModel
 
@@ -23,7 +23,7 @@ class Proposta(Base):
     lead_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("leads.id"), nullable=False, index=True)
     descricao: Mapped[str] = mapped_column(Text, nullable=False)
     valor_estimado: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2))
-    status: Mapped[PropostaStatus] = mapped_column(String(20), nullable=False, default=PropostaStatus.rascunho)
+    status: Mapped[PropostaStatus] = mapped_column(PgEnum(PropostaStatus, name="proposta_status_enum", create_type=False), nullable=False, default=PropostaStatus.rascunho)
     consultor_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
     criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

@@ -1,5 +1,4 @@
-import 'package:cadife_smart_travel/core/theme/app_colors.dart';
-import 'package:cadife_smart_travel/core/theme/app_text_styles.dart';
+import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -8,10 +7,10 @@ class RegisterScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        leading: BackButton(onPressed: () => context.pop()),
-        title: const Text('Criar conta'),
+    return PageScaffold(
+      appBar: const CadifeAppBar(
+        title: 'Criar conta',
+        showProfile: false,
       ),
       body: Center(
         child: Padding(
@@ -27,6 +26,12 @@ class RegisterScreen extends StatelessWidget {
                 'Essa funcionalidade estará disponível em breve.',
                 style: AppTextStyles.bodyMedium,
                 textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              CadifeButton(
+                text: 'VOLTAR AO LOGIN',
+                isOutline: true,
+                onPressed: () => context.pop(),
               ),
             ],
           ),

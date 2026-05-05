@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Optional
 
 import structlog
+import tiktoken
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
@@ -31,12 +32,29 @@ from app.services.metadata_tagger import extract_tags, tags_to_metadata
 logger = structlog.get_logger()
 
 # ---------------------------------------------------------------------------
-# Text splitter — matches .claude/rules/ai_langchain.md spec
+# Token-based length function (cl100k_base ≈ GPT-4/Gemini vocabulary)
+# ---------------------------------------------------------------------------
+_tiktoken_enc = tiktoken.get_encoding("cl100k_base")
+
+
+def _token_length(text: str) -> int:
+    return len(_tiktoken_enc.encode(text))
+
+
+# ---------------------------------------------------------------------------
+# Splitter version — bump this whenever chunk_size, overlap, or
+# length_function changes so the hash-based cache detects the config drift
+# and forces automatic re-indexing of all documents.
+# ---------------------------------------------------------------------------
+_SPLITTER_VERSION = "v2_chunk500_overlap50_tiktoken"
+
+# ---------------------------------------------------------------------------
+# Text splitter — 500 tokens / 50-token overlap (spec: 300–500 tokens)
 # ---------------------------------------------------------------------------
 _splitter = RecursiveCharacterTextSplitter(
-    chunk_size=400,
+    chunk_size=500,
     chunk_overlap=50,
-    length_function=len,
+    length_function=_token_length,
     separators=["\n\n", "\n", ". ", " ", ""],
 )
 
@@ -141,7 +159,8 @@ SUPPORTED_EXTENSIONS = set(_LOADERS.keys())
 
 
 def _compute_hash(content: str) -> str:
-    return "sha256:" + hashlib.sha256(content.encode("utf-8")).hexdigest()
+    versioned = f"{_SPLITTER_VERSION}:{content}"
+    return "sha256:" + hashlib.sha256(versioned.encode("utf-8")).hexdigest()
 
 
 def _read_file(filepath: Path) -> Optional[str]:

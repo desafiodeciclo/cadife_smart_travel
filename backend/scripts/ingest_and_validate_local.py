@@ -35,7 +35,7 @@ from app.services.metadata_tagger import extract_tags, tags_to_metadata
 KNOWLEDGE_BASE_DIR = Path("./knowledge_base")
 CHROMA_PERSIST_DIR = Path("./chroma_db_local")
 CHUNK_SIZE = 500
-CHUNK_OVERLAP = 30
+CHUNK_OVERLAP = 50
 
 _tiktoken_enc = tiktoken.get_encoding("cl100k_base")
 
