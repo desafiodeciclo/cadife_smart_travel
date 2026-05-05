@@ -1,4 +1,5 @@
 import 'package:cadife_smart_travel/config/app_config.dart';
+import 'package:cadife_smart_travel/core/analytics/analytics_service.dart';
 import 'package:cadife_smart_travel/core/cache/database_helper.dart';
 import 'package:cadife_smart_travel/core/cache/isar_cache_manager.dart';
 import 'package:cadife_smart_travel/core/config/firebase_options_prod.dart';
@@ -39,6 +40,8 @@ import 'package:cadife_smart_travel/features/client/profile/domain/repositories/
 import 'package:cadife_smart_travel/features/client/status/data/datasources/status_datasource.dart';
 import 'package:cadife_smart_travel/features/client/status/data/repositories/status_repository_impl.dart';
 import 'package:cadife_smart_travel/features/client/status/domain/repositories/i_status_repository.dart';
+import 'package:cadife_smart_travel/features/notifications/domain/repositories/i_notification_repository.dart';
+import 'package:cadife_smart_travel/features/notifications/infrastructure/database/notification_isar.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
@@ -57,6 +60,9 @@ Future<void> setupServiceLocator({
   // Registrar o AppConfig no Service Locator para uso global
   final config = appConfig ?? AppConfig.dev;
   sl.registerSingleton<AppConfig>(config);
+
+  sl.registerSingleton<AnalyticsService>(AnalyticsService());
+
   // ── 1. Infra Layer (singletons — performance-critical) ──
 
   sl.registerLazySingleton<NetworkInfo>(NetworkInfo.new);
@@ -68,7 +74,7 @@ Future<void> setupServiceLocator({
     () => OfflineSyncQueue(networkInfo: sl<NetworkInfo>()),
   );
   sl.registerLazySingleton<IsarCacheManager>(IsarCacheManager.new);
-  
+
   sl.registerLazySingleton<DatabaseHelper>(DatabaseHelper.new);
   sl.registerLazySingleton<IOfflineEventRepository>(
     () => OfflineEventRepositoryImpl(sl<DatabaseHelper>()),
@@ -137,6 +143,7 @@ Future<void> setupServiceLocator({
   _registerProposalModule();
   _registerProfileModule();
   _registerNotificationsModule();
+  _registerInAppNotificationsModule();
   _registerSettingsModule();
   _registerStatusModule();
 }
@@ -191,13 +198,23 @@ void _registerNotificationsModule() {
   sl.registerLazySingleton<INotificationsRepository>(NotificationsRepositoryImpl.new);
 }
 
+void _registerInAppNotificationsModule() {
+  sl.registerLazySingleton<INotificationRepository>(() {
+    final isar = sl<IsarCacheManager>().isar;
+    if (isar == null) {
+      throw StateError('Isar must be initialized before INotificationRepository');
+    }
+    return NotificationIsarRepository(isar);
+  });
+}
+
 void _registerSettingsModule() {
   sl.registerLazySingleton<IAgencySettingsRepository>(MockAgencySettingsRepository.new);
 }
 
 Future<void> initDependencies() async {
   final env = sl<AppConfig>().environment;
-  
+
   FirebaseOptions? options;
   if (env == AppEnvironment.staging) {
     options = StagingFirebaseOptions.currentPlatform;
@@ -210,7 +227,9 @@ Future<void> initDependencies() async {
   await sl<OfflineManager>().initialize();
   await sl<IsarCacheManager>().initialize();
   await sl<OfflineSyncQueue>().initialize();
-  
+
+  await sl<AnalyticsService>().init();
+
   await LocalNotificationManager.init();
   await FCMManager.init();
   ConnectivityService.init();
@@ -230,4 +249,3 @@ Future<void> disposeDependencies() async {
   await sl<DatabaseHelper>().close();
   await sl.reset(dispose: true);
 }
-
