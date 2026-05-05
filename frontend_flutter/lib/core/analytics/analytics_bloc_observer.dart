@@ -4,7 +4,7 @@ import 'package:cadife_smart_travel/features/auth/presentation/bloc/auth_state.d
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class AnalyticsBlocObserver extends BlocObserver {
-  final AnalyticsService _analytics = sl<AnalyticsService>();
+  AnalyticsService get _analytics => sl<AnalyticsService>();
 
   @override
   void onTransition(Bloc bloc, Transition transition) {
