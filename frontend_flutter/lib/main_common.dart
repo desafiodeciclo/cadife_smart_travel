@@ -27,27 +27,37 @@ Future<void> initializeApp(AppConfig config) async {
     WidgetsFlutterBinding.ensureInitialized();
     await initializeDateFormatting('pt_BR', null);
 
-    Bloc.observer = AnalyticsBlocObserver();
-
+    // 1. Setup Service Locator primeiro (contém AnalyticsService)
     try {
       await setupServiceLocator(
         appConfig: config,
         onTokenExpired: () => _providerContainer.read(authBlocProvider).add(const AuthEvent.logoutRequested()),
       );
+      
+      // 2. Agora podemos configurar os observers que dependem do SL
+      Bloc.observer = AnalyticsBlocObserver();
+
+      // 3. Inicializar dependências assíncronas (Firebase, Isar, etc)
       await initDependencies();
 
-      // Configurar Crashlytics
-      FlutterError.onError = (errorDetails) {
-        FirebaseCrashlytics.instance.recordFlutterError(errorDetails);
-      };
+      // 4. Configurar Crashlytics apenas se não for Web E se disponível
+      if (!kIsWeb) {
+        FlutterError.onError = (errorDetails) {
+          FirebaseCrashlytics.instance.recordFlutterError(errorDetails);
+        };
 
-      PlatformDispatcher.instance.onError = (error, stack) {
-        FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-        return true;
-      };
+        PlatformDispatcher.instance.onError = (error, stack) {
+          FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+          return true;
+        };
+      }
     } catch (e, stack) {
       dev.log('Initialization Error', error: e, stackTrace: stack, name: 'main');
-      FirebaseCrashlytics.instance.recordError(e, stack, fatal: true);
+      if (!kIsWeb) {
+        try {
+          FirebaseCrashlytics.instance.recordError(e, stack, fatal: true);
+        } catch (_) {}
+      }
     }
 
     _providerContainer = ProviderContainer(
@@ -58,7 +68,12 @@ Future<void> initializeApp(AppConfig config) async {
       observers: [AnalyticsProviderObserver()],
     );
   }, (error, stack) {
-    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    dev.log('Top level error', error: error, stackTrace: stack, name: 'main');
+    if (!kIsWeb) {
+      try {
+        FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      } catch (_) {}
+    }
   });
 }
 

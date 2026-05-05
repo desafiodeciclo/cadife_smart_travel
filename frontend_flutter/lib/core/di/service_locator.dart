@@ -42,6 +42,7 @@ import 'package:cadife_smart_travel/features/client/status/data/repositories/sta
 import 'package:cadife_smart_travel/features/client/status/domain/repositories/i_status_repository.dart';
 import 'package:cadife_smart_travel/features/notifications/domain/repositories/i_notification_repository.dart';
 import 'package:cadife_smart_travel/features/notifications/infrastructure/database/notification_isar.dart';
+import 'package:cadife_smart_travel/features/notifications/infrastructure/database/notification_mock.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
@@ -201,8 +202,8 @@ void _registerNotificationsModule() {
 void _registerInAppNotificationsModule() {
   sl.registerLazySingleton<INotificationRepository>(() {
     final isar = sl<IsarCacheManager>().isar;
-    if (isar == null) {
-      throw StateError('Isar must be initialized before INotificationRepository');
+    if (isar == null || kIsWeb) {
+      return const MockNotificationRepository();
     }
     return NotificationIsarRepository(isar);
   });
@@ -221,17 +222,36 @@ Future<void> initDependencies() async {
   } else if (env == AppEnvironment.prod) {
     options = ProdFirebaseOptions.currentPlatform;
   }
-  // No dev, se options for null, ele tenta carregar os arquivos nativos padrão
 
-  await Firebase.initializeApp(options: options);
+  // No Web, só inicializamos se tivermos options explícitas
+  if (!kIsWeb || options != null) {
+    try {
+      await Firebase.initializeApp(options: options);
+    } catch (e) {
+      debugPrint('Firebase initialization failed: $e');
+    }
+  }
+
   await sl<OfflineManager>().initialize();
   await sl<IsarCacheManager>().initialize();
   await sl<OfflineSyncQueue>().initialize();
 
-  await sl<AnalyticsService>().init();
+  // Analytics e Notifications podem falhar no Web se não configurados
+  try {
+    await sl<AnalyticsService>().init();
+  } catch (e) {
+    debugPrint('Analytics initialization failed: $e');
+  }
 
-  await LocalNotificationManager.init();
-  await FCMManager.init();
+  if (!kIsWeb) {
+    try {
+      await LocalNotificationManager.init();
+      await FCMManager.init();
+    } catch (e) {
+      debugPrint('Notification managers initialization failed: $e');
+    }
+  }
+  
   ConnectivityService.init();
 }
 

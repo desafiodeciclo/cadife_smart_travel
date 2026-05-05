@@ -4,7 +4,7 @@ import 'dart:io';
 void main() async {
   final directory = Directory('lib');
   if (!directory.existsSync()) {
-    print('Directory lib not found');
+    stdout.writeln('Directory lib not found');
     return;
   }
 
@@ -13,7 +13,7 @@ void main() async {
       .where((file) => file.path.endsWith('.g.dart'));
 
   final largeIntRegex = RegExp(r'id:\s*(-?\d+),');
-  final maxSafeInt = 9007199254740991;
+  const maxSafeInt = 9007199254740991;
 
   for (final file in files) {
     final content = await file.readAsString();
@@ -33,7 +33,7 @@ void main() async {
         final rounded = value.toDouble().toInt();
         if (rounded.toString() != valueStr) {
           changed = true;
-          print('Fixing ${file.path}: $valueStr -> $rounded');
+          stdout.writeln('Fixing ${file.path}: $valueStr -> $rounded');
           return 'id: $rounded,';
         }
       }
