@@ -43,7 +43,7 @@ def _make_test_app() -> FastAPI:
 
 
 @pytest.fixture
-def test_app() -> FastAPI:
+def app_fixture() -> FastAPI:
     return _make_test_app()
 
 
@@ -84,7 +84,7 @@ def fake_briefing(
 # ── Tests ──────────────────────────────────────────────────────────────────
 
 @pytest.mark.asyncio
-async def test_transition_to_qualificado_score_quente(test_app: FastAPI) -> None:
+async def test_transition_to_qualificado_score_quente(app_fixture: FastAPI) -> None:
     """All hot fields filled → score QUENTE."""
     lead = fake_lead(LeadStatus.em_atendimento)
     lead.briefing = fake_briefing(
@@ -99,7 +99,7 @@ async def test_transition_to_qualificado_score_quente(test_app: FastAPI) -> None
             "app.routes.leads.lead_service.get_lead_by_id",
             AsyncMock(return_value=lead),
         )
-        async with AsyncClient(transport=ASGITransport(app=test_app), base_url="http://test") as ac:
+        async with AsyncClient(transport=ASGITransport(app=app_fixture), base_url="http://test") as ac:
             response = await ac.put(
                 f"/leads/{lead.id}",
                 json={"status": LeadStatus.qualificado.value},
@@ -111,7 +111,7 @@ async def test_transition_to_qualificado_score_quente(test_app: FastAPI) -> None
 
 
 @pytest.mark.asyncio
-async def test_transition_to_qualificado_score_morno(test_app: FastAPI) -> None:
+async def test_transition_to_qualificado_score_morno(app_fixture: FastAPI) -> None:
     """Only destino filled → score MORNO."""
     lead = fake_lead(LeadStatus.em_atendimento)
     lead.briefing = fake_briefing(destino="Portugal")
@@ -121,7 +121,7 @@ async def test_transition_to_qualificado_score_morno(test_app: FastAPI) -> None:
             "app.routes.leads.lead_service.get_lead_by_id",
             AsyncMock(return_value=lead),
         )
-        async with AsyncClient(transport=ASGITransport(app=test_app), base_url="http://test") as ac:
+        async with AsyncClient(transport=ASGITransport(app=app_fixture), base_url="http://test") as ac:
             response = await ac.put(
                 f"/leads/{lead.id}",
                 json={"status": LeadStatus.qualificado.value},
@@ -132,7 +132,7 @@ async def test_transition_to_qualificado_score_morno(test_app: FastAPI) -> None:
 
 
 @pytest.mark.asyncio
-async def test_transition_to_qualificado_score_frio(test_app: FastAPI) -> None:
+async def test_transition_to_qualificado_score_frio(app_fixture: FastAPI) -> None:
     """No destino → score FRIO."""
     lead = fake_lead(LeadStatus.em_atendimento)
     lead.briefing = fake_briefing()
@@ -142,7 +142,7 @@ async def test_transition_to_qualificado_score_frio(test_app: FastAPI) -> None:
             "app.routes.leads.lead_service.get_lead_by_id",
             AsyncMock(return_value=lead),
         )
-        async with AsyncClient(transport=ASGITransport(app=test_app), base_url="http://test") as ac:
+        async with AsyncClient(transport=ASGITransport(app=app_fixture), base_url="http://test") as ac:
             response = await ac.put(
                 f"/leads/{lead.id}",
                 json={"status": LeadStatus.qualificado.value},
@@ -153,7 +153,7 @@ async def test_transition_to_qualificado_score_frio(test_app: FastAPI) -> None:
 
 
 @pytest.mark.asyncio
-async def test_transition_to_qualificado_without_briefing_score_none(test_app: FastAPI) -> None:
+async def test_transition_to_qualificado_without_briefing_score_none(app_fixture: FastAPI) -> None:
     """No briefing attached → score remains None."""
     lead = fake_lead(LeadStatus.em_atendimento)
     lead.briefing = None
@@ -163,7 +163,7 @@ async def test_transition_to_qualificado_without_briefing_score_none(test_app: F
             "app.routes.leads.lead_service.get_lead_by_id",
             AsyncMock(return_value=lead),
         )
-        async with AsyncClient(transport=ASGITransport(app=test_app), base_url="http://test") as ac:
+        async with AsyncClient(transport=ASGITransport(app=app_fixture), base_url="http://test") as ac:
             response = await ac.put(
                 f"/leads/{lead.id}",
                 json={"status": LeadStatus.qualificado.value},

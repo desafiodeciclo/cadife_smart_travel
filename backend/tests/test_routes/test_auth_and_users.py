@@ -60,7 +60,7 @@ async def create_user(db_session, email: str = "test@cadife.com", password: str 
 async def test_auth_login_missing_password_returns_422(async_client_no_auth):
     response = await async_client_no_auth.post("/auth/login", json={"email": "test@cadife.com"})
 
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
     assert response.json()["detail"]
 
 
@@ -150,7 +150,7 @@ async def test_register_fcm_token_missing_payload_returns_422(async_client_no_au
         json={},
     )
 
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
     assert response.json()["detail"]
 
 

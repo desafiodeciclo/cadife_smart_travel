@@ -6,9 +6,9 @@ from app.presentation.middlewares.request_id import RequestIdMiddleware
 from app.presentation.middlewares.timeout import TimeoutMiddleware
 
 # App de teste isolado para middlewares
-test_app = FastAPI()
-test_app.add_middleware(RequestIdMiddleware)
-test_app.add_middleware(TimeoutMiddleware)
+mock_app = FastAPI()
+mock_app.add_middleware(RequestIdMiddleware)
+mock_app.add_middleware(TimeoutMiddleware)
 
 router = APIRouter()
 
@@ -26,12 +26,12 @@ async def webhook_route():
     await asyncio.sleep(2) # Simula delay no webhook
     return {"status": "webhook_ok"}
 
-test_app.include_router(router)
+mock_app.include_router(router)
 
 @pytest.mark.asyncio
 async def test_request_id_middleware():
     """Testa se o header X-Request-ID est presente na resposta."""
-    async with AsyncClient(transport=ASGITransport(app=test_app), base_url="http://test") as ac:
+    async with AsyncClient(transport=ASGITransport(app=mock_app), base_url="http://test") as ac:
         response = await ac.get("/fast")
     
     assert response.status_code == 200
@@ -43,7 +43,7 @@ async def test_request_id_middleware():
 @pytest.mark.asyncio
 async def test_timeout_middleware_standard_pass():
     """Testa se uma rota dentro do tempo limite passa (global default 30s)."""
-    async with AsyncClient(transport=ASGITransport(app=test_app), base_url="http://test") as ac:
+    async with AsyncClient(transport=ASGITransport(app=mock_app), base_url="http://test") as ac:
         response = await ac.get("/fast")
     assert response.status_code == 200
 
@@ -55,7 +55,7 @@ async def test_timeout_middleware_webhook_enforcement(monkeypatch):
     # Foramos um timeout curto para o teste no demorar 4.5s
     monkeypatch.setattr(settings, "WEBHOOK_TIMEOUT_SECONDS", 0.5)
     
-    async with AsyncClient(transport=ASGITransport(app=test_app), base_url="http://test") as ac:
+    async with AsyncClient(transport=ASGITransport(app=mock_app), base_url="http://test") as ac:
         # /webhook/test deve disparar o timeout de 0.5s (mockado)
         response = await ac.post("/webhook/test")
     
@@ -70,7 +70,7 @@ async def test_timeout_middleware_global_enforcement(monkeypatch):
     # Foramos um timeout curto para o teste
     monkeypatch.setattr(settings, "REQUEST_TIMEOUT_SECONDS", 0.5)
     
-    async with AsyncClient(transport=ASGITransport(app=test_app), base_url="http://test") as ac:
+    async with AsyncClient(transport=ASGITransport(app=mock_app), base_url="http://test") as ac:
         response = await ac.get("/slow")
     
     assert response.status_code == 504
