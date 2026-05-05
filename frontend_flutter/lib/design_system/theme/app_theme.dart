@@ -17,14 +17,14 @@ class AppTheme {
       brightness: brightness,
       colorScheme: isDark 
         ? const ShadZincColorScheme.dark(
-            background: AppColors.backgroundDark,
-            primary: AppColors.primary,
+            background: Color(0xFF1C1B1F), // Deep Black Surface
+            primary: Color(0xFFDD0B0E),    // Red Cadife
           )
         : const ShadZincColorScheme.light(
-            primary: AppColors.primary,
+            background: Color(0xFFFAFAFA), // Cadife Light Surface
+            primary: Color(0xFFDD0B0E),    // Red Cadife
           ),
       textTheme: ShadTextTheme.fromGoogleFont(GoogleFonts.inter),
-
     );
   }
 

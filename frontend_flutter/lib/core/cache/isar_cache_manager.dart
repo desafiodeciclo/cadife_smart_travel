@@ -54,6 +54,7 @@ class IsarCacheManager {
           AgendaCacheSchema,
           ProposalCacheSchema,
           InAppNotificationSchema,
+          UserPreferencesIsarSchema,
         ],
         directory: path,
         name: 'cadife_cache_v3',
