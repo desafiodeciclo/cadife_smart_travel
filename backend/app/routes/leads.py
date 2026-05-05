@@ -156,22 +156,23 @@ async def update_lead(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail=str(exc),
             ) from exc
+
+        # ── Auto-score trigger on transition to QUALIFICADO ───────────────────
+        if new_status == LeadStatus.qualificado:
+            from app.services.lead_service import calculate_score_from_briefing
+            lead.score = calculate_score_from_briefing(lead.briefing)
+            logger.info(
+                "lead_auto_scored",
+                lead_id=str(lead.id),
+                status=lead.status.value,
+                score=lead.score.value if lead.score else None,
+            )
+
         # Status removed from data as it's already handled by service
         data.pop("status")
 
     for field, value in data.items():
         setattr(lead, field, value)
-
-    # ── Auto-score trigger on transition to QUALIFICADO ───────────────────
-    if data.get("status") == LeadStatus.qualificado.value:
-        from app.services.lead_service import calculate_score_from_briefing
-        lead.score = calculate_score_from_briefing(lead.briefing)
-        logger.info(
-            "lead_auto_scored",
-            lead_id=str(lead.id),
-            status=lead.status.value,
-            score=lead.score.value if lead.score else None,
-        )
 
     await db.commit()
     await db.refresh(lead)

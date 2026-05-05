@@ -1,6 +1,7 @@
 import 'package:cadife_smart_travel/features/agency/agenda/domain/entities/agendamento.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/domain/repositories/i_agenda_repository.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/presentation/providers/agenda_provider.dart';
+import 'package:cadife_smart_travel/features/notifications/application/providers/notification_providers.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -48,14 +49,15 @@ class ScheduleAppointmentState extends Equatable {
 final scheduleAppointmentProvider = StateNotifierProvider.autoDispose<
     ScheduleAppointmentNotifier, ScheduleAppointmentState>((ref) {
   final agendaRepository = ref.watch(iAgendaRepositoryProvider);
-  return ScheduleAppointmentNotifier(agendaRepository);
+  return ScheduleAppointmentNotifier(agendaRepository, ref);
 });
 
 class ScheduleAppointmentNotifier
     extends StateNotifier<ScheduleAppointmentState> {
   final IAgendaRepository _agendaRepository;
+  final Ref _ref;
 
-  ScheduleAppointmentNotifier(this._agendaRepository)
+  ScheduleAppointmentNotifier(this._agendaRepository, this._ref)
       : super(ScheduleAppointmentState(
             selectedDate: DateTime.now().copyWith(
                 hour: 0, minute: 0, second: 0, millisecond: 0, microsecond: 0))) {
@@ -101,6 +103,15 @@ class ScheduleAppointmentNotifier
       },
       (_) {
         state = state.copyWith(isLoading: false);
+        
+        // Cleanup notificações de agendamento pendente para este lead
+        try {
+          final repo = _ref.read(notificationRepositoryProvider);
+          repo.deleteNotificationsByLeadId(leadId);
+        } catch (e) {
+          // Silencioso
+        }
+        
         return true;
       },
     );

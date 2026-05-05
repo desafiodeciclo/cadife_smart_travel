@@ -1,3 +1,4 @@
+import json
 import re
 import time
 from typing import Optional
@@ -386,9 +387,6 @@ SCHEMA:
         raw_json = str(response.content).strip()
 
         # Limpeza robusta de Markdown e ruídos
-        import json
-        import re
-        
         # Remove blocos de código markdown se existirem
         if "```" in raw_json:
             match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", raw_json, re.DOTALL)

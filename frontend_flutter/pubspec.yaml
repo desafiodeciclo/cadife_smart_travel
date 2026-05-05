@@ -17,6 +17,11 @@ dependencies:
   mask_text_input_formatter: ^2.5.0
   flutter_svg: ^2.0.9
   lottie: ^3.0.0
+  shadcn_ui: ^0.54.0
+  flutter_animate: ^4.5.2
+
+  # Functional Programming
+  fpdart: ^1.1.0
 
   # Security / Biometrics
   local_auth: ^2.3.0
@@ -24,10 +29,6 @@ dependencies:
   # State Management
   flutter_riverpod: ^2.6.1
   flutter_bloc: ^8.1.6
-  freezed_annotation: ^2.4.4
-
-  # Functional Error Handling
-  fpdart: ^1.1.0
 
   # Navigation
   go_router: ^17.2.2
@@ -62,18 +63,18 @@ dependencies:
   shared_preferences: ^2.4.0
   equatable: ^2.0.7
   json_annotation: ^4.9.0
+  uuid: ^3.0.7
   isar: ^3.1.0+1
   isar_flutter_libs: ^3.1.0+1
+  freezed_annotation: ^2.4.4
   sqflite: ^2.4.2+1
   path: ^1.9.1
   fluttertoast: ^9.0.0
   google_fonts: ^6.1.0
   lucide_icons_flutter: ^3.1.13
-  shadcn_ui: 0.54.0
   share_plus: ^12.0.2
   photo_view: ^0.15.0
   pdfrx: ^2.2.24
-  flutter_animate: ^4.5.2
   firebase_crashlytics: ^4.3.10
   firebase_analytics: ^11.6.0
   device_info_plus: ^11.3.0
@@ -90,6 +91,8 @@ dev_dependencies:
   # Testing
   mocktail: ^1.0.4
   network_image_mock: ^2.1.1
+  alchemist: ^0.8.0
+  patrol: ^3.6.1
   isar_generator: ^3.1.0+1
   build_runner: ^2.4.13
   freezed: ^2.5.2

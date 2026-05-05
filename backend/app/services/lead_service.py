@@ -6,6 +6,7 @@ import structlog
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.application.services.lead_state_machine import LeadStateMachine
 from app.domain.entities.enums import LeadScore, LeadStatus, TipoMensagem
 from app.infrastructure.security.pii_encryption import hmac_hash
 from app.models.briefing import Briefing, BriefingExtracted, calculate_completude
@@ -265,12 +266,17 @@ async def mark_stale_leads_as_perdido(db: AsyncSession, inactivity_days: int = 3
 
     count = 0
     for lead in stale_leads:
+        previous_status = lead.status
+        LeadStateMachine.validate_transition(previous_status, LeadStatus.perdido)
         lead.status = LeadStatus.perdido
         count += 1
         logger.info(
-            "lead_auto_perdido",
+            "lead_status_changed",
             lead_id=str(lead.id),
+            previous_status=previous_status.value,
+            new_status=LeadStatus.perdido.value,
             reason=f"no_response_for_{inactivity_days}_days",
+            actor="sistema/rotina_automatica",
         )
 
     if count:

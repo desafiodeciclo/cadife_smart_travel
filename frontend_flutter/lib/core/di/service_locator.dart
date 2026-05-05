@@ -40,6 +40,8 @@ import 'package:cadife_smart_travel/features/client/profile/domain/repositories/
 import 'package:cadife_smart_travel/features/client/status/data/datasources/status_datasource.dart';
 import 'package:cadife_smart_travel/features/client/status/data/repositories/status_repository_impl.dart';
 import 'package:cadife_smart_travel/features/client/status/domain/repositories/i_status_repository.dart';
+import 'package:cadife_smart_travel/features/notifications/domain/repositories/i_notification_repository.dart';
+import 'package:cadife_smart_travel/features/notifications/infrastructure/database/notification_isar.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
@@ -140,6 +142,7 @@ Future<void> setupServiceLocator({
   _registerProposalModule();
   _registerProfileModule();
   _registerNotificationsModule();
+  _registerInAppNotificationsModule();
   _registerSettingsModule();
   _registerStatusModule();
 }
@@ -192,6 +195,16 @@ void _registerProfileModule() {
 
 void _registerNotificationsModule() {
   sl.registerLazySingleton<INotificationsRepository>(NotificationsRepositoryImpl.new);
+}
+
+void _registerInAppNotificationsModule() {
+  sl.registerLazySingleton<INotificationRepository>(() {
+    final isar = sl<IsarCacheManager>().isar;
+    if (isar == null) {
+      throw StateError('Isar must be initialized before INotificationRepository');
+    }
+    return NotificationIsarRepository(isar);
+  });
 }
 
 void _registerSettingsModule() {
