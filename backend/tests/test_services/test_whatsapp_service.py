@@ -111,20 +111,20 @@ def test_extract_malformed_payload_returns_none():
 
 def test_verify_signature_valid(monkeypatch):
     secret = "test_token"
-    monkeypatch.setattr("app.services.whatsapp_service.settings.WHATSAPP_TOKEN", secret)
+    monkeypatch.setattr("app.services.whatsapp_service.settings.META_APP_SECRET", secret)
     body = b'{"test": "payload"}'
     sig = "sha256=" + hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
     assert verify_signature(body, sig) is True
 
 
 def test_verify_signature_invalid(monkeypatch):
-    monkeypatch.setattr("app.services.whatsapp_service.settings.WHATSAPP_TOKEN", "test_token")
+    monkeypatch.setattr("app.services.whatsapp_service.settings.META_APP_SECRET", "test_token")
     body = b'{"test": "payload"}'
     assert verify_signature(body, "sha256=badhash") is False
 
 
 def test_verify_signature_missing_prefix(monkeypatch):
-    monkeypatch.setattr("app.services.whatsapp_service.settings.WHATSAPP_TOKEN", "test_token")
+    monkeypatch.setattr("app.services.whatsapp_service.settings.META_APP_SECRET", "test_token")
     assert verify_signature(b"body", "noprefixhash") is False
 
 

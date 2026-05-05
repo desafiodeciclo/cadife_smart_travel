@@ -4,6 +4,8 @@ Test Configuration — Pytest fixtures for database, auth, and client setup.
 This file configures the test suite to use an in-memory SQLite database
 (via aiosqlite) instead of PostgreSQL, allowing for fast, isolated tests.
 
+pytest_plugins = ["pytest_asyncio"]
+
 Key design decisions:
   - Overrides FastAPI's `get_db` dependency to use the test DB session.
   - Overrides `get_current_user` to simulate authenticated requests.
@@ -37,7 +39,8 @@ os.environ["REFRESH_TOKEN_EXPIRE_DAYS"] = "7"
 
 # Now import the app and models AFTER setting env vars
 from main import app
-from app.infrastructure.persistence.database import Base, get_db, AsyncSessionLocal
+from app.infrastructure.persistence.database import Base, AsyncSessionLocal
+from app.core.dependencies import get_db
 from app.infrastructure.security.dependencies import get_current_user
 from app.infrastructure.security.jwt import create_access_token
 from app.infrastructure.config.settings import get_settings
@@ -70,28 +73,34 @@ def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
     loop.close()
 
 
-@pytest.fixture(scope="session")
-async def setup_database() -> AsyncGenerator[None, None]:
+@pytest.fixture(scope="function")
+def setup_database(event_loop) -> None:
     """
-    Create all tables in the test database once per session.
-    We use run_sync because create_all is a sync operation.
+    Create all tables in the test database before each test and drop them afterwards.
+
+    This keeps each test isolated without relying on savepoint rollback semantics.
     """
-    async with test_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    async def _setup() -> None:
+        async with test_engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+
+    event_loop.run_until_complete(_setup())
     yield
-    async with test_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
+
+    async def _teardown() -> None:
+        async with test_engine.begin() as conn:
+            await conn.run_sync(Base.metadata.drop_all)
+
+    event_loop.run_until_complete(_teardown())
 
 
 @pytest.fixture()
 async def db_session(setup_database) -> AsyncGenerator[AsyncSession, None]:
     """
-    Create a new database session for a test, and roll back afterwards.
-    This ensures test isolation.
+    Create a new database session for a test.
     """
     async with TestSessionLocal() as session:
         yield session
-        # Rollback any changes made during the test
         await session.rollback()
 
 

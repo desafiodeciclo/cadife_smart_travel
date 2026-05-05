@@ -1,0 +1,2124 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.14.4, pytest-9.0.3, pluggy-1.6.0
+rootdir: C:\Users\F.R.A.N.Ks\Documents\ALPHA\DESAFIOCICLO\Semana 2\cadife_smart_travel\backend
+configfile: pytest.ini
+plugins: anyio-4.13.0, langsmith-0.8.0, asyncio-1.3.0, cov-7.1.0, mock-3.15.1
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 219 items
+
+tests\test_application\test_lead_state_machine.py ...................... [ 10%]
+............                                                             [ 15%]
+tests\test_infrastructure\test_repositories.py .................         [ 23%]
+tests\test_infrastructure\test_settings.py FF..                          [ 25%]
+tests\test_jobs\test_lead_expiration_job.py ...                          [ 26%]
+tests\test_presentation\test_leads_auto_score.py FFFF                    [ 28%]
+tests\test_presentation\test_leads_state_machine.py FFFFFFF....F         [ 33%]
+tests\test_presentation\test_middlewares.py ....                         [ 35%]
+tests\test_routes\test_auth_and_users.py ........                        [ 39%]
+tests\test_routes\test_health.py ..                                      [ 40%]
+tests\test_routes\test_propostas.py .................F                   [ 48%]
+tests\test_security\test_security_observability.py ...............F      [ 55%]
+tests\test_services\test_curadoria_service.py ............F              [ 61%]
+tests\test_services\test_ingestion_pipeline.py ....................      [ 70%]
+tests\test_services\test_lead_stale_transition.py .......                [ 73%]
+tests\test_services\test_metadata_tagger.py ...................          [ 82%]
+tests\test_services\test_rag_knowledge_base.py .................s        [ 90%]
+tests\test_services\test_whatsapp_service.py ....F.......                [ 96%]
+tests\test_use_cases\test_process_whatsapp_message.py ........           [100%]
+
+================================== FAILURES ===================================
+_________________________ test_settings_load_defaults _________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001A73EF30050>
+
+    def test_settings_load_defaults(monkeypatch):
+        """Testa se as settings carregam com valores padrÒo quando possÝvel."""
+        monkeypatch.setenv("WHATSAPP_TOKEN", "test_token")
+        monkeypatch.setenv("PHONE_NUMBER_ID", "test_id")
+        monkeypatch.setenv("GEMINI_API_KEY", "test_gemini")
+        monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://user:pass@localhost/db")
+        monkeypatch.setenv("VERIFY_TOKEN", "test_verify")
+    
+        settings = Settings()
+>       assert settings.APP_ENV == "development"
+E       AssertionError: assert 'test' == 'development'
+E         
+E         - development
+E         + test
+
+tests\test_infrastructure\test_settings.py:14: AssertionError
+____________________ test_settings_missing_required_field _____________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001A73EFD0F80>
+
+    def test_settings_missing_required_field(monkeypatch):
+        """Testa se o Pydantic reclama quando falta uma varißvel obrigat¾ria."""
+        monkeypatch.delenv("WHATSAPP_TOKEN", raising=False)
+        monkeypatch.delenv("DATABASE_URL", raising=False)
+    
+>       with pytest.raises(ValidationError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'pydantic_core._pydantic_core.ValidationError'>
+
+tests\test_infrastructure\test_settings.py:22: Failed
+_________________ test_transition_to_qualificado_score_quente _________________
+
+test_app = <fastapi.applications.FastAPI object at 0x000001A73F258050>
+
+    @pytest.mark.asyncio
+    async def test_transition_to_qualificado_score_quente(test_app: FastAPI) -> None:
+        """All hot fields filled \u2192 score QUENTE."""
+        lead = fake_lead(LeadStatus.em_atendimento)
+        lead.briefing = fake_briefing(
+            destino="Portugal",
+            data_ida="2026-06-01",
+            qtd_pessoas=3,
+            orcamento="mÚdio",
+        )
+    
+        with pytest.MonkeyPatch().context() as mp:
+            mp.setattr(
+                "app.routes.leads.lead_service.get_lead_by_id",
+                AsyncMock(return_value=lead),
+            )
+            async with AsyncClient(transport=ASGITransport(app=test_app), base_url="http://test") as ac:
+>               response = await ac.put(
+                    f"/leads/{lead.id}",
+                    json={"status": LeadStatus.qualificado.value},
+                )
+
+tests\test_presentation\test_leads_auto_score.py:100: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1896: in put
+    return await self.request(
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1540: in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1629: in send
+    response = await self._send_handling_auth(
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1657: in _send_handling_auth
+    response = await self._send_handling_redirects(
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1694: in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1730: in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_transports\asgi.py:170: in handle_async_request
+    await self.app(scope, receive, send)
+C:\Python314\Lib\site-packages\fastapi\applications.py:1159: in __call__
+    await super().__call__(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\middleware\errors.py:186: in __call__
+    raise exc
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\middleware\errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\middleware\exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:53: in wrapped_app
+    raise exc
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+C:\Python314\Lib\site-packages\fastapi\middleware\asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\routing.py:680: in app
+    await route.handle(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\routing.py:276: in handle
+    await self.app(scope, receive, send)
+C:\Python314\Lib\site-packages\fastapi\routing.py:134: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:53: in wrapped_app
+    raise exc
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+C:\Python314\Lib\site-packages\fastapi\routing.py:120: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+C:\Python314\Lib\site-packages\fastapi\routing.py:674: in app
+    raw_response = await run_endpoint_function(
+C:\Python314\Lib\site-packages\fastapi\routing.py:328: in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+lead_id = UUID('07b6711a-0bd1-4eb8-9e22-a707e43cb85d')
+lead_in = LeadUpdate(nome=None, status=<LeadStatus.qualificado: 'qualificado'>, score=None, consultor_id=None)
+db = <AsyncMock id='1817830588832'>
+current_user = <MagicMock id='1817830589504'>
+
+    @router.put("/{lead_id}", response_model=LeadResponse, dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))])
+    async def update_lead(
+        lead_id: uuid.UUID,
+        lead_in: LeadUpdate,
+        db: AsyncSession = Depends(get_db),
+        current_user=Depends(get_current_user),
+    ):
+        lead = await lead_service.get_lead_by_id(db, lead_id)
+        if not lead:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead nÒo encontrado")
+    
+        data = lead_in.model_dump(exclude_none=True)
+    
+        # \u2500\u2500 State Machine validation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+        if "status" in data:
+            new_status = LeadStatus(data["status"])
+            try:
+                LeadStateMachine.validate_transition(lead.status, new_status)
+                await lead_service.update_lead_status(db, lead, new_status, triggered_by="user_manual")
+            except InvalidStateTransitionError as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=str(exc),
+                ) from exc
+    
+            # \u2500\u2500 Auto-score trigger on transition to QUALIFICADO \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+            if new_status == LeadStatus.qualificado:
+                from app.services.lead_service import calculate_score_from_briefing
+                lead.score = calculate_score_from_briefing(lead.briefing)
+                logger.info(
+                    "lead_auto_scored",
+                    lead_id=str(lead.id),
+                    status=lead.status.value,
+                    score=lead.score.value if lead.score else None,
+                )
+    
+            # Status removed from data as it's already handled by service
+            data.pop("status")
+    
+        for field, value in data.items():
+            setattr(lead, field, value)
+    
+        await db.commit()
+        await db.refresh(lead)
+>       return LeadResponse.model_validate(lead)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 2 validation errors for LeadResponse
+E       consultor_nome
+E         Input should be a valid string [type=string_type, input_value=<MagicMock name='mock.con...ome' id='1817830965664'>, input_type=MagicMock]
+E           For further information visit https://errors.pydantic.dev/2.13/v/string_type
+E       consultor_avatar
+E         Input should be a valid string [type=string_type, input_value=<MagicMock name='mock.con...tar' id='1817830966000'>, input_type=MagicMock]
+E           For further information visit https://errors.pydantic.dev/2.13/v/string_type
+
+app\routes\leads.py:179: ValidationError
+---------------------------- Captured stdout setup ----------------------------
+Using proactor: IocpProactor
+----------------------------- Captured log setup ------------------------------
+DEBUG    asyncio:proactor_events.py:633 Using proactor: IocpProactor
+---------------------------- Captured stdout call -----------------------------
+[2m2026-05-05T22:07:38.543767Z[0m [[32m[1minfo     [0m] [1mlead_status_transition        [0m [36mlead_id[0m=[35m07b6711a-0bd1-4eb8-9e22-a707e43cb85d[0m [36mnew_status[0m=[35mqualificado[0m [36mold_status[0m=[35mem_atendimento[0m [36mtriggered_by[0m=[35muser_manual[0m
+[2m2026-05-05T22:07:38.543972Z[0m [[32m[1minfo     [0m] [1mlead_auto_scored              [0m [36mlead_id[0m=[35m07b6711a-0bd1-4eb8-9e22-a707e43cb85d[0m [36mscore[0m=[35mquente[0m [36mstatus[0m=[35mqualificado[0m
+_________________ test_transition_to_qualificado_score_morno __________________
+
+test_app = <fastapi.applications.FastAPI object at 0x000001A73F25B4D0>
+
+    @pytest.mark.asyncio
+    async def test_transition_to_qualificado_score_morno(test_app: FastAPI) -> None:
+        """Only destino filled \u2192 score MORNO."""
+        lead = fake_lead(LeadStatus.em_atendimento)
+        lead.briefing = fake_briefing(destino="Portugal")
+    
+        with pytest.MonkeyPatch().context() as mp:
+            mp.setattr(
+                "app.routes.leads.lead_service.get_lead_by_id",
+                AsyncMock(return_value=lead),
+            )
+            async with AsyncClient(transport=ASGITransport(app=test_app), base_url="http://test") as ac:
+>               response = await ac.put(
+                    f"/leads/{lead.id}",
+                    json={"status": LeadStatus.qualificado.value},
+                )
+
+tests\test_presentation\test_leads_auto_score.py:122: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1896: in put
+    return await self.request(
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1540: in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1629: in send
+    response = await self._send_handling_auth(
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1657: in _send_handling_auth
+    response = await self._send_handling_redirects(
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1694: in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1730: in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_transports\asgi.py:170: in handle_async_request
+    await self.app(scope, receive, send)
+C:\Python314\Lib\site-packages\fastapi\applications.py:1159: in __call__
+    await super().__call__(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\middleware\errors.py:186: in __call__
+    raise exc
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\middleware\errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\middleware\exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:53: in wrapped_app
+    raise exc
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+C:\Python314\Lib\site-packages\fastapi\middleware\asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\routing.py:680: in app
+    await route.handle(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\routing.py:276: in handle
+    await self.app(scope, receive, send)
+C:\Python314\Lib\site-packages\fastapi\routing.py:134: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:53: in wrapped_app
+    raise exc
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+C:\Python314\Lib\site-packages\fastapi\routing.py:120: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+C:\Python314\Lib\site-packages\fastapi\routing.py:674: in app
+    raw_response = await run_endpoint_function(
+C:\Python314\Lib\site-packages\fastapi\routing.py:328: in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+lead_id = UUID('d773e8a2-9419-445c-b3c5-850a5b67b813')
+lead_in = LeadUpdate(nome=None, status=<LeadStatus.qualificado: 'qualificado'>, score=None, consultor_id=None)
+db = <AsyncMock id='1817830968352'>
+current_user = <MagicMock id='1817830967344'>
+
+    @router.put("/{lead_id}", response_model=LeadResponse, dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))])
+    async def update_lead(
+        lead_id: uuid.UUID,
+        lead_in: LeadUpdate,
+        db: AsyncSession = Depends(get_db),
+        current_user=Depends(get_current_user),
+    ):
+        lead = await lead_service.get_lead_by_id(db, lead_id)
+        if not lead:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead nÒo encontrado")
+    
+        data = lead_in.model_dump(exclude_none=True)
+    
+        # \u2500\u2500 State Machine validation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+        if "status" in data:
+            new_status = LeadStatus(data["status"])
+            try:
+                LeadStateMachine.validate_transition(lead.status, new_status)
+                await lead_service.update_lead_status(db, lead, new_status, triggered_by="user_manual")
+            except InvalidStateTransitionError as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=str(exc),
+                ) from exc
+    
+            # \u2500\u2500 Auto-score trigger on transition to QUALIFICADO \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+            if new_status == LeadStatus.qualificado:
+                from app.services.lead_service import calculate_score_from_briefing
+                lead.score = calculate_score_from_briefing(lead.briefing)
+                logger.info(
+                    "lead_auto_scored",
+                    lead_id=str(lead.id),
+                    status=lead.status.value,
+                    score=lead.score.value if lead.score else None,
+                )
+    
+            # Status removed from data as it's already handled by service
+            data.pop("status")
+    
+        for field, value in data.items():
+            setattr(lead, field, value)
+    
+        await db.commit()
+        await db.refresh(lead)
+>       return LeadResponse.model_validate(lead)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 2 validation errors for LeadResponse
+E       consultor_nome
+E         Input should be a valid string [type=string_type, input_value=<MagicMock name='mock.con...ome' id='1817830977424'>, input_type=MagicMock]
+E           For further information visit https://errors.pydantic.dev/2.13/v/string_type
+E       consultor_avatar
+E         Input should be a valid string [type=string_type, input_value=<MagicMock name='mock.con...tar' id='1817830977760'>, input_type=MagicMock]
+E           For further information visit https://errors.pydantic.dev/2.13/v/string_type
+
+app\routes\leads.py:179: ValidationError
+---------------------------- Captured stdout setup ----------------------------
+Using proactor: IocpProactor
+----------------------------- Captured log setup ------------------------------
+DEBUG    asyncio:proactor_events.py:633 Using proactor: IocpProactor
+---------------------------- Captured stdout call -----------------------------
+[2m2026-05-05T22:07:38.917080Z[0m [[32m[1minfo     [0m] [1mlead_status_transition        [0m [36mlead_id[0m=[35md773e8a2-9419-445c-b3c5-850a5b67b813[0m [36mnew_status[0m=[35mqualificado[0m [36mold_status[0m=[35mem_atendimento[0m [36mtriggered_by[0m=[35muser_manual[0m
+[2m2026-05-05T22:07:38.917320Z[0m [[32m[1minfo     [0m] [1mlead_auto_scored              [0m [36mlead_id[0m=[35md773e8a2-9419-445c-b3c5-850a5b67b813[0m [36mscore[0m=[35mmorno[0m [36mstatus[0m=[35mqualificado[0m
+__________________ test_transition_to_qualificado_score_frio __________________
+
+test_app = <fastapi.applications.FastAPI object at 0x000001A73F2B74D0>
+
+    @pytest.mark.asyncio
+    async def test_transition_to_qualificado_score_frio(test_app: FastAPI) -> None:
+        """No destino \u2192 score FRIO."""
+        lead = fake_lead(LeadStatus.em_atendimento)
+        lead.briefing = fake_briefing()
+    
+        with pytest.MonkeyPatch().context() as mp:
+            mp.setattr(
+                "app.routes.leads.lead_service.get_lead_by_id",
+                AsyncMock(return_value=lead),
+            )
+            async with AsyncClient(transport=ASGITransport(app=test_app), base_url="http://test") as ac:
+>               response = await ac.put(
+                    f"/leads/{lead.id}",
+                    json={"status": LeadStatus.qualificado.value},
+                )
+
+tests\test_presentation\test_leads_auto_score.py:143: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1896: in put
+    return await self.request(
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1540: in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1629: in send
+    response = await self._send_handling_auth(
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1657: in _send_handling_auth
+    response = await self._send_handling_redirects(
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1694: in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1730: in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_transports\asgi.py:170: in handle_async_request
+    await self.app(scope, receive, send)
+C:\Python314\Lib\site-packages\fastapi\applications.py:1159: in __call__
+    await super().__call__(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\middleware\errors.py:186: in __call__
+    raise exc
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\middleware\errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\middleware\exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:53: in wrapped_app
+    raise exc
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+C:\Python314\Lib\site-packages\fastapi\middleware\asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\routing.py:680: in app
+    await route.handle(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\routing.py:276: in handle
+    await self.app(scope, receive, send)
+C:\Python314\Lib\site-packages\fastapi\routing.py:134: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:53: in wrapped_app
+    raise exc
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+C:\Python314\Lib\site-packages\fastapi\routing.py:120: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+C:\Python314\Lib\site-packages\fastapi\routing.py:674: in app
+    raw_response = await run_endpoint_function(
+C:\Python314\Lib\site-packages\fastapi\routing.py:328: in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+lead_id = UUID('36bb6971-0625-4c00-9729-26a1f8798f3c')
+lead_in = LeadUpdate(nome=None, status=<LeadStatus.qualificado: 'qualificado'>, score=None, consultor_id=None)
+db = <AsyncMock id='1817830979104'>
+current_user = <MagicMock id='1817830980112'>
+
+    @router.put("/{lead_id}", response_model=LeadResponse, dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))])
+    async def update_lead(
+        lead_id: uuid.UUID,
+        lead_in: LeadUpdate,
+        db: AsyncSession = Depends(get_db),
+        current_user=Depends(get_current_user),
+    ):
+        lead = await lead_service.get_lead_by_id(db, lead_id)
+        if not lead:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead nÒo encontrado")
+    
+        data = lead_in.model_dump(exclude_none=True)
+    
+        # \u2500\u2500 State Machine validation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+        if "status" in data:
+            new_status = LeadStatus(data["status"])
+            try:
+                LeadStateMachine.validate_transition(lead.status, new_status)
+                await lead_service.update_lead_status(db, lead, new_status, triggered_by="user_manual")
+            except InvalidStateTransitionError as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=str(exc),
+                ) from exc
+    
+            # \u2500\u2500 Auto-score trigger on transition to QUALIFICADO \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+            if new_status == LeadStatus.qualificado:
+                from app.services.lead_service import calculate_score_from_briefing
+                lead.score = calculate_score_from_briefing(lead.briefing)
+                logger.info(
+                    "lead_auto_scored",
+                    lead_id=str(lead.id),
+                    status=lead.status.value,
+                    score=lead.score.value if lead.score else None,
+                )
+    
+            # Status removed from data as it's already handled by service
+            data.pop("status")
+    
+        for field, value in data.items():
+            setattr(lead, field, value)
+    
+        await db.commit()
+        await db.refresh(lead)
+>       return LeadResponse.model_validate(lead)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 2 validation errors for LeadResponse
+E       consultor_nome
+E         Input should be a valid string [type=string_type, input_value=<MagicMock name='mock.con...ome' id='1817831088416'>, input_type=MagicMock]
+E           For further information visit https://errors.pydantic.dev/2.13/v/string_type
+E       consultor_avatar
+E         Input should be a valid string [type=string_type, input_value=<MagicMock name='mock.con...tar' id='1817831088752'>, input_type=MagicMock]
+E           For further information visit https://errors.pydantic.dev/2.13/v/string_type
+
+app\routes\leads.py:179: ValidationError
+---------------------------- Captured stdout setup ----------------------------
+Using proactor: IocpProactor
+----------------------------- Captured log setup ------------------------------
+DEBUG    asyncio:proactor_events.py:633 Using proactor: IocpProactor
+---------------------------- Captured stdout call -----------------------------
+[2m2026-05-05T22:07:39.299475Z[0m [[32m[1minfo     [0m] [1mlead_status_transition        [0m [36mlead_id[0m=[35m36bb6971-0625-4c00-9729-26a1f8798f3c[0m [36mnew_status[0m=[35mqualificado[0m [36mold_status[0m=[35mem_atendimento[0m [36mtriggered_by[0m=[35muser_manual[0m
+[2m2026-05-05T22:07:39.299745Z[0m [[32m[1minfo     [0m] [1mlead_auto_scored              [0m [36mlead_id[0m=[35m36bb6971-0625-4c00-9729-26a1f8798f3c[0m [36mscore[0m=[35mfrio[0m [36mstatus[0m=[35mqualificado[0m
+_________ test_transition_to_qualificado_without_briefing_score_none __________
+
+test_app = <fastapi.applications.FastAPI object at 0x000001A73F2B6270>
+
+    @pytest.mark.asyncio
+    async def test_transition_to_qualificado_without_briefing_score_none(test_app: FastAPI) -> None:
+        """No briefing attached \u2192 score remains None."""
+        lead = fake_lead(LeadStatus.em_atendimento)
+        lead.briefing = None
+    
+        with pytest.MonkeyPatch().context() as mp:
+            mp.setattr(
+                "app.routes.leads.lead_service.get_lead_by_id",
+                AsyncMock(return_value=lead),
+            )
+            async with AsyncClient(transport=ASGITransport(app=test_app), base_url="http://test") as ac:
+>               response = await ac.put(
+                    f"/leads/{lead.id}",
+                    json={"status": LeadStatus.qualificado.value},
+                )
+
+tests\test_presentation\test_leads_auto_score.py:164: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1896: in put
+    return await self.request(
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1540: in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1629: in send
+    response = await self._send_handling_auth(
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1657: in _send_handling_auth
+    response = await self._send_handling_redirects(
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1694: in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1730: in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_transports\asgi.py:170: in handle_async_request
+    await self.app(scope, receive, send)
+C:\Python314\Lib\site-packages\fastapi\applications.py:1159: in __call__
+    await super().__call__(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\middleware\errors.py:186: in __call__
+    raise exc
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\middleware\errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\middleware\exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:53: in wrapped_app
+    raise exc
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+C:\Python314\Lib\site-packages\fastapi\middleware\asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\routing.py:680: in app
+    await route.handle(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\routing.py:276: in handle
+    await self.app(scope, receive, send)
+C:\Python314\Lib\site-packages\fastapi\routing.py:134: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:53: in wrapped_app
+    raise exc
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+C:\Python314\Lib\site-packages\fastapi\routing.py:120: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+C:\Python314\Lib\site-packages\fastapi\routing.py:674: in app
+    raw_response = await run_endpoint_function(
+C:\Python314\Lib\site-packages\fastapi\routing.py:328: in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+lead_id = UUID('7e48de4b-26e9-4992-b35d-262d0c1b92c4')
+lead_in = LeadUpdate(nome=None, status=<LeadStatus.qualificado: 'qualificado'>, score=None, consultor_id=None)
+db = <AsyncMock id='1817830595216'>
+current_user = <MagicMock id='1817829275840'>
+
+    @router.put("/{lead_id}", response_model=LeadResponse, dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))])
+    async def update_lead(
+        lead_id: uuid.UUID,
+        lead_in: LeadUpdate,
+        db: AsyncSession = Depends(get_db),
+        current_user=Depends(get_current_user),
+    ):
+        lead = await lead_service.get_lead_by_id(db, lead_id)
+        if not lead:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead nÒo encontrado")
+    
+        data = lead_in.model_dump(exclude_none=True)
+    
+        # \u2500\u2500 State Machine validation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+        if "status" in data:
+            new_status = LeadStatus(data["status"])
+            try:
+                LeadStateMachine.validate_transition(lead.status, new_status)
+                await lead_service.update_lead_status(db, lead, new_status, triggered_by="user_manual")
+            except InvalidStateTransitionError as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=str(exc),
+                ) from exc
+    
+            # \u2500\u2500 Auto-score trigger on transition to QUALIFICADO \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+            if new_status == LeadStatus.qualificado:
+                from app.services.lead_service import calculate_score_from_briefing
+                lead.score = calculate_score_from_briefing(lead.briefing)
+                logger.info(
+                    "lead_auto_scored",
+                    lead_id=str(lead.id),
+                    status=lead.status.value,
+                    score=lead.score.value if lead.score else None,
+                )
+    
+            # Status removed from data as it's already handled by service
+            data.pop("status")
+    
+        for field, value in data.items():
+            setattr(lead, field, value)
+    
+        await db.commit()
+        await db.refresh(lead)
+>       return LeadResponse.model_validate(lead)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 2 validation errors for LeadResponse
+E       consultor_nome
+E         Input should be a valid string [type=string_type, input_value=<MagicMock name='mock.con...ome' id='1817829266768'>, input_type=MagicMock]
+E           For further information visit https://errors.pydantic.dev/2.13/v/string_type
+E       consultor_avatar
+E         Input should be a valid string [type=string_type, input_value=<MagicMock name='mock.con...tar' id='1817829269456'>, input_type=MagicMock]
+E           For further information visit https://errors.pydantic.dev/2.13/v/string_type
+
+app\routes\leads.py:179: ValidationError
+---------------------------- Captured stdout setup ----------------------------
+Using proactor: IocpProactor
+----------------------------- Captured log setup ------------------------------
+DEBUG    asyncio:proactor_events.py:633 Using proactor: IocpProactor
+---------------------------- Captured stdout call -----------------------------
+[2m2026-05-05T22:07:39.690206Z[0m [[32m[1minfo     [0m] [1mlead_status_transition        [0m [36mlead_id[0m=[35m7e48de4b-26e9-4992-b35d-262d0c1b92c4[0m [36mnew_status[0m=[35mqualificado[0m [36mold_status[0m=[35mem_atendimento[0m [36mtriggered_by[0m=[35muser_manual[0m
+[2m2026-05-05T22:07:39.690379Z[0m [[32m[1minfo     [0m] [1mlead_auto_scored              [0m [36mlead_id[0m=[35m7e48de4b-26e9-4992-b35d-262d0c1b92c4[0m [36mscore[0m=[35mNone[0m [36mstatus[0m=[35mqualificado[0m
+________ test_valid_status_transition_returns_200[novo-em_atendimento] ________
+
+test_app = <fastapi.applications.FastAPI object at 0x000001A73F114590>
+current = <LeadStatus.novo: 'novo'>
+target = <LeadStatus.em_atendimento: 'em_atendimento'>
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("current,target", [
+        (LeadStatus.novo, LeadStatus.em_atendimento),
+        (LeadStatus.em_atendimento, LeadStatus.qualificado),
+        (LeadStatus.qualificado, LeadStatus.agendado),
+        (LeadStatus.qualificado, LeadStatus.proposta),
+        (LeadStatus.agendado, LeadStatus.proposta),
+        (LeadStatus.proposta, LeadStatus.fechado),
+        (LeadStatus.novo, LeadStatus.perdido),
+    ])
+    async def test_valid_status_transition_returns_200(test_app: FastAPI, current: LeadStatus, target: LeadStatus) -> None:
+        lead = fake_lead(current)
+    
+        with pytest.MonkeyPatch().context() as mp:
+            mp.setattr(
+                "app.routes.leads.lead_service.get_lead_by_id",
+                AsyncMock(return_value=lead),
+            )
+            async with AsyncClient(transport=ASGITransport(app=test_app), base_url="http://test") as ac:
+>               response = await ac.put(f"/leads/{lead.id}", json={"status": target.value})
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_presentation\test_leads_state_machine.py:90: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1896: in put
+    return await self.request(
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1540: in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1629: in send
+    response = await self._send_handling_auth(
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1657: in _send_handling_auth
+    response = await self._send_handling_redirects(
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1694: in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1730: in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_transports\asgi.py:170: in handle_async_request
+    await self.app(scope, receive, send)
+C:\Python314\Lib\site-packages\fastapi\applications.py:1159: in __call__
+    await super().__call__(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\middleware\errors.py:186: in __call__
+    raise exc
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\middleware\errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\middleware\exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:53: in wrapped_app
+    raise exc
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+C:\Python314\Lib\site-packages\fastapi\middleware\asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\routing.py:680: in app
+    await route.handle(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\routing.py:276: in handle
+    await self.app(scope, receive, send)
+C:\Python314\Lib\site-packages\fastapi\routing.py:134: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:53: in wrapped_app
+    raise exc
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+C:\Python314\Lib\site-packages\fastapi\routing.py:120: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+C:\Python314\Lib\site-packages\fastapi\routing.py:674: in app
+    raw_response = await run_endpoint_function(
+C:\Python314\Lib\site-packages\fastapi\routing.py:328: in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+lead_id = UUID('2d77631c-acd1-4185-8cc4-1099679ce357')
+lead_in = LeadUpdate(nome=None, status=<LeadStatus.em_atendimento: 'em_atendimento'>, score=None, consultor_id=None)
+db = <AsyncMock id='1817829262400'>
+current_user = <MagicMock id='1817829264752'>
+
+    @router.put("/{lead_id}", response_model=LeadResponse, dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))])
+    async def update_lead(
+        lead_id: uuid.UUID,
+        lead_in: LeadUpdate,
+        db: AsyncSession = Depends(get_db),
+        current_user=Depends(get_current_user),
+    ):
+        lead = await lead_service.get_lead_by_id(db, lead_id)
+        if not lead:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead nÒo encontrado")
+    
+        data = lead_in.model_dump(exclude_none=True)
+    
+        # \u2500\u2500 State Machine validation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+        if "status" in data:
+            new_status = LeadStatus(data["status"])
+            try:
+                LeadStateMachine.validate_transition(lead.status, new_status)
+                await lead_service.update_lead_status(db, lead, new_status, triggered_by="user_manual")
+            except InvalidStateTransitionError as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=str(exc),
+                ) from exc
+    
+            # \u2500\u2500 Auto-score trigger on transition to QUALIFICADO \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+            if new_status == LeadStatus.qualificado:
+                from app.services.lead_service import calculate_score_from_briefing
+                lead.score = calculate_score_from_briefing(lead.briefing)
+                logger.info(
+                    "lead_auto_scored",
+                    lead_id=str(lead.id),
+                    status=lead.status.value,
+                    score=lead.score.value if lead.score else None,
+                )
+    
+            # Status removed from data as it's already handled by service
+            data.pop("status")
+    
+        for field, value in data.items():
+            setattr(lead, field, value)
+    
+        await db.commit()
+        await db.refresh(lead)
+>       return LeadResponse.model_validate(lead)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 2 validation errors for LeadResponse
+E       consultor_nome
+E         Input should be a valid string [type=string_type, input_value=<MagicMock name='mock.con...ome' id='1817827134496'>, input_type=MagicMock]
+E           For further information visit https://errors.pydantic.dev/2.13/v/string_type
+E       consultor_avatar
+E         Input should be a valid string [type=string_type, input_value=<MagicMock name='mock.con...tar' id='1817827133488'>, input_type=MagicMock]
+E           For further information visit https://errors.pydantic.dev/2.13/v/string_type
+
+app\routes\leads.py:179: ValidationError
+---------------------------- Captured stdout setup ----------------------------
+Using proactor: IocpProactor
+----------------------------- Captured log setup ------------------------------
+DEBUG    asyncio:proactor_events.py:633 Using proactor: IocpProactor
+---------------------------- Captured stdout call -----------------------------
+[2m2026-05-05T22:07:40.047230Z[0m [[32m[1minfo     [0m] [1mlead_status_transition        [0m [36mlead_id[0m=[35m2d77631c-acd1-4185-8cc4-1099679ce357[0m [36mnew_status[0m=[35mem_atendimento[0m [36mold_status[0m=[35mnovo[0m [36mtriggered_by[0m=[35muser_manual[0m
+____ test_valid_status_transition_returns_200[em_atendimento-qualificado] _____
+
+test_app = <fastapi.applications.FastAPI object at 0x000001A73EF0C440>
+current = <LeadStatus.em_atendimento: 'em_atendimento'>
+target = <LeadStatus.qualificado: 'qualificado'>
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("current,target", [
+        (LeadStatus.novo, LeadStatus.em_atendimento),
+        (LeadStatus.em_atendimento, LeadStatus.qualificado),
+        (LeadStatus.qualificado, LeadStatus.agendado),
+        (LeadStatus.qualificado, LeadStatus.proposta),
+        (LeadStatus.agendado, LeadStatus.proposta),
+        (LeadStatus.proposta, LeadStatus.fechado),
+        (LeadStatus.novo, LeadStatus.perdido),
+    ])
+    async def test_valid_status_transition_returns_200(test_app: FastAPI, current: LeadStatus, target: LeadStatus) -> None:
+        lead = fake_lead(current)
+    
+        with pytest.MonkeyPatch().context() as mp:
+            mp.setattr(
+                "app.routes.leads.lead_service.get_lead_by_id",
+                AsyncMock(return_value=lead),
+            )
+            async with AsyncClient(transport=ASGITransport(app=test_app), base_url="http://test") as ac:
+>               response = await ac.put(f"/leads/{lead.id}", json={"status": target.value})
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_presentation\test_leads_state_machine.py:90: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1896: in put
+    return await self.request(
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1540: in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1629: in send
+    response = await self._send_handling_auth(
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1657: in _send_handling_auth
+    response = await self._send_handling_redirects(
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1694: in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1730: in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_transports\asgi.py:170: in handle_async_request
+    await self.app(scope, receive, send)
+C:\Python314\Lib\site-packages\fastapi\applications.py:1159: in __call__
+    await super().__call__(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\middleware\errors.py:186: in __call__
+    raise exc
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\middleware\errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\middleware\exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:53: in wrapped_app
+    raise exc
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+C:\Python314\Lib\site-packages\fastapi\middleware\asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\routing.py:680: in app
+    await route.handle(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\routing.py:276: in handle
+    await self.app(scope, receive, send)
+C:\Python314\Lib\site-packages\fastapi\routing.py:134: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:53: in wrapped_app
+    raise exc
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+C:\Python314\Lib\site-packages\fastapi\routing.py:120: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+C:\Python314\Lib\site-packages\fastapi\routing.py:674: in app
+    raw_response = await run_endpoint_function(
+C:\Python314\Lib\site-packages\fastapi\routing.py:328: in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+lead_id = UUID('88fbc82a-98a3-4d0c-a0dd-e212ae1049e6')
+lead_in = LeadUpdate(nome=None, status=<LeadStatus.qualificado: 'qualificado'>, score=None, consultor_id=None)
+db = <AsyncMock id='1817827131472'>
+current_user = <MagicMock id='1817828782640'>
+
+    @router.put("/{lead_id}", response_model=LeadResponse, dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))])
+    async def update_lead(
+        lead_id: uuid.UUID,
+        lead_in: LeadUpdate,
+        db: AsyncSession = Depends(get_db),
+        current_user=Depends(get_current_user),
+    ):
+        lead = await lead_service.get_lead_by_id(db, lead_id)
+        if not lead:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead nÒo encontrado")
+    
+        data = lead_in.model_dump(exclude_none=True)
+    
+        # \u2500\u2500 State Machine validation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+        if "status" in data:
+            new_status = LeadStatus(data["status"])
+            try:
+                LeadStateMachine.validate_transition(lead.status, new_status)
+                await lead_service.update_lead_status(db, lead, new_status, triggered_by="user_manual")
+            except InvalidStateTransitionError as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=str(exc),
+                ) from exc
+    
+            # \u2500\u2500 Auto-score trigger on transition to QUALIFICADO \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+            if new_status == LeadStatus.qualificado:
+                from app.services.lead_service import calculate_score_from_briefing
+                lead.score = calculate_score_from_briefing(lead.briefing)
+                logger.info(
+                    "lead_auto_scored",
+                    lead_id=str(lead.id),
+                    status=lead.status.value,
+                    score=lead.score.value if lead.score else None,
+                )
+    
+            # Status removed from data as it's already handled by service
+            data.pop("status")
+    
+        for field, value in data.items():
+            setattr(lead, field, value)
+    
+        await db.commit()
+        await db.refresh(lead)
+>       return LeadResponse.model_validate(lead)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 2 validation errors for LeadResponse
+E       consultor_nome
+E         Input should be a valid string [type=string_type, input_value=<MagicMock name='mock.con...ome' id='1817826053824'>, input_type=MagicMock]
+E           For further information visit https://errors.pydantic.dev/2.13/v/string_type
+E       consultor_avatar
+E         Input should be a valid string [type=string_type, input_value=<MagicMock name='mock.con...tar' id='1817826054160'>, input_type=MagicMock]
+E           For further information visit https://errors.pydantic.dev/2.13/v/string_type
+
+app\routes\leads.py:179: ValidationError
+---------------------------- Captured stdout setup ----------------------------
+Using proactor: IocpProactor
+----------------------------- Captured log setup ------------------------------
+DEBUG    asyncio:proactor_events.py:633 Using proactor: IocpProactor
+---------------------------- Captured stdout call -----------------------------
+[2m2026-05-05T22:07:40.422426Z[0m [[32m[1minfo     [0m] [1mlead_status_transition        [0m [36mlead_id[0m=[35m88fbc82a-98a3-4d0c-a0dd-e212ae1049e6[0m [36mnew_status[0m=[35mqualificado[0m [36mold_status[0m=[35mem_atendimento[0m [36mtriggered_by[0m=[35muser_manual[0m
+[2m2026-05-05T22:07:40.425706Z[0m [[32m[1minfo     [0m] [1mlead_auto_scored              [0m [36mlead_id[0m=[35m88fbc82a-98a3-4d0c-a0dd-e212ae1049e6[0m [36mscore[0m=[35mquente[0m [36mstatus[0m=[35mqualificado[0m
+_______ test_valid_status_transition_returns_200[qualificado-agendado] ________
+
+test_app = <fastapi.applications.FastAPI object at 0x000001A73EE046E0>
+current = <LeadStatus.qualificado: 'qualificado'>
+target = <LeadStatus.agendado: 'agendado'>
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("current,target", [
+        (LeadStatus.novo, LeadStatus.em_atendimento),
+        (LeadStatus.em_atendimento, LeadStatus.qualificado),
+        (LeadStatus.qualificado, LeadStatus.agendado),
+        (LeadStatus.qualificado, LeadStatus.proposta),
+        (LeadStatus.agendado, LeadStatus.proposta),
+        (LeadStatus.proposta, LeadStatus.fechado),
+        (LeadStatus.novo, LeadStatus.perdido),
+    ])
+    async def test_valid_status_transition_returns_200(test_app: FastAPI, current: LeadStatus, target: LeadStatus) -> None:
+        lead = fake_lead(current)
+    
+        with pytest.MonkeyPatch().context() as mp:
+            mp.setattr(
+                "app.routes.leads.lead_service.get_lead_by_id",
+                AsyncMock(return_value=lead),
+            )
+            async with AsyncClient(transport=ASGITransport(app=test_app), base_url="http://test") as ac:
+>               response = await ac.put(f"/leads/{lead.id}", json={"status": target.value})
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_presentation\test_leads_state_machine.py:90: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1896: in put
+    return await self.request(
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1540: in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1629: in send
+    response = await self._send_handling_auth(
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1657: in _send_handling_auth
+    response = await self._send_handling_redirects(
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1694: in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1730: in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_transports\asgi.py:170: in handle_async_request
+    await self.app(scope, receive, send)
+C:\Python314\Lib\site-packages\fastapi\applications.py:1159: in __call__
+    await super().__call__(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\middleware\errors.py:186: in __call__
+    raise exc
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\middleware\errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\middleware\exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:53: in wrapped_app
+    raise exc
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+C:\Python314\Lib\site-packages\fastapi\middleware\asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\routing.py:680: in app
+    await route.handle(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\routing.py:276: in handle
+    await self.app(scope, receive, send)
+C:\Python314\Lib\site-packages\fastapi\routing.py:134: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:53: in wrapped_app
+    raise exc
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+C:\Python314\Lib\site-packages\fastapi\routing.py:120: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+C:\Python314\Lib\site-packages\fastapi\routing.py:674: in app
+    raw_response = await run_endpoint_function(
+C:\Python314\Lib\site-packages\fastapi\routing.py:328: in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+lead_id = UUID('51583b64-cd33-46bf-acf2-23ed8c7ca41f')
+lead_in = LeadUpdate(nome=None, status=<LeadStatus.agendado: 'agendado'>, score=None, consultor_id=None)
+db = <AsyncMock id='1817826050128'>
+current_user = <MagicMock id='1817826052816'>
+
+    @router.put("/{lead_id}", response_model=LeadResponse, dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))])
+    async def update_lead(
+        lead_id: uuid.UUID,
+        lead_in: LeadUpdate,
+        db: AsyncSession = Depends(get_db),
+        current_user=Depends(get_current_user),
+    ):
+        lead = await lead_service.get_lead_by_id(db, lead_id)
+        if not lead:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead nÒo encontrado")
+    
+        data = lead_in.model_dump(exclude_none=True)
+    
+        # \u2500\u2500 State Machine validation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+        if "status" in data:
+            new_status = LeadStatus(data["status"])
+            try:
+                LeadStateMachine.validate_transition(lead.status, new_status)
+                await lead_service.update_lead_status(db, lead, new_status, triggered_by="user_manual")
+            except InvalidStateTransitionError as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=str(exc),
+                ) from exc
+    
+            # \u2500\u2500 Auto-score trigger on transition to QUALIFICADO \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+            if new_status == LeadStatus.qualificado:
+                from app.services.lead_service import calculate_score_from_briefing
+                lead.score = calculate_score_from_briefing(lead.briefing)
+                logger.info(
+                    "lead_auto_scored",
+                    lead_id=str(lead.id),
+                    status=lead.status.value,
+                    score=lead.score.value if lead.score else None,
+                )
+    
+            # Status removed from data as it's already handled by service
+            data.pop("status")
+    
+        for field, value in data.items():
+            setattr(lead, field, value)
+    
+        await db.commit()
+        await db.refresh(lead)
+>       return LeadResponse.model_validate(lead)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 2 validation errors for LeadResponse
+E       consultor_nome
+E         Input should be a valid string [type=string_type, input_value=<MagicMock name='mock.con...ome' id='1817825338304'>, input_type=MagicMock]
+E           For further information visit https://errors.pydantic.dev/2.13/v/string_type
+E       consultor_avatar
+E         Input should be a valid string [type=string_type, input_value=<MagicMock name='mock.con...tar' id='1817825337296'>, input_type=MagicMock]
+E           For further information visit https://errors.pydantic.dev/2.13/v/string_type
+
+app\routes\leads.py:179: ValidationError
+---------------------------- Captured stdout setup ----------------------------
+Using proactor: IocpProactor
+----------------------------- Captured log setup ------------------------------
+DEBUG    asyncio:proactor_events.py:633 Using proactor: IocpProactor
+---------------------------- Captured stdout call -----------------------------
+[2m2026-05-05T22:07:40.888164Z[0m [[32m[1minfo     [0m] [1mlead_status_transition        [0m [36mlead_id[0m=[35m51583b64-cd33-46bf-acf2-23ed8c7ca41f[0m [36mnew_status[0m=[35magendado[0m [36mold_status[0m=[35mqualificado[0m [36mtriggered_by[0m=[35muser_manual[0m
+_______ test_valid_status_transition_returns_200[qualificado-proposta] ________
+
+test_app = <fastapi.applications.FastAPI object at 0x000001A73ED556A0>
+current = <LeadStatus.qualificado: 'qualificado'>
+target = <LeadStatus.proposta: 'proposta'>
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("current,target", [
+        (LeadStatus.novo, LeadStatus.em_atendimento),
+        (LeadStatus.em_atendimento, LeadStatus.qualificado),
+        (LeadStatus.qualificado, LeadStatus.agendado),
+        (LeadStatus.qualificado, LeadStatus.proposta),
+        (LeadStatus.agendado, LeadStatus.proposta),
+        (LeadStatus.proposta, LeadStatus.fechado),
+        (LeadStatus.novo, LeadStatus.perdido),
+    ])
+    async def test_valid_status_transition_returns_200(test_app: FastAPI, current: LeadStatus, target: LeadStatus) -> None:
+        lead = fake_lead(current)
+    
+        with pytest.MonkeyPatch().context() as mp:
+            mp.setattr(
+                "app.routes.leads.lead_service.get_lead_by_id",
+                AsyncMock(return_value=lead),
+            )
+            async with AsyncClient(transport=ASGITransport(app=test_app), base_url="http://test") as ac:
+>               response = await ac.put(f"/leads/{lead.id}", json={"status": target.value})
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_presentation\test_leads_state_machine.py:90: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1896: in put
+    return await self.request(
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1540: in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1629: in send
+    response = await self._send_handling_auth(
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1657: in _send_handling_auth
+    response = await self._send_handling_redirects(
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1694: in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1730: in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_transports\asgi.py:170: in handle_async_request
+    await self.app(scope, receive, send)
+C:\Python314\Lib\site-packages\fastapi\applications.py:1159: in __call__
+    await super().__call__(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\middleware\errors.py:186: in __call__
+    raise exc
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\middleware\errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\middleware\exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:53: in wrapped_app
+    raise exc
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+C:\Python314\Lib\site-packages\fastapi\middleware\asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\routing.py:680: in app
+    await route.handle(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\routing.py:276: in handle
+    await self.app(scope, receive, send)
+C:\Python314\Lib\site-packages\fastapi\routing.py:134: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:53: in wrapped_app
+    raise exc
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+C:\Python314\Lib\site-packages\fastapi\routing.py:120: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+C:\Python314\Lib\site-packages\fastapi\routing.py:674: in app
+    raw_response = await run_endpoint_function(
+C:\Python314\Lib\site-packages\fastapi\routing.py:328: in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+lead_id = UUID('49e6a03e-32fb-49ea-9eea-eeb3a7f0c4a0')
+lead_in = LeadUpdate(nome=None, status=<LeadStatus.proposta: 'proposta'>, score=None, consultor_id=None)
+db = <AsyncMock id='1817825333600'>
+current_user = <MagicMock id='1817825330912'>
+
+    @router.put("/{lead_id}", response_model=LeadResponse, dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))])
+    async def update_lead(
+        lead_id: uuid.UUID,
+        lead_in: LeadUpdate,
+        db: AsyncSession = Depends(get_db),
+        current_user=Depends(get_current_user),
+    ):
+        lead = await lead_service.get_lead_by_id(db, lead_id)
+        if not lead:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead nÒo encontrado")
+    
+        data = lead_in.model_dump(exclude_none=True)
+    
+        # \u2500\u2500 State Machine validation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+        if "status" in data:
+            new_status = LeadStatus(data["status"])
+            try:
+                LeadStateMachine.validate_transition(lead.status, new_status)
+                await lead_service.update_lead_status(db, lead, new_status, triggered_by="user_manual")
+            except InvalidStateTransitionError as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=str(exc),
+                ) from exc
+    
+            # \u2500\u2500 Auto-score trigger on transition to QUALIFICADO \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+            if new_status == LeadStatus.qualificado:
+                from app.services.lead_service import calculate_score_from_briefing
+                lead.score = calculate_score_from_briefing(lead.briefing)
+                logger.info(
+                    "lead_auto_scored",
+                    lead_id=str(lead.id),
+                    status=lead.status.value,
+                    score=lead.score.value if lead.score else None,
+                )
+    
+            # Status removed from data as it's already handled by service
+            data.pop("status")
+    
+        for field, value in data.items():
+            setattr(lead, field, value)
+    
+        await db.commit()
+        await db.refresh(lead)
+>       return LeadResponse.model_validate(lead)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 2 validation errors for LeadResponse
+E       consultor_nome
+E         Input should be a valid string [type=string_type, input_value=<MagicMock name='mock.con...ome' id='1817831089760'>, input_type=MagicMock]
+E           For further information visit https://errors.pydantic.dev/2.13/v/string_type
+E       consultor_avatar
+E         Input should be a valid string [type=string_type, input_value=<MagicMock name='mock.con...tar' id='1817831090096'>, input_type=MagicMock]
+E           For further information visit https://errors.pydantic.dev/2.13/v/string_type
+
+app\routes\leads.py:179: ValidationError
+---------------------------- Captured stdout setup ----------------------------
+Using proactor: IocpProactor
+----------------------------- Captured log setup ------------------------------
+DEBUG    asyncio:proactor_events.py:633 Using proactor: IocpProactor
+---------------------------- Captured stdout call -----------------------------
+[2m2026-05-05T22:07:41.318423Z[0m [[32m[1minfo     [0m] [1mlead_status_transition        [0m [36mlead_id[0m=[35m49e6a03e-32fb-49ea-9eea-eeb3a7f0c4a0[0m [36mnew_status[0m=[35mproposta[0m [36mold_status[0m=[35mqualificado[0m [36mtriggered_by[0m=[35muser_manual[0m
+_________ test_valid_status_transition_returns_200[agendado-proposta] _________
+
+test_app = <fastapi.applications.FastAPI object at 0x000001A73F2D3380>
+current = <LeadStatus.agendado: 'agendado'>
+target = <LeadStatus.proposta: 'proposta'>
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("current,target", [
+        (LeadStatus.novo, LeadStatus.em_atendimento),
+        (LeadStatus.em_atendimento, LeadStatus.qualificado),
+        (LeadStatus.qualificado, LeadStatus.agendado),
+        (LeadStatus.qualificado, LeadStatus.proposta),
+        (LeadStatus.agendado, LeadStatus.proposta),
+        (LeadStatus.proposta, LeadStatus.fechado),
+        (LeadStatus.novo, LeadStatus.perdido),
+    ])
+    async def test_valid_status_transition_returns_200(test_app: FastAPI, current: LeadStatus, target: LeadStatus) -> None:
+        lead = fake_lead(current)
+    
+        with pytest.MonkeyPatch().context() as mp:
+            mp.setattr(
+                "app.routes.leads.lead_service.get_lead_by_id",
+                AsyncMock(return_value=lead),
+            )
+            async with AsyncClient(transport=ASGITransport(app=test_app), base_url="http://test") as ac:
+>               response = await ac.put(f"/leads/{lead.id}", json={"status": target.value})
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_presentation\test_leads_state_machine.py:90: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1896: in put
+    return await self.request(
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1540: in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1629: in send
+    response = await self._send_handling_auth(
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1657: in _send_handling_auth
+    response = await self._send_handling_redirects(
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1694: in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1730: in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_transports\asgi.py:170: in handle_async_request
+    await self.app(scope, receive, send)
+C:\Python314\Lib\site-packages\fastapi\applications.py:1159: in __call__
+    await super().__call__(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\middleware\errors.py:186: in __call__
+    raise exc
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\middleware\errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\middleware\exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:53: in wrapped_app
+    raise exc
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+C:\Python314\Lib\site-packages\fastapi\middleware\asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\routing.py:680: in app
+    await route.handle(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\routing.py:276: in handle
+    await self.app(scope, receive, send)
+C:\Python314\Lib\site-packages\fastapi\routing.py:134: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:53: in wrapped_app
+    raise exc
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+C:\Python314\Lib\site-packages\fastapi\routing.py:120: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+C:\Python314\Lib\site-packages\fastapi\routing.py:674: in app
+    raw_response = await run_endpoint_function(
+C:\Python314\Lib\site-packages\fastapi\routing.py:328: in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+lead_id = UUID('ab5565bb-2989-4243-981e-a32debb56538')
+lead_in = LeadUpdate(nome=None, status=<LeadStatus.proposta: 'proposta'>, score=None, consultor_id=None)
+db = <AsyncMock id='1817831094128'>
+current_user = <MagicMock id='1817831084384'>
+
+    @router.put("/{lead_id}", response_model=LeadResponse, dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))])
+    async def update_lead(
+        lead_id: uuid.UUID,
+        lead_in: LeadUpdate,
+        db: AsyncSession = Depends(get_db),
+        current_user=Depends(get_current_user),
+    ):
+        lead = await lead_service.get_lead_by_id(db, lead_id)
+        if not lead:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead nÒo encontrado")
+    
+        data = lead_in.model_dump(exclude_none=True)
+    
+        # \u2500\u2500 State Machine validation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+        if "status" in data:
+            new_status = LeadStatus(data["status"])
+            try:
+                LeadStateMachine.validate_transition(lead.status, new_status)
+                await lead_service.update_lead_status(db, lead, new_status, triggered_by="user_manual")
+            except InvalidStateTransitionError as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=str(exc),
+                ) from exc
+    
+            # \u2500\u2500 Auto-score trigger on transition to QUALIFICADO \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+            if new_status == LeadStatus.qualificado:
+                from app.services.lead_service import calculate_score_from_briefing
+                lead.score = calculate_score_from_briefing(lead.briefing)
+                logger.info(
+                    "lead_auto_scored",
+                    lead_id=str(lead.id),
+                    status=lead.status.value,
+                    score=lead.score.value if lead.score else None,
+                )
+    
+            # Status removed from data as it's already handled by service
+            data.pop("status")
+    
+        for field, value in data.items():
+            setattr(lead, field, value)
+    
+        await db.commit()
+        await db.refresh(lead)
+>       return LeadResponse.model_validate(lead)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 2 validation errors for LeadResponse
+E       consultor_nome
+E         Input should be a valid string [type=string_type, input_value=<MagicMock name='mock.con...ome' id='1817825973920'>, input_type=MagicMock]
+E           For further information visit https://errors.pydantic.dev/2.13/v/string_type
+E       consultor_avatar
+E         Input should be a valid string [type=string_type, input_value=<MagicMock name='mock.con...tar' id='1817825974256'>, input_type=MagicMock]
+E           For further information visit https://errors.pydantic.dev/2.13/v/string_type
+
+app\routes\leads.py:179: ValidationError
+---------------------------- Captured stdout setup ----------------------------
+Using proactor: IocpProactor
+----------------------------- Captured log setup ------------------------------
+DEBUG    asyncio:proactor_events.py:633 Using proactor: IocpProactor
+---------------------------- Captured stdout call -----------------------------
+[2m2026-05-05T22:07:41.715348Z[0m [[32m[1minfo     [0m] [1mlead_status_transition        [0m [36mlead_id[0m=[35mab5565bb-2989-4243-981e-a32debb56538[0m [36mnew_status[0m=[35mproposta[0m [36mold_status[0m=[35magendado[0m [36mtriggered_by[0m=[35muser_manual[0m
+_________ test_valid_status_transition_returns_200[proposta-fechado] __________
+
+test_app = <fastapi.applications.FastAPI object at 0x000001A73EDF23C0>
+current = <LeadStatus.proposta: 'proposta'>
+target = <LeadStatus.fechado: 'fechado'>
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("current,target", [
+        (LeadStatus.novo, LeadStatus.em_atendimento),
+        (LeadStatus.em_atendimento, LeadStatus.qualificado),
+        (LeadStatus.qualificado, LeadStatus.agendado),
+        (LeadStatus.qualificado, LeadStatus.proposta),
+        (LeadStatus.agendado, LeadStatus.proposta),
+        (LeadStatus.proposta, LeadStatus.fechado),
+        (LeadStatus.novo, LeadStatus.perdido),
+    ])
+    async def test_valid_status_transition_returns_200(test_app: FastAPI, current: LeadStatus, target: LeadStatus) -> None:
+        lead = fake_lead(current)
+    
+        with pytest.MonkeyPatch().context() as mp:
+            mp.setattr(
+                "app.routes.leads.lead_service.get_lead_by_id",
+                AsyncMock(return_value=lead),
+            )
+            async with AsyncClient(transport=ASGITransport(app=test_app), base_url="http://test") as ac:
+>               response = await ac.put(f"/leads/{lead.id}", json={"status": target.value})
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_presentation\test_leads_state_machine.py:90: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1896: in put
+    return await self.request(
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1540: in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1629: in send
+    response = await self._send_handling_auth(
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1657: in _send_handling_auth
+    response = await self._send_handling_redirects(
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1694: in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1730: in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_transports\asgi.py:170: in handle_async_request
+    await self.app(scope, receive, send)
+C:\Python314\Lib\site-packages\fastapi\applications.py:1159: in __call__
+    await super().__call__(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\middleware\errors.py:186: in __call__
+    raise exc
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\middleware\errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\middleware\exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:53: in wrapped_app
+    raise exc
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+C:\Python314\Lib\site-packages\fastapi\middleware\asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\routing.py:680: in app
+    await route.handle(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\routing.py:276: in handle
+    await self.app(scope, receive, send)
+C:\Python314\Lib\site-packages\fastapi\routing.py:134: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:53: in wrapped_app
+    raise exc
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+C:\Python314\Lib\site-packages\fastapi\routing.py:120: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+C:\Python314\Lib\site-packages\fastapi\routing.py:674: in app
+    raw_response = await run_endpoint_function(
+C:\Python314\Lib\site-packages\fastapi\routing.py:328: in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+lead_id = UUID('d0e8c8be-aba8-489e-b227-398687093b4e')
+lead_in = LeadUpdate(nome=None, status=<LeadStatus.fechado: 'fechado'>, score=None, consultor_id=None)
+db = <AsyncMock id='1817825978288'>
+current_user = <MagicMock id='1817825975936'>
+
+    @router.put("/{lead_id}", response_model=LeadResponse, dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))])
+    async def update_lead(
+        lead_id: uuid.UUID,
+        lead_in: LeadUpdate,
+        db: AsyncSession = Depends(get_db),
+        current_user=Depends(get_current_user),
+    ):
+        lead = await lead_service.get_lead_by_id(db, lead_id)
+        if not lead:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead nÒo encontrado")
+    
+        data = lead_in.model_dump(exclude_none=True)
+    
+        # \u2500\u2500 State Machine validation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+        if "status" in data:
+            new_status = LeadStatus(data["status"])
+            try:
+                LeadStateMachine.validate_transition(lead.status, new_status)
+                await lead_service.update_lead_status(db, lead, new_status, triggered_by="user_manual")
+            except InvalidStateTransitionError as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=str(exc),
+                ) from exc
+    
+            # \u2500\u2500 Auto-score trigger on transition to QUALIFICADO \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+            if new_status == LeadStatus.qualificado:
+                from app.services.lead_service import calculate_score_from_briefing
+                lead.score = calculate_score_from_briefing(lead.briefing)
+                logger.info(
+                    "lead_auto_scored",
+                    lead_id=str(lead.id),
+                    status=lead.status.value,
+                    score=lead.score.value if lead.score else None,
+                )
+    
+            # Status removed from data as it's already handled by service
+            data.pop("status")
+    
+        for field, value in data.items():
+            setattr(lead, field, value)
+    
+        await db.commit()
+        await db.refresh(lead)
+>       return LeadResponse.model_validate(lead)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 2 validation errors for LeadResponse
+E       consultor_nome
+E         Input should be a valid string [type=string_type, input_value=<MagicMock name='mock.con...ome' id='1817826772704'>, input_type=MagicMock]
+E           For further information visit https://errors.pydantic.dev/2.13/v/string_type
+E       consultor_avatar
+E         Input should be a valid string [type=string_type, input_value=<MagicMock name='mock.con...tar' id='1817826773040'>, input_type=MagicMock]
+E           For further information visit https://errors.pydantic.dev/2.13/v/string_type
+
+app\routes\leads.py:179: ValidationError
+---------------------------- Captured stdout setup ----------------------------
+Using proactor: IocpProactor
+----------------------------- Captured log setup ------------------------------
+DEBUG    asyncio:proactor_events.py:633 Using proactor: IocpProactor
+---------------------------- Captured stdout call -----------------------------
+[2m2026-05-05T22:07:42.139516Z[0m [[32m[1minfo     [0m] [1mlead_status_transition        [0m [36mlead_id[0m=[35md0e8c8be-aba8-489e-b227-398687093b4e[0m [36mnew_status[0m=[35mfechado[0m [36mold_status[0m=[35mproposta[0m [36mtriggered_by[0m=[35muser_manual[0m
+___________ test_valid_status_transition_returns_200[novo-perdido] ____________
+
+test_app = <fastapi.applications.FastAPI object at 0x000001A73EEB5400>
+current = <LeadStatus.novo: 'novo'>, target = <LeadStatus.perdido: 'perdido'>
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("current,target", [
+        (LeadStatus.novo, LeadStatus.em_atendimento),
+        (LeadStatus.em_atendimento, LeadStatus.qualificado),
+        (LeadStatus.qualificado, LeadStatus.agendado),
+        (LeadStatus.qualificado, LeadStatus.proposta),
+        (LeadStatus.agendado, LeadStatus.proposta),
+        (LeadStatus.proposta, LeadStatus.fechado),
+        (LeadStatus.novo, LeadStatus.perdido),
+    ])
+    async def test_valid_status_transition_returns_200(test_app: FastAPI, current: LeadStatus, target: LeadStatus) -> None:
+        lead = fake_lead(current)
+    
+        with pytest.MonkeyPatch().context() as mp:
+            mp.setattr(
+                "app.routes.leads.lead_service.get_lead_by_id",
+                AsyncMock(return_value=lead),
+            )
+            async with AsyncClient(transport=ASGITransport(app=test_app), base_url="http://test") as ac:
+>               response = await ac.put(f"/leads/{lead.id}", json={"status": target.value})
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_presentation\test_leads_state_machine.py:90: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1896: in put
+    return await self.request(
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1540: in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1629: in send
+    response = await self._send_handling_auth(
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1657: in _send_handling_auth
+    response = await self._send_handling_redirects(
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1694: in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1730: in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_transports\asgi.py:170: in handle_async_request
+    await self.app(scope, receive, send)
+C:\Python314\Lib\site-packages\fastapi\applications.py:1159: in __call__
+    await super().__call__(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\middleware\errors.py:186: in __call__
+    raise exc
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\middleware\errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\middleware\exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:53: in wrapped_app
+    raise exc
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+C:\Python314\Lib\site-packages\fastapi\middleware\asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\routing.py:680: in app
+    await route.handle(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\routing.py:276: in handle
+    await self.app(scope, receive, send)
+C:\Python314\Lib\site-packages\fastapi\routing.py:134: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:53: in wrapped_app
+    raise exc
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+C:\Python314\Lib\site-packages\fastapi\routing.py:120: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+C:\Python314\Lib\site-packages\fastapi\routing.py:674: in app
+    raw_response = await run_endpoint_function(
+C:\Python314\Lib\site-packages\fastapi\routing.py:328: in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+lead_id = UUID('262f7c88-3183-42cb-bd05-c2781fe723dc')
+lead_in = LeadUpdate(nome=None, status=<LeadStatus.perdido: 'perdido'>, score=None, consultor_id=None)
+db = <AsyncMock id='1817826777072'>
+current_user = <MagicMock id='1817826774720'>
+
+    @router.put("/{lead_id}", response_model=LeadResponse, dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))])
+    async def update_lead(
+        lead_id: uuid.UUID,
+        lead_in: LeadUpdate,
+        db: AsyncSession = Depends(get_db),
+        current_user=Depends(get_current_user),
+    ):
+        lead = await lead_service.get_lead_by_id(db, lead_id)
+        if not lead:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead nÒo encontrado")
+    
+        data = lead_in.model_dump(exclude_none=True)
+    
+        # \u2500\u2500 State Machine validation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+        if "status" in data:
+            new_status = LeadStatus(data["status"])
+            try:
+                LeadStateMachine.validate_transition(lead.status, new_status)
+                await lead_service.update_lead_status(db, lead, new_status, triggered_by="user_manual")
+            except InvalidStateTransitionError as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=str(exc),
+                ) from exc
+    
+            # \u2500\u2500 Auto-score trigger on transition to QUALIFICADO \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+            if new_status == LeadStatus.qualificado:
+                from app.services.lead_service import calculate_score_from_briefing
+                lead.score = calculate_score_from_briefing(lead.briefing)
+                logger.info(
+                    "lead_auto_scored",
+                    lead_id=str(lead.id),
+                    status=lead.status.value,
+                    score=lead.score.value if lead.score else None,
+                )
+    
+            # Status removed from data as it's already handled by service
+            data.pop("status")
+    
+        for field, value in data.items():
+            setattr(lead, field, value)
+    
+        await db.commit()
+        await db.refresh(lead)
+>       return LeadResponse.model_validate(lead)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 2 validation errors for LeadResponse
+E       consultor_nome
+E         Input should be a valid string [type=string_type, input_value=<MagicMock name='mock.con...ome' id='1817826784800'>, input_type=MagicMock]
+E           For further information visit https://errors.pydantic.dev/2.13/v/string_type
+E       consultor_avatar
+E         Input should be a valid string [type=string_type, input_value=<MagicMock name='mock.con...tar' id='1817826785136'>, input_type=MagicMock]
+E           For further information visit https://errors.pydantic.dev/2.13/v/string_type
+
+app\routes\leads.py:179: ValidationError
+---------------------------- Captured stdout setup ----------------------------
+Using proactor: IocpProactor
+----------------------------- Captured log setup ------------------------------
+DEBUG    asyncio:proactor_events.py:633 Using proactor: IocpProactor
+---------------------------- Captured stdout call -----------------------------
+[2m2026-05-05T22:07:42.552186Z[0m [[32m[1minfo     [0m] [1mlead_status_transition        [0m [36mlead_id[0m=[35m262f7c88-3183-42cb-bd05-c2781fe723dc[0m [36mnew_status[0m=[35mperdido[0m [36mold_status[0m=[35mnovo[0m [36mtriggered_by[0m=[35muser_manual[0m
+________________ test_update_without_status_change_returns_200 ________________
+
+test_app = <fastapi.applications.FastAPI object at 0x000001A73FC9FCB0>
+
+    @pytest.mark.asyncio
+    async def test_update_without_status_change_returns_200(test_app: FastAPI) -> None:
+        lead = fake_lead(LeadStatus.qualificado)
+    
+        with pytest.MonkeyPatch().context() as mp:
+            mp.setattr(
+                "app.routes.leads.lead_service.get_lead_by_id",
+                AsyncMock(return_value=lead),
+            )
+            async with AsyncClient(transport=ASGITransport(app=test_app), base_url="http://test") as ac:
+>               response = await ac.put(f"/leads/{lead.id}", json={"nome": "Novo Nome"})
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_presentation\test_leads_state_machine.py:130: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1896: in put
+    return await self.request(
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1540: in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1629: in send
+    response = await self._send_handling_auth(
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1657: in _send_handling_auth
+    response = await self._send_handling_redirects(
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1694: in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1730: in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_transports\asgi.py:170: in handle_async_request
+    await self.app(scope, receive, send)
+C:\Python314\Lib\site-packages\fastapi\applications.py:1159: in __call__
+    await super().__call__(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\middleware\errors.py:186: in __call__
+    raise exc
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\middleware\errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\middleware\exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:53: in wrapped_app
+    raise exc
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+C:\Python314\Lib\site-packages\fastapi\middleware\asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\routing.py:680: in app
+    await route.handle(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\routing.py:276: in handle
+    await self.app(scope, receive, send)
+C:\Python314\Lib\site-packages\fastapi\routing.py:134: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:53: in wrapped_app
+    raise exc
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+C:\Python314\Lib\site-packages\fastapi\routing.py:120: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+C:\Python314\Lib\site-packages\fastapi\routing.py:674: in app
+    raw_response = await run_endpoint_function(
+C:\Python314\Lib\site-packages\fastapi\routing.py:328: in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+lead_id = UUID('4b791c40-e394-4c1e-b424-5e6a251739be')
+lead_in = LeadUpdate(nome='Novo Nome', status=None, score=None, consultor_id=None)
+db = <AsyncMock id='1817841368576'>
+current_user = <MagicMock id='1817842205088'>
+
+    @router.put("/{lead_id}", response_model=LeadResponse, dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))])
+    async def update_lead(
+        lead_id: uuid.UUID,
+        lead_in: LeadUpdate,
+        db: AsyncSession = Depends(get_db),
+        current_user=Depends(get_current_user),
+    ):
+        lead = await lead_service.get_lead_by_id(db, lead_id)
+        if not lead:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead nÒo encontrado")
+    
+        data = lead_in.model_dump(exclude_none=True)
+    
+        # \u2500\u2500 State Machine validation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+        if "status" in data:
+            new_status = LeadStatus(data["status"])
+            try:
+                LeadStateMachine.validate_transition(lead.status, new_status)
+                await lead_service.update_lead_status(db, lead, new_status, triggered_by="user_manual")
+            except InvalidStateTransitionError as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=str(exc),
+                ) from exc
+    
+            # \u2500\u2500 Auto-score trigger on transition to QUALIFICADO \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+            if new_status == LeadStatus.qualificado:
+                from app.services.lead_service import calculate_score_from_briefing
+                lead.score = calculate_score_from_briefing(lead.briefing)
+                logger.info(
+                    "lead_auto_scored",
+                    lead_id=str(lead.id),
+                    status=lead.status.value,
+                    score=lead.score.value if lead.score else None,
+                )
+    
+            # Status removed from data as it's already handled by service
+            data.pop("status")
+    
+        for field, value in data.items():
+            setattr(lead, field, value)
+    
+        await db.commit()
+        await db.refresh(lead)
+>       return LeadResponse.model_validate(lead)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 2 validation errors for LeadResponse
+E       consultor_nome
+E         Input should be a valid string [type=string_type, input_value=<MagicMock name='mock.con...ome' id='1817842214160'>, input_type=MagicMock]
+E           For further information visit https://errors.pydantic.dev/2.13/v/string_type
+E       consultor_avatar
+E         Input should be a valid string [type=string_type, input_value=<MagicMock name='mock.con...tar' id='1817842214496'>, input_type=MagicMock]
+E           For further information visit https://errors.pydantic.dev/2.13/v/string_type
+
+app\routes\leads.py:179: ValidationError
+---------------------------- Captured stdout setup ----------------------------
+Using proactor: IocpProactor
+----------------------------- Captured log setup ------------------------------
+DEBUG    asyncio:proactor_events.py:633 Using proactor: IocpProactor
+_______ TestLeadPropostasRelation.test_lead_response_includes_propostas _______
+
+self = <test_routes.test_propostas.TestLeadPropostasRelation object at 0x000001A73EB379D0>
+
+    def test_lead_response_includes_propostas(self):
+        consultor_id = uuid.uuid4()
+        lead_id = uuid.uuid4()
+        user = fake_user(UserPerfil.consultor, consultor_id)
+        lead = fake_lead(lead_id, consultor_id, status=LeadStatus.proposta.value)
+        proposta1 = fake_proposta(uuid.uuid4(), lead_id, consultor_id, PropostaStatus.enviada)
+        proposta2 = fake_proposta(uuid.uuid4(), lead_id, consultor_id, PropostaStatus.rascunho)
+        lead.propostas = [proposta1, proposta2]
+    
+        app.dependency_overrides[get_current_user] = lambda: user
+        app.dependency_overrides[get_db] = lambda: make_db_session()
+    
+        with patch("app.routes.leads.lead_service.get_lead_by_id", new_callable=AsyncMock, return_value=lead):
+>           response = client.get(f"/leads/{lead_id}")
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_routes\test_propostas.py:460: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\testclient.py:473: in get
+    return super().get(
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1053: in get
+    return self.request(
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\testclient.py:445: in request
+    return super().request(
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:825: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:914: in send
+    response = self._send_handling_auth(
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:942: in _send_handling_auth
+    response = self._send_handling_redirects(
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:979: in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\httpx\_client.py:1014: in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\testclient.py:348: in handle_request
+    raise exc
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\testclient.py:345: in handle_request
+    portal.call(self.app, scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\anyio\from_thread.py:334: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python314\Lib\concurrent\futures\_base.py:450: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+C:\Python314\Lib\concurrent\futures\_base.py:395: in __get_result
+    raise self._exception
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\anyio\from_thread.py:259: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python314\Lib\site-packages\fastapi\applications.py:1159: in __call__
+    await super().__call__(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\middleware\errors.py:186: in __call__
+    raise exc
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\middleware\errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\middleware\exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:53: in wrapped_app
+    raise exc
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+C:\Python314\Lib\site-packages\fastapi\middleware\asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\routing.py:680: in app
+    await route.handle(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\routing.py:276: in handle
+    await self.app(scope, receive, send)
+C:\Python314\Lib\site-packages\fastapi\routing.py:134: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:53: in wrapped_app
+    raise exc
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\starlette\_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+C:\Python314\Lib\site-packages\fastapi\routing.py:120: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+C:\Python314\Lib\site-packages\fastapi\routing.py:674: in app
+    raw_response = await run_endpoint_function(
+C:\Python314\Lib\site-packages\fastapi\routing.py:328: in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+lead_id = UUID('3dcaa0ea-7f64-4b11-9de3-42de3d233c7f')
+db = <AsyncMock id='1817842313136'>
+current_user = <MagicMock id='1817842311120'>
+
+    @router.get("/{lead_id}", response_model=LeadResponse, dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))])
+    async def get_lead(
+        lead_id: uuid.UUID,
+        db: AsyncSession = Depends(get_db),
+        current_user=Depends(get_current_user),
+    ):
+        lead = await lead_service.get_lead_by_id(db, lead_id)
+        if not lead:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead nÒo encontrado")
+    
+        # Scope Check
+        if current_user.perfil == "consultor" and lead.consultor_id != current_user.id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado ao lead")
+    
+>       return LeadResponse.model_validate(lead)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 2 validation errors for LeadResponse
+E       consultor_nome
+E         Input should be a valid string [type=string_type, input_value=<MagicMock name='mock.con...ome' id='1817842317168'>, input_type=MagicMock]
+E           For further information visit https://errors.pydantic.dev/2.13/v/string_type
+E       consultor_avatar
+E         Input should be a valid string [type=string_type, input_value=<MagicMock name='mock.con...tar' id='1817842317504'>, input_type=MagicMock]
+E           For further information visit https://errors.pydantic.dev/2.13/v/string_type
+
+app\routes\leads.py:132: ValidationError
+---------------------------- Captured stdout call -----------------------------
+Using proactor: IocpProactor
+------------------------------ Captured log call ------------------------------
+DEBUG    asyncio:proactor_events.py:633 Using proactor: IocpProactor
+___________ TestAuditTrail.test_log_emitido_com_campos_obrigatorios ___________
+
+self = <test_security.test_security_observability.TestAuditTrail object at 0x000001A73EBF1220>
+caplog = <_pytest.logging.LogCaptureFixture object at 0x000001A73FD84590>
+
+    def test_log_emitido_com_campos_obrigatorios(self, caplog):
+        """Verifica que o logger emite eventos com campos vitais."""
+        import structlog
+    
+        events = []
+    
+        def capture(logger, method, event_dict):
+            events.append(event_dict)
+            raise structlog.DropEvent()
+    
+        structlog.configure(processors=[capture])
+    
+        _, client = _make_audit_app()
+        client.get("/audit-test")
+    
+        structlog.reset_defaults()
+    
+        # Pelo menos um evento deve conter 'request_finished'
+        finished = [e for e in events if e.get("event") == "request_finished"]
+>       assert finished, "Deve emitir evento 'request_finished'"
+E       AssertionError: Deve emitir evento 'request_finished'
+E       assert []
+
+tests\test_security\test_security_observability.py:247: AssertionError
+---------------------------- Captured stdout call -----------------------------
+Using proactor: IocpProactor
+[2m2026-05-05T22:07:49.788592Z[0m [[32m[1minfo     [0m] [1mrequest_started               [0m [36mip[0m=[35mtestclient[0m [36mmethod[0m=[35mGET[0m [36moperation[0m=[35m/audit-test[0m [36mpath[0m=[35m/audit-test[0m [36mrequest_id[0m=[35m79b781e1-0e1e-4039-b43f-4a5ebc0b1ab9[0m
+[2m2026-05-05T22:07:49.789969Z[0m [[32m[1minfo     [0m] [1mrequest_finished              [0m [36mduration_ms[0m=[35m1.42[0m [36mip[0m=[35mtestclient[0m [36mmethod[0m=[35mGET[0m [36moperation[0m=[35m/audit-test[0m [36mpath[0m=[35m/audit-test[0m [36mrequest_id[0m=[35m79b781e1-0e1e-4039-b43f-4a5ebc0b1ab9[0m [36mstatus_code[0m=[35m200[0m [36muser_id[0m=[35manonymous[0m
+HTTP Request: GET http://testserver/audit-test "HTTP/1.1 200 OK"
+------------------------------ Captured log call ------------------------------
+DEBUG    asyncio:proactor_events.py:633 Using proactor: IocpProactor
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/audit-test "HTTP/1.1 200 OK"
+________________ test_get_proximos_slots_respeita_max_por_dia _________________
+
+    @pytest.mark.asyncio
+    async def test_get_proximos_slots_respeita_max_por_dia():
+        db = AsyncMock()
+        from app.models.agendamento import Agendamento
+    
+        # Full day of bookings only for the first queried date
+        agendamentos_full = [
+            MagicMock(hora=time(9, 0)),
+            MagicMock(hora=time(10, 0)),
+            MagicMock(hora=time(11, 0)),
+            MagicMock(hora=time(13, 0)),
+            MagicMock(hora=time(14, 0)),
+            MagicMock(hora=time(15, 0)),
+        ]
+    
+        def _fake_execute(stmt):
+            mock_result = MagicMock()
+            # Extract the date filter from the SQLAlchemy where clause
+            # For simplicity, alternate: first call \u2192 full, subsequent \u2192 empty
+            call_count = len([c for c in db.execute.call_args_list])
+            if call_count == 0:
+                mock_result.scalars.return_value.all.return_value = agendamentos_full
+            else:
+                mock_result.scalars.return_value.all.return_value = []
+            return mock_result
+    
+        db.execute.side_effect = _fake_execute
+    
+        slots = await get_proximos_slots_disponiveis(db, quantidade=3)
+    
+        # Should skip the full day and return slots from subsequent days
+        assert len(slots) == 3
+        # All returned slots must be from days after the full one (today)
+        from datetime import date
+>       assert all(s["data"] > date.today() for s in slots)
+E       assert False
+E        +  where False = all(<generator object test_get_proximos_slots_respeita_max_por_dia.<locals>.<genexpr> at 0x000001A73F3925E0>)
+
+tests\test_services\test_curadoria_service.py:144: AssertionError
+---------------------------- Captured stdout setup ----------------------------
+Using proactor: IocpProactor
+----------------------------- Captured log setup ------------------------------
+DEBUG    asyncio:proactor_events.py:633 Using proactor: IocpProactor
+_________________________ test_verify_signature_valid _________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001A73EC83230>
+
+    def test_verify_signature_valid(monkeypatch):
+        secret = "test_token"
+        monkeypatch.setattr("app.services.whatsapp_service.settings.WHATSAPP_TOKEN", secret)
+        body = b'{"test": "payload"}'
+        sig = "sha256=" + hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
+>       assert verify_signature(body, sig) is True
+E       assert False is True
+E        +  where False = verify_signature(b'{"test": "payload"}', 'sha256=ead3add02cb9f638cfafc5c17e671708fa30054c23ee1fc1e190157a11c4a857')
+
+tests\test_services\test_whatsapp_service.py:117: AssertionError
+============================== warnings summary ===============================
+..\..\..\..\..\..\..\..\Python314\Lib\site-packages\chromadb\telemetry\opentelemetry\__init__.py:128
+  C:\Python314\Lib\site-packages\chromadb\telemetry\opentelemetry\__init__.py:128: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(f):
+
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\slowapi\extension.py:717
+..\..\..\..\..\..\AppData\Roaming\Python\Python314\site-packages\slowapi\extension.py:717
+tests/test_security/test_security_observability.py::TestRateLimiting::test_dentro_do_limite_retorna_200
+tests/test_security/test_security_observability.py::TestRateLimiting::test_excede_limite_retorna_429
+tests/test_security/test_security_observability.py::TestRateLimiting::test_headers_rate_limit_presentes
+  C:\Users\F.R.A.N.Ks\AppData\Roaming\Python\Python314\site-packages\slowapi\extension.py:717: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+..\..\..\..\..\..\..\..\Python314\Lib\site-packages\fastapi\applications.py:1156
+  C:\Python314\Lib\site-packages\fastapi\applications.py:1156: PytestCollectionWarning: cannot collect 'test_app' because it is not a function.
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+
+tests/test_presentation/test_leads_state_machine.py::test_invalid_status_transition_returns_422[fechado-novo]
+tests/test_presentation/test_leads_state_machine.py::test_invalid_status_transition_returns_422[perdido-qualificado]
+tests/test_presentation/test_leads_state_machine.py::test_invalid_status_transition_returns_422[novo-proposta]
+tests/test_presentation/test_leads_state_machine.py::test_invalid_status_transition_returns_422[em_atendimento-agendado]
+  C:\Python314\Lib\site-packages\fastapi\routing.py:328: DeprecationWarning: 'HTTP_422_UNPROCESSABLE_ENTITY' is deprecated. Use 'HTTP_422_UNPROCESSABLE_CONTENT' instead.
+    return await dependant.call(**values)
+
+tests/test_routes/test_auth_and_users.py::test_auth_login_missing_password_returns_422
+  C:\Users\F.R.A.N.Ks\Documents\ALPHA\DESAFIOCICLO\Semana 2\cadife_smart_travel\backend\tests\conftest.py:71: DeprecationWarning: 'asyncio.get_event_loop_policy' is deprecated and slated for removal in Python 3.16
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+
+tests/test_routes/test_auth_and_users.py::test_auth_login_missing_password_returns_422
+tests/test_routes/test_auth_and_users.py::test_register_fcm_token_missing_payload_returns_422
+  C:\Python314\Lib\asyncio\events.py:94: DeprecationWarning: 'HTTP_422_UNPROCESSABLE_ENTITY' is deprecated. Use 'HTTP_422_UNPROCESSABLE_CONTENT' instead.
+    self._context.run(self._callback, *self._args)
+
+tests/test_routes/test_auth_and_users.py::test_auth_login_valid_credentials_returns_tokens
+  C:\Users\F.R.A.N.Ks\AppData\Roaming\Python\Python314\site-packages\passlib\handlers\argon2.py:716: DeprecationWarning: Accessing argon2.__version__ is deprecated and will be removed in a future release. Use importlib.metadata directly to query for argon2-cffi's packaging metadata.
+    _argon2_cffi.__version__, max_version)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_infrastructure/test_settings.py::test_settings_load_defaults
+FAILED tests/test_infrastructure/test_settings.py::test_settings_missing_required_field
+FAILED tests/test_presentation/test_leads_auto_score.py::test_transition_to_qualificado_score_quente
+FAILED tests/test_presentation/test_leads_auto_score.py::test_transition_to_qualificado_score_morno
+FAILED tests/test_presentation/test_leads_auto_score.py::test_transition_to_qualificado_score_frio
+FAILED tests/test_presentation/test_leads_auto_score.py::test_transition_to_qualificado_without_briefing_score_none
+FAILED tests/test_presentation/test_leads_state_machine.py::test_valid_status_transition_returns_200[novo-em_atendimento]
+FAILED tests/test_presentation/test_leads_state_machine.py::test_valid_status_transition_returns_200[em_atendimento-qualificado]
+FAILED tests/test_presentation/test_leads_state_machine.py::test_valid_status_transition_returns_200[qualificado-agendado]
+FAILED tests/test_presentation/test_leads_state_machine.py::test_valid_status_transition_returns_200[qualificado-proposta]
+FAILED tests/test_presentation/test_leads_state_machine.py::test_valid_status_transition_returns_200[agendado-proposta]
+FAILED tests/test_presentation/test_leads_state_machine.py::test_valid_status_transition_returns_200[proposta-fechado]
+FAILED tests/test_presentation/test_leads_state_machine.py::test_valid_status_transition_returns_200[novo-perdido]
+FAILED tests/test_presentation/test_leads_state_machine.py::test_update_without_status_change_returns_200
+FAILED tests/test_routes/test_propostas.py::TestLeadPropostasRelation::test_lead_response_includes_propostas
+FAILED tests/test_security/test_security_observability.py::TestAuditTrail::test_log_emitido_com_campos_obrigatorios
+FAILED tests/test_services/test_curadoria_service.py::test_get_proximos_slots_respeita_max_por_dia
+FAILED tests/test_services/test_whatsapp_service.py::test_verify_signature_valid
+=========== 18 failed, 200 passed, 1 skipped, 15 warnings in 16.59s ===========

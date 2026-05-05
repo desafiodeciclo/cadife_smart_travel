@@ -61,6 +61,7 @@ class PropostaModel(Base):
             "valor_estimado IS NULL OR valor_estimado >= 0",
             name="ck_propostas_valor_positivo",
         ),
+        {"extend_existing": True},
     )
 
     id: Mapped[uuid.UUID] = mapped_column(

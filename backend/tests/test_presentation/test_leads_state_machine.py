@@ -60,6 +60,9 @@ def fake_lead(status: LeadStatus) -> MagicMock:
     lead.status = status
     lead.score = None
     lead.consultor_id = None
+    lead.consultor = None
+    lead.consultor_nome = None
+    lead.consultor_avatar = None
     lead.is_archived = False
     lead.criado_em = datetime.now()
     lead.atualizado_em = datetime.now()

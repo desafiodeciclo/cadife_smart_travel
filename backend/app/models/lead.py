@@ -43,7 +43,7 @@ class Lead(Base):
     interacoes: Mapped[list["Interacao"]] = relationship("Interacao", back_populates="lead")
     agendamentos: Mapped[list["Agendamento"]] = relationship("Agendamento", back_populates="lead")
     propostas: Mapped[list["Proposta"]] = relationship("Proposta", back_populates="lead")
-    consultor: Mapped[Optional["User"]] = relationship("User", foreign_keys=[consultor_id], primaryjoin="Lead.consultor_id == User.id", overlaps="consultor")
+    consultor: Mapped[Optional["User"]] = relationship("User", primaryjoin="foreign(Lead.consultor_id) == User.id", overlaps="consultor")
 
 
 # Pydantic schemas

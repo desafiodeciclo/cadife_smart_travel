@@ -40,6 +40,7 @@ class InteracaoModel(Base):
     __table_args__ = (
         # Composite index: fetch conversation history sorted by time
         Index("ix_interacoes_lead_timestamp", "lead_id", "timestamp"),
+        {"extend_existing": True},
     )
 
     id: Mapped[uuid.UUID] = mapped_column(

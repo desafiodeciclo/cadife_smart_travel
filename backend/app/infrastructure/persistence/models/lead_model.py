@@ -71,6 +71,7 @@ class LeadModel(Base):
         Index("ix_leads_consultor_status", "consultor_id", "status"),
         # Note: ck_leads_telefone_min_length was dropped in migration a1b2c3d4e5f6
         # (meaningless after Fernet encryption of telefone field)
+        {"extend_existing": True},
     )
 
     id: Mapped[uuid.UUID] = mapped_column(

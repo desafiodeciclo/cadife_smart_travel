@@ -58,6 +58,7 @@ class AgendamentoModel(Base):
         Index("ix_agendamentos_consultor_data", "consultor_id", "data"),
         # Business rule: a lead cannot have duplicate slot bookings
         UniqueConstraint("lead_id", "data", "hora", name="uq_agendamento_lead_slot"),
+        {"extend_existing": True},
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
