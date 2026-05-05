@@ -1,8 +1,10 @@
 import 'package:cadife_smart_travel/config/providers/isar_provider.dart';
+import 'package:cadife_smart_travel/core/di/service_locator.dart';
 import 'package:cadife_smart_travel/features/settings/domain/entities/user_preferences.dart';
 import 'package:cadife_smart_travel/features/settings/infrastructure/theme_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ThemeNotifier extends StreamNotifier<ThemePreference> {
   @override
@@ -38,7 +40,8 @@ class ThemeNotifier extends StreamNotifier<ThemePreference> {
 // Providers
 final themeRepositoryProvider = Provider<ThemeRepository>((ref) {
   final isar = ref.watch(isarProvider);
-  return ThemeRepository(isar);
+  final prefs = sl<SharedPreferences>();
+  return ThemeRepository(isar, prefs);
 });
 
 final themeNotifierProvider =
