@@ -119,10 +119,13 @@ class _TripBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (imageUrl != null && imageUrl!.isNotEmpty) {
-      return Image.network(
-        imageUrl!,
-        fit: BoxFit.cover,
-        errorBuilder: (_, _, _) => const _FallbackGradient(),
+      return Hero(
+        tag: 'ongoing_trip_image',
+        child: Image.network(
+          imageUrl!,
+          fit: BoxFit.cover,
+          errorBuilder: (_, _, _) => const _FallbackGradient(),
+        ),
       );
     }
     return const _FallbackGradient();

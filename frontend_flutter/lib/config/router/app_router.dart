@@ -21,6 +21,7 @@ import 'package:cadife_smart_travel/features/client/historico/presentation/pages
 import 'package:cadife_smart_travel/features/client/profile/presentation/pages/profile_page.dart'
     as client_profile;
 import 'package:cadife_smart_travel/features/client/status/presentation/pages/status_page.dart';
+import 'package:cadife_smart_travel/config/router/transitions/custom_page_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -91,28 +92,43 @@ final routerProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(
             path: '/agency/dashboard',
-            builder: (context, state) => const DashboardScreen(),
+            pageBuilder: (context, state) => SlideTransitionPage(
+              name: state.name,
+              child: const DashboardScreen(),
+            ),
           ),
           GoRoute(
             path: '/agency/leads',
-            builder: (context, state) => const LeadsPage(),
+            pageBuilder: (context, state) => SlideTransitionPage(
+              name: state.name,
+              child: const LeadsPage(),
+            ),
             routes: [
               GoRoute(
                 path: 'details',
-                builder: (context, state) {
+                pageBuilder: (context, state) {
                   final lead = state.extra as Lead;
-                  return LeadDetailPage(leadId: lead.id);
+                  return SlideTransitionPage(
+                    name: state.name,
+                    child: LeadDetailPage(leadId: lead.id),
+                  );
                 },
               ),
             ],
           ),
           GoRoute(
             path: '/agency/agenda',
-            builder: (context, state) => const AgendaScreen(),
+            pageBuilder: (context, state) => SlideTransitionPage(
+              name: state.name,
+              child: const AgendaScreen(),
+            ),
           ),
           GoRoute(
             path: '/agency/perfil',
-            builder: (context, state) => const ConsultorProfileScreen(),
+            pageBuilder: (context, state) => SlideTransitionPage(
+              name: state.name,
+              child: const ConsultorProfileScreen(),
+            ),
           ),
         ],
       ),
@@ -125,35 +141,53 @@ final routerProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(
             path: '/client/status',
-            builder: (context, state) => const StatusPage(),
+            pageBuilder: (context, state) => SlideTransitionPage(
+              name: state.name,
+              child: const StatusPage(),
+            ),
           ),
           GoRoute(
             path: '/client/historico',
-            builder: (context, state) => const HistoricoPage(),
+            pageBuilder: (context, state) => SlideTransitionPage(
+              name: state.name,
+              child: const HistoricoPage(),
+            ),
           ),
           GoRoute(
             path: '/client/documentos',
-            builder: (context, state) => const DocumentosPage(),
+            pageBuilder: (context, state) => SlideTransitionPage(
+              name: state.name,
+              child: const DocumentosPage(),
+            ),
             routes: [
               GoRoute(
                 path: 'viewer',
-                builder: (context, state) {
+                pageBuilder: (context, state) {
                   final doc = state.extra as Documento;
-                  return DocumentViewerPage(document: doc);
+                  return SlideTransitionPage(
+                    name: state.name,
+                    child: DocumentViewerPage(document: doc),
+                  );
                 },
               ),
               GoRoute(
                 path: ':tripId',
-                builder: (context, state) {
+                pageBuilder: (context, state) {
                   final tripId = state.pathParameters['tripId']!;
-                  return TripDocumentsPage(tripId: tripId);
+                  return SlideTransitionPage(
+                    name: state.name,
+                    child: TripDocumentsPage(tripId: tripId),
+                  );
                 },
               ),
             ],
           ),
           GoRoute(
             path: '/client/perfil',
-            builder: (context, state) => const client_profile.ProfileScreen(),
+            pageBuilder: (context, state) => SlideTransitionPage(
+              name: state.name,
+              child: const client_profile.ProfileScreen(),
+            ),
           ),
         ],
       ),

@@ -25,13 +25,38 @@ class TripDocumentsPage extends ConsumerWidget {
           orElse: () => throw Exception('Trip not found'),
         );
 
-        return PageScaffold(
-          title: trip.name,
-          body: SingleChildScrollView(
-            child: Column(
-              children: [
-                const SizedBox(height: 72),
-                Padding(
+        return Scaffold(
+          body: CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                expandedHeight: 200,
+                pinned: true,
+                flexibleSpace: FlexibleSpaceBar(
+                  title: Text(
+                    trip.name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      shadows: [Shadow(color: Colors.black45, blurRadius: 10)],
+                    ),
+                  ),
+                  background: trip.imageUrl != null
+                      ? Hero(
+                          tag: 'trip_image_${trip.id}',
+                          child: Image.network(
+                            trip.imageUrl!,
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                      : Container(color: context.cadife.primary),
+                ),
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => context.pop(),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -120,9 +145,9 @@ class TripDocumentsPage extends ConsumerWidget {
                     ],
                   ),
                 ),
-                const SizedBox(height: 24),
-              ],
-            ),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 24)),
+            ],
           ),
         );
       },
