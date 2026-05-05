@@ -1,9 +1,8 @@
+import 'package:cadife_smart_travel/features/notifications/application/providers/notification_providers.dart';
+import 'package:cadife_smart_travel/features/notifications/domain/entities/in_app_notification.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
-import '../../domain/entities/in_app_notification.dart';
-import '../../application/providers/notification_providers.dart';
 
 class NotificationTile extends ConsumerWidget {
   final InAppNotification notification;
@@ -193,7 +192,7 @@ class _NotificationTypeIcon extends StatelessWidget {
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: color.withOpacity(0.2),
+        color: color.withValues(alpha: 0.2),
       ),
       child: Icon(
         icon,

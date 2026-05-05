@@ -1,5 +1,4 @@
 import 'package:cadife_smart_travel/features/notifications/application/providers/notification_providers.dart';
-import 'package:cadife_smart_travel/features/notifications/domain/entities/in_app_notification.dart';
 import 'package:cadife_smart_travel/features/notifications/domain/repositories/i_notification_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';

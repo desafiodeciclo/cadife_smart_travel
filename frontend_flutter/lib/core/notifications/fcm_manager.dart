@@ -1,13 +1,12 @@
 import 'dart:developer' as developer;
 
+import 'package:cadife_smart_travel/core/di/service_locator.dart';
 import 'package:cadife_smart_travel/core/notifications/local_notification_manager.dart';
 import 'package:cadife_smart_travel/features/auth/domain/repositories/i_auth_repository.dart';
 import 'package:cadife_smart_travel/features/notifications/domain/dtos/notification_payload_dto.dart';
 import 'package:cadife_smart_travel/features/notifications/domain/entities/in_app_notification.dart';
 import 'package:cadife_smart_travel/features/notifications/domain/repositories/i_notification_repository.dart';
-import 'package:cadife_smart_travel/core/di/service_locator.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 
 class FCMManager {

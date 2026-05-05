@@ -1,11 +1,7 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:isar/isar.dart';
-
-import 'package:cadife_smart_travel/core/cache/isar_cache_manager.dart';
 import 'package:cadife_smart_travel/core/di/service_locator.dart';
-import '../../domain/entities/in_app_notification.dart';
-import '../../domain/repositories/i_notification_repository.dart';
-import '../../infrastructure/database/notification_isar.dart';
+import 'package:cadife_smart_travel/features/notifications/domain/entities/in_app_notification.dart';
+import 'package:cadife_smart_travel/features/notifications/domain/repositories/i_notification_repository.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Repositório
 final notificationRepositoryProvider = Provider<INotificationRepository>((ref) {
@@ -78,5 +74,5 @@ class NotificationNotifier extends AsyncNotifier<void> {
 
 final notificationNotifierProvider = 
   AsyncNotifierProvider<NotificationNotifier, void>(
-    () => NotificationNotifier(),
+    NotificationNotifier.new,
   );

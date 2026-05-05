@@ -1,7 +1,6 @@
+import 'package:cadife_smart_travel/features/notifications/domain/entities/in_app_notification.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:uuid/uuid.dart';
-
-import '../entities/in_app_notification.dart';
 
 class NotificationPayloadDTO {
   final String id;

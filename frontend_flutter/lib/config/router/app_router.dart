@@ -13,7 +13,6 @@ import 'package:cadife_smart_travel/features/auth/presentation/screens/forgot_pa
 import 'package:cadife_smart_travel/features/auth/presentation/screens/login_screen.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/screens/register_screen.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/screens/splash_screen.dart';
-import 'package:cadife_smart_travel/features/notifications/presentation/screens/notification_center_screen.dart';
 import 'package:cadife_smart_travel/features/client/documentos/domain/entities/documento.dart';
 import 'package:cadife_smart_travel/features/client/documentos/presentation/pages/document_viewer_page.dart';
 import 'package:cadife_smart_travel/features/client/documentos/presentation/pages/documentos_page.dart';
@@ -22,6 +21,7 @@ import 'package:cadife_smart_travel/features/client/historico/presentation/pages
 import 'package:cadife_smart_travel/features/client/profile/presentation/pages/profile_page.dart'
     as client_profile;
 import 'package:cadife_smart_travel/features/client/status/presentation/pages/status_page.dart';
+import 'package:cadife_smart_travel/features/notifications/presentation/screens/notification_center_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';

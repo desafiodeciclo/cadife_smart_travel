@@ -1,8 +1,7 @@
+import 'package:cadife_smart_travel/features/notifications/application/providers/notification_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
-import '../../application/providers/notification_providers.dart';
 
 class NotificationBell extends ConsumerWidget {
   const NotificationBell({super.key});
@@ -59,7 +58,7 @@ class NotificationBell extends ConsumerWidget {
         icon: const Icon(Icons.notifications_none),
         tooltip: 'Notificações',
       ),
-      error: (_, __) => IconButton(
+      error: (_, _) => IconButton(
         onPressed: () => context.push('/notifications'),
         icon: const Icon(Icons.notifications_none),
         tooltip: 'Notificações',

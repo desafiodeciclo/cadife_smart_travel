@@ -1,4 +1,4 @@
-import '../../domain/entities/in_app_notification.dart';
+import 'package:cadife_smart_travel/features/notifications/domain/entities/in_app_notification.dart';
 
 abstract class INotificationRepository {
   Future<void> saveNotification(InAppNotification notification);

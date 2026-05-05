@@ -1,6 +1,6 @@
+import 'package:cadife_smart_travel/features/notifications/domain/entities/in_app_notification.dart';
+import 'package:cadife_smart_travel/features/notifications/domain/repositories/i_notification_repository.dart';
 import 'package:isar/isar.dart';
-import '../../domain/entities/in_app_notification.dart';
-import '../../domain/repositories/i_notification_repository.dart';
 
 class NotificationIsarRepository implements INotificationRepository {
   final Isar _isar;

@@ -27,10 +27,10 @@ class DashboardScreen extends ConsumerWidget {
             child: CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
-                CadifeAppBar(
+                const CadifeAppBar(
                   title: 'Dashboard',
                   showNotificationBell: false,
-                  actions: [const NotificationBell()],
+                  actions: [NotificationBell()],
                 ),
                 SliverToBoxAdapter(
                   child: NotificationCard(

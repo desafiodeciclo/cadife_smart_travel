@@ -1,9 +1,7 @@
+import 'package:cadife_smart_travel/features/notifications/application/providers/notification_providers.dart';
+import 'package:cadife_smart_travel/features/notifications/presentation/widgets/notification_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-
-import '../../application/providers/notification_providers.dart';
-import '../widgets/notification_tile.dart';
 
 class NotificationCenterScreen extends ConsumerStatefulWidget {
   const NotificationCenterScreen({super.key});
@@ -64,7 +62,7 @@ class _NotificationCenterScreenState
               return const SizedBox.shrink();
             },
             loading: () => const SizedBox.shrink(),
-            error: (_, __) => const SizedBox.shrink(),
+            error: (_, _) => const SizedBox.shrink(),
           ),
           const SizedBox(width: 16),
         ],
