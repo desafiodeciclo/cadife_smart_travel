@@ -59,6 +59,8 @@ class Settings(BaseSettings):
         default="https://cloud.langfuse.com",
         description="Langfuse API host (self-hosted or cloud)",
     )
+    
+    SLACK_WEBHOOK_URL: str = Field(default="", description="Slack webhook URL for critical alerts")
 
     # ── Database (spec.md §3.3 — PostgreSQL preferred) ────────────────────
     DATABASE_URL: str = Field(

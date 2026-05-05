@@ -22,6 +22,7 @@ from slowapi.errors import RateLimitExceeded
 
 # Core / Infra
 from app.infrastructure.config.settings import get_settings
+from app.infrastructure.config.logging_config import configure_logging
 from app.infrastructure.persistence.database import create_tables
 from app.infrastructure.adapters.firebase import init_firebase
 from app.infrastructure.security.rate_limiter import limiter
@@ -44,6 +45,7 @@ from app.presentation.middlewares.security_headers import SecurityHeadersMiddlew
 # -------------------------------------------------------------------
 
 settings = get_settings()
+configure_logging()
 logger = structlog.get_logger()
 
 # Scheduler instance — configured at module level, started/stopped in lifespan

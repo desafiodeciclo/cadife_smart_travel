@@ -65,12 +65,17 @@ async def get_or_create_by_phone(db: AsyncSession, phone: str, name: Optional[st
     db.add(briefing)
     await db.commit()
     await db.refresh(lead)
-    logger.info("lead_created", lead_id=str(lead.id), phone=phone)
+    logger.info(
+        "lead_created",
+        lead_id=str(lead.id),
+        phone=phone,
+        initial_status=lead.status.value if hasattr(lead.status, 'value') else str(lead.status)
+    )
     return lead
 
 
 async def get_lead_by_id(db: AsyncSession, lead_id: uuid.UUID) -> Optional[Lead]:
-    result = await db.execute(select(Lead).where(Lead.id == lead_id, Lead.is_archived == False))
+    result = await db.execute(select(Lead).where(Lead.id == lead_id, Lead.is_archived.is_(False)))
     return result.scalar_one_or_none()
 
 
@@ -83,7 +88,7 @@ async def list_leads(
     limit: int = 20,
     consultor_id: Optional[uuid.UUID] = None,
 ) -> tuple[list[Lead], int]:
-    query = select(Lead).where(Lead.is_archived == False)
+    query = select(Lead).where(Lead.is_archived.is_(False))
     if status:
         query = query.where(Lead.status == status)
     if score:
@@ -104,10 +109,27 @@ async def list_leads(
     return list(result.scalars().all()), total
 
 
-async def update_lead_status(db: AsyncSession, lead: Lead, new_status: LeadStatus) -> Lead:
+async def update_lead_status(
+    db: AsyncSession, 
+    lead: Lead, 
+    new_status: LeadStatus,
+    triggered_by: str = "user_manual"
+) -> Lead:
+    old_status = lead.status
+    if old_status == new_status:
+        return lead
+        
     lead.status = new_status
     await db.commit()
     await db.refresh(lead)
+    
+    logger.info(
+        "lead_status_transition",
+        lead_id=str(lead.id),
+        old_status=old_status.value if hasattr(old_status, 'value') else str(old_status),
+        new_status=new_status.value if hasattr(new_status, 'value') else str(new_status),
+        triggered_by=triggered_by
+    )
     return lead
 
 
@@ -134,7 +156,7 @@ async def update_briefing_from_extraction(
     lead.score = calculate_score_from_briefing(briefing)
 
     if briefing.completude_pct >= 60 and lead.status == LeadStatus.em_atendimento:
-        lead.status = LeadStatus.qualificado
+        await update_lead_status(db, lead, LeadStatus.qualificado, triggered_by="ai_auto")
         logger.info("lead_qualified", lead_id=str(lead.id), completude=briefing.completude_pct)
 
     await db.commit()

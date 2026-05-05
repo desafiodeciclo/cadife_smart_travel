@@ -1,3 +1,5 @@
+import 'package:cadife_smart_travel/core/analytics/analytics_service.dart';
+import 'package:cadife_smart_travel/core/di/service_locator.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/providers/leads_usecases_providers.dart';
 import 'package:cadife_smart_travel/features/notifications/application/providers/notification_providers.dart';
@@ -40,7 +42,26 @@ class LeadDetailNotifier extends FamilyAsyncNotifier<Lead?, String> {
     final result = await ref.read(updateLeadStatusUseCaseProvider).call(arg, newStatus);
     result.fold(
       (failure) => state = AsyncError(failure, StackTrace.current),
-      (_) => refresh(),
+      (_) {
+        final analytics = sl<AnalyticsService>();
+        analytics.logEvent('lead_status_updated', parameters: {
+          'lead_id': arg,
+          'new_status': newStatus.name,
+        });
+
+        if (newStatus == LeadStatus.qualificado) {
+          final lead = state.value;
+          analytics.logEvent('lead_qualified', parameters: {
+            'lead_id': arg,
+            'score': lead?.score.name,
+            'time_to_qualify_seconds': lead?.createdAt != null 
+                ? DateTime.now().difference(lead!.createdAt!).inSeconds 
+                : null,
+          });
+        }
+
+        refresh();
+      },
     );
   }
 }

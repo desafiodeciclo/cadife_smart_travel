@@ -1,5 +1,6 @@
 import 'package:cadife_smart_travel/config/router/agency_shell.dart';
 import 'package:cadife_smart_travel/config/router/client_shell.dart';
+import 'package:cadife_smart_travel/core/analytics/analytics_navigation_observer.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/presentation/pages/agenda_page.dart';
 import 'package:cadife_smart_travel/features/agency/dashboard/dashboard_screen.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
@@ -31,6 +32,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   final notifier = _RouterNotifier(authBloc.stream);
 
   return GoRouter(
+    observers: [AnalyticsNavigationObserver()],
     refreshListenable: notifier,
     initialLocation: '/splash',
     redirect: (context, state) {
@@ -69,18 +71,22 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(
         path: '/splash',
+        name: 'splash',
         builder: (context, state) => const SplashScreen(),
       ),
       GoRoute(
         path: '/auth/login',
+        name: 'login',
         builder: (context, state) => const LoginScreen(),
       ),
       GoRoute(
         path: '/auth/register',
+        name: 'register',
         builder: (context, state) => const RegisterScreen(),
       ),
       GoRoute(
         path: '/auth/forgot-password',
+        name: 'forgot_password',
         builder: (context, state) => const ForgotPasswordScreen(),
       ),
 
@@ -92,14 +98,17 @@ final routerProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(
             path: '/agency/dashboard',
+            name: 'agency_dashboard',
             builder: (context, state) => const DashboardScreen(),
           ),
           GoRoute(
             path: '/agency/leads',
+            name: 'agency_leads',
             builder: (context, state) => const LeadsPage(),
             routes: [
               GoRoute(
                 path: 'details',
+                name: 'agency_lead_details',
                 builder: (context, state) {
                   final lead = state.extra as Lead;
                   return LeadDetailPage(leadId: lead.id);
@@ -109,10 +118,12 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/agency/agenda',
+            name: 'agency_agenda',
             builder: (context, state) => const AgendaScreen(),
           ),
           GoRoute(
             path: '/agency/perfil',
+            name: 'agency_profile',
             builder: (context, state) => const ConsultorProfileScreen(),
           ),
           GoRoute(
@@ -137,18 +148,22 @@ final routerProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(
             path: '/client/status',
+            name: 'client_status',
             builder: (context, state) => const StatusPage(),
           ),
           GoRoute(
             path: '/client/historico',
+            name: 'client_history',
             builder: (context, state) => const HistoricoPage(),
           ),
           GoRoute(
             path: '/client/documentos',
+            name: 'client_documents',
             builder: (context, state) => const DocumentosPage(),
             routes: [
               GoRoute(
                 path: 'viewer',
+                name: 'client_document_viewer',
                 builder: (context, state) {
                   final doc = state.extra as Documento;
                   return DocumentViewerPage(document: doc);
@@ -156,6 +171,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
               GoRoute(
                 path: ':tripId',
+                name: 'client_trip_documents',
                 builder: (context, state) {
                   final tripId = state.pathParameters['tripId']!;
                   return TripDocumentsPage(tripId: tripId);
@@ -165,6 +181,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/client/perfil',
+            name: 'client_profile',
             builder: (context, state) => const client_profile.ProfileScreen(),
           ),
         ],

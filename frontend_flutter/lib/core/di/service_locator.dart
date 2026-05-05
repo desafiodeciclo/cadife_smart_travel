@@ -1,3 +1,4 @@
+import 'package:cadife_smart_travel/core/analytics/analytics_service.dart';
 import 'package:cadife_smart_travel/core/cache/database_helper.dart';
 import 'package:cadife_smart_travel/core/cache/isar_cache_manager.dart';
 import 'package:cadife_smart_travel/core/config/env_config.dart';
@@ -59,6 +60,8 @@ Future<void> setupServiceLocator({
   // Registrar o EnvConfig no Service Locator para uso global
   final env = config ?? EnvConfig.dev;
   sl.registerSingleton<EnvConfig>(env);
+  
+  sl.registerSingleton<AnalyticsService>(AnalyticsService());
   // ── 1. Infra Layer (singletons — performance-critical) ──
 
   sl.registerLazySingleton<NetworkInfo>(NetworkInfo.new);
@@ -223,6 +226,8 @@ Future<void> initDependencies() async {
   await sl<OfflineManager>().initialize();
   await sl<IsarCacheManager>().initialize();
   await sl<OfflineSyncQueue>().initialize();
+  
+  await sl<AnalyticsService>().init();
   
   await LocalNotificationManager.init();
   await FCMManager.init();
