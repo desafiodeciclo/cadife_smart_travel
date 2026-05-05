@@ -1,6 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:cadife_smart_travel/design_system/tokens/app_colors.dart';
-
+import 'package:flutter/material.dart';
 /// Widget wrapper que encapsula lógica de Hero com validações
 class HeroImage extends StatelessWidget {
   final String heroTag;
@@ -36,7 +35,7 @@ class HeroImage extends StatelessWidget {
             height: height,
             width: width,
             fit: fit,
-            errorBuilder: (_, __, ___) => Container(
+            errorBuilder: (_, _, _) => Container(
               height: height,
               width: width,
               color: Colors.grey[300],

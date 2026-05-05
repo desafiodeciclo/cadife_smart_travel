@@ -8,11 +8,10 @@ class SlideTransitionPage<T> extends CustomTransitionPage<T> {
     super.arguments,
     super.restorationId,
     super.key,
-    this.transitionDuration = const Duration(milliseconds: 280),
+    super.transitionDuration = const Duration(milliseconds: 280),
     this.curve = Curves.easeInOut,
     this.reverse = false,
   }) : super(
-          transitionDuration: transitionDuration,
           transitionsBuilder: (context, animation, secondaryAnimation, child) =>
               _buildSlideTransition(
             animation,
@@ -24,7 +23,6 @@ class SlideTransitionPage<T> extends CustomTransitionPage<T> {
           ),
         );
 
-  final Duration transitionDuration;
   final Curve curve;
   final bool reverse;
 
@@ -68,9 +66,8 @@ class ModalSlideTransitionPage<T> extends CustomTransitionPage<T> {
     super.arguments,
     super.restorationId,
     super.key,
-    this.transitionDuration = const Duration(milliseconds: 300),
+    super.transitionDuration = const Duration(milliseconds: 300),
   }) : super(
-          transitionDuration: transitionDuration,
           transitionsBuilder: (context, animation, secondaryAnimation, child) =>
               SlideTransition(
             position: animation.drive(
@@ -89,5 +86,4 @@ class ModalSlideTransitionPage<T> extends CustomTransitionPage<T> {
           ),
         );
 
-  final Duration transitionDuration;
 }

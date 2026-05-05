@@ -24,8 +24,8 @@ class AnimatedTabContent extends StatelessWidget {
           child: child,
         ),
       ),
-      child: child,
       key: ValueKey(tabIndex), // Force rebuild ao mudar aba
+      child: child,
     );
   }
 }

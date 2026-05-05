@@ -1,5 +1,6 @@
 import 'package:cadife_smart_travel/config/router/agency_shell.dart';
 import 'package:cadife_smart_travel/config/router/client_shell.dart';
+import 'package:cadife_smart_travel/config/router/transitions/custom_page_route.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/presentation/pages/agenda_page.dart';
 import 'package:cadife_smart_travel/features/agency/dashboard/dashboard_screen.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
@@ -18,10 +19,8 @@ import 'package:cadife_smart_travel/features/client/documentos/presentation/page
 import 'package:cadife_smart_travel/features/client/documentos/presentation/pages/documentos_page.dart';
 import 'package:cadife_smart_travel/features/client/documentos/presentation/pages/trip_documents_page.dart';
 import 'package:cadife_smart_travel/features/client/historico/presentation/pages/historico_page.dart';
-import 'package:cadife_smart_travel/features/client/profile/presentation/pages/profile_page.dart'
-    as client_profile;
+import 'package:cadife_smart_travel/features/client/profile/presentation/pages/profile_page.dart' as client_profile;
 import 'package:cadife_smart_travel/features/client/status/presentation/pages/status_page.dart';
-import 'package:cadife_smart_travel/config/router/transitions/custom_page_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';

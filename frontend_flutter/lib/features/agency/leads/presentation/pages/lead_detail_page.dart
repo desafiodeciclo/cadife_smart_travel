@@ -4,9 +4,9 @@ import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.d
 import 'package:cadife_smart_travel/features/agency/leads/presentation/providers/lead_detail_provider.dart';
 import 'package:cadife_smart_travel/features/agency/propostas/presentation/widgets/create_proposal_modal.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/animated_tab_content.dart';
-import 'package:cadife_smart_travel/shared/presentation/widgets/hero_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 class LeadDetailPage extends ConsumerStatefulWidget {
   final String leadId;
