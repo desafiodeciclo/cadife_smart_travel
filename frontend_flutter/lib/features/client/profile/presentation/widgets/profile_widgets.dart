@@ -502,6 +502,63 @@ class ProfileThemeSelector extends StatelessWidget {
   }
 }
 
+class ProfileActionsSection extends StatelessWidget {
+  const ProfileActionsSection({
+    required this.isEditing,
+    required this.isSaving,
+    required this.onSave,
+    required this.onCancel,
+    required this.onLogout,
+    required this.onDeleteAccount,
+    super.key,
+  });
+
+  final bool isEditing;
+  final bool isSaving;
+  final VoidCallback onSave;
+  final VoidCallback onCancel;
+  final VoidCallback onLogout;
+  final VoidCallback onDeleteAccount;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      child: Column(
+        children: [
+          if (isEditing) ...[
+            CadifeButton(
+              onPressed: isSaving ? null : onSave,
+              isLoading: isSaving,
+              text: 'Salvar alterações',
+            ),
+            const SizedBox(height: 12),
+            CadifeButton(
+              onPressed: onCancel,
+              text: 'Cancelar',
+              isOutline: true,
+            ),
+            const SizedBox(height: 12),
+          ],
+          CadifeButton(
+            onPressed: onLogout,
+            text: 'Sair da conta',
+            icon: Icons.logout,
+            isOutline: true,
+          ),
+          const SizedBox(height: 12),
+          CadifeButton(
+            onPressed: onDeleteAccount,
+            text: 'Apagar conta',
+            icon: Icons.delete_outline,
+            isOutline: true,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ProfileThemeOption extends StatelessWidget {
   const _ProfileThemeOption({
     required this.mode,

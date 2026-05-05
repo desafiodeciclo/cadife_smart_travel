@@ -24,7 +24,7 @@ class LeadDetailNotifier extends FamilyAsyncNotifier<Lead?, String> {
     }
 
     return result.fold(
-      (failure) => throw failure, // ignore: only_throw_errors
+      (failure) => throw failure,
       (lead) => lead,
     );
   }

@@ -2,6 +2,7 @@ import 'package:cadife_smart_travel/features/agency/propostas/domain/entities/pr
 import 'package:cadife_smart_travel/features/agency/propostas/domain/repositories/i_proposals_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+// Override registrado em: lib/core/di/provider_overrides.dart
 final iProposalsRepositoryProvider = Provider<IProposalsRepository>((ref) {
   throw UnimplementedError('Override em ProviderScope');
 });
@@ -17,7 +18,7 @@ class ProposalsNotifier extends AsyncNotifier<List<Proposta>> {
     final repo = ref.watch(iProposalsRepositoryProvider);
     final result = await repo.getProposals();
     return result.fold<List<Proposta>>(
-      (failure) => throw failure, // ignore: only_throw_errors
+      (failure) => throw failure,
       (proposals) => proposals,
     );
   }

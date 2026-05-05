@@ -7,13 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-/// Tela de perfil do cliente.
-///
-/// Exibe dados pessoais (nome editÃƒÂ¡vel, email, telefone read-only),
-/// preferÃƒÂªncias de viagem via chips (tipo_viagem, preferencias),
-/// toggle de passaporte vÃƒÂ¡lido, controle de tema e logout.
-///
-/// Integra com GET /users/me e PATCH /users/me via [IProfileRepository].
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
@@ -24,7 +17,6 @@ class ProfileScreen extends ConsumerStatefulWidget {
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final _nameController = TextEditingController();
   bool _isEditing = false;
-  bool _isSaving = false;
   bool _hasSynced = false;
 
   final List<String> _tipoViagemSelected = [];
@@ -35,8 +27,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     'turismo',
     'lazer',
     'aventura',
-    'imigraÃƒÂ§ÃƒÂ£o',
-    'negÃƒÂ³cios',
+    'imigração',
+    'negócios',
   ];
 
   static const _preferenciasOptions = [
@@ -45,7 +37,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     'praia',
     'cidade',
     'luxo',
-    'econÃƒÂ´mico',
+    'econômico',
   ];
 
   @override
@@ -68,30 +60,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Future<void> _save(AuthUser? current) async {
-    if (current == null || _isSaving) return;
-    setState(() => _isSaving = true);
-    try {
-      await ref.read(userProfileProvider.notifier).updateProfile(
-            name: _nameController.text.trim(),
-            tipoViagem: List<String>.from(_tipoViagemSelected),
-            preferencias: List<String>.from(_preferenciasSelected),
-            temPassaporte: _temPassaporte,
-          );
-      if (mounted) {
+    if (current == null) return;
+    final success = await ref.read(userProfileProvider.notifier).updateProfile(
+          name: _nameController.text.trim(),
+          tipoViagem: List<String>.from(_tipoViagemSelected),
+          preferencias: List<String>.from(_preferenciasSelected),
+          temPassaporte: _temPassaporte,
+        );
+    if (mounted) {
+      if (success) {
         setState(() {
           _isEditing = false;
           _hasSynced = false;
-          _isSaving = false;
         });
         ShadToaster.of(context).show(
-          const ShadToast(
-            description: Text('Perfil atualizado com sucesso'),
-          ),
+          const ShadToast(description: Text('Perfil atualizado com sucesso')),
         );
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() => _isSaving = false);
+      } else {
         ShadToaster.of(context).show(
           const ShadToast.destructive(
             description: Text('Erro ao salvar. Tente novamente.'),
@@ -105,20 +90,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget build(BuildContext context) {
     final userAsync = ref.watch(userProfileProvider);
     final themeMode = ref.watch(themeModeProvider);
+    final isSaving = ref.watch(profileSaveStateProvider) is AsyncLoading;
 
     return PageScaffold(
       title: 'MEU PERFIL',
       showProfile: false,
       body: userAsync.when(
-        loading: () =>
-            const AppLoadingWidget(message: 'Carregando perfil...'),
+        loading: () => const AppLoadingWidget(message: 'Carregando perfil...'),
         error: (e, _) => AppErrorWidget(
           message: 'Erro ao carregar perfil. Tente novamente.',
           onRetry: () => ref.invalidate(userProfileProvider),
         ),
         data: (user) {
           if (!_isEditing) _syncFromUser(user);
-          return _buildContent(context, user, themeMode);
+          return _buildContent(context, user, themeMode, isSaving);
         },
       ),
     );
@@ -128,11 +113,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     BuildContext context,
     AuthUser? user,
     ThemeMode themeMode,
+    bool isSaving,
   ) {
     return CustomScrollView(
       slivers: [
         const SliverToBoxAdapter(child: SizedBox(height: 72)),
-        // ── Header com avatar e nome ──────────────────────────────
         SliverToBoxAdapter(
           child: ProfileHeader(
             user: user,
@@ -141,8 +126,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             onToggleEdit: () => setState(() => _isEditing = !_isEditing),
           ),
         ),
-
-        // ── Dados Pessoais ────────────────────────────────────────
         SliverToBoxAdapter(
           child: ProfileSectionCard(
             title: 'Dados Pessoais',
@@ -170,8 +153,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ],
           ),
         ),
-
-        // ── Preferências de Viagem ────────────────────────────────
         SliverToBoxAdapter(
           child: ProfileSectionCard(
             title: 'Preferências de Viagem',
@@ -208,8 +189,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ],
           ),
         ),
-
-        // ── Passaporte ───────────────────────────────────────────
         SliverToBoxAdapter(
           child: ProfilePassaporteCard(
             value: _temPassaporte,
@@ -219,8 +198,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 : null,
           ),
         ),
-
-        // ── Aparência (tema) ──────────────────────────────────────
         SliverToBoxAdapter(
           child: ProfileSectionCard(
             title: 'Aparência',
@@ -242,129 +219,92 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ],
           ),
         ),
-
-        // ── Ações (salvar / logout / apagar conta) ──────────────────
         SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            child: Column(
-              children: [
-                if (_isEditing) ...[
-                  CadifeButton(
-                    onPressed: _isSaving ? null : () => _save(user),
-                    isLoading: _isSaving,
-                    text: 'Salvar alterações',
-                  ),
-                  const SizedBox(height: 12),
-                  CadifeButton(
-                    onPressed: () {
-                      setState(() {
-                        _isEditing = false;
-                        _hasSynced = false;
-                        _syncFromUser(user);
-                      });
-                    },
-                    text: 'Cancelar',
-                    isOutline: true,
-                  ),
-                  const SizedBox(height: 12),
-                ],
-                CadifeButton(
-                  onPressed: () => _confirmLogout(context, ref),
-                  text: 'Sair da conta',
-                  icon: Icons.logout,
-                  isOutline: true,
-                ),
-                const SizedBox(height: 12),
-                CadifeButton(
-                  onPressed: () => _confirmDeleteAccount(context, ref),
-                  text: 'Apagar conta',
-                  icon: Icons.delete_outline,
-                  isOutline: true,
-                ),
-              ],
-            ),
+          child: ProfileActionsSection(
+            isEditing: _isEditing,
+            isSaving: isSaving,
+            onSave: () => _save(user),
+            onCancel: () => setState(() {
+              _isEditing = false;
+              _hasSynced = false;
+              _syncFromUser(user);
+            }),
+            onLogout: () => _confirmLogout(context, ref),
+            onDeleteAccount: () => _confirmDeleteAccount(context, ref),
           ),
         ),
-
         const SliverToBoxAdapter(child: SizedBox(height: 32)),
       ],
     );
   }
+}
 
-  Future<void> _confirmLogout(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showShadDialog<bool>(
-      context: context,
-      builder: (ctx) => ShadDialog(
-        title: const Text('Sair da conta'),
-        description: const Text('Tem certeza que deseja sair?'),
-        actions: [
-          ShadButton.outline(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          ShadButton.destructive(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Sair'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true && context.mounted) {
-      await ref.read(authNotifierProvider.notifier).logout();
-    }
-  }
-
-  Future<void> _confirmDeleteAccount(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showShadDialog<bool>(
-      context: context,
-      builder: (ctx) => ShadDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.warning_amber_rounded, color: AppColors.error, size: 24),
-            SizedBox(width: 8),
-            Text('Apagar conta'),
-          ],
+Future<void> _confirmLogout(BuildContext context, WidgetRef ref) async {
+  final confirmed = await showShadDialog<bool>(
+    context: context,
+    builder: (ctx) => ShadDialog(
+      title: const Text('Sair da conta'),
+      description: const Text('Tem certeza que deseja sair?'),
+      actions: [
+        ShadButton.outline(
+          onPressed: () => Navigator.of(ctx).pop(false),
+          child: const Text('Cancelar'),
         ),
-        description: const Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Você está prestes a apagar permanentemente sua conta e todos os dados associados.',
-            ),
-            SizedBox(height: 12),
-            Text(
-              'Esta ação não pode ser desfeita.',
-              style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.error),
-            ),
-          ],
+        ShadButton.destructive(
+          onPressed: () => Navigator.of(ctx).pop(true),
+          child: const Text('Sair'),
         ),
-        actions: [
-          ShadButton.outline(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          ShadButton.destructive(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Apagar minha conta'),
-          ),
-        ],
-      ),
-    );
+      ],
+    ),
+  );
 
-    // Backend integration pending: integrar com DELETE /users/me quando o endpoint existir.
-    if (confirmed == true && context.mounted) {
-      ShadToaster.of(context).show(
-        const ShadToast(
-          description: Text('Funcionalidade em breve'),
-        ),
-      );
-    }
+  if (confirmed == true && context.mounted) {
+    await ref.read(authNotifierProvider.notifier).logout();
   }
 }
 
+Future<void> _confirmDeleteAccount(BuildContext context, WidgetRef ref) async {
+  final confirmed = await showShadDialog<bool>(
+    context: context,
+    builder: (ctx) => ShadDialog(
+      title: const Row(
+        children: [
+          Icon(Icons.warning_amber_rounded, color: AppColors.error, size: 24),
+          SizedBox(width: 8),
+          Text('Apagar conta'),
+        ],
+      ),
+      description: const Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Você está prestes a apagar permanentemente sua conta e todos os dados associados.',
+          ),
+          SizedBox(height: 12),
+          Text(
+            'Esta ação não pode ser desfeita.',
+            style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.error),
+          ),
+        ],
+      ),
+      actions: [
+        ShadButton.outline(
+          onPressed: () => Navigator.of(ctx).pop(false),
+          child: const Text('Cancelar'),
+        ),
+        ShadButton.destructive(
+          onPressed: () => Navigator.of(ctx).pop(true),
+          child: const Text('Apagar minha conta'),
+        ),
+      ],
+    ),
+  );
 
-
-
+  // Backend integration pending: integrar com DELETE /users/me quando o endpoint existir.
+  if (confirmed == true && context.mounted) {
+    ShadToaster.of(context).show(
+      const ShadToast(description: Text('Funcionalidade em breve')),
+    );
+  }
+}

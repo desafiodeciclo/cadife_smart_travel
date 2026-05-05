@@ -2,6 +2,7 @@ import 'package:cadife_smart_travel/features/agency/settings/domain/entities/age
 import 'package:cadife_smart_travel/features/agency/settings/domain/repositories/i_agency_settings_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+// Override registrado em: lib/core/di/provider_overrides.dart
 final iAgencySettingsRepositoryProvider = Provider<IAgencySettingsRepository>((ref) {
   throw UnimplementedError('Override em ProviderScope');
 });
@@ -16,7 +17,7 @@ class AgencySettingsNotifier extends AsyncNotifier<AgencySettings> {
   Future<AgencySettings> build() async {
     final result = await ref.watch(iAgencySettingsRepositoryProvider).getSettings();
     return result.fold<AgencySettings>(
-      (failure) => throw failure, // ignore: only_throw_errors
+      (failure) => throw failure,
       (settings) => settings,
     );
   }

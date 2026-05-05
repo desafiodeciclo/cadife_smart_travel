@@ -101,7 +101,7 @@ linter:
     null_closures: true
     omit_local_variable_types: false
     one_member_abstracts: true
-    only_throw_errors: true
+    only_throw_errors: false
     parameter_assignments: true
     prefer_adjacent_string_concatenation: true
     prefer_collection_literals: true

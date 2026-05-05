@@ -2,6 +2,7 @@ import 'package:cadife_smart_travel/features/agency/agenda/domain/entities/agend
 import 'package:cadife_smart_travel/features/agency/agenda/domain/repositories/i_agenda_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+// Override registrado em: lib/core/di/provider_overrides.dart
 final agendaRepositoryProvider = Provider<IAgendaRepository>((ref) {
   throw UnimplementedError('Override em ProviderScope');
 });
@@ -25,7 +26,7 @@ class AgendaNotifier extends AsyncNotifier<List<Agendamento>> {
     final agendaRepository = ref.watch(agendaRepositoryProvider);
     final result = await agendaRepository.getAgenda();
     return result.fold(
-      (failure) => throw failure, // ignore: only_throw_errors
+      (failure) => throw failure,
       (agenda) => agenda,
     );
   }
