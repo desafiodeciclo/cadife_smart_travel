@@ -1,6 +1,7 @@
 import 'package:cadife_smart_travel/config/router/agency_shell.dart';
 import 'package:cadife_smart_travel/config/router/client_shell.dart';
 import 'package:cadife_smart_travel/config/router/transitions/custom_page_route.dart';
+import 'package:cadife_smart_travel/core/analytics/analytics_navigation_observer.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/presentation/pages/agenda_page.dart';
 import 'package:cadife_smart_travel/features/agency/dashboard/dashboard_screen.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
@@ -21,6 +22,7 @@ import 'package:cadife_smart_travel/features/client/documentos/presentation/page
 import 'package:cadife_smart_travel/features/client/historico/presentation/pages/historico_page.dart';
 import 'package:cadife_smart_travel/features/client/profile/presentation/pages/profile_page.dart' as client_profile;
 import 'package:cadife_smart_travel/features/client/status/presentation/pages/status_page.dart';
+import 'package:cadife_smart_travel/features/notifications/presentation/screens/notification_center_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -30,6 +32,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   final notifier = _RouterNotifier(authBloc.stream);
 
   return GoRouter(
+    observers: [AnalyticsNavigationObserver()],
     refreshListenable: notifier,
     initialLocation: '/splash',
     redirect: (context, state) {
@@ -68,18 +71,22 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(
         path: '/splash',
+        name: 'splash',
         builder: (context, state) => const SplashScreen(),
       ),
       GoRoute(
         path: '/auth/login',
+        name: 'login',
         builder: (context, state) => const LoginScreen(),
       ),
       GoRoute(
         path: '/auth/register',
+        name: 'register',
         builder: (context, state) => const RegisterScreen(),
       ),
       GoRoute(
         path: '/auth/forgot-password',
+        name: 'forgot_password',
         builder: (context, state) => const ForgotPasswordScreen(),
       ),
 
@@ -91,6 +98,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(
             path: '/agency/dashboard',
+            name: 'agency_dashboard',
             pageBuilder: (context, state) => SlideTransitionPage(
               name: state.name,
               child: const DashboardScreen(),
@@ -98,6 +106,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/agency/leads',
+            name: 'agency_leads',
             pageBuilder: (context, state) => SlideTransitionPage(
               name: state.name,
               child: const LeadsPage(),
@@ -105,6 +114,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: 'details',
+                name: 'agency_lead_details',
                 pageBuilder: (context, state) {
                   final lead = state.extra as Lead;
                   return SlideTransitionPage(
@@ -117,6 +127,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/agency/agenda',
+            name: 'agency_agenda',
             pageBuilder: (context, state) => SlideTransitionPage(
               name: state.name,
               child: const AgendaScreen(),
@@ -124,10 +135,22 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/agency/perfil',
+            name: 'agency_profile',
             pageBuilder: (context, state) => SlideTransitionPage(
               name: state.name,
               child: const ConsultorProfileScreen(),
             ),
+          ),
+          GoRoute(
+            path: '/notifications',
+            builder: (context, state) => const NotificationCenterScreen(),
+          ),
+          GoRoute(
+            path: '/leads/:leadId',
+            builder: (context, state) {
+              final leadId = state.pathParameters['leadId']!;
+              return LeadDetailPage(leadId: leadId);
+            },
           ),
         ],
       ),
@@ -140,6 +163,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(
             path: '/client/status',
+            name: 'client_status',
             pageBuilder: (context, state) => SlideTransitionPage(
               name: state.name,
               child: const StatusPage(),
@@ -147,6 +171,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/client/historico',
+            name: 'client_history',
             pageBuilder: (context, state) => SlideTransitionPage(
               name: state.name,
               child: const HistoricoPage(),
@@ -154,6 +179,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/client/documentos',
+            name: 'client_documents',
             pageBuilder: (context, state) => SlideTransitionPage(
               name: state.name,
               child: const DocumentosPage(),
@@ -161,6 +187,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: 'viewer',
+                name: 'client_document_viewer',
                 pageBuilder: (context, state) {
                   final doc = state.extra as Documento;
                   return SlideTransitionPage(
@@ -171,6 +198,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
               GoRoute(
                 path: ':tripId',
+                name: 'client_trip_documents',
                 pageBuilder: (context, state) {
                   final tripId = state.pathParameters['tripId']!;
                   return SlideTransitionPage(
@@ -183,6 +211,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/client/perfil',
+            name: 'client_profile',
             pageBuilder: (context, state) => SlideTransitionPage(
               name: state.name,
               child: const client_profile.ProfileScreen(),
