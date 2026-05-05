@@ -1,0 +1,100 @@
+{
+  "id": "notification-dlq-throttle-001",
+  "title": "Notificador com DLQ e Rate Limiting/Throttling em Alertas",
+  "description": "Implementar fila de notificações push com Dead Letter Queue (DLQ) para envio assíncrono de alertas quando lead transita para QUALIFICADO, incluindo backoff exponencial com retry_delay/max_retries. Adicionar debounce de 60 segundos por lead_id via Redis para evitar notificações excessivas quando a IA extrai blocos picados.",
+  "status": "done",
+  "assignee": "Nikolas Tesch",
+  "created_at": "2026-05-05",
+  "priority": "high",
+  "epic": "Backend — Notificações Push (FCM)",
+  "source": "spec.md §8.4, §9.1",
+  "acceptance_criteria": [
+    "Tabela notification_queue persiste jobs de push pendentes com retry_count, max_retries, retry_delay_seconds e next_retry_at",
+    "Tabela dead_letter_queue recebe jobs que excederam max_retries com payload original e error_trace",
+    "Debounce via Redis (TTL 60s) impede múltiplas notificações do mesmo lead_id em menos de 1 minuto",
+    "Worker processa fila a cada 15s aplicando backoff exponencial (retry_delay * 2^retry_count)",
+    "Ao falhar max_retries vezes o job é movido para DLQ e removido da fila ativa",
+    "process_whatsapp_message enfileira notificação assincronamente em vez de chamar FCM síncrono",
+    "Testes pytest cobrem debounce, enqueue, worker success, worker retry exhaustion e DLQ"
+  ],
+  "completed_at": "2026-05-05",
+  "steps": [
+    {
+      "step": 1,
+      "title": "Criar modelos NotificationQueue e DeadLetterQueue",
+      "description": "Adicionar tabelas SQLAlchemy para fila de notificações e dead letter queue com campos de retry e payload JSON",
+      "status": "done",
+      "files": [
+        "backend/app/models/notification_queue.py",
+        "backend/app/models/dead_letter_queue.py"
+      ]
+    },
+    {
+      "step": 2,
+      "title": "Criar serviço de debounce/throttle com Redis",
+      "description": "Serviço que usa Redis com TTL 60s para controlar frequência de notificações por lead_id",
+      "status": "done",
+      "files": [
+        "backend/app/services/notification_debounce_service.py"
+      ]
+    },
+    {
+      "step": 3,
+      "title": "Criar serviço de fila (notification_queue_service)",
+      "description": "Serviço para enfileirar notificações de lead qualificado, respeitando debounce e evitando duplicatas",
+      "status": "done",
+      "files": [
+        "backend/app/services/notification_queue_service.py"
+      ]
+    },
+    {
+      "step": 4,
+      "title": "Criar Notification Worker com backoff e DLQ",
+      "description": "Worker que processa items pending da fila, aplica backoff exponencial, envia FCM e move para DLQ ao exaurir retries",
+      "status": "done",
+      "files": [
+        "backend/app/jobs/notification_worker.py"
+      ]
+    },
+    {
+      "step": 5,
+      "title": "Integrar worker no scheduler do FastAPI",
+      "description": "Registrar job no AsyncIOScheduler para processar fila a cada 15 segundos no lifespan",
+      "status": "done",
+      "files": [
+        "backend/main.py"
+      ]
+    },
+    {
+      "step": 6,
+      "title": "Refatorar process_whatsapp_message para usar fila",
+      "description": "Substituir chamada síncrona _notify_consultants por enqueue_qualified_lead_notification no notification_queue_service",
+      "status": "done",
+      "files": [
+        "backend/app/application/use_cases/process_whatsapp_message.py"
+      ]
+    },
+    {
+      "step": 7,
+      "title": "Escrever testes pytest",
+      "description": "Testes unitários e de integração para debounce, fila, worker, backoff e DLQ",
+      "status": "done",
+      "files": [
+        "backend/tests/test_services/test_notification_debounce.py",
+        "backend/tests/test_services/test_notification_queue.py",
+        "backend/tests/test_jobs/test_notification_worker.py"
+      ]
+    },
+    {
+      "step": 8,
+      "title": "Atualizar configurações e documentação",
+      "description": "Adicionar variáveis de ambiente no .env.example e garantir que create_tables inclua novos modelos",
+      "status": "done",
+      "files": [
+        "backend/.env.example",
+        "backend/app/infrastructure/config/settings.py",
+        "backend/app/infrastructure/persistence/models/__init__.py"
+      ]
+    }
+  ]
+}

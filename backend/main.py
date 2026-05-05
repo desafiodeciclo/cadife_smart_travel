@@ -30,6 +30,7 @@ from app.services.ingestion_pipeline import get_ingestion_pipeline
 
 # Scheduled Jobs
 from app.jobs.lead_expiration_job import expire_stale_leads
+from app.jobs.notification_worker import NotificationWorker, WORKER_INTERVAL_SECONDS
 
 # Routers
 from app.routes import agenda, auth, ia, leads, propostas, webhook
@@ -90,8 +91,17 @@ async def lifespan(app: FastAPI):
         id="lead_expiration",
         replace_existing=True,
     )
+    # Notification Worker — drains push queue every 15s with backoff + DLQ
+    _notification_worker = NotificationWorker()
+    _scheduler.add_job(
+        _notification_worker.run,
+        trigger="interval",
+        seconds=WORKER_INTERVAL_SECONDS,
+        id="notification_worker",
+        replace_existing=True,
+    )
     _scheduler.start()
-    logger.info("scheduler_started", jobs=["lead_expiration"])
+    logger.info("scheduler_started", jobs=["lead_expiration", "notification_worker"])
 
     logger.info("startup_complete", version="1.0.0")
 

@@ -22,7 +22,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.domain.entities.enums import LeadStatus, TipoMensagem
 from app.models.lead import Lead
 from app.models.user import User
-from app.services import ai_service, curadoria_service, fcm_service, lead_service, whatsapp_service
+from app.services import ai_service, curadoria_service, lead_service, whatsapp_service
+from app.services.notification_queue_service import NotificationQueueService
 from app.services.domain_validator import BriefingValidator
 
 logger = structlog.get_logger()
@@ -85,9 +86,9 @@ async def execute(payload: dict, db: AsyncSession) -> None:
             extracted = await ai_service.extract_briefing([{"role": "user", "content": text}])
             briefing = await lead_service.update_briefing_from_extraction(db, lead, extracted)
 
-            # ── Step 5: FCM notification when lead qualifies ──────────────
+            # ── Step 5: Enqueue FCM notification when lead qualifies ─────
             if briefing.completude_pct >= 60 and lead.status == LeadStatus.qualificado:
-                await _notify_consultants(db, lead, briefing)
+                await _enqueue_qualified_notification(db, lead, briefing)
 
             # ── Step 5b: Offer curation appointment when freshly qualified ─
             if curadoria_service.deve_oferecer_curadoria(
@@ -132,22 +133,25 @@ async def execute(payload: dict, db: AsyncSession) -> None:
     )
 
 
-async def _notify_consultants(db: AsyncSession, lead: Lead, briefing) -> None:
-    """Send FCM push to all agency consultants with an active device token."""
+async def _enqueue_qualified_notification(db: AsyncSession, lead: Lead, briefing) -> None:
+    """Enqueue FCM push notification for all agency consultants via background queue."""
     from sqlalchemy import select
 
     result = await db.execute(
         select(User).where(User.perfil == "agencia", User.fcm_token.isnot(None))
     )
     consultores = result.scalars().all()
+    tokens = [c.fcm_token for c in consultores if c.fcm_token]
 
-    for consultor in consultores:
-        try:
-            if consultor.fcm_token:
-                await fcm_service.notify_new_lead(
-                    consultor.fcm_token,
-                    lead.nome or lead.telefone,
-                    briefing.destino,
-                )
-        except Exception as exc:
-            logger.error("fcm_notification_failed", consultor_id=str(consultor.id), error=str(exc))
+    if not tokens:
+        logger.warning("no_consultant_tokens_for_notification", lead_id=str(lead.id))
+        return
+
+    queue_service = NotificationQueueService()
+    await queue_service.enqueue_qualified_lead_notification(
+        db=db,
+        lead_id=lead.id,
+        lead_nome=lead.nome,
+        destino=briefing.destino,
+        fcm_tokens=tokens,
+    )
