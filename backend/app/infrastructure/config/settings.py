@@ -109,6 +109,11 @@ class Settings(BaseSettings):
     ENCRYPTION_KEY: str = Field(default="", description="Fernet key for PII encryption")
     HASH_KEY: str = Field(default="", description="HMAC-SHA256 key for searchable phone hash")
 
+    # ── Notification Queue & DLQ ──────────────────────────────────────────
+    NOTIFICATION_MAX_RETRIES: int = Field(default=3, ge=0)
+    NOTIFICATION_RETRY_DELAY_SECONDS: int = Field(default=60, ge=1)
+    NOTIFICATION_DEBOUNCE_TTL_SECONDS: int = Field(default=60, ge=1)
+
     # ── Business Rules (spec.md §8.4) ─────────────────────────────────────
     LEAD_EXPIRATION_DAYS: int = Field(
         default=30,
