@@ -3,6 +3,7 @@ import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/providers/leads_notifier.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/empty_state/empty_type.dart';
+import 'package:cadife_smart_travel/shared/presentation/widgets/hero_image.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/state_container.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -434,6 +435,16 @@ class _LeadCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      if (lead.imageUrl != null) ...[
+                        HeroImage(
+                          heroTag: 'lead_image_${lead.id}',
+                          imageUrl: lead.imageUrl!,
+                          height: 120,
+                          width: double.infinity,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
                       Row(
                         children: [
                           Expanded(

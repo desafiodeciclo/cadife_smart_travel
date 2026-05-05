@@ -50,10 +50,13 @@ class TripHistoryCard extends StatelessWidget {
                     fit: StackFit.expand,
                     children: [
                       if (trip.imageUrl != null)
-                        Image.network(
-                          trip.imageUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => _ImagePlaceholder(isDark: isDark),
+                        Hero(
+                          tag: 'trip_image_${trip.id}',
+                          child: Image.network(
+                            trip.imageUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => _ImagePlaceholder(isDark: isDark),
+                          ),
                         )
                       else
                         _ImagePlaceholder(isDark: isDark),

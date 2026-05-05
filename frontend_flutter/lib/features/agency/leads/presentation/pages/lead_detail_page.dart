@@ -5,10 +5,12 @@ import 'package:cadife_smart_travel/features/agency/agenda/presentation/widgets/
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/providers/lead_detail_provider.dart';
 import 'package:cadife_smart_travel/features/agency/propostas/presentation/widgets/create_proposal_modal.dart';
+import 'package:cadife_smart_travel/shared/presentation/widgets/animated_tab_content.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/empty_state/empty_type.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/state_container.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 class LeadDetailPage extends ConsumerStatefulWidget {
   final String leadId;
@@ -49,52 +51,89 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> with SingleTick
 
     return Scaffold(
       backgroundColor: context.cadife.background,
-      appBar: CadifeAppBar(
-        title: 'Detalhes do Lead',
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.more_vert, color: Colors.white),
-            onPressed: () {},
-          ),
-        ],
-      ),
-      body: StateContainer(
+      body: StateContainer<Lead?>(
         state: detailAsync,
         onRetry: () => ref.refresh(leadDetailProvider(widget.leadId)),
         isEmpty: detailAsync.valueOrNull == null && detailAsync is AsyncData,
         customEmptyType: EmptyType.notFound,
         dataBuilder: (lead) {
           if (lead == null) return const SizedBox.shrink();
-          return Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    _InfoCard(lead: lead),
-                    const SizedBox(height: 16),
-                    _ActionButtons(lead: lead),
-                  ],
+          return CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                expandedHeight: 200,
+                pinned: true,
+                stretch: true,
+                backgroundColor: context.cadife.primary,
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => context.pop(),
                 ),
-              ),
-              TabBar(
-                controller: _tabController,
-                labelColor: AppColors.primary,
-                unselectedLabelColor: context.cadife.textSecondary,
-                indicatorColor: AppColors.primary,
-                tabs: const [
-                  Tab(text: 'Briefing'),
-                  Tab(text: 'Chat & Timeline'),
+                flexibleSpace: FlexibleSpaceBar(
+                  title: Text(
+                    lead.name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      shadows: [Shadow(color: Colors.black45, blurRadius: 10)],
+                    ),
+                  ),
+                  background: lead.imageUrl != null
+                      ? Hero(
+                          tag: 'lead_image_${lead.id}',
+                          child: Image.network(
+                            lead.imageUrl!,
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                      : Container(color: context.cadife.primary),
+                ),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.more_vert, color: Colors.white),
+                    onPressed: () {},
+                  ),
                 ],
               ),
-              Expanded(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _BriefingTab(lead: lead),
-                    const _ChatTimelineTab(),
-                  ],
-                ),
+              SliverList(
+                delegate: SliverChildListDelegate([
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      children: [
+                        _InfoCard(lead: lead),
+                        const SizedBox(height: 16),
+                        _ActionButtons(lead: lead),
+                      ],
+                    ),
+                  ),
+                  TabBar(
+                    controller: _tabController,
+                    labelColor: AppColors.primary,
+                    unselectedLabelColor: context.cadife.textSecondary,
+                    indicatorColor: AppColors.primary,
+                    tabs: const [
+                      Tab(text: 'Briefing'),
+                      Tab(text: 'Chat & Timeline'),
+                    ],
+                  ),
+                  SizedBox(
+                    height: 500,
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        AnimatedTabContent(
+                          tabIndex: 0,
+                          child: _BriefingTab(lead: lead),
+                        ),
+                        const AnimatedTabContent(
+                          tabIndex: 1,
+                          child: _ChatTimelineTab(),
+                        ),
+                      ],
+                    ),
+                  ),
+                ]),
               ),
             ],
           );

@@ -1,5 +1,6 @@
 import 'package:cadife_smart_travel/config/router/agency_shell.dart';
 import 'package:cadife_smart_travel/config/router/client_shell.dart';
+import 'package:cadife_smart_travel/config/router/transitions/custom_page_route.dart';
 import 'package:cadife_smart_travel/core/analytics/analytics_navigation_observer.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/presentation/pages/agenda_page.dart';
 import 'package:cadife_smart_travel/features/agency/dashboard/dashboard_screen.dart';
@@ -19,8 +20,7 @@ import 'package:cadife_smart_travel/features/client/documentos/presentation/page
 import 'package:cadife_smart_travel/features/client/documentos/presentation/pages/documentos_page.dart';
 import 'package:cadife_smart_travel/features/client/documentos/presentation/pages/trip_documents_page.dart';
 import 'package:cadife_smart_travel/features/client/historico/presentation/pages/historico_page.dart';
-import 'package:cadife_smart_travel/features/client/profile/presentation/pages/profile_page.dart'
-    as client_profile;
+import 'package:cadife_smart_travel/features/client/profile/presentation/pages/profile_page.dart' as client_profile;
 import 'package:cadife_smart_travel/features/client/status/presentation/pages/status_page.dart';
 import 'package:cadife_smart_travel/features/notifications/presentation/screens/notification_center_screen.dart';
 import 'package:flutter/material.dart';
@@ -99,19 +99,28 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/agency/dashboard',
             name: 'agency_dashboard',
-            builder: (context, state) => const DashboardScreen(),
+            pageBuilder: (context, state) => SlideTransitionPage(
+              name: state.name,
+              child: const DashboardScreen(),
+            ),
           ),
           GoRoute(
             path: '/agency/leads',
             name: 'agency_leads',
-            builder: (context, state) => const LeadsPage(),
+            pageBuilder: (context, state) => SlideTransitionPage(
+              name: state.name,
+              child: const LeadsPage(),
+            ),
             routes: [
               GoRoute(
                 path: 'details',
                 name: 'agency_lead_details',
-                builder: (context, state) {
+                pageBuilder: (context, state) {
                   final lead = state.extra as Lead;
-                  return LeadDetailPage(leadId: lead.id);
+                  return SlideTransitionPage(
+                    name: state.name,
+                    child: LeadDetailPage(leadId: lead.id),
+                  );
                 },
               ),
             ],
@@ -119,12 +128,18 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/agency/agenda',
             name: 'agency_agenda',
-            builder: (context, state) => const AgendaScreen(),
+            pageBuilder: (context, state) => SlideTransitionPage(
+              name: state.name,
+              child: const AgendaScreen(),
+            ),
           ),
           GoRoute(
             path: '/agency/perfil',
             name: 'agency_profile',
-            builder: (context, state) => const ConsultorProfileScreen(),
+            pageBuilder: (context, state) => SlideTransitionPage(
+              name: state.name,
+              child: const ConsultorProfileScreen(),
+            ),
           ),
           GoRoute(
             path: '/notifications',
@@ -149,32 +164,47 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/client/status',
             name: 'client_status',
-            builder: (context, state) => const StatusPage(),
+            pageBuilder: (context, state) => SlideTransitionPage(
+              name: state.name,
+              child: const StatusPage(),
+            ),
           ),
           GoRoute(
             path: '/client/historico',
             name: 'client_history',
-            builder: (context, state) => const HistoricoPage(),
+            pageBuilder: (context, state) => SlideTransitionPage(
+              name: state.name,
+              child: const HistoricoPage(),
+            ),
           ),
           GoRoute(
             path: '/client/documentos',
             name: 'client_documents',
-            builder: (context, state) => const DocumentosPage(),
+            pageBuilder: (context, state) => SlideTransitionPage(
+              name: state.name,
+              child: const DocumentosPage(),
+            ),
             routes: [
               GoRoute(
                 path: 'viewer',
                 name: 'client_document_viewer',
-                builder: (context, state) {
+                pageBuilder: (context, state) {
                   final doc = state.extra as Documento;
-                  return DocumentViewerPage(document: doc);
+                  return SlideTransitionPage(
+                    name: state.name,
+                    child: DocumentViewerPage(document: doc),
+                  );
                 },
               ),
               GoRoute(
                 path: ':tripId',
                 name: 'client_trip_documents',
-                builder: (context, state) {
+                pageBuilder: (context, state) {
                   final tripId = state.pathParameters['tripId']!;
-                  return TripDocumentsPage(tripId: tripId);
+                  return SlideTransitionPage(
+                    name: state.name,
+                    child: TripDocumentsPage(tripId: tripId),
+                  );
                 },
               ),
             ],
@@ -182,7 +212,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/client/perfil',
             name: 'client_profile',
-            builder: (context, state) => const client_profile.ProfileScreen(),
+            pageBuilder: (context, state) => SlideTransitionPage(
+              name: state.name,
+              child: const client_profile.ProfileScreen(),
+            ),
           ),
         ],
       ),
