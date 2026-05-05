@@ -5,6 +5,7 @@ import 'package:cadife_smart_travel/features/agency/dashboard/widgets/funnel_sec
 import 'package:cadife_smart_travel/features/agency/dashboard/widgets/notification_card.dart';
 import 'package:cadife_smart_travel/features/agency/dashboard/widgets/performance_section.dart';
 import 'package:cadife_smart_travel/features/agency/dashboard/widgets/summary_section.dart';
+import 'package:cadife_smart_travel/shared/presentation/widgets/state_container.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -17,10 +18,10 @@ class DashboardScreen extends ConsumerWidget {
     final statsAsync = ref.watch(dashboardStatsProvider);
 
     return Scaffold(
-      body: statsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Erro: $e')),
-        data: (stats) {
+      body: StateContainer(
+        state: statsAsync,
+        onRetry: () => ref.read(dashboardStatsProvider.notifier).refresh(),
+        dataBuilder: (stats) {
           return RefreshIndicator(
             onRefresh: () => ref.read(dashboardStatsProvider.notifier).refresh(),
             child: CustomScrollView(
@@ -55,3 +56,4 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 }
+
