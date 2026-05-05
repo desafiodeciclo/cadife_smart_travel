@@ -1,10 +1,8 @@
-import 'package:cadife_smart_travel/core/config/env_config.dart';
-import 'package:cadife_smart_travel/main.dart' as app_main;
+import 'package:cadife_smart_travel/config/app_config.dart';
+import 'package:cadife_smart_travel/main_common.dart';
+import 'package:flutter/material.dart';
 
 void main() async {
-  // Configuração específica de Staging
-  final stagingConfig = EnvConfig.staging;
-
-  // Inicia o app principal passando a configuração de Staging
-  app_main.main(config: stagingConfig);
+  await initializeApp(AppConfig.staging);
+  runApp(const CadifeAppWrapper());
 }

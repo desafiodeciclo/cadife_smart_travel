@@ -1,10 +1,16 @@
+import 'package:cadife_smart_travel/core/analytics/analytics_service.dart';
+import 'package:cadife_smart_travel/core/di/service_locator.dart';
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/presentation/widgets/schedule_appointment_modal.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/providers/lead_detail_provider.dart';
 import 'package:cadife_smart_travel/features/agency/propostas/presentation/widgets/create_proposal_modal.dart';
+import 'package:cadife_smart_travel/shared/presentation/widgets/animated_tab_content.dart';
+import 'package:cadife_smart_travel/shared/presentation/widgets/empty_state/empty_type.dart';
+import 'package:cadife_smart_travel/shared/presentation/widgets/state_container.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 class LeadDetailPage extends ConsumerStatefulWidget {
   final String leadId;
@@ -31,26 +37,66 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> with SingleTick
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(leadDetailProvider(widget.leadId), (previous, next) {
+      if (next is AsyncData && next.value != null && previous?.value == null) {
+        sl<AnalyticsService>().logEvent('lead_viewed', parameters: {
+          'lead_id': next.value!.id,
+          'status': next.value!.status.name,
+          'score': next.value!.score,
+        });
+      }
+    });
+
     final detailAsync = ref.watch(leadDetailProvider(widget.leadId));
 
     return Scaffold(
       backgroundColor: context.cadife.background,
-      appBar: CadifeAppBar(
-        title: 'Detalhes do Lead',
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.more_vert, color: Colors.white),
-            onPressed: () {},
-          ),
-        ],
-      ),
-      body: detailAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Erro: $e')),
-        data: (lead) => lead == null
-            ? const Center(child: Text('Lead não encontrado.'))
-            : Column(
-                children: [
+      body: StateContainer<Lead?>(
+        state: detailAsync,
+        onRetry: () => ref.refresh(leadDetailProvider(widget.leadId)),
+        isEmpty: detailAsync.valueOrNull == null && detailAsync is AsyncData,
+        customEmptyType: EmptyType.notFound,
+        dataBuilder: (lead) {
+          if (lead == null) return const SizedBox.shrink();
+          return CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                expandedHeight: 200,
+                pinned: true,
+                stretch: true,
+                backgroundColor: context.cadife.primary,
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => context.pop(),
+                ),
+                flexibleSpace: FlexibleSpaceBar(
+                  title: Text(
+                    lead.name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      shadows: [Shadow(color: Colors.black45, blurRadius: 10)],
+                    ),
+                  ),
+                  background: lead.imageUrl != null
+                      ? Hero(
+                          tag: 'lead_image_${lead.id}',
+                          child: Image.network(
+                            lead.imageUrl!,
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                      : Container(color: context.cadife.primary),
+                ),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.more_vert, color: Colors.white),
+                    onPressed: () {},
+                  ),
+                ],
+              ),
+              SliverList(
+                delegate: SliverChildListDelegate([
                   Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
@@ -71,21 +117,32 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> with SingleTick
                       Tab(text: 'Chat & Timeline'),
                     ],
                   ),
-                  Expanded(
+                  SizedBox(
+                    height: 500,
                     child: TabBarView(
                       controller: _tabController,
                       children: [
-                        _BriefingTab(lead: lead),
-                        const _ChatTimelineTab(),
+                        AnimatedTabContent(
+                          tabIndex: 0,
+                          child: _BriefingTab(lead: lead),
+                        ),
+                        const AnimatedTabContent(
+                          tabIndex: 1,
+                          child: _ChatTimelineTab(),
+                        ),
                       ],
                     ),
                   ),
-                ],
+                ]),
               ),
+            ],
+          );
+        },
       ),
     );
   }
 }
+
 
 class _InfoCard extends StatelessWidget {
   final Lead lead;

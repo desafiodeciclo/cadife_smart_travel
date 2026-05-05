@@ -12,8 +12,8 @@
 | **Projeto** | Cadife Smart Travel |
 | **Cliente** | Cadife Tour |
 | **Prazo MVP** | 25 dias |
-| **Data** | Maio 2026 (atualizado) |
-| **Status** | **Em Andamento — Fase Final (Fase 4)** |
+| **Data** | Maio 2026 |
+| **Status** | **CONCLUÍDO — 19/19 specs entregues** |
 
 ---
 

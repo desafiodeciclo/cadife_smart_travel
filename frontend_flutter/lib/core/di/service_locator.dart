@@ -1,6 +1,7 @@
+import 'package:cadife_smart_travel/config/app_config.dart';
+import 'package:cadife_smart_travel/core/analytics/analytics_service.dart';
 import 'package:cadife_smart_travel/core/cache/database_helper.dart';
 import 'package:cadife_smart_travel/core/cache/isar_cache_manager.dart';
-import 'package:cadife_smart_travel/core/config/env_config.dart';
 import 'package:cadife_smart_travel/core/config/firebase_options_prod.dart';
 import 'package:cadife_smart_travel/core/config/firebase_options_stg.dart';
 import 'package:cadife_smart_travel/core/network/connectivity_service.dart';
@@ -39,6 +40,9 @@ import 'package:cadife_smart_travel/features/client/profile/domain/repositories/
 import 'package:cadife_smart_travel/features/client/status/data/datasources/status_datasource.dart';
 import 'package:cadife_smart_travel/features/client/status/data/repositories/status_repository_impl.dart';
 import 'package:cadife_smart_travel/features/client/status/domain/repositories/i_status_repository.dart';
+import 'package:cadife_smart_travel/features/notifications/domain/repositories/i_notification_repository.dart';
+import 'package:cadife_smart_travel/features/notifications/infrastructure/database/notification_isar.dart';
+import 'package:cadife_smart_travel/features/notifications/infrastructure/database/notification_mock.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
@@ -49,14 +53,17 @@ final sl = GetIt.instance;
 
 /// Registra TODOS os serviços core e ports por módulo.
 Future<void> setupServiceLocator({
-  EnvConfig? config,
+  AppConfig? appConfig,
   List<String>? pinnedCertificates,
   List<String>? backupCertificates,
   VoidCallback? onTokenExpired,
 }) async {
-  // Registrar o EnvConfig no Service Locator para uso global
-  final env = config ?? EnvConfig.dev;
-  sl.registerSingleton<EnvConfig>(env);
+  // Registrar o AppConfig no Service Locator para uso global
+  final config = appConfig ?? AppConfig.dev;
+  sl.registerSingleton<AppConfig>(config);
+
+  sl.registerSingleton<AnalyticsService>(AnalyticsService());
+
   // ── 1. Infra Layer (singletons — performance-critical) ──
 
   sl.registerLazySingleton<NetworkInfo>(NetworkInfo.new);
@@ -68,7 +75,7 @@ Future<void> setupServiceLocator({
     () => OfflineSyncQueue(networkInfo: sl<NetworkInfo>()),
   );
   sl.registerLazySingleton<IsarCacheManager>(IsarCacheManager.new);
-  
+
   sl.registerLazySingleton<DatabaseHelper>(DatabaseHelper.new);
   sl.registerLazySingleton<IOfflineEventRepository>(
     () => OfflineEventRepositoryImpl(sl<DatabaseHelper>()),
@@ -137,6 +144,7 @@ Future<void> setupServiceLocator({
   _registerProposalModule();
   _registerProfileModule();
   _registerNotificationsModule();
+  _registerInAppNotificationsModule();
   _registerSettingsModule();
   _registerStatusModule();
 }
@@ -191,28 +199,59 @@ void _registerNotificationsModule() {
   sl.registerLazySingleton<INotificationsRepository>(NotificationsRepositoryImpl.new);
 }
 
+void _registerInAppNotificationsModule() {
+  sl.registerLazySingleton<INotificationRepository>(() {
+    final isar = sl<IsarCacheManager>().isar;
+    if (isar == null || kIsWeb) {
+      return const MockNotificationRepository();
+    }
+    return NotificationIsarRepository(isar);
+  });
+}
+
 void _registerSettingsModule() {
   sl.registerLazySingleton<IAgencySettingsRepository>(MockAgencySettingsRepository.new);
 }
 
 Future<void> initDependencies() async {
-  final env = sl<EnvConfig>().environment;
-  
+  final env = sl<AppConfig>().environment;
+
   FirebaseOptions? options;
   if (env == AppEnvironment.staging) {
     options = StagingFirebaseOptions.currentPlatform;
   } else if (env == AppEnvironment.prod) {
     options = ProdFirebaseOptions.currentPlatform;
   }
-  // No dev, se options for null, ele tenta carregar os arquivos nativos padrão
 
-  await Firebase.initializeApp(options: options);
+  // No Web, só inicializamos se tivermos options explícitas
+  if (!kIsWeb || options != null) {
+    try {
+      await Firebase.initializeApp(options: options);
+    } catch (e) {
+      debugPrint('Firebase initialization failed: $e');
+    }
+  }
+
   await sl<OfflineManager>().initialize();
   await sl<IsarCacheManager>().initialize();
   await sl<OfflineSyncQueue>().initialize();
+
+  // Analytics e Notifications podem falhar no Web se não configurados
+  try {
+    await sl<AnalyticsService>().init();
+  } catch (e) {
+    debugPrint('Analytics initialization failed: $e');
+  }
+
+  if (!kIsWeb) {
+    try {
+      await LocalNotificationManager.init();
+      await FCMManager.init();
+    } catch (e) {
+      debugPrint('Notification managers initialization failed: $e');
+    }
+  }
   
-  await LocalNotificationManager.init();
-  await FCMManager.init();
   ConnectivityService.init();
 }
 
@@ -230,4 +269,3 @@ Future<void> disposeDependencies() async {
   await sl<DatabaseHelper>().close();
   await sl.reset(dispose: true);
 }
-

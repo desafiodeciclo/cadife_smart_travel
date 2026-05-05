@@ -28,3 +28,4 @@ tiktoken
 pytest-cov
 pytest-mock
 aiosqlite
+apscheduler>=3.10,<4.0

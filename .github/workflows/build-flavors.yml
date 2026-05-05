@@ -1,0 +1,45 @@
+name: Build Flavors
+
+on:
+  push:
+    branches: [ main, developer, staging ]
+  pull_request:
+    branches: [ main, developer, staging ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        flavor: [dev, staging, prod]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+          
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          
+      - name: Install Dependencies
+        run: |
+          cd frontend_flutter
+          flutter pub get
+          
+      - name: Build APK (${{ matrix.flavor }})
+        run: |
+          cd frontend_flutter
+          flutter build apk \
+            --flavor ${{ matrix.flavor }} \
+            -t lib/main_${{ matrix.flavor }}.dart
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-${{ matrix.flavor }}.apk
+          path: frontend_flutter/build/app/outputs/flutter-apk/app-${{ matrix.flavor }}-release.apk

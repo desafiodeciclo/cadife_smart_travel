@@ -1,3 +1,4 @@
+import 'package:cadife_smart_travel/config/theme/android_slide_page_transitions_builder.dart';
 import 'package:cadife_smart_travel/design_system/theme/cadife_theme_extension.dart';
 import 'package:cadife_smart_travel/design_system/tokens/app_colors.dart';
 import 'package:flutter/material.dart';
@@ -48,12 +49,12 @@ class AppTheme {
       scaffoldBackgroundColor: ext.background,
       extensions: [ext],
       textTheme: _buildTextTheme(brightness, ext),
-      pageTransitionsTheme: const PageTransitionsTheme(
+      pageTransitionsTheme: PageTransitionsTheme(
         builders: {
-          TargetPlatform.android: ZoomPageTransitionsBuilder(),
-          TargetPlatform.iOS:     CupertinoPageTransitionsBuilder(),
-          TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
-          TargetPlatform.macOS:   CupertinoPageTransitionsBuilder(),
+          TargetPlatform.android: AndroidSlidePageTransitionsBuilder(),
+          TargetPlatform.iOS:     const CupertinoPageTransitionsBuilder(),
+          TargetPlatform.windows: const FadeUpwardsPageTransitionsBuilder(),
+          TargetPlatform.macOS:   const CupertinoPageTransitionsBuilder(),
         },
       ),
       appBarTheme: AppBarTheme(

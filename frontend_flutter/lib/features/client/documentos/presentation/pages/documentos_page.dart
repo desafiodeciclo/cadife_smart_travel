@@ -1,6 +1,9 @@
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/client/documentos/presentation/providers/documentos_notifier.dart';
 import 'package:cadife_smart_travel/features/client/documentos/presentation/widgets/widgets.dart';
+import 'package:cadife_smart_travel/shared/presentation/widgets/empty_state/app_empty_state.dart';
+import 'package:cadife_smart_travel/shared/presentation/widgets/empty_state/empty_type.dart';
+import 'package:cadife_smart_travel/shared/presentation/widgets/state_container.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -97,82 +100,26 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  globalDocsAsync.when(
-                    loading: () => Column(
+                  StateContainer(
+                    state: globalDocsAsync,
+                    onRetry: () => ref.refresh(globalDocumentsProvider),
+                    loadingWidget: Column(
                       children: List.generate(
                         3,
                         (index) => const DocumentCardSkeleton(),
                       ),
                     ),
-                    error: (e, st) => Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Text(
-                          'Erro ao carregar documentos',
-                          style: TextStyle(
-                            color: Theme.of(context).textTheme.bodyMedium?.color
-                                ?.withValues(alpha: 0.7),
-                          ),
-                        ),
-                      ),
-                    ),
-                    data: (docs) {
+                    isEmpty: globalDocsAsync.valueOrNull?.isEmpty ?? false,
+                    customEmptyType: EmptyType.noDocuments,
+                    dataBuilder: (docs) {
                       final filteredDocs = _selectedCategory == 'Todos'
                           ? docs
                           : docs
                                 .where((d) => d.category == _selectedCategory)
                                 .toList();
 
-                      if (docs.isEmpty) {
-                        return Center(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 24),
-                            child: Column(
-                              children: [
-                                Icon(
-                                  LucideIcons.folderSearch,
-                                  size: 64,
-                                  color: isDark ? Colors.white12 : Colors.black12,
-                                ),
-                                const SizedBox(height: 24),
-                                Text(
-                                  'Nenhum documento disponível ainda.',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: isDark ? Colors.white70 : Colors.black87,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Seu consultor irá compartilhá-los em breve.',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: isDark ? Colors.white38 : Colors.black38,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      }
-
-                      if (filteredDocs.isEmpty) {
-                        return Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(32),
-                            child: Text(
-                              'Nenhum documento nesta categoria.',
-                              style: TextStyle(
-                                color: Theme.of(
-                                  context,
-                                ).textTheme.bodySmall?.color,
-                              ),
-                            ),
-                          ),
-                        );
+                      if (filteredDocs.isEmpty && _selectedCategory != 'Todos') {
+                        return const AppEmptyState(type: EmptyType.emptySearch);
                       }
 
                       return Column(
@@ -218,56 +165,33 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  tripsWithDocsAsync.when(
-                    loading: () => Column(
+                  StateContainer(
+                    state: tripsWithDocsAsync,
+                    onRetry: () => ref.refresh(tripsWithDocumentsProvider),
+                    loadingWidget: Column(
                       children: List.generate(
                         2,
                         (index) => const DocumentCardSkeleton(),
                       ),
                     ),
-                    error: (e, st) => Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Text(
-                          'Erro ao carregar viagens',
-                          style: TextStyle(
-                            color: Theme.of(context).textTheme.bodyMedium?.color
-                                ?.withValues(alpha: 0.7),
-                          ),
-                        ),
-                      ),
-                    ),
-                    data: (trips) => trips.isEmpty
-                        ? Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Text(
-                                'Nenhuma viagem com documentos',
-                                style: TextStyle(
-                                  color: Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium
-                                      ?.color
-                                      ?.withValues(alpha: 0.7),
-                                ),
-                               ),
+                    isEmpty: tripsWithDocsAsync.valueOrNull?.isEmpty ?? false,
+                    customEmptyType: EmptyType.emptyList,
+                    dataBuilder: (trips) => Column(
+                      children: trips
+                          .map(
+                            (trip) => TripSelectionCard(
+                              trip: trip,
+                              onTap: () {
+                                context.push(
+                                  '/client/documentos/${trip.id}',
+                                );
+                              },
                             ),
                           )
-                        : Column(
-                            children: trips
-                                .map(
-                                  (trip) => TripSelectionCard(
-                                    trip: trip,
-                                    onTap: () {
-                                      context.push(
-                                        '/client/documentos/${trip.id}',
-                                      );
-                                    },
-                                  ),
-                                )
-                                .toList(),
-                          ),
+                          .toList(),
+                    ),
                   ),
+
                 ],
               ),
             ),
