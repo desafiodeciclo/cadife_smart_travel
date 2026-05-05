@@ -52,8 +52,13 @@ async def execute(payload: dict, db: AsyncSession) -> None:
 
     logger.info("processing_whatsapp_message", phone=phone, msg_type=msg_type)
 
-    # ── Step 1: Get or create lead ────────────────────────────────────────
-    lead: Lead = await lead_service.get_or_create_by_phone(db, phone, msg.get("name"))
+    # ── Step 1: Get or create lead (Upsert) ───────────────────────────────
+    lead_data = {
+        "telefone": phone,
+        "nome": msg.get("name"),
+        "status": LeadStatus.novo,
+    }
+    lead: Lead = await lead_service.upsert_lead_with_resilience(db, lead_data)
 
     # ── Step 2: Advance status NOVO → EM_ATENDIMENTO ─────────────────────
     if lead.status == LeadStatus.novo:
