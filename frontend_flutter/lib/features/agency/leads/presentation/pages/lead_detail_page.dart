@@ -1,3 +1,5 @@
+import 'package:cadife_smart_travel/core/analytics/analytics_service.dart';
+import 'package:cadife_smart_travel/core/di/service_locator.dart';
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/presentation/widgets/schedule_appointment_modal.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
@@ -31,6 +33,16 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> with SingleTick
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(leadDetailProvider(widget.leadId), (previous, next) {
+      if (next is AsyncData && next.value != null && previous?.value == null) {
+        sl<AnalyticsService>().logEvent('lead_viewed', parameters: {
+          'lead_id': next.value!.id,
+          'status': next.value!.status.name,
+          'score': next.value!.score,
+        });
+      }
+    });
+
     final detailAsync = ref.watch(leadDetailProvider(widget.leadId));
 
     return Scaffold(

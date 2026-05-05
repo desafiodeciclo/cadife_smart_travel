@@ -1,3 +1,5 @@
+import re
+import time
 from typing import Optional
 
 import structlog
@@ -9,8 +11,8 @@ from pydantic import SecretStr
 
 from app.core.config import get_settings
 from app.models.briefing import BriefingExtracted, calculate_completude
-from app.services import rag_service
-from app.services.metadata_tagger import DESTINO_KEYWORDS, PERFIL_KEYWORDS
+from app.services import rag_service, alert_service
+from app.services.metadata_tagger import DESTINO_KEYWORDS
 from app.services.observability import get_callbacks_for_chain, flush_langfuse
 from app.services.prompt_security import (
     EXTRACTION_SYSTEM_PROMPT_SECURE,
@@ -154,6 +156,16 @@ def _fallback_reply(message: str) -> str:
         f'Em breve um consultor da Cadife Tour irá te atender pessoalmente.'
     )
 
+def detect_hallucinations(response: str) -> list[str]:
+    """Detect common hallucination patterns in AI response."""
+    hallucinations = []
+    # Patterns from implementation plan
+    if re.search(r'(custa|preço|valor)\s*r\$\s*[\d.,]+', response, re.IGNORECASE):
+        hallucinations.append("price_generated")
+    if re.search(r'(disponível|reservo|confirmo sua vaga)', response, re.IGNORECASE):
+        hallucinations.append("availability_confirmed")
+    return hallucinations
+
 async def process_message(
     phone: str,
     message: str,
@@ -218,18 +230,41 @@ Você DEVE:
         callbacks = get_callbacks_for_chain()
         config = {"callbacks": callbacks} if callbacks else {}
 
+        start_time = time.time()
         response = await chain.ainvoke({
             "chat_history": history.get("chat_history", []),
             "input": safe_message,
         }, config=config)
+        latency_ms = int((time.time() - start_time) * 1000)
 
-        memory.save_context({"input": safe_message}, {"output": str(response.content)})
-        logger.info("ai_message_processed", phone=phone)
+        response_content = str(response.content)
+        hallucinations = detect_hallucinations(response_content)
+        
+        if hallucinations:
+            logger.warning(
+                "hallucination_detected",
+                phone=phone,
+                hallucinations=hallucinations,
+                response_snippet=response_content[:100]
+            )
+            await alert_service.AlertService.notify_hallucination(
+                phone, hallucinations, response_content[:100]
+            )
+
+        memory.save_context({"input": safe_message}, {"output": response_content})
+        
+        logger.info(
+            "ai_message_processed",
+            phone=phone,
+            latency_ms=latency_ms,
+            response_length=len(response_content),
+            hallucination_count=len(hallucinations)
+        )
 
         # Flush eventos Langfuse pendentes (não bloqueante)
         flush_langfuse()
 
-        return str(response.content)
+        return response_content
 
     except Exception as exc:
         logger.error("ai_chain_error", phone=phone, error=str(exc))

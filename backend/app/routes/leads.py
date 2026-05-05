@@ -147,13 +147,17 @@ async def update_lead(
 
     # ── State Machine validation ──────────────────────────────────────────
     if "status" in data:
+        new_status = LeadStatus(data["status"])
         try:
-            LeadStateMachine.validate_transition(lead.status, LeadStatus(data["status"]))
+            LeadStateMachine.validate_transition(lead.status, new_status)
+            await lead_service.update_lead_status(db, lead, new_status, triggered_by="user_manual")
         except InvalidStateTransitionError as exc:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail=str(exc),
             ) from exc
+        # Status removed from data as it's already handled by service
+        data.pop("status")
 
     for field, value in data.items():
         setattr(lead, field, value)
