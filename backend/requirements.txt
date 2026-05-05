@@ -29,3 +29,4 @@ python-dotenv
 structlog
 slowapi
 tiktoken
+apscheduler>=3.10,<4.0

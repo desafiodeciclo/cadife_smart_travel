@@ -106,6 +106,13 @@ class Settings(BaseSettings):
     ENCRYPTION_KEY: str = Field(default="", description="Fernet key for PII encryption")
     HASH_KEY: str = Field(default="", description="HMAC-SHA256 key for searchable phone hash")
 
+    # ── Business Rules (spec.md §8.4) ─────────────────────────────────────
+    LEAD_EXPIRATION_DAYS: int = Field(
+        default=30,
+        ge=1,
+        description="Days of inactivity before a lead is automatically transitioned to PERDIDO",
+    )
+
     # ── Request Timeout (spec.md §12.3 — webhook must respond in < 5s) ────
     REQUEST_TIMEOUT_SECONDS: float = Field(
         default=30.0,
