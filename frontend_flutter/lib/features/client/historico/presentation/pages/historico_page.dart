@@ -3,6 +3,8 @@ import 'package:cadife_smart_travel/features/client/historico/presentation/provi
 import 'package:cadife_smart_travel/features/client/historico/presentation/widgets/historico_states.dart';
 import 'package:cadife_smart_travel/features/client/historico/presentation/widgets/trip_history_card.dart';
 import 'package:cadife_smart_travel/features/client/historico/presentation/widgets/whatsapp_fab.dart';
+import 'package:cadife_smart_travel/shared/presentation/widgets/empty_state/empty_type.dart';
+import 'package:cadife_smart_travel/shared/presentation/widgets/state_container.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -21,32 +23,21 @@ class _HistoricoPageState extends ConsumerState<HistoricoPage> {
     return PageScaffold(
       title: 'Histórico',
       floatingActionButton: const WhatsAppFab(),
-      body: tripsAsync.when(
-        loading: () => const HistoricoShimmer(),
-        error: (_, s) => HistoricoErrorState(
-          onRetry: () => ref.invalidate(historicoProvider),
-        ),
-        data: (trips) {
-          if (trips.isEmpty) return const HistoricoEmptyState();
-          return RefreshIndicator(
-            color: AppColors.primary,
-            onRefresh: () => ref.read(historicoProvider.notifier).refresh(),
-            child: ListView.builder(
-              padding: const EdgeInsets.only(top: 72, bottom: 96, left: 16, right: 16),
-              itemCount: trips.length,
-              itemBuilder: (context, index) {
-                final trip = trips[index];
-                return TripHistoryCard(
-                  trip: trip,
-                  onTap: () {
-                    // Futura ação ao clicar na viagem
-                  },
-                );
-              },
-            ),
+      body: StateListView(
+        state: tripsAsync,
+        onRetry: () => ref.read(historicoProvider.notifier).refresh(),
+        emptyType: EmptyType.noTrips,
+        padding: const EdgeInsets.only(top: 72, bottom: 96, left: 16, right: 16),
+        itemBuilder: (trip, index) {
+          return TripHistoryCard(
+            trip: trip,
+            onTap: () {
+              // Futura ação ao clicar na viagem
+            },
           );
         },
       ),
     );
   }
 }
+

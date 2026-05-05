@@ -1,6 +1,7 @@
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/domain/entities/agendamento.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/presentation/providers/agenda_provider.dart';
+import 'package:cadife_smart_travel/shared/presentation/widgets/state_container.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -45,38 +46,21 @@ class AgendaScreen extends ConsumerWidget {
           _ViewToggleBar(viewMode: viewMode),
           const Divider(height: 1),
           Expanded(
-            child: allAsync.when(
-              loading: () => ShimmerLoading(
+            child: StateContainer<List<Agendamento>>(
+              state: allAsync,
+              onRetry: () => ref.read(agendaProvider.notifier).refresh(),
+              loadingWidget: ShimmerLoading(
                 isLoading: true,
                 child: AppSkeletons.listPage(),
               ),
-              error: (e, _) => Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.error_outline,
-                      size: 48,
-                      color: context.cadife.textSecondary,
-                    ),
-                    const SizedBox(height: 12),
-                    Text('Erro: $e'),
-                    const SizedBox(height: 8),
-                    TextButton(
-                      onPressed: () =>
-                          ref.read(agendaProvider.notifier).refresh(),
-                      child: const Text('Tentar novamente'),
-                    ),
-                  ],
-                ),
-              ),
-              data: (items) => viewMode == 0
+              dataBuilder: (items) => viewMode == 0
                   ? _MonthView(items: items)
                   : _DailyView(items: items),
             ),
           ),
         ],
       ),
+
       floatingActionButton: viewMode == 1
           ? ShadButton(
               onPressed: () => ShadToaster.of(context).show(
