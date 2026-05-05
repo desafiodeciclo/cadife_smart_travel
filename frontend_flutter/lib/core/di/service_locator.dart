@@ -1,7 +1,7 @@
+import 'package:cadife_smart_travel/config/app_config.dart';
 import 'package:cadife_smart_travel/core/analytics/analytics_service.dart';
 import 'package:cadife_smart_travel/core/cache/database_helper.dart';
 import 'package:cadife_smart_travel/core/cache/isar_cache_manager.dart';
-import 'package:cadife_smart_travel/core/config/env_config.dart';
 import 'package:cadife_smart_travel/core/config/firebase_options_prod.dart';
 import 'package:cadife_smart_travel/core/config/firebase_options_stg.dart';
 import 'package:cadife_smart_travel/core/network/connectivity_service.dart';
@@ -52,16 +52,17 @@ final sl = GetIt.instance;
 
 /// Registra TODOS os serviços core e ports por módulo.
 Future<void> setupServiceLocator({
-  EnvConfig? config,
+  AppConfig? appConfig,
   List<String>? pinnedCertificates,
   List<String>? backupCertificates,
   VoidCallback? onTokenExpired,
 }) async {
-  // Registrar o EnvConfig no Service Locator para uso global
-  final env = config ?? EnvConfig.dev;
-  sl.registerSingleton<EnvConfig>(env);
-  
+  // Registrar o AppConfig no Service Locator para uso global
+  final config = appConfig ?? AppConfig.dev;
+  sl.registerSingleton<AppConfig>(config);
+
   sl.registerSingleton<AnalyticsService>(AnalyticsService());
+
   // ── 1. Infra Layer (singletons — performance-critical) ──
 
   sl.registerLazySingleton<NetworkInfo>(NetworkInfo.new);
@@ -73,7 +74,7 @@ Future<void> setupServiceLocator({
     () => OfflineSyncQueue(networkInfo: sl<NetworkInfo>()),
   );
   sl.registerLazySingleton<IsarCacheManager>(IsarCacheManager.new);
-  
+
   sl.registerLazySingleton<DatabaseHelper>(DatabaseHelper.new);
   sl.registerLazySingleton<IOfflineEventRepository>(
     () => OfflineEventRepositoryImpl(sl<DatabaseHelper>()),
@@ -212,8 +213,8 @@ void _registerSettingsModule() {
 }
 
 Future<void> initDependencies() async {
-  final env = sl<EnvConfig>().environment;
-  
+  final env = sl<AppConfig>().environment;
+
   FirebaseOptions? options;
   if (env == AppEnvironment.staging) {
     options = StagingFirebaseOptions.currentPlatform;
@@ -226,9 +227,9 @@ Future<void> initDependencies() async {
   await sl<OfflineManager>().initialize();
   await sl<IsarCacheManager>().initialize();
   await sl<OfflineSyncQueue>().initialize();
-  
+
   await sl<AnalyticsService>().init();
-  
+
   await LocalNotificationManager.init();
   await FCMManager.init();
   ConnectivityService.init();
@@ -248,4 +249,3 @@ Future<void> disposeDependencies() async {
   await sl<DatabaseHelper>().close();
   await sl.reset(dispose: true);
 }
-

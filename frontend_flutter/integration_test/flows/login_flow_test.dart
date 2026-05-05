@@ -1,4 +1,4 @@
-import 'package:cadife_smart_travel/main.dart' as app;
+import 'package:cadife_smart_travel/main_dev.dart' as app;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:patrol/patrol.dart';
 
@@ -7,7 +7,7 @@ void main() {
     'deve realizar login com sucesso e navegar para a dashboard',
     ($) async {
       // Inicializa o app
-      await app.main();
+      app.main();
       await $.pumpAndSettle();
 
       // 1. Verifica se os elementos da LoginScreen estão presentes

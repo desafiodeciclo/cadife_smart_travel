@@ -2,9 +2,10 @@ import 'dart:async';
 import 'dart:developer' as dev;
 
 import 'package:cadife_smart_travel/app.dart';
+import 'package:cadife_smart_travel/config/app_config.dart';
+import 'package:cadife_smart_travel/config/providers/app_config_provider.dart';
 import 'package:cadife_smart_travel/core/analytics/analytics_bloc_observer.dart';
 import 'package:cadife_smart_travel/core/analytics/analytics_provider_observer.dart';
-import 'package:cadife_smart_travel/core/config/env_config.dart';
 import 'package:cadife_smart_travel/core/di/provider_overrides.dart';
 import 'package:cadife_smart_travel/core/di/service_locator.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/bloc/auth_event.dart';
@@ -16,46 +17,59 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
-Future<void> main({EnvConfig? config}) async {
-  runZonedGuarded(() async {
+late AppConfig _appConfig;
+late ProviderContainer _providerContainer;
+
+Future<void> initializeApp(AppConfig config) async {
+  _appConfig = config;
+
+  await runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
     await initializeDateFormatting('pt_BR', null);
-    
-    Bloc.observer = AnalyticsBlocObserver();
 
-    late final ProviderContainer container;
+    Bloc.observer = AnalyticsBlocObserver();
 
     try {
       await setupServiceLocator(
-        config: config,
-        onTokenExpired: () => container.read(authBlocProvider).add(const AuthEvent.logoutRequested()),
+        appConfig: config,
+        onTokenExpired: () => _providerContainer.read(authBlocProvider).add(const AuthEvent.logoutRequested()),
       );
       await initDependencies();
-      
+
       // Configurar Crashlytics
       FlutterError.onError = (errorDetails) {
         FirebaseCrashlytics.instance.recordFlutterError(errorDetails);
       };
-      
+
       PlatformDispatcher.instance.onError = (error, stack) {
         FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
         return true;
       };
-
     } catch (e, stack) {
       dev.log('Initialization Error', error: e, stackTrace: stack, name: 'main');
       FirebaseCrashlytics.instance.recordError(e, stack, fatal: true);
     }
 
-    container = ProviderContainer(
-      overrides: getProviderOverrides(),
+    _providerContainer = ProviderContainer(
+      overrides: [
+        appConfigProvider.overrideWithValue(_appConfig),
+        ...getProviderOverrides(),
+      ],
       observers: [AnalyticsProviderObserver()],
-    );
-
-    runApp(
-      UncontrolledProviderScope(container: container, child: const CadifeApp()),
     );
   }, (error, stack) {
     FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
   });
+}
+
+class CadifeAppWrapper extends StatelessWidget {
+  const CadifeAppWrapper({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return UncontrolledProviderScope(
+      container: _providerContainer,
+      child: const CadifeApp(),
+    );
+  }
 }

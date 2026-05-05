@@ -3,6 +3,11 @@ allprojects {
         google()
         mavenCentral()
     }
+    configurations.all {
+        resolutionStrategy {
+            force("com.android.tools.build:gradle:8.11.1")
+        }
+    }
 }
 
 val newBuildDir: Directory = rootProject.layout.buildDirectory.dir("../../build").get()
@@ -20,6 +25,10 @@ subprojects {
 subprojects {
     plugins.withId("com.android.library") {
         val library = extensions.getByType<com.android.build.gradle.LibraryExtension>()
+        
+        // Force a modern build tools version to avoid old plugins crashing the build
+        library.buildToolsVersion = "34.0.0"
+        
         if (library.namespace == null) {
             val manifestFile = projectDir.resolve("src/main/AndroidManifest.xml")
             if (manifestFile.exists()) {
@@ -32,6 +41,10 @@ subprojects {
                 }
             }
         }
+    }
+    plugins.withId("com.android.application") {
+        val app = extensions.getByType<com.android.build.gradle.AppExtension>()
+        app.buildToolsVersion = "34.0.0"
     }
 }
 

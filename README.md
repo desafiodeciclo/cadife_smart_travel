@@ -104,6 +104,46 @@ graph TD
 
 ---
 
+## 🌍 Multi-Environment Configuration
+
+O app utiliza **Flutter Flavors** para separar as configurações de desenvolvimento, homologação (staging) e produção.
+
+### Ambientes Disponíveis
+
+| Ambiente | API URL | Firebase Project | App ID | App Name |
+| :--- | :--- | :--- | :--- | :--- |
+| **Development** | `http://localhost:4000` | `cadife-dev-123` | `com.cadife.tour.dev` | Cadife Dev |
+| **Staging** | `https://staging-api.cadife.com` | `cadife-staging-456` | `com.cadife.tour.staging` | Cadife Staging |
+| **Production** | `https://api.cadife.com` | `cadife-prod-789` | `com.cadife.tour` | Cadife |
+
+### Comandos de Execução (Frontend)
+
+Os comandos devem ser executados dentro do diretório `frontend_flutter/`:
+
+```bash
+# Executar em Desenvolvimento
+make run-dev
+
+# Executar em Staging
+make run-staging
+
+# Executar em Produção
+make run-prod
+
+# Build APK para Staging
+make build-staging
+```
+
+### Configuração de Desenvolvimento Local (ngrok)
+
+Para apontar o app mobile para seu backend local:
+
+1. Inicie o backend local (`uvicorn` ou `dev.sh`).
+2. Inicie o ngrok: `ngrok http 4000`.
+3. Atualize o `apiBaseUrl` em `lib/config/app_config.dart` (static const dev).
+
+---
+
 ## 🚀 Como Executar
 
 ### Pré-requisitos
