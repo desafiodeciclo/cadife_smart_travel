@@ -34,7 +34,6 @@ class Lead(Base):
     origem: Mapped[LeadOrigem] = mapped_column(String(20), nullable=False, default=LeadOrigem.whatsapp)
     status: Mapped[LeadStatus] = mapped_column(String(30), nullable=False, default=LeadStatus.novo)
     score: Mapped[Optional[LeadScore]] = mapped_column(String(10))
-=======
 
     consultor_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
     is_archived: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
