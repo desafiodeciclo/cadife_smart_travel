@@ -5,6 +5,8 @@ import 'package:cadife_smart_travel/features/agency/agenda/presentation/widgets/
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/providers/lead_detail_provider.dart';
 import 'package:cadife_smart_travel/features/agency/propostas/presentation/widgets/create_proposal_modal.dart';
+import 'package:cadife_smart_travel/shared/presentation/widgets/empty_state/empty_type.dart';
+import 'package:cadife_smart_travel/shared/presentation/widgets/state_container.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -56,48 +58,52 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> with SingleTick
           ),
         ],
       ),
-      body: detailAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Erro: $e')),
-        data: (lead) => lead == null
-            ? const Center(child: Text('Lead não encontrado.'))
-            : Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      children: [
-                        _InfoCard(lead: lead),
-                        const SizedBox(height: 16),
-                        _ActionButtons(lead: lead),
-                      ],
-                    ),
-                  ),
-                  TabBar(
-                    controller: _tabController,
-                    labelColor: AppColors.primary,
-                    unselectedLabelColor: context.cadife.textSecondary,
-                    indicatorColor: AppColors.primary,
-                    tabs: const [
-                      Tab(text: 'Briefing'),
-                      Tab(text: 'Chat & Timeline'),
-                    ],
-                  ),
-                  Expanded(
-                    child: TabBarView(
-                      controller: _tabController,
-                      children: [
-                        _BriefingTab(lead: lead),
-                        const _ChatTimelineTab(),
-                      ],
-                    ),
-                  ),
+      body: StateContainer(
+        state: detailAsync,
+        onRetry: () => ref.refresh(leadDetailProvider(widget.leadId)),
+        isEmpty: detailAsync.valueOrNull == null && detailAsync is AsyncData,
+        customEmptyType: EmptyType.notFound,
+        dataBuilder: (lead) {
+          if (lead == null) return const SizedBox.shrink();
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    _InfoCard(lead: lead),
+                    const SizedBox(height: 16),
+                    _ActionButtons(lead: lead),
+                  ],
+                ),
+              ),
+              TabBar(
+                controller: _tabController,
+                labelColor: AppColors.primary,
+                unselectedLabelColor: context.cadife.textSecondary,
+                indicatorColor: AppColors.primary,
+                tabs: const [
+                  Tab(text: 'Briefing'),
+                  Tab(text: 'Chat & Timeline'),
                 ],
               ),
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _BriefingTab(lead: lead),
+                    const _ChatTimelineTab(),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 }
+
 
 class _InfoCard extends StatelessWidget {
   final Lead lead;

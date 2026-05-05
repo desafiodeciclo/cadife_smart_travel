@@ -2,6 +2,8 @@ import 'package:cadife_smart_travel/core/utils/extensions/extensions.dart';
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/providers/leads_notifier.dart';
+import 'package:cadife_smart_travel/shared/presentation/widgets/empty_state/empty_type.dart';
+import 'package:cadife_smart_travel/shared/presentation/widgets/state_container.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -102,23 +104,12 @@ class _LeadsPageState extends ConsumerState<LeadsPage> {
           _FilterStrip(activeStatus: activeStatus, activeScore: activeScore),
           Divider(height: 1, thickness: 1, color: context.cadife.cardBorder),
           Expanded(
-            child: filteredAsync.when(
-              loading: () =>
-                  const Center(child: CircularProgressIndicator(color: AppColors.primary)),
-              error: (e, _) => _ErrorView(
-                onRetry: () => ref.read(leadsNotifierProvider.notifier).refresh(),
-              ),
-              data: (leads) => leads.isEmpty
-                  ? const _EmptyView()
-                  : RefreshIndicator(
-                      color: AppColors.primary,
-                      onRefresh: () => ref.read(leadsNotifierProvider.notifier).refresh(),
-                      child: ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-                        itemCount: leads.length,
-                        itemBuilder: (_, i) => _LeadCard(lead: leads[i]),
-                      ),
-                    ),
+            child: StateListView<Lead>(
+              state: filteredAsync,
+              itemBuilder: (lead, _) => _LeadCard(lead: lead),
+              onRetry: () => ref.read(leadsNotifierProvider.notifier).refresh(),
+              emptyType: isFiltered ? EmptyType.emptySearch : EmptyType.noLeads,
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
             ),
           ),
         ],
@@ -611,64 +602,4 @@ class _StatusBadge extends StatelessWidget {
   }
 }
 
-// ─── Estados auxiliares ────────────────────────────────────────────────────────────────────────────────
-
-class _ErrorView extends StatelessWidget {
-  const _ErrorView({required this.onRetry});
-
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.wifi_off_rounded, size: 48, color: context.cadife.textSecondary),
-          const SizedBox(height: 12),
-          Text(
-            'Erro ao carregar leads',
-            style: TextStyle(color: context.cadife.textSecondary, fontSize: 14),
-          ),
-          const SizedBox(height: 12),
-          ShadButton(
-            onPressed: onRetry,
-            leading: const Icon(Icons.refresh, size: 18),
-            child: const Text('Tentar novamente'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _EmptyView extends StatelessWidget {
-  const _EmptyView();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.search_off_rounded,
-              size: 56, color: context.cadife.textSecondary.withValues(alpha: 0.4)),
-          const SizedBox(height: 12),
-          Text(
-            'Nenhum lead encontrado',
-            style: TextStyle(
-              color: context.cadife.textSecondary,
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Tente ajustar os filtros ou a busca',
-            style: TextStyle(color: context.cadife.textSecondary, fontSize: 12),
-          ),
-        ],
-      ),
-    );
-  }
-}
+// ─── Estados auxiliares removidos (substituídos por biblioteca global) ───
