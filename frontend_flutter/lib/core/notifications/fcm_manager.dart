@@ -2,7 +2,12 @@ import 'dart:developer' as developer;
 
 import 'package:cadife_smart_travel/core/notifications/local_notification_manager.dart';
 import 'package:cadife_smart_travel/features/auth/domain/repositories/i_auth_repository.dart';
+import 'package:cadife_smart_travel/features/notifications/domain/dtos/notification_payload_dto.dart';
+import 'package:cadife_smart_travel/features/notifications/domain/entities/in_app_notification.dart';
+import 'package:cadife_smart_travel/features/notifications/domain/repositories/i_notification_repository.dart';
+import 'package:cadife_smart_travel/core/di/service_locator.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 
 class FCMManager {
@@ -21,20 +26,54 @@ class FCMManager {
     );
 
     // Configurar listener para foreground
-    FirebaseMessaging.onMessage.listen((message) {
+    FirebaseMessaging.onMessage.listen((message) async {
       developer.log(
         'Recebido mensagem FCM Foreground: ${message.messageId}',
         name: 'FCMManager',
       );
+
+      // Persistir no banco local
+      try {
+        final payloadDTO = NotificationPayloadDTO.fromFirebaseMessage(message);
+        final repo = sl<INotificationRepository>();
+
+        final notification = InAppNotification(
+          uuid: payloadDTO.id,
+          leadId: payloadDTO.leadId,
+          type: payloadDTO.type,
+          title: payloadDTO.title,
+          body: payloadDTO.body,
+          receivedAt: payloadDTO.receivedAt,
+          actionUrl: '/leads/${payloadDTO.leadId}',
+          leadName: payloadDTO.leadName,
+          leadPhone: payloadDTO.leadPhone,
+        );
+
+        await repo.saveNotification(notification);
+        developer.log('Notificação persistida no Isar.', name: 'FCMManager');
+      } catch (e) {
+        developer.log('Erro ao persistir notificação: $e', name: 'FCMManager');
+      }
+
       if (message.notification != null) {
-        // Usa messageId (quando disponÃ­vel) para evitar colisÃµes de hashCode.
+        // Usa messageId (quando disponível) para evitar colisões de hashCode.
         final id = message.messageId?.hashCode ?? message.hashCode;
         LocalNotificationManager.showNotification(
           id: id,
-          title: message.notification!.title ?? 'NotificaÃ§Ã£o',
+          title: message.notification!.title ?? 'Notificação',
           body: message.notification!.body ?? '',
         );
       }
+    });
+
+    // Configurar listener para quando o app é aberto via notificação
+    FirebaseMessaging.onMessageOpenedApp.listen((message) {
+      developer.log(
+        'App aberto via notificação: ${message.messageId}',
+        name: 'FCMManager',
+      );
+      // O tratamento de navegação será feito via GoRouter ou no contexto da UI
+      // Aqui podemos apenas registrar o evento ou preparar o estado
     });
 
     // Handle token refresh

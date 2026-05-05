@@ -13,6 +13,7 @@ import 'package:cadife_smart_travel/features/auth/presentation/screens/forgot_pa
 import 'package:cadife_smart_travel/features/auth/presentation/screens/login_screen.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/screens/register_screen.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/screens/splash_screen.dart';
+import 'package:cadife_smart_travel/features/notifications/presentation/screens/notification_center_screen.dart';
 import 'package:cadife_smart_travel/features/client/documentos/domain/entities/documento.dart';
 import 'package:cadife_smart_travel/features/client/documentos/presentation/pages/document_viewer_page.dart';
 import 'package:cadife_smart_travel/features/client/documentos/presentation/pages/documentos_page.dart';
@@ -113,6 +114,17 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/agency/perfil',
             builder: (context, state) => const ConsultorProfileScreen(),
+          ),
+          GoRoute(
+            path: '/notifications',
+            builder: (context, state) => const NotificationCenterScreen(),
+          ),
+          GoRoute(
+            path: '/leads/:leadId',
+            builder: (context, state) {
+              final leadId = state.pathParameters['leadId']!;
+              return LeadDetailPage(leadId: leadId);
+            },
           ),
         ],
       ),

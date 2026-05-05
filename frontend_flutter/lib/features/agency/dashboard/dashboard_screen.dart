@@ -5,6 +5,7 @@ import 'package:cadife_smart_travel/features/agency/dashboard/widgets/funnel_sec
 import 'package:cadife_smart_travel/features/agency/dashboard/widgets/notification_card.dart';
 import 'package:cadife_smart_travel/features/agency/dashboard/widgets/performance_section.dart';
 import 'package:cadife_smart_travel/features/agency/dashboard/widgets/summary_section.dart';
+import 'package:cadife_smart_travel/features/notifications/presentation/widgets/notification_bell.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -26,7 +27,11 @@ class DashboardScreen extends ConsumerWidget {
             child: CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
-                const CadifeAppBar(title: 'Dashboard'),
+                CadifeAppBar(
+                  title: 'Dashboard',
+                  showNotificationBell: false,
+                  actions: [const NotificationBell()],
+                ),
                 SliverToBoxAdapter(
                   child: NotificationCard(
                     leadName: 'Mariana S.',

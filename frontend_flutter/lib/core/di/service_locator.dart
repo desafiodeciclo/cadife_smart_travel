@@ -17,8 +17,10 @@ import 'package:cadife_smart_travel/core/offline/offline_manager.dart';
 import 'package:cadife_smart_travel/core/offline/offline_sync_queue.dart';
 import 'package:cadife_smart_travel/core/offline/process_offline_queue_usecase.dart';
 import 'package:cadife_smart_travel/core/security/secure_config.dart';
-import 'package:cadife_smart_travel/features/agency/agenda/data/datasources/mock_agenda_repository.dart';
+import 'package:cadife_smart_travel/features/notifications/domain/repositories/i_notification_repository.dart';
+import 'package:cadife_smart_travel/features/notifications/infrastructure/database/notification_isar.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/domain/repositories/i_agenda_repository.dart';
+import 'package:cadife_smart_travel/features/agency/agenda/data/datasources/mock_agenda_repository.dart';
 import 'package:cadife_smart_travel/features/agency/leads/data/datasources/leads_remote_mock_datasource.dart';
 import 'package:cadife_smart_travel/features/agency/leads/data/repositories/leads_repository_impl.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/repositories/i_leads_repository.dart';
@@ -137,6 +139,7 @@ Future<void> setupServiceLocator({
   _registerProposalModule();
   _registerProfileModule();
   _registerNotificationsModule();
+  _registerInAppNotificationsModule();
   _registerSettingsModule();
   _registerStatusModule();
 }
@@ -189,6 +192,16 @@ void _registerProfileModule() {
 
 void _registerNotificationsModule() {
   sl.registerLazySingleton<INotificationsRepository>(NotificationsRepositoryImpl.new);
+}
+
+void _registerInAppNotificationsModule() {
+  sl.registerLazySingleton<INotificationRepository>(() {
+    final isar = sl<IsarCacheManager>().isar;
+    if (isar == null) {
+      throw StateError('Isar must be initialized before INotificationRepository');
+    }
+    return NotificationIsarRepository(isar);
+  });
 }
 
 void _registerSettingsModule() {

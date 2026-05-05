@@ -1,5 +1,6 @@
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/providers/leads_usecases_providers.dart';
+import 'package:cadife_smart_travel/features/notifications/application/providers/notification_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final leadDetailProvider =
@@ -11,6 +12,15 @@ class LeadDetailNotifier extends FamilyAsyncNotifier<Lead?, String> {
   @override
   Future<Lead?> build(String arg) async {
     final result = await ref.watch(getLeadByIdUseCaseProvider).call(arg);
+    
+    // Cleanup notificações relacionadas ao lead
+    try {
+      final repo = ref.read(notificationRepositoryProvider);
+      await repo.deleteNotificationsByLeadId(arg);
+    } catch (e) {
+      // Falha silenciosa no cleanup
+    }
+
     return result.fold(
       (failure) => throw failure,
       (lead) => lead,
