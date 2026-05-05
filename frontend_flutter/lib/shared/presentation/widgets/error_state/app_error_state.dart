@@ -1,9 +1,10 @@
 import 'dart:async';
 import 'dart:io';
+
+import 'package:cadife_smart_travel/design_system/design_system.dart';
+import 'package:cadife_smart_travel/shared/presentation/widgets/error_state/error_type.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:cadife_smart_travel/design_system/design_system.dart';
-import 'error_type.dart';
 
 class AppErrorState extends StatelessWidget {
   final ErrorType type;
@@ -77,14 +78,14 @@ class AppErrorState extends StatelessWidget {
               children: [
                 if (showRetry)
                   CadifeButton(
-                    label: retryButtonLabel,
+                    text: retryButtonLabel,
                     onPressed: onRetry,
                   ),
                 if (onDismiss != null)
                   CadifeButton(
-                    label: 'Fechar',
+                    text: 'Fechar',
                     onPressed: onDismiss,
-                    variant: CadifeButtonVariant.secondary,
+                    isOutline: true,
                   ),
               ],
             ),
@@ -118,7 +119,7 @@ extension AppErrorStateFactory on AppErrorState {
         403 => ErrorType.forbidden,
         404 => ErrorType.notFound,
         429 => ErrorType.rateLimited,
-        >= 500 => ErrorType.serverError,
+        final int status when status >= 500 => ErrorType.serverError,
         400 => ErrorType.validationError,
         _ => ErrorType.genericError,
       },

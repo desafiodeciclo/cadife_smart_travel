@@ -1,10 +1,10 @@
+import 'package:cadife_smart_travel/design_system/design_system.dart';
+import 'package:cadife_smart_travel/shared/presentation/widgets/empty_state/app_empty_state.dart';
+import 'package:cadife_smart_travel/shared/presentation/widgets/empty_state/empty_type.dart';
+import 'package:cadife_smart_travel/shared/presentation/widgets/error_state/app_error_state.dart';
+import 'package:cadife_smart_travel/shared/presentation/widgets/error_state/error_type.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cadife_smart_travel/design_system/design_system.dart';
-import 'error_state/app_error_state.dart';
-import 'error_state/error_type.dart';
-import 'empty_state/app_empty_state.dart';
-import 'empty_state/empty_type.dart';
 
 class StateContainer<T> extends StatelessWidget {
   final AsyncValue<T> state;

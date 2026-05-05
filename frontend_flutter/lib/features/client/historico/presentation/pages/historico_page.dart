@@ -1,6 +1,5 @@
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/client/historico/presentation/providers/historico_notifier.dart';
-import 'package:cadife_smart_travel/features/client/historico/presentation/widgets/historico_states.dart';
 import 'package:cadife_smart_travel/features/client/historico/presentation/widgets/trip_history_card.dart';
 import 'package:cadife_smart_travel/features/client/historico/presentation/widgets/whatsapp_fab.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/empty_state/empty_type.dart';

@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:cadife_smart_travel/design_system/design_system.dart';
-import 'empty_type.dart';
+import 'package:cadife_smart_travel/shared/presentation/widgets/empty_state/empty_type.dart';
+import 'package:flutter/material.dart';
 
 class AppEmptyState extends StatelessWidget {
   final EmptyType type;
@@ -58,7 +58,7 @@ class AppEmptyState extends StatelessWidget {
             if (showAction) ...[
               const SizedBox(height: 32),
               CadifeButton(
-                label: actionLabel,
+                text: actionLabel,
                 onPressed: onAction,
               ),
             ],

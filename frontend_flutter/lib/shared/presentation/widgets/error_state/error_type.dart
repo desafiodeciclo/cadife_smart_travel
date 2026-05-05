@@ -54,8 +54,8 @@ extension ErrorTypeConfig on ErrorType {
       ErrorType.unauthorized => LucideIcons.lock,
       ErrorType.forbidden => LucideIcons.shieldAlert,
       ErrorType.notFound => LucideIcons.searchX,
-      ErrorType.validationError => LucideIcons.alertCircle,
-      ErrorType.genericError => LucideIcons.alertTriangle,
+      ErrorType.validationError => LucideIcons.circleAlert,
+      ErrorType.genericError => LucideIcons.triangleAlert,
       ErrorType.rateLimited => LucideIcons.timer,
     };
   }

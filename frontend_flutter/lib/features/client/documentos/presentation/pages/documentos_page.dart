@@ -1,6 +1,7 @@
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/client/documentos/presentation/providers/documentos_notifier.dart';
 import 'package:cadife_smart_travel/features/client/documentos/presentation/widgets/widgets.dart';
+import 'package:cadife_smart_travel/shared/presentation/widgets/empty_state/app_empty_state.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/empty_state/empty_type.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/state_container.dart';
 import 'package:flutter/material.dart';
@@ -101,7 +102,7 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
                   const SizedBox(height: 16),
                   StateContainer(
                     state: globalDocsAsync,
-                    onRetry: () => ref.read(globalDocumentsProvider.notifier).refresh(),
+                    onRetry: () => ref.refresh(globalDocumentsProvider),
                     loadingWidget: Column(
                       children: List.generate(
                         3,
@@ -166,7 +167,7 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
                   const SizedBox(height: 12),
                   StateContainer(
                     state: tripsWithDocsAsync,
-                    onRetry: () => ref.read(tripsWithDocumentsProvider.notifier).refresh(),
+                    onRetry: () => ref.refresh(tripsWithDocumentsProvider),
                     loadingWidget: Column(
                       children: List.generate(
                         2,
@@ -174,7 +175,7 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
                       ),
                     ),
                     isEmpty: tripsWithDocsAsync.valueOrNull?.isEmpty ?? false,
-                    customEmptyType: EmptyType.genericEmpty,
+                    customEmptyType: EmptyType.emptyList,
                     dataBuilder: (trips) => Column(
                       children: trips
                           .map(
