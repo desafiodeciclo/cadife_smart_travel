@@ -5,11 +5,11 @@ import 'package:google_fonts/google_fonts.dart';
 
 class ProfileHeader extends StatelessWidget {
   const ProfileHeader({
-    super.key,
     required this.user,
     required this.isEditing,
     required this.nameController,
     required this.onToggleEdit,
+    super.key,
   });
 
   final AuthUser? user;
@@ -153,9 +153,9 @@ class ProfileHeader extends StatelessWidget {
 
 class ProfileSectionCard extends StatelessWidget {
   const ProfileSectionCard({
-    super.key,
     required this.title,
     required this.children,
+    super.key,
   });
 
   final String title;
@@ -211,10 +211,10 @@ class ProfileSectionCard extends StatelessWidget {
 
 class ProfileInfoRow extends StatelessWidget {
   const ProfileInfoRow({
-    super.key,
     required this.icon,
     required this.label,
     required this.value,
+    super.key,
     this.readOnly = false,
   });
 
@@ -289,10 +289,10 @@ class ProfileInfoRow extends StatelessWidget {
 
 class ProfileChipGroup extends StatelessWidget {
   const ProfileChipGroup({
-    super.key,
     required this.label,
     required this.options,
     required this.selected,
+    super.key,
     this.onTap,
   });
 
@@ -376,8 +376,8 @@ class ProfileChipGroup extends StatelessWidget {
 
 class ProfilePassaporteCard extends StatelessWidget {
   const ProfilePassaporteCard({
-    super.key,
     required this.value,
+    super.key,
     this.onToggle,
   });
 
@@ -480,9 +480,9 @@ class ProfilePassaporteCard extends StatelessWidget {
 
 class ProfileThemeSelector extends StatelessWidget {
   const ProfileThemeSelector({
-    super.key,
     required this.themeMode,
     required this.onChanged,
+    super.key,
   });
 
   final ThemeMode themeMode;

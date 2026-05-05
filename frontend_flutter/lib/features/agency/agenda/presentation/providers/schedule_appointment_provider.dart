@@ -108,7 +108,7 @@ class ScheduleAppointmentNotifier
         try {
           final repo = _ref.read(notificationRepositoryProvider);
           repo.deleteNotificationsByLeadId(leadId);
-        } on Exception catch (e) {
+        } on Exception catch (_) {
           // Silencioso
         }
         

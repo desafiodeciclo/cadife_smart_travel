@@ -7,7 +7,7 @@ import 'package:go_router/go_router.dart';
 class NotificationTile extends ConsumerWidget {
   final InAppNotification notification;
   
-  const NotificationTile({super.key, required this.notification});
+  const NotificationTile({required this.notification, super.key});
   
   @override
   Widget build(BuildContext context, WidgetRef ref) {

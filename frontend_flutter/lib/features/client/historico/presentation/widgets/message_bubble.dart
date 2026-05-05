@@ -3,7 +3,7 @@ import 'package:cadife_smart_travel/features/client/historico/domain/entities/in
 import 'package:flutter/material.dart';
 
 class MessageBubble extends StatelessWidget {
-  const MessageBubble({super.key, required this.interaction});
+  const MessageBubble({required this.interaction, super.key});
   final Interacao interaction;
 
   bool get _isClient => interaction.direction == 'inbound';

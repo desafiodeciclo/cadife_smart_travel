@@ -19,10 +19,10 @@ class CadifeBottomNav extends StatelessWidget {
   final Function(int) onTap;
 
   const CadifeBottomNav({
-    super.key,
     required this.currentIndex,
     required this.items,
     required this.onTap,
+    super.key,
   });
 
   @override

@@ -1,3 +1,4 @@
+import 'package:cadife_smart_travel/features/client/documentos/data/providers/documento_data_providers.dart';
 import 'package:cadife_smart_travel/features/client/documentos/domain/entities/documento.dart';
 import 'package:cadife_smart_travel/features/client/status/data/providers/status_data_providers.dart';
 import 'package:cadife_smart_travel/features/client/status/domain/entities/client_travel_status.dart';
@@ -13,30 +14,12 @@ final activeLeadProvider = FutureProvider<ClientTravelStatus?>((ref) async {
   );
 });
 
-/// Provider mock para documentos do cliente.
-// TODO: substituir por IDocumentRepository quando endpoint GET /client/documents existir.
-final clientDocumentsProvider = Provider<List<Documento>>((ref) {
-  return const [
-    Documento(
-      id: '1',
-      name: 'Voucher Hotel',
-      type: DocumentType.pdf,
-      size: 1258291,
-      url: 'https://example.com/voucher.pdf',
-    ),
-    Documento(
-      id: '2',
-      name: 'Seguro Viagem',
-      type: DocumentType.pdf,
-      size: 838860,
-      url: 'https://example.com/seguro.pdf',
-    ),
-    Documento(
-      id: '3',
-      name: 'Passagens Aéreas',
-      type: DocumentType.pdf,
-      size: 2621440,
-      url: 'https://example.com/passagens.pdf',
-    ),
-  ];
+/// Provider para documentos do cliente usando o repositório.
+final clientDocumentsProvider = FutureProvider<List<Documento>>((ref) async {
+  final repository = ref.watch(documentoRepositoryProvider);
+  final result = await repository.getMyDocuments();
+  return result.fold(
+    (failure) => throw failure,
+    (documents) => documents,
+  );
 });

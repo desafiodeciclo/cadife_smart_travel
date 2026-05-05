@@ -12,8 +12,8 @@ class CadifeCard extends StatelessWidget {
   final bool showBorder;
 
   const CadifeCard({
-    super.key,
     required this.child,
+    super.key,
     this.padding,
     this.width,
     this.height,

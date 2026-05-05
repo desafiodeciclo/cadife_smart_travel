@@ -2,7 +2,7 @@ import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:flutter/material.dart';
 
 class DateDivider extends StatelessWidget {
-  const DateDivider({super.key, required this.date});
+  const DateDivider({required this.date, super.key});
   final DateTime date;
 
   String _label() {

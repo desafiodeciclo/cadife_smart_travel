@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 class ClientShell extends StatefulWidget {
-  const ClientShell({super.key, required this.child, required this.location});
+  const ClientShell({required this.child, required this.location, super.key});
 
   final Widget child;
   final String location;

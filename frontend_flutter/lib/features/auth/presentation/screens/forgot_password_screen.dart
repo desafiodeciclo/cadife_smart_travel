@@ -105,13 +105,13 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
 class _EmailStep extends StatelessWidget {
   const _EmailStep({
-    super.key,
     required this.formKey,
     required this.controller,
     required this.isLoading,
     required this.errorMessage,
     required this.primaryColor,
     required this.onSubmit,
+    super.key,
   });
 
   final GlobalKey<FormState> formKey;
@@ -183,10 +183,10 @@ class _EmailStep extends StatelessWidget {
 
 class _ConfirmationStep extends StatelessWidget {
   const _ConfirmationStep({
-    super.key,
     required this.email,
     required this.onResend,
     required this.isResending,
+    super.key,
   });
 
   final String email;
@@ -296,7 +296,7 @@ class _ConfirmationStep extends StatelessWidget {
 // ── Success Step ─────────────────────────────────────────────────────────────
 
 class _SuccessStep extends StatelessWidget {
-  const _SuccessStep({super.key, required this.onBackToLogin});
+  const _SuccessStep({required this.onBackToLogin, super.key});
   final VoidCallback onBackToLogin;
 
   @override

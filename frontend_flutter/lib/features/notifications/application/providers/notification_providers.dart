@@ -33,7 +33,7 @@ class NotificationNotifier extends AsyncNotifier<void> {
       final repo = ref.read(notificationRepositoryProvider);
       await repo.markAsRead(uuid);
       state = const AsyncData(null);
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       state = AsyncError(e, st);
     }
   }
@@ -44,7 +44,7 @@ class NotificationNotifier extends AsyncNotifier<void> {
       final repo = ref.read(notificationRepositoryProvider);
       await repo.markAllAsRead();
       state = const AsyncData(null);
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       state = AsyncError(e, st);
     }
   }
@@ -55,7 +55,7 @@ class NotificationNotifier extends AsyncNotifier<void> {
       final repo = ref.read(notificationRepositoryProvider);
       await repo.deleteNotification(uuid);
       state = const AsyncData(null);
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       state = AsyncError(e, st);
     }
   }
@@ -66,7 +66,7 @@ class NotificationNotifier extends AsyncNotifier<void> {
       final repo = ref.read(notificationRepositoryProvider);
       await repo.deleteNotificationsByLeadId(leadId);
       state = const AsyncData(null);
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       state = AsyncError(e, st);
     }
   }

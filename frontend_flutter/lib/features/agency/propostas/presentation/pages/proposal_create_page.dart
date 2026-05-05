@@ -18,9 +18,9 @@ class ProposalCreateScreen extends ConsumerStatefulWidget {
   final String consultorId;
 
   const ProposalCreateScreen({
-    super.key,
     required this.leadId,
     required this.consultorId,
+    super.key,
   });
 
   @override
@@ -94,7 +94,7 @@ class _ProposalCreateScreenState extends ConsumerState<ProposalCreateScreen>
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    HapticFeedback.lightImpact();
+    await HapticFeedback.lightImpact();
     setState(() => _saving = true);
 
     final valorText = _valorController.text

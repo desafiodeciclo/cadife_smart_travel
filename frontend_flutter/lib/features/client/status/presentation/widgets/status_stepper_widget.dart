@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 /// Horizontal trip-status stepper.
 /// [currentStep]: 0 = Em análise, 1 = Proposta enviada, 2 = Confirmado, 3 = Emitido
 class StatusStepperWidget extends StatelessWidget {
-  const StatusStepperWidget({super.key, required this.currentStep});
+  const StatusStepperWidget({required this.currentStep, super.key});
 
   final int currentStep;
 

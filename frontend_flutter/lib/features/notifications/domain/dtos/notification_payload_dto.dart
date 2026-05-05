@@ -52,7 +52,7 @@ class NotificationPayloadDTO {
     if (typeStr == null) return NotificationType.sistemaAlerta;
     try {
       return NotificationType.values.byName(typeStr);
-    } catch (_) {
+    } on Exception catch (_) {
       return NotificationType.sistemaAlerta;
     }
   }

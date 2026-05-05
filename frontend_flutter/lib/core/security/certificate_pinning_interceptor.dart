@@ -20,7 +20,7 @@ class CertificatePinningInterceptor extends Interceptor {
 
   /// Cria um [HttpClient] configurado com pinning de certificado X.509.
   ///
-  /// Use este client no [Dio.httpClientAdapter] ou [IOHttpClientAdapter].
+  /// Use este client no Dio.httpClientAdapter ou IOHttpClientAdapter.
   static HttpClient createPinnedHttpClient({
     required List<String> pinnedSha256,
     List<String>? backupPinnedSha256,

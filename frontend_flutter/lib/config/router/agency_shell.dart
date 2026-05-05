@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 class AgencyShell extends StatefulWidget {
-  const AgencyShell({super.key, required this.child, required this.location});
+  const AgencyShell({required this.child, required this.location, super.key});
 
   final Widget child;
   final String location;
