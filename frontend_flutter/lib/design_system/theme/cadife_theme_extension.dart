@@ -109,8 +109,15 @@ class CadifeThemeExtension extends ThemeExtension<CadifeThemeExtension> {
 }
 
 extension CadifeTheme on BuildContext {
-  CadifeThemeExtension get cadife =>
-      Theme.of(this).extension<CadifeThemeExtension>()!;
+  CadifeThemeExtension get cadife {
+    final ext = Theme.of(this).extension<CadifeThemeExtension>();
+    if (ext != null) return ext;
+    
+    // Fallback to light or dark defaults if extension is missing
+    return Theme.of(this).brightness == Brightness.dark 
+        ? CadifeThemeExtension.dark 
+        : CadifeThemeExtension.light;
+  }
       
   bool get isDark => Theme.of(this).brightness == Brightness.dark;
 
