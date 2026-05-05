@@ -1,4 +1,5 @@
 import 'package:cadife_smart_travel/config/theme/cadife_theme.dart';
+import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_bloc_provider.dart';
 import 'package:cadife_smart_travel/features/settings/application/theme_notifier.dart';
@@ -7,7 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:cadife_smart_travel/design_system/design_system.dart';
 
 /// Helper central para testes de widget e golden tests.
 /// Garante que o widget seja renderizado com o tema, providers e localização corretos.

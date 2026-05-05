@@ -1,8 +1,8 @@
 import 'package:cadife_smart_travel/features/settings/application/theme_notifier.dart';
 import 'package:cadife_smart_travel/features/settings/domain/entities/user_preferences.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 class _MockThemeNotifier extends ThemeNotifier {
   ThemePreference _current = ThemePreference.light;
@@ -23,7 +23,7 @@ void main() {
   testWidgets('Theme switch deve disparar alteração de estado no Riverpod', (tester) async {
     final container = ProviderContainer(
       overrides: [
-        themeNotifierProvider.overrideWith(() => _MockThemeNotifier()),
+        themeNotifierProvider.overrideWith(_MockThemeNotifier.new),
       ],
     );
     addTearDown(container.dispose);

@@ -5,9 +5,9 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('WCAG AA Contrast Validation', () {
     double getRelativeLuminance(Color color) {
-      final r = color.red / 255;
-      final g = color.green / 255;
-      final b = color.blue / 255;
+      final r = color.r;
+      final g = color.g;
+      final b = color.b;
       
       final rLin = r <= 0.03928 ? r / 12.92 : pow((r + 0.055) / 1.055, 2).toDouble();
       final gLin = g <= 0.03928 ? g / 12.92 : pow((g + 0.055) / 1.055, 2).toDouble();
