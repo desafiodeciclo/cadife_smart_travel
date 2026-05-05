@@ -28,7 +28,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 # Must be set BEFORE importing app modules to avoid real PostgreSQL/WhatsApp
 os.environ["WHATSAPP_TOKEN"] = "test_token"
 os.environ["PHONE_NUMBER_ID"] = "test_id"
-os.environ["OPENAI_API_KEY"] = "test_key"
+os.environ["GEMINI_API_KEY"] = "test_key"
 os.environ["VERIFY_TOKEN"] = "test_verify"
 os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
 os.environ["APP_ENV"] = "test"
@@ -36,6 +36,8 @@ os.environ["JWT_SECRET_KEY"] = "test-secret-key-12345678901234567890"
 os.environ["JWT_ALGORITHM"] = "HS256"
 os.environ["ACCESS_TOKEN_EXPIRE_MINUTES"] = "15"
 os.environ["REFRESH_TOKEN_EXPIRE_DAYS"] = "7"
+os.environ["ENCRYPTION_KEY"] = "858iXm1S2iXN5sH3W6V-q7W_U8U7z6T5S4R3Q2P1O0N="
+os.environ["HASH_KEY"] = "f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7"
 
 # Now import the app and models AFTER setting env vars
 from main import app

@@ -50,12 +50,33 @@ class Briefing(Base):
     lead: Mapped["Lead"] = relationship("Lead", back_populates="briefing")
 
 
+REQUIRED_FIELDS = ["destino", "data_ida", "orcamento", "perfil"]
+OPTIONAL_FIELDS = ["data_volta", "qtd_pessoas", "tipo_viagem", "preferencias", "tem_passaporte"]
+
 def calculate_completude(briefing_data: dict) -> int:
-    filled = sum(
-        1 for field in BRIEFING_FIELDS
+    """
+    Calcula o percentual de completude do briefing.
+    Campos obrigatórios (destino, data, orçamento, perfil) têm peso maior.
+    """
+    total_required = len(REQUIRED_FIELDS)
+    filled_required = sum(
+        1 for field in REQUIRED_FIELDS
         if briefing_data.get(field) not in (None, [], "", 0)
     )
-    return round((filled / len(BRIEFING_FIELDS)) * 100)
+    
+    # Se todos os obrigatórios estiverem preenchidos, temos pelo menos 80%
+    # Os outros 20% vêm dos campos opcionais
+    base_pct = (filled_required / total_required) * 80
+    
+    total_optional = len(OPTIONAL_FIELDS)
+    filled_optional = sum(
+        1 for field in OPTIONAL_FIELDS
+        if briefing_data.get(field) not in (None, [], "", 0)
+    )
+    
+    extra_pct = (filled_optional / total_optional) * 20 if total_optional > 0 else 0
+    
+    return min(100, round(base_pct + extra_pct))
 
 
 # Pydantic schemas

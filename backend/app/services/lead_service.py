@@ -6,8 +6,10 @@ import structlog
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from sqlalchemy.exc import IntegrityError, ProgrammingError
+from sqlalchemy.dialects.postgresql import insert
 from app.application.services.lead_state_machine import LeadStateMachine
-from app.domain.entities.enums import LeadScore, LeadStatus, TipoMensagem
+from app.domain.entities.enums import LeadOrigem, LeadScore, LeadStatus, TipoMensagem
 from app.infrastructure.security.pii_encryption import hmac_hash
 from app.models.briefing import Briefing, BriefingExtracted, calculate_completude
 from app.models.interacao import Interacao
@@ -47,31 +49,95 @@ def calculate_score_from_briefing(briefing: Briefing | None) -> LeadScore | None
     return LeadScore.frio
 
 
-async def get_or_create_by_phone(db: AsyncSession, phone: str, name: Optional[str] = None) -> Lead:
-    phone_hash = hmac_hash(phone)
-    result = await db.execute(select(Lead).where(Lead.telefone_hash == phone_hash))
-    lead = result.scalar_one_or_none()
-    if lead:
+async def upsert_lead_with_resilience(db: AsyncSession, lead_data: dict) -> Lead:
+    """
+    Implementa a estratégia de Upsert (Update or Insert) com resiliência.
+    Trata erros de integridade e tabelas inexistentes (fail-safe).
+    """
+    try:
+        phone = lead_data.get("telefone")
+        if not phone:
+            raise ValueError("Telefone é obrigatório para upsert de lead")
+            
+        phone_hash = hmac_hash(phone)
+        
+        # Tenta inserir ou atualizar no conflito do telefone_hash
+        stmt = insert(Lead).values(
+            telefone=phone,
+            telefone_hash=phone_hash,
+            nome=lead_data.get("nome"),
+            status=lead_data.get("status", LeadStatus.novo),
+            origem=lead_data.get("origem", LeadOrigem.whatsapp)
+        ).on_conflict_do_update(
+            index_elements=[Lead.telefone_hash],
+            set_={
+                "nome": lead_data.get("nome"),
+                "atualizado_em": func.now()
+            }
+        ).returning(Lead)
+        
+        result = await db.execute(stmt)
+        lead = result.scalar_one()
+        
+        # Garante que o briefing exista
+        briefing_stmt = insert(Briefing).values(
+            lead_id=lead.id,
+            completude_pct=0
+        ).on_conflict_do_nothing()
+        await db.execute(briefing_stmt)
+        
+        await db.commit()
+        await db.refresh(lead)
         return lead
+        
+    except ProgrammingError as e:
+        if "relation \"leads\" does not exist" in str(e):
+            logger.error("database_table_missing", table="leads", error=str(e))
+            # Fallback ou raise informativo
+            raise RuntimeError("Banco de dados não inicializado. Execute as migrações.")
+        raise e
+    except IntegrityError as e:
+        await db.rollback()
+        logger.warning("integrity_error_during_upsert", error=str(e))
+        # Se falhar o upsert atômico, tenta o fallback manual (get or update)
+        return await get_or_create_by_phone(db, phone, lead_data.get("nome"))
+    except Exception as e:
+        await db.rollback()
+        logger.error("unexpected_error_in_upsert", error=str(e))
+        raise e
 
-    lead = Lead(
-        telefone=phone,
-        telefone_hash=phone_hash,
-        nome=name,
-        status=LeadStatus.novo,
-    )
-    db.add(lead)
-    briefing = Briefing(lead=lead)
-    db.add(briefing)
-    await db.commit()
-    await db.refresh(lead)
-    logger.info(
-        "lead_created",
-        lead_id=str(lead.id),
-        phone=phone,
-        initial_status=lead.status.value if hasattr(lead.status, 'value') else str(lead.status)
-    )
-    return lead
+
+async def get_or_create_by_phone(db: AsyncSession, phone: str, name: Optional[str] = None) -> Lead:
+    try:
+        phone_hash = hmac_hash(phone)
+        result = await db.execute(select(Lead).where(Lead.telefone_hash == phone_hash))
+        lead = result.scalar_one_or_none()
+        if lead:
+            if name and not lead.nome:
+                lead.nome = name
+                await db.commit()
+            return lead
+
+        lead = Lead(
+            telefone=phone,
+            telefone_hash=phone_hash,
+            nome=name,
+            status=LeadStatus.novo,
+        )
+        db.add(lead)
+        await db.flush() # Para pegar o ID do lead sem commit total ainda
+        
+        briefing = Briefing(lead_id=lead.id)
+        db.add(briefing)
+        
+        await db.commit()
+        await db.refresh(lead)
+        logger.info("lead_created", lead_id=str(lead.id), phone=phone)
+        return lead
+    except Exception as e:
+        await db.rollback()
+        logger.error("error_get_or_create_lead", phone=phone, error=str(e))
+        raise e
 
 
 async def get_lead_by_id(db: AsyncSession, lead_id: uuid.UUID) -> Optional[Lead]:
