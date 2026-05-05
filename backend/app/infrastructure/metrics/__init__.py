@@ -1,1 +1,1 @@
-# Metrics package
+﻿# Metrics package for Prometheus integration

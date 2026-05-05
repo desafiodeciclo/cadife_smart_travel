@@ -1,1 +1,1 @@
-# Logging infrastructure package
+﻿# Logging infrastructure package
