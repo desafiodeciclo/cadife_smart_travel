@@ -69,6 +69,11 @@ void main() {
 
   group('DioProvider Tests', () {
     test('dioClient usa baseUrl correto por config', () async {
+      // Registra um Dio no GetIt para que o provider possa resolvê-lo
+      if (!sl.isRegistered<Dio>()) {
+        sl.registerSingleton<Dio>(Dio(BaseOptions(baseUrl: AppConfig.dev.apiBaseUrl)));
+      }
+
       final container = ProviderContainer(
         overrides: [
           appConfigProvider.overrideWithValue(AppConfig.dev),
