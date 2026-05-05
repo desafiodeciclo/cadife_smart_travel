@@ -8,7 +8,8 @@
 
 ### Classes e Enums
 - **PascalCase**: `AuthRepository`, `UserStatus`.
-- Interfaces de repositório devem começar com `I`: `IAuthRepository`.
+- Interfaces de repositório **devem** começar com `I`: `IAuthRepository`, `IAgendaRepository`. Isso é intencional e correto.
+- ⚠️ **Distinção crítica**: O prefixo `I` se aplica a **classes de interface** (`abstract class IFooRepository`), **NÃO** a **providers Riverpod**. Exemplo incorreto: `iAgendaRepositoryProvider`. Correto: `agendaRepositoryProvider`.
 
 ### Variáveis e Métodos
 - **camelCase**: `currentUser`, `fetchLeads()`.
@@ -38,3 +39,10 @@ Toda feature em `lib/features/` deve seguir a estrutura:
 
 - **Failure Pattern**: Repositórios retornam `Either<Failure, T>`.
 - **Custom Failures**: Criar tipos específicos para erros comuns (Network, Unauthorized, Server).
+- ⚠️ **Proibido**: `catch (e) { return Left(ServerFailure(e.toString())); }`. Use `on DioException catch (e)` para erros de rede e inspecione `e.type` / `e.response?.statusCode`.
+- **Factory obrigatória**: Adicionar `Failure.fromDioException(DioException e)` em `failures.dart`.
+
+## Idioma de Pastas e Rotas
+
+- Todas as pastas em `features/` devem usar **inglês**: `documents` (não `documentos`), `history` (não `historico`), `profile` (não `perfil`), `proposals` (não `propostas`).
+- Todas as rotas GoRouter devem usar inglês: `/client/documents`, `/client/profile`, `/client/history`, `/agency/profile`.
