@@ -1,0 +1,57 @@
+{
+  "id": "leads-data-mappers-dto-idor-defense-001",
+  "title": "Data Mappers (DTO layer) para Prevenção IDOR/DataLeak",
+  "description": "Criar camada explícita de Data Mappers (DTO) para separar ORM Layer da serialização JSON. Garantir que endpoints de listagem, detalhe e métricas de leads nunca transmitam instâncias literais do banco, prevenindo vazamento de campos confidenciais e ataques IDOR.",
+  "status": "done",
+  "assignee": "Nikolas Tesch",
+  "created_at": "2026-05-05",
+  "completed_at": "2026-05-05",
+  "priority": "high",
+  "epic": "Backend — Leads CRM",
+  "source": "spec.md §5.3, §12.2",
+  "acceptance_criteria": [
+    "DTOs de response Pydantic v2 isolados em app/presentation/schemas/leads.py (nunca no mesmo arquivo de ORM)",
+    "Mappers explícitos ORM → DTO em app/application/dto/lead_mapper.py para listagem, detalhe e métricas",
+    "Endpoints GET /leads, GET /leads/{id} e POST /leads usam response_model estrito com DTOs (nunca ORM diretamente)",
+    "Campos sensíveis (telefone_hash, internal flags) são removidos ou mascarados nos DTOs de listagem",
+    "Testes pytest verificam que response JSON não contém campos fora do contrato do DTO"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "title": "Criar schemas DTO em presentation layer",
+      "description": "LeadListItemDTO, LeadDetailDTO, LeadMetricsDTO e LeadCreateRequest em app/presentation/schemas/leads.py",
+      "status": "done",
+      "files": [
+        "backend/app/presentation/schemas/leads.py"
+      ]
+    },
+    {
+      "step": 2,
+      "title": "Criar Data Mappers ORM → DTO",
+      "description": "Funções puras de mapping na Application Layer para garantir separação entre persistência e apresentação",
+      "status": "done",
+      "files": [
+        "backend/app/application/dto/lead_mapper.py"
+      ]
+    },
+    {
+      "step": 3,
+      "title": "Refatorar routes/leads.py para usar DTOs e response_models estritos",
+      "description": "Importar schemas e mappers dos novos módulos, eliminar model_validate direto de ORM nos responses",
+      "status": "done",
+      "files": [
+        "backend/app/routes/leads.py"
+      ]
+    },
+    {
+      "step": 4,
+      "title": "Escrever testes de prevenção de DataLeak",
+      "description": "Testes que validam que responses não contêm campos inesperados (telefone_hash, etc.) e que ORM nunca é retornado diretamente",
+      "status": "done",
+      "files": [
+        "backend/tests/test_presentation/test_lead_dto_mapper.py"
+      ]
+    }
+  ]
+}

@@ -79,6 +79,22 @@ async def get_lead_by_id(db: AsyncSession, lead_id: uuid.UUID) -> Optional[Lead]
     return result.scalar_one_or_none()
 
 
+async def get_lead_metrics(db: AsyncSession) -> dict[str, int]:
+    """Return aggregated lead counts by status for dashboard metrics."""
+    total_ativos_stmt = select(func.count()).select_from(Lead).where(Lead.is_archived.is_(False))
+    total_ativos = (await db.execute(total_ativos_stmt)).scalar_one()
+
+    metrics: dict[str, int] = {"total_ativos": total_ativos}
+    for st in LeadStatus:
+        stmt = (
+            select(func.count())
+            .select_from(Lead)
+            .where(Lead.is_archived.is_(False), Lead.status == st)
+        )
+        metrics[st.value] = (await db.execute(stmt)).scalar_one()
+    return metrics
+
+
 async def list_leads(
     db: AsyncSession,
     status: Optional[str] = None,
