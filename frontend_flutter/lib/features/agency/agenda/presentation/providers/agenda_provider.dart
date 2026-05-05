@@ -25,7 +25,7 @@ class AgendaNotifier extends AsyncNotifier<List<Agendamento>> {
     final agendaRepository = ref.watch(agendaRepositoryProvider);
     final result = await agendaRepository.getAgenda();
     return result.fold(
-      (failure) => throw failure,
+      (failure) => throw failure, // ignore: only_throw_errors
       (agenda) => agenda,
     );
   }

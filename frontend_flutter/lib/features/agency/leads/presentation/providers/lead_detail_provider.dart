@@ -19,12 +19,12 @@ class LeadDetailNotifier extends FamilyAsyncNotifier<Lead?, String> {
     try {
       final repo = ref.read(notificationRepositoryProvider);
       await repo.deleteNotificationsByLeadId(arg);
-    } catch (e) {
+    } on Object catch (_) {
       // Falha silenciosa no cleanup
     }
 
     return result.fold(
-      (failure) => throw failure,
+      (failure) => throw failure, // ignore: only_throw_errors
       (lead) => lead,
     );
   }

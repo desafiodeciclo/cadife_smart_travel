@@ -18,7 +18,7 @@ class LeadsRepositoryImpl implements ILeadsRepository {
     try {
       final leads = await _remoteDatasource.getLeads(status: status, score: score);
       return Right(leads);
-    } catch (e) {
+    } on Exception catch (e) {
       return Left(Failure.fromException(e));
     }
   }
@@ -28,7 +28,7 @@ class LeadsRepositoryImpl implements ILeadsRepository {
     try {
       final lead = await _remoteDatasource.getLeadById(id);
       return Right(lead);
-    } catch (e) {
+    } on Exception catch (e) {
       return Left(Failure.fromException(e));
     }
   }
@@ -38,7 +38,7 @@ class LeadsRepositoryImpl implements ILeadsRepository {
     try {
       final lead = await _remoteDatasource.getMyLead();
       return Right(lead);
-    } catch (e) {
+    } on Exception catch (e) {
       return Left(Failure.fromException(e));
     }
   }
@@ -48,7 +48,7 @@ class LeadsRepositoryImpl implements ILeadsRepository {
     try {
       final lead = await _remoteDatasource.updateLeadStatus(id, newStatus);
       return Right(lead);
-    } catch (e) {
+    } on Exception catch (e) {
       return Left(Failure.fromException(e));
     }
   }
@@ -58,7 +58,7 @@ class LeadsRepositoryImpl implements ILeadsRepository {
     try {
       final briefing = await _remoteDatasource.getBriefing(leadId);
       return Right(briefing);
-    } catch (e) {
+    } on Exception catch (e) {
       return Left(Failure.fromException(e));
     }
   }
@@ -68,7 +68,7 @@ class LeadsRepositoryImpl implements ILeadsRepository {
     try {
       final interactions = await _remoteDatasource.getInteractions(leadId);
       return Right(interactions);
-    } catch (e) {
+    } on Exception catch (e) {
       return Left(Failure.fromException(e));
     }
   }
@@ -78,7 +78,7 @@ class LeadsRepositoryImpl implements ILeadsRepository {
     try {
       final lead = await _remoteDatasource.createLead(request);
       return Right(lead);
-    } catch (e) {
+    } on Exception catch (e) {
       return Left(Failure.fromException(e));
     }
   }

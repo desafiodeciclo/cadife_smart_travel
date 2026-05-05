@@ -16,7 +16,7 @@ class AgencySettingsNotifier extends AsyncNotifier<AgencySettings> {
   Future<AgencySettings> build() async {
     final result = await ref.watch(iAgencySettingsRepositoryProvider).getSettings();
     return result.fold<AgencySettings>(
-      (failure) => throw failure,
+      (failure) => throw failure, // ignore: only_throw_errors
       (settings) => settings,
     );
   }

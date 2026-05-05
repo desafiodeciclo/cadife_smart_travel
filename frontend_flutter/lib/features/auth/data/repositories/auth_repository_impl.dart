@@ -28,7 +28,7 @@ class AuthRepositoryImpl implements IAuthRepository {
       );
 
       return Right(AuthUser.fromJson(data['user'] as Map<String, dynamic>));
-    } catch (e) {
+    } on Exception catch (e) {
       return Left(Failure.fromException(e));
     }
   }
@@ -38,7 +38,7 @@ class AuthRepositoryImpl implements IAuthRepository {
     try {
       final data = await _remoteDatasource.register(name, email, password);
       return Right(AuthUser.fromJson(data));
-    } catch (e) {
+    } on Exception catch (e) {
       return Left(Failure.fromException(e));
     }
   }
@@ -48,12 +48,12 @@ class AuthRepositoryImpl implements IAuthRepository {
     try {
       try {
         await _remoteDatasource.logout();
-      } catch (_) {
+      } on Object catch (_) {
         // Ignore remote logout errors
       }
       await _secureConfig.clearTokens();
       return const Right(null);
-    } catch (e) {
+    } on Exception catch (e) {
       return Left(Failure.fromException(e));
     }
   }
@@ -69,7 +69,7 @@ class AuthRepositoryImpl implements IAuthRepository {
       );
 
       return Right(TokenModel.fromJson(data));
-    } catch (e) {
+    } on Exception catch (e) {
       return Left(Failure.fromException(e));
     }
   }
@@ -83,7 +83,7 @@ class AuthRepositoryImpl implements IAuthRepository {
       }
       final user = await _getUserFromStoredToken();
       return Right(user);
-    } catch (_) {
+    } on Object catch (_) {
       final user = await _getUserFromStoredToken();
       return Right(user);
     }
@@ -112,7 +112,7 @@ class AuthRepositoryImpl implements IAuthRepository {
     try {
       final token = await _secureConfig.getAccessToken();
       return Right(token != null);
-    } catch (e) {
+    } on Exception catch (e) {
       return Left(Failure.fromException(e));
     }
   }
@@ -122,7 +122,7 @@ class AuthRepositoryImpl implements IAuthRepository {
     try {
       await _remoteDatasource.saveFcmToken(token);
       return const Right(null);
-    } catch (e) {
+    } on Exception catch (e) {
       return Left(Failure.fromException(e));
     }
   }
@@ -132,7 +132,7 @@ class AuthRepositoryImpl implements IAuthRepository {
     try {
       await _remoteDatasource.forgotPassword(email);
       return const Right(null);
-    } catch (e) {
+    } on Exception catch (e) {
       return Left(Failure.fromException(e));
     }
   }

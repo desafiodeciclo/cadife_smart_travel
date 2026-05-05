@@ -5,6 +5,7 @@ import 'package:cadife_smart_travel/features/client/profile/presentation/provide
 import 'package:cadife_smart_travel/features/client/profile/presentation/widgets/profile_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 /// Tela de perfil do cliente.
 ///

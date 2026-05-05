@@ -7,7 +7,7 @@ class LeadsNotifier extends AsyncNotifier<List<Lead>> {
   Future<List<Lead>> build() async {
     final result = await ref.watch(getLeadsUseCaseProvider).call();
     return result.fold(
-      (failure) => throw failure,
+      (failure) => throw failure, // ignore: only_throw_errors
       (leads) => leads,
     );
   }

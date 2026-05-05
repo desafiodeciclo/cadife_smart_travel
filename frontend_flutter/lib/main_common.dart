@@ -50,12 +50,12 @@ Future<void> initializeApp(AppConfig config) async {
           return true;
         };
       }
-    } catch (e, stack) {
+    } on Exception catch (e, stack) {
       dev.log('Initialization Error', error: e, stackTrace: stack, name: 'main');
       if (!kIsWeb) {
         try {
-          FirebaseCrashlytics.instance.recordError(e, stack, fatal: true);
-        } catch (_) {}
+          unawaited(FirebaseCrashlytics.instance.recordError(e, stack, fatal: true));
+        } on Object catch (_) {}
       }
     }
 
@@ -71,7 +71,7 @@ Future<void> initializeApp(AppConfig config) async {
     if (!kIsWeb) {
       try {
         FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-      } catch (_) {}
+      } on Object catch (_) {}
     }
   });
 }

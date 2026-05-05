@@ -14,7 +14,7 @@ class StatusRepositoryImpl implements IStatusRepository {
     try {
       final result = await _datasource.getMyStatus();
       return Right(result);
-    } catch (e) {
+    } on Exception catch (e) {
       return Left(Failure.fromException(e));
     }
   }
@@ -24,7 +24,7 @@ class StatusRepositoryImpl implements IStatusRepository {
     try {
       final result = await _datasource.getStatusById(id);
       return Right(result);
-    } catch (e) {
+    } on Exception catch (e) {
       return Left(Failure.fromException(e));
     }
   }

@@ -27,7 +27,7 @@ class NotificationsRepositoryImpl implements INotificationsRepository {
         }
       });
       return const Right(null);
-    } catch (e) {
+    } on Exception catch (e) {
       return Left(Failure.fromException(e));
     }
   }
@@ -37,7 +37,7 @@ class NotificationsRepositoryImpl implements INotificationsRepository {
     try {
       final token = await _messaging.getToken();
       return Right(token);
-    } catch (e) {
+    } on Exception catch (e) {
       return Left(Failure.fromException(e));
     }
   }
@@ -47,7 +47,7 @@ class NotificationsRepositoryImpl implements INotificationsRepository {
     try {
       await _messaging.subscribeToTopic(topic);
       return const Right(null);
-    } catch (e) {
+    } on Exception catch (e) {
       return Left(Failure.fromException(e));
     }
   }
@@ -57,7 +57,7 @@ class NotificationsRepositoryImpl implements INotificationsRepository {
     try {
       await _messaging.unsubscribeFromTopic(topic);
       return const Right(null);
-    } catch (e) {
+    } on Exception catch (e) {
       return Left(Failure.fromException(e));
     }
   }
@@ -71,7 +71,7 @@ class NotificationsRepositoryImpl implements INotificationsRepository {
         sound: true,
       );
       return const Right(null);
-    } catch (e) {
+    } on Exception catch (e) {
       return Left(Failure.fromException(e));
     }
   }

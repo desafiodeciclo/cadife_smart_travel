@@ -33,7 +33,7 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
       
       // ignore: deprecated_member_use
       await Share.shareXFiles([XFile(tempPath)], text: widget.document.name);
-    } catch (e) {
+    } on Exception catch (e) {
       Fluttertoast.showToast(msg: 'Erro ao compartilhar documento');
     }
   }
@@ -60,7 +60,7 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
       await dio.download(widget.document.url, savePath);
       
       Fluttertoast.showToast(msg: 'Documento salvo em: $savePath');
-    } catch (e) {
+    } on Exception catch (e) {
       Fluttertoast.showToast(msg: 'Erro ao baixar documento');
     } finally {
       if (mounted) setState(() => _isDownloading = false);

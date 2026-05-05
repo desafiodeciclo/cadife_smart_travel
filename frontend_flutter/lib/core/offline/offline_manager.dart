@@ -56,7 +56,7 @@ class OfflineManager {
       });
 
       _isInitialized = true;
-    } catch (e) {
+    } on Exception catch (e) {
       debugPrint('OfflineManager initialization failed: $e');
       // Even if it fails, we set _isInitialized to true if we assigned boxes
       // Or we can leave it false and handle it in getters.

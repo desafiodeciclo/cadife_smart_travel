@@ -39,7 +39,7 @@ class DashboardStatsNotifier extends AsyncNotifier<DashboardStats> {
     final leadRepository = ref.watch(leadsRepositoryProvider);
     final allLeadsResult = await leadRepository.getLeads();
     final allLeads = allLeadsResult.fold(
-      (failure) => throw failure,
+      (failure) => throw failure, // ignore: only_throw_errors
       (leads) => leads,
     );
 

@@ -8,7 +8,7 @@ final activeLeadProvider = FutureProvider<Lead?>((ref) async {
   final repository = ref.watch(statusRepositoryProvider);
   final result = await repository.getMyStatus();
   return result.fold(
-    (failure) => throw failure,
+    (failure) => throw failure, // ignore: only_throw_errors
     (lead) => lead,
   );
 });

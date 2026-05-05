@@ -17,7 +17,7 @@ class ProposalsNotifier extends AsyncNotifier<List<Proposta>> {
     final repo = ref.watch(iProposalsRepositoryProvider);
     final result = await repo.getProposals();
     return result.fold<List<Proposta>>(
-      (failure) => throw failure,
+      (failure) => throw failure, // ignore: only_throw_errors
       (proposals) => proposals,
     );
   }

@@ -30,7 +30,7 @@ class ProfileRepositoryImpl implements IProfileRepository {
         return Right(AuthUser.fromJson(cached as Map<String, dynamic>));
       }
       return Left(_handleDioError(e));
-    } catch (e) {
+    } on Exception catch (e) {
       return Left(GenericFailure(e.toString()));
     }
   }
@@ -58,7 +58,7 @@ class ProfileRepositoryImpl implements IProfileRepository {
       return Right(user);
     } on DioException catch (e) {
       return Left(_handleDioError(e));
-    } catch (e) {
+    } on Exception catch (e) {
       return Left(GenericFailure(e.toString()));
     }
   }

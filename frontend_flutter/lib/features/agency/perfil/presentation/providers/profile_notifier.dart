@@ -19,7 +19,7 @@ class ConsultorProfileNotifier
   Future<ConsultorProfile> build() async {
     final result = await ref.watch(iConsultorRepositoryProvider).getProfile();
     return result.fold<ConsultorProfile>(
-      (failure) => throw failure,
+      (failure) => throw failure, // ignore: only_throw_errors
       (profile) => profile,
     );
   }
@@ -54,7 +54,7 @@ class SaleGoalsNotifier extends AsyncNotifier<List<SaleGoal>> {
   Future<List<SaleGoal>> build() async {
     final result = await ref.watch(iConsultorRepositoryProvider).getGoals();
     return result.fold<List<SaleGoal>>(
-      (failure) => throw failure,
+      (failure) => throw failure, // ignore: only_throw_errors
       (goals) => goals,
     );
   }

@@ -127,7 +127,7 @@ class _ProposalCreateScreenState extends ConsumerState<ProposalCreateScreen>
         );
         context.pop();
       }
-    } catch (e) {
+    } on Exception catch (e) {
       if (mounted) {
         ShadToaster.of(context).show(
           ShadToast.destructive(

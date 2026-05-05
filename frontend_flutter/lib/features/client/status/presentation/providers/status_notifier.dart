@@ -1,5 +1,6 @@
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/client/status/data/providers/status_data_providers.dart';
+import 'package:cadife_smart_travel/features/client/status/domain/repositories/i_status_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Provider que gerencia o status da viagem do cliente.
@@ -15,7 +16,7 @@ class StatusNotifier extends FamilyAsyncNotifier<Lead?, String> {
     final repository = ref.watch(statusRepositoryProvider);
     final result = await repository.getStatusById(arg);
     return result.fold(
-      (failure) => throw failure,
+      (failure) => throw failure, // ignore: only_throw_errors
       (lead) => lead,
     );
   }

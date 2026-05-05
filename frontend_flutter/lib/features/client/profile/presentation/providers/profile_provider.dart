@@ -17,7 +17,7 @@ class UserProfileNotifier extends AsyncNotifier<AuthUser?> {
     final repo = ref.watch(iProfileRepositoryProvider);
     final result = await repo.getCurrentUser();
     return result.fold(
-      (failure) => throw failure,
+      (failure) => throw failure, // ignore: only_throw_errors
       (user) => user,
     );
   }
