@@ -36,7 +36,7 @@ class OfflineFirst {
         if (returnExpiredOffline) {
           return _fromCacheOrFailure(cacheKey, fromCache);
         }
-        return Left(ServerFailure(e.toString()));
+        return Left(Failure.fromException(e));
       }
     }
 
@@ -76,7 +76,7 @@ class OfflineFirst {
       final data = await remoteCall();
       return Right(data);
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(Failure.fromException(e));
     }
   }
 
@@ -95,7 +95,7 @@ class OfflineFirst {
         final data = await remoteCall();
         return Right(data);
       } catch (e) {
-        return Left(ServerFailure(e.toString()));
+        return Left(Failure.fromException(e));
       }
     }
 

@@ -20,16 +20,16 @@ class AuthRepositoryImpl implements IAuthRepository {
   Future<Either<Failure, AuthUser>> login(String email, String password, {UserRole? profileHint}) async {
     try {
       final data = await _remoteDatasource.login(email, password, profileHint: profileHint);
-      
+
       final tokenData = data['token'] as Map<String, dynamic>;
       await _secureConfig.saveTokens(
         accessToken: tokenData['access_token'] as String,
         refreshToken: tokenData['refresh_token'] as String,
       );
-      
+
       return Right(AuthUser.fromJson(data['user'] as Map<String, dynamic>));
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(Failure.fromException(e));
     }
   }
 
@@ -39,7 +39,7 @@ class AuthRepositoryImpl implements IAuthRepository {
       final data = await _remoteDatasource.register(name, email, password);
       return Right(AuthUser.fromJson(data));
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(Failure.fromException(e));
     }
   }
 
@@ -54,7 +54,7 @@ class AuthRepositoryImpl implements IAuthRepository {
       await _secureConfig.clearTokens();
       return const Right(null);
     } catch (e) {
-      return Left(GenericFailure(e.toString()));
+      return Left(Failure.fromException(e));
     }
   }
 
@@ -62,15 +62,15 @@ class AuthRepositoryImpl implements IAuthRepository {
   Future<Either<Failure, TokenModel>> refreshToken(String refreshToken) async {
     try {
       final data = await _remoteDatasource.refreshToken(refreshToken);
-      
+
       await _secureConfig.saveTokens(
         accessToken: data['access_token'] as String,
         refreshToken: data['refresh_token'] as String,
       );
-      
+
       return Right(TokenModel.fromJson(data));
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(Failure.fromException(e));
     }
   }
 
@@ -92,10 +92,10 @@ class AuthRepositoryImpl implements IAuthRepository {
   Future<AuthUser?> _getUserFromStoredToken() async {
     final token = await _secureConfig.getAccessToken();
     if (token == null) return null;
-    
+
     final payload = JwtUtils.decodePayload(token);
     if (payload == null) return null;
-    
+
     return AuthUser(
       id: payload['sub'] as String? ?? '',
       name: payload['name'] as String? ?? payload['email'] as String? ?? 'Usuário',
@@ -113,7 +113,7 @@ class AuthRepositoryImpl implements IAuthRepository {
       final token = await _secureConfig.getAccessToken();
       return Right(token != null);
     } catch (e) {
-      return Left(GenericFailure(e.toString()));
+      return Left(Failure.fromException(e));
     }
   }
 
@@ -123,7 +123,7 @@ class AuthRepositoryImpl implements IAuthRepository {
       await _remoteDatasource.saveFcmToken(token);
       return const Right(null);
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(Failure.fromException(e));
     }
   }
 
@@ -133,7 +133,7 @@ class AuthRepositoryImpl implements IAuthRepository {
       await _remoteDatasource.forgotPassword(email);
       return const Right(null);
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(Failure.fromException(e));
     }
   }
 }

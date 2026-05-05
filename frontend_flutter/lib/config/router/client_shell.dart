@@ -16,9 +16,9 @@ class ClientShell extends StatefulWidget {
 class _ClientShellState extends State<ClientShell> {
   static const _tabs = [
     '/client/status',
-    '/client/historico',
-    '/client/documentos',
-    '/client/perfil',
+    '/client/interactions',
+    '/client/documents',
+    '/client/profile',
   ];
 
   int _currentIndex = 0;

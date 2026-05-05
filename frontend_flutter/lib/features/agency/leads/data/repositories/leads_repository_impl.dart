@@ -19,7 +19,7 @@ class LeadsRepositoryImpl implements ILeadsRepository {
       final leads = await _remoteDatasource.getLeads(status: status, score: score);
       return Right(leads);
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(Failure.fromException(e));
     }
   }
 
@@ -29,7 +29,7 @@ class LeadsRepositoryImpl implements ILeadsRepository {
       final lead = await _remoteDatasource.getLeadById(id);
       return Right(lead);
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(Failure.fromException(e));
     }
   }
 
@@ -39,7 +39,7 @@ class LeadsRepositoryImpl implements ILeadsRepository {
       final lead = await _remoteDatasource.getMyLead();
       return Right(lead);
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(Failure.fromException(e));
     }
   }
 
@@ -49,7 +49,7 @@ class LeadsRepositoryImpl implements ILeadsRepository {
       final lead = await _remoteDatasource.updateLeadStatus(id, newStatus);
       return Right(lead);
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(Failure.fromException(e));
     }
   }
 
@@ -59,7 +59,7 @@ class LeadsRepositoryImpl implements ILeadsRepository {
       final briefing = await _remoteDatasource.getBriefing(leadId);
       return Right(briefing);
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(Failure.fromException(e));
     }
   }
 
@@ -69,7 +69,7 @@ class LeadsRepositoryImpl implements ILeadsRepository {
       final interactions = await _remoteDatasource.getInteractions(leadId);
       return Right(interactions);
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(Failure.fromException(e));
     }
   }
 
@@ -79,7 +79,7 @@ class LeadsRepositoryImpl implements ILeadsRepository {
       final lead = await _remoteDatasource.createLead(request);
       return Right(lead);
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(Failure.fromException(e));
     }
   }
 }

@@ -14,7 +14,7 @@ class AgencyShell extends StatefulWidget {
 }
 
 class _AgencyShellState extends State<AgencyShell> {
-  static const _tabs = ['/agency/dashboard', '/agency/leads', '/agency/agenda', '/agency/perfil'];
+  static const _tabs = ['/agency/dashboard', '/agency/leads', '/agency/agenda', '/agency/profile'];
 
   int _currentIndex = 0;
   int _previousIndex = 0;

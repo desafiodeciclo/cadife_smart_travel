@@ -3,11 +3,9 @@ import 'dart:math' as math;
 
 import 'package:cadife_smart_travel/core/utils/extensions/string_extensions.dart';
 import 'package:cadife_smart_travel/design_system/design_system.dart';
-import 'package:cadife_smart_travel/features/auth/presentation/bloc/auth_bloc.dart';
-import 'package:cadife_smart_travel/features/auth/presentation/bloc/auth_event.dart';
-import 'package:cadife_smart_travel/features/auth/presentation/bloc/auth_state.dart';
+import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
+import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -54,50 +52,41 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _handleLogin() async {
-    final authBloc = context.read<AuthBloc>();
-    if (authBloc.state is AuthLoading) return;
+    final authState = ref.read(authNotifierProvider);
+    if (authState.isLoading) return;
     if (!_formKey.currentState!.validate()) return;
     if (_emailState == _EmailState.invalid) return;
 
-    context.read<AuthBloc>().add(AuthEvent.loginRequested(
-          email: _emailController.text.trim(),
-          password: _passwordController.text,
-        ));
+    await ref.read(authNotifierProvider.notifier).login(
+          _emailController.text.trim(),
+          _passwordController.text,
+        );
   }
-
-
-
 
   @override
   Widget build(BuildContext context) {
+    // Show snackbar on login errors.
+    ref.listen<AsyncValue<AuthUser?>>(authNotifierProvider, (previous, next) {
+      if (next.hasError && !(previous?.hasError ?? false)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(next.error?.toString() ?? 'Erro ao fazer login.')),
+        );
+      }
+    });
+
+    final authState = ref.watch(authNotifierProvider);
+    final isLoggingIn = authState.isLoading;
+    final hasLoginError = authState.hasError;
+
     final themeMode = ref.watch(themeModeProvider);
     final isDark = themeMode == ThemeMode.dark ||
         (themeMode == ThemeMode.system &&
             MediaQuery.platformBrightnessOf(context) == Brightness.dark);
 
     final cadife = context.cadife;
-    
-    return BlocListener<AuthBloc, AuthState>(
-      listener: (context, state) {
-        state.maybeWhen(
-          authenticated: (user) {
-            // GoRouter handles redirection automatically via refreshListenable
-          },
-          failure: (message) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(message)),
-            );
-          },
-          orElse: () {},
-        );
-      },
-      child: BlocBuilder<AuthBloc, AuthState>(
-        builder: (context, state) {
-          final isLoggingIn = state is AuthLoading;
-          final hasLoginError = state is AuthFailure;
 
-          final textSecondary = isDark ? Colors.white60 : context.cadife.textSecondary;
-          final dividerColor = isDark ? Colors.white12 : context.cadife.cardBorder;
+    final textSecondary = isDark ? Colors.white60 : context.cadife.textSecondary;
+    final dividerColor = isDark ? Colors.white12 : context.cadife.cardBorder;
 
     // ── FIX: Column layout instead of Stack — avoids unbounded constraints
     //         and hit-testing issues that blocked all interactions.
@@ -321,9 +310,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ),
       ),
     );
-        },
-      ),
-    );
   }
 }
 
@@ -391,8 +377,6 @@ class _CadifeLogo extends StatelessWidget {
     );
   }
 }
-
-
 
 class _GoogleIcon extends StatelessWidget {
   const _GoogleIcon();

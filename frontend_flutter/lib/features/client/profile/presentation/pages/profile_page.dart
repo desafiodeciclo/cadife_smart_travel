@@ -1,11 +1,9 @@
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
-import 'package:cadife_smart_travel/features/auth/presentation/bloc/auth_bloc.dart';
-import 'package:cadife_smart_travel/features/auth/presentation/bloc/auth_event.dart';
+import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:cadife_smart_travel/features/client/profile/presentation/providers/profile_provider.dart';
 import 'package:cadife_smart_travel/features/client/profile/presentation/widgets/profile_widgets.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Tela de perfil do cliente.
@@ -313,7 +311,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
 
     if (confirmed == true && context.mounted) {
-      context.read<AuthBloc>().add(const AuthEvent.logoutRequested());
+      await ref.read(authNotifierProvider.notifier).logout();
     }
   }
 
