@@ -24,6 +24,7 @@ firebase-admin
 langfuse
 rank-bm25
 python-dotenv
-structlog
-slowapi
 tiktoken
+pytest-cov
+pytest-mock
+aiosqlite
