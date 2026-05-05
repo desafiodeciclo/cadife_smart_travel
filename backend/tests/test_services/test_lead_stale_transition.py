@@ -10,10 +10,11 @@ Coverage targets:
   - Lead without interactions but old creation date → transitioned
   - Already PERDIDO or FECHADO leads are ignored
   - Returns correct count of transitioned leads
+  - Transition is routed through LeadStateMachine.validate_transition
 """
 import uuid
 from datetime import datetime, timedelta, timezone
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -111,3 +112,18 @@ async def test_archived_lead_ignored():
     count = await mark_stale_leads_as_perdido(db, inactivity_days=30)
 
     assert count == 0
+
+
+@pytest.mark.asyncio
+async def test_transition_goes_through_state_machine():
+    """Status change must be validated by LeadStateMachine.validate_transition."""
+    lead = fake_lead(LeadStatus.qualificado)
+    db = AsyncMock()
+    db.execute = AsyncMock(return_value=make_async_result([lead]))
+
+    with patch(
+        "app.services.lead_service.LeadStateMachine.validate_transition"
+    ) as mock_validate:
+        await mark_stale_leads_as_perdido(db, inactivity_days=30)
+
+        mock_validate.assert_called_once_with(LeadStatus.qualificado, LeadStatus.perdido)
