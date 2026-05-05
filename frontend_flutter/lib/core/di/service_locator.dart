@@ -1,6 +1,6 @@
+import 'package:cadife_smart_travel/config/app_config.dart';
 import 'package:cadife_smart_travel/core/cache/database_helper.dart';
 import 'package:cadife_smart_travel/core/cache/isar_cache_manager.dart';
-import 'package:cadife_smart_travel/config/app_config.dart';
 import 'package:cadife_smart_travel/core/config/firebase_options_prod.dart';
 import 'package:cadife_smart_travel/core/config/firebase_options_stg.dart';
 import 'package:cadife_smart_travel/core/network/connectivity_service.dart';

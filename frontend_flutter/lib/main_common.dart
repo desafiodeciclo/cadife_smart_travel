@@ -4,8 +4,6 @@ import 'package:cadife_smart_travel/config/app_config.dart';
 import 'package:cadife_smart_travel/config/providers/app_config_provider.dart';
 import 'package:cadife_smart_travel/core/di/provider_overrides.dart';
 import 'package:cadife_smart_travel/core/di/service_locator.dart';
-import 'package:cadife_smart_travel/features/auth/presentation/bloc/auth_event.dart';
-import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_bloc_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';

@@ -1,5 +1,5 @@
-import 'package:flutter_test/flutter_test.dart';
 import 'package:cadife_smart_travel/config/app_config.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('AppConfig.dev aponta para localhost', () {

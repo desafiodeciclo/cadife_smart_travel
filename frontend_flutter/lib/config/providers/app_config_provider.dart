@@ -1,5 +1,5 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cadife_smart_travel/config/app_config.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final appConfigProvider = Provider<AppConfig>((ref) {
   // Este provider será overridado nos entry points

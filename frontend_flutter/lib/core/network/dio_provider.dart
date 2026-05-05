@@ -1,9 +1,4 @@
 import 'package:cadife_smart_travel/config/providers/app_config_provider.dart';
-import 'package:cadife_smart_travel/core/network/dio_client.dart';
-import 'package:cadife_smart_travel/core/network/interceptors/auth_interceptor.dart';
-import 'package:cadife_smart_travel/core/network/interceptors/error_interceptor.dart';
-import 'package:cadife_smart_travel/core/network/interceptors/logging_interceptor.dart';
-import 'package:cadife_smart_travel/core/offline/offline_interceptor.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
