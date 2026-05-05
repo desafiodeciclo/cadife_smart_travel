@@ -129,6 +129,135 @@ flutter run
 
 ---
 
+## 💻 Desenvolvimento Local com ngrok (Webhook WhatsApp)
+
+Esta seção descreve como qualquer membro do time pode subir o ambiente completo de desenvolvimento — banco de dados, cache, API e túnel HTTPS — com **um único comando**, sem configuração manual.
+
+### Por que ngrok?
+
+O WhatsApp Cloud API (Meta) exige que a URL de callback do webhook seja **HTTPS pública**. Durante o desenvolvimento local, o `ngrok` cria um túnel HTTPS que aponta para o servidor FastAPI rodando na sua máquina, eliminando a necessidade de deploy para testar a integração.
+
+### Pré-requisitos
+
+| Ferramenta | Instalação |
+| :--- | :--- |
+| Docker Engine + Compose v2 | [docs.docker.com/get-docker](https://docs.docker.com/get-docker/) |
+| ngrok | [ngrok.com/download](https://ngrok.com/download) |
+| Python 3.11+ com virtualenv | `python3 -m venv .venv && source .venv/bin/activate` |
+| Dependências do backend | `pip install -r backend/requirements.txt` |
+
+> **Recomendado:** Crie uma conta gratuita em [ngrok.com](https://ngrok.com) para obter um `authtoken`. Sem ele, a sessão do túnel expira em 2 horas.
+
+### Configuração inicial (uma única vez)
+
+```bash
+# 1. Copie o template de variáveis de ambiente
+cp backend/.env.example backend/.env
+
+# 2. Preencha as variáveis obrigatórias no backend/.env:
+#    GEMINI_API_KEY, WHATSAPP_TOKEN, PHONE_NUMBER_ID, VERIFY_TOKEN, JWT_SECRET_KEY
+#    (opcional) NGROK_AUTHTOKEN — para sessões sem limite de tempo
+
+# 3. Ative seu virtualenv Python
+source .venv/bin/activate   # Linux/macOS
+# .venv\Scripts\activate    # Windows
+
+# 4. Instale as dependências do backend
+pip install -r backend/requirements.txt
+```
+
+### Subindo o ambiente com um único comando
+
+```bash
+./dev.sh
+```
+
+O script executa automaticamente, em ordem:
+
+1. **Docker Compose** — sobe PostgreSQL, Redis e ChromaDB em background (apenas infraestrutura; o FastAPI **não** roda no Docker durante o dev)
+2. **Migrações Alembic** — aplica todas as migrations pendentes no banco
+3. **FastAPI** — inicia com `--reload` na porta `8000` (hot-reload a cada mudança no código)
+4. **ngrok** — abre um túnel HTTPS público apontando para `localhost:8000`
+
+Ao final da inicialização, você verá um resumo como este no terminal:
+
+```
+╔══════════════════════════════════════════════════════════════════╗
+║      CADIFE SMART TRAVEL  —  Ambiente Dev Ativo  ✓               ║
+╚══════════════════════════════════════════════════════════════════╝
+
+  Endpoints locais:
+  ├─ API FastAPI    →  http://localhost:8000
+  ├─ Swagger Docs   →  http://localhost:8000/docs
+  ├─ PostgreSQL     →  localhost:5433  (cadife / cadife)
+  ├─ Redis          →  localhost:6379
+  └─ ngrok UI       →  http://localhost:4040
+
+  ┌─ URL pública HTTPS do ngrok: ────────────────────────┐
+  │  https://abc123.ngrok-free.app                        │
+  │                                                        │
+  │  URL do Webhook para o Meta:                           │
+  │  https://abc123.ngrok-free.app/webhook/whatsapp       │
+  └────────────────────────────────────────────────────────┘
+```
+
+Para encerrar todos os processos (FastAPI, ngrok e containers Docker), pressione **Ctrl+C**.
+
+### Tutorial: Registrando o Webhook no Meta for Developers
+
+Após o `./dev.sh` exibir a URL do ngrok, siga estes passos para conectar o WhatsApp ao servidor local:
+
+**Passo 1 — Copiar a URL do Webhook**
+
+Copie a URL exibida no terminal (o script já monta o path correto):
+```
+https://<id-aleatorio>.ngrok-free.app/webhook/whatsapp
+```
+
+Você também pode consultar a URL a qualquer momento acessando o dashboard local do ngrok:
+```
+http://localhost:4040
+```
+
+**Passo 2 — Acessar o painel do Meta**
+
+1. Acesse [developers.facebook.com](https://developers.facebook.com) e faça login.
+2. No menu superior, clique em **Meus Apps** e selecione o app do projeto.
+3. No menu lateral esquerdo, vá em **WhatsApp → Configuração**.
+
+**Passo 3 — Configurar o Webhook**
+
+Na seção **Webhook**, clique em **Editar** (ou **Configurar**, se for a primeira vez):
+
+| Campo | Valor |
+| :--- | :--- |
+| **Callback URL** | `https://<id-aleatorio>.ngrok-free.app/webhook/whatsapp` |
+| **Verify Token** | O valor de `VERIFY_TOKEN` do seu `backend/.env` |
+
+**Passo 4 — Verificar e Salvar**
+
+Clique em **Verificar e Salvar**. O Meta enviará um `GET` com um `hub.challenge` para a URL cadastrada e, se a API local responder corretamente (o `VERIFY_TOKEN` bater), o webhook será ativado.
+
+**Passo 5 — Assinar os campos (Webhooks Fields)**
+
+Após salvar, role a página até **Campos do Webhook** e ative, no mínimo:
+- `messages`
+- `message_deliveries`
+
+> **Importante:** A URL do ngrok **muda a cada restart** do `dev.sh` (plano gratuito). Repita o Passo 3 sempre que reiniciar o ambiente. Para uma URL fixa, configure um [domínio estático no ngrok](https://ngrok.com/docs/ngrok-agent/config/#tunnels) e defina `NGROK_DOMAIN` no `backend/.env`.
+
+### Logs em tempo real
+
+```bash
+# Log da API FastAPI (com erros de startup, requests, etc.)
+tail -f .dev-logs/uvicorn.log
+
+# Log do ngrok (conexões, requests recebidos pelo túnel)
+tail -f .dev-logs/ngrok.log
+```
+
+---
+
 ## 📈 Status Atual & Roadmap
 
 O projeto passou por uma fase intensa de refatoração e agora encontra-se em estado **Estável** para desenvolvimento de novas features.
