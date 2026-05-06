@@ -1,3 +1,4 @@
+import 'package:cadife_smart_travel/config/responsive/responsive_breakpoints.dart';
 import 'package:cadife_smart_travel/core/analytics/analytics_service.dart';
 import 'package:cadife_smart_travel/core/di/service_locator.dart';
 import 'package:cadife_smart_travel/design_system/design_system.dart';
@@ -8,7 +9,7 @@ import 'package:cadife_smart_travel/features/agency/propostas/presentation/widge
 import 'package:cadife_smart_travel/shared/presentation/widgets/animated_tab_content.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/empty_state/empty_type.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/state_container.dart';
-import 'package:cadife_smart_travel/config/responsive/responsive_breakpoints.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';

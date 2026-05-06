@@ -114,5 +114,8 @@ extension CadifeTheme on BuildContext {
       
   bool get isDark => Theme.of(this).brightness == Brightness.dark;
 
+  ColorScheme get colorScheme => Theme.of(this).colorScheme;
+  TextTheme get textTheme => Theme.of(this).textTheme;
+
   ShadTextTheme get shadText => ShadTheme.of(this).textTheme;
 }

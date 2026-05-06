@@ -355,7 +355,6 @@ class _ScheduleAppointmentModalState
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 }

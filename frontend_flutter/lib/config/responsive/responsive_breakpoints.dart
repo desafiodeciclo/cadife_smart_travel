@@ -51,9 +51,4 @@ extension ResponsiveContext on BuildContext {
   bool get isDesktop => ResponsiveBreakpoints.isDesktop(this);
   bool get isPortrait => ResponsiveBreakpoints.isPortrait(this);
   bool get isLandscape => ResponsiveBreakpoints.isLandscape(this);
-
-  // Helpers para o tema (conforme usado nos snippets da task)
-  ThemeData get theme => Theme.of(this);
-  ColorScheme get colorScheme => theme.colorScheme;
-  TextTheme get textTheme => theme.textTheme;
 }

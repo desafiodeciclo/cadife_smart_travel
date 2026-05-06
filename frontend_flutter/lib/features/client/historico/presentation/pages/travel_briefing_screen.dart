@@ -3,7 +3,7 @@ import 'package:cadife_smart_travel/config/responsive/responsive_breakpoints.dar
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/client/historico/presentation/providers/historico_notifier.dart';
 import 'package:cadife_smart_travel/features/client/historico/presentation/widgets/trip_history_card.dart';
-import 'package:cadife_smart_travel/features/client/documentos/domain/entities/trip_summary.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -27,7 +27,6 @@ class TravelBriefingScreen extends ConsumerWidget {
             itemCount: trips.length,
             itemBuilder: (context, index) {
               final trip = trips[index];
-              final isSelected = trip.id == (selectedTripId ?? tripId);
               
               return Padding(
                 padding: const EdgeInsets.only(bottom: 12),
@@ -103,7 +102,7 @@ class TravelBriefingContent extends ConsumerWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Datas: ${trip.dataIda.toIso8601String().split('T')[0]} a ${trip.dataVolta?.toIso8601String().split('T')[0] ?? "..."}',
+                  'Datas: ${trip.dataIda?.toIso8601String().split('T').first ?? "..."} a ${trip.dataVolta?.toIso8601String().split('T').first ?? "..."}',
                   style: context.textTheme.bodyLarge,
                 ),
                 const SizedBox(height: 24),
@@ -115,7 +114,7 @@ class TravelBriefingContent extends ConsumerWidget {
                 ),
                 const SizedBox(height: 16),
                 _BriefingItem(label: 'Número de Pessoas', value: '${trip.numPessoas}'),
-                _BriefingItem(label: 'Orçamento Estimado', value: 'R$ ${trip.orcamento?.toStringAsFixed(2) ?? "0.00"}'),
+                _BriefingItem(label: 'Orçamento Estimado', value: 'R\$ ${trip.orcamento?.toStringAsFixed(2) ?? "0.00"}'),
                 // Adicione mais itens conforme necessário
               ],
             ),

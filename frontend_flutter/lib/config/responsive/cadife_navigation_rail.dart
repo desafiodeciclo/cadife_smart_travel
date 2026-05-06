@@ -1,4 +1,4 @@
-import 'package:cadife_smart_travel:config/responsive/responsive_breakpoints.dart';
+import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:flutter/material.dart';
 
 class CadifeNavigationRail extends StatelessWidget {

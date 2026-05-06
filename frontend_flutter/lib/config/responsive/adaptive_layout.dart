@@ -45,12 +45,12 @@ class AdaptiveScaffold extends StatelessWidget {
   final List<NavigationDestination> navigationDestinations;
   
   const AdaptiveScaffold({
-    this.appBar,
     required this.body,
+    required this.navigationDestinations,
+    this.appBar,
     this.floatingActionButton,
     this.selectedIndex = 0,
     this.onNavigationChanged,
-    required this.navigationDestinations,
     super.key,
   });
   
