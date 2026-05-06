@@ -14,12 +14,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Cria usuário aqui (pois builder tem shell e comandos de sistema)
+# Cria usuário aqui
 RUN groupadd -g 1000 appgroup && \
     useradd -u 1000 -g appgroup -s /bin/sh -m appuser
 
-# Instala dependências diretamente no site-packages do sistema do builder
-# para facilitar a cópia para o distroless depois
+# Instala dependências
 COPY requirements.txt .
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
@@ -30,29 +29,34 @@ FROM gcr.io/distroless/python3-debian12 AS runtime
 
 WORKDIR /app
 
+# Configura a localidade para suportar UTF-8 (corrige UnicodeDecodeError)
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+ENV PYTHONIOENCODING=utf-8
+ENV PYTHONUTF8=1
+
 # Copia as bibliotecas instaladas do builder
 COPY --from=builder /install /usr/local
 ENV PYTHONPATH=/usr/local/lib/python3.11/site-packages
 
-# Copia as definições de usuário (necessário pois distroless não tem groupadd/useradd)
+# Copia as definições de usuário
 COPY --from=builder /etc/passwd /etc/passwd
 COPY --from=builder /etc/group /etc/group
 
-# Copia bibliotecas nativas essenciais (libpq para o Postgres)
-# Nota: Distroless debian12 já costuma vir com libs básicas, mas garantimos o necessário
-COPY --from=builder /usr/lib/x86_64-linux-gnu/libpq.so.5 /usr/lib/x86_64-linux-gnu/libpq.so.5
-COPY --from=builder /usr/lib/x86_64-linux-gnu/libldap_r-2.5.so.0 /usr/lib/x86_64-linux-gnu/libldap_r-2.5.so.0
-COPY --from=builder /usr/lib/x86_64-linux-gnu/liblber-2.5.so.0 /usr/lib/x86_64-linux-gnu/liblber-2.5.so.0
-COPY --from=builder /usr/lib/x86_64-linux-gnu/libsasl2.so.2 /usr/lib/x86_64-linux-gnu/libsasl2.so.2
-COPY --from=builder /usr/lib/x86_64-linux-gnu/libgnutls.so.30 /usr/lib/x86_64-linux-gnu/libgnutls.so.30
+# Copia TODAS as bibliotecas necessárias para o PostgreSQL de uma vez
+# Isso é mais seguro do que tentar adivinhar nomes de arquivos individuais
+COPY --from=builder /usr/lib/x86_64-linux-gnu/libpq.so* /usr/lib/x86_64-linux-gnu/
+COPY --from=builder /usr/lib/x86_64-linux-gnu/libgssapi_krb5.so* /usr/lib/x86_64-linux-gnu/
+COPY --from=builder /usr/lib/x86_64-linux-gnu/libldap_r* /usr/lib/x86_64-linux-gnu/
+COPY --from=builder /usr/lib/x86_64-linux-gnu/liblber* /usr/lib/x86_64-linux-gnu/
+COPY --from=builder /usr/lib/x86_64-linux-gnu/libsasl2.so* /usr/lib/x86_64-linux-gnu/
+COPY --from=builder /usr/lib/x86_64-linux-gnu/libgnutls.so* /usr/lib/x86_64-linux-gnu/
 
 # Copia o código fonte
 COPY . .
 
-# Switch para o usuário não-privilegiado
 USER appuser
 
 EXPOSE 8000
 
-# No Distroless, chamamos o bootstrap.py que gerencia as migrações e o uvicorn
 ENTRYPOINT ["/usr/bin/python3", "bootstrap.py"]
