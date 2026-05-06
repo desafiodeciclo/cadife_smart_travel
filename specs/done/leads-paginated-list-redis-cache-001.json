@@ -1,0 +1,59 @@
+{
+  "id": "leads-paginated-list-redis-cache-001",
+  "title": "Listagem Paginada e Cache-Hit / Redis (GET /leads)",
+  "description": "Implementar camada abstrata de Redis com TTL configurável para cache de listagem e detalhe de leads. Cache invalidado proscionalmente via sinais do LeadRepository em operações de escrita (PUT/POST/DELETE).",
+  "status": "done",
+  "assignee": "Nikolas Tesch",
+  "created_at": "2026-05-05",
+  "completed_at": "2026-05-05",
+  "priority": "high",
+  "epic": "Backend — Leads CRM",
+  "source": "spec.md §5.3",
+  "acceptance_criteria": [
+    "Camada abstrata Redis (async) disponível em app/infrastructure/cache/ com decorator @cached e TTL configurável",
+    "GET /leads e GET /leads/{id} utilizam cache com TTL padrão de 300s",
+    "LeadRepository invalida chaves de cache após create, update_status, update_score e soft_delete",
+    "Cache key inclui parâmetros de query (status, score, search, page, limit, consultor_id) para evitar colisões",
+    "Testes pytest cobrem cache hit, miss, TTL expiration e invalidação proscional"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "title": "Criar camada abstrata Redis",
+      "description": "Cliente async redis, decorator @cached com TTL, e helpers de invalidação em app/infrastructure/cache/",
+      "status": "done",
+      "files": [
+        "backend/app/infrastructure/cache/__init__.py",
+        "backend/app/infrastructure/cache/redis_client.py",
+        "backend/app/infrastructure/cache/decorator.py"
+      ]
+    },
+    {
+      "step": 2,
+      "title": "Integrar cache nos endpoints GET /leads e GET /leads/{id}",
+      "description": "Aplicar decorator @cached nos route handlers de listagem e detalhe, garantindo response_model estrito",
+      "status": "done",
+      "files": [
+        "backend/app/routes/leads.py"
+      ]
+    },
+    {
+      "step": 3,
+      "title": "Invalidar cache no LeadRepository",
+      "description": "Emitir invalidação de chaves após mutações no repositório (create, update_status, update_score, soft_delete)",
+      "status": "done",
+      "files": [
+        "backend/app/infrastructure/persistence/repositories/lead_repository.py"
+      ]
+    },
+    {
+      "step": 4,
+      "title": "Escrever testes de cache",
+      "description": "Testes unitários e de integração para cache hit, miss, TTL e invalidação proscional",
+      "status": "done",
+      "files": [
+        "backend/tests/test_infrastructure/test_redis_cache.py"
+      ]
+    }
+  ]
+}

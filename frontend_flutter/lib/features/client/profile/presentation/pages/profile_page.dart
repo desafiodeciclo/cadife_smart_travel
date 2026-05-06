@@ -3,6 +3,8 @@ import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart
 import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:cadife_smart_travel/features/client/profile/presentation/providers/profile_provider.dart';
 import 'package:cadife_smart_travel/features/client/profile/presentation/widgets/profile_widgets.dart';
+import 'package:cadife_smart_travel/features/settings/application/theme_notifier.dart';
+import 'package:cadife_smart_travel/features/settings/domain/entities/user_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -89,8 +91,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final userAsync = ref.watch(userProfileProvider);
-    final themeMode = ref.watch(themeModeProvider);
-    final isSaving = ref.watch(profileSaveStateProvider) is AsyncLoading;
+    final themePref = ref.watch(themeNotifierProvider);
 
     return PageScaffold(
       title: 'MEU PERFIL',
@@ -103,7 +104,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ),
         data: (user) {
           if (!_isEditing) _syncFromUser(user);
-          return _buildContent(context, user, themeMode, isSaving);
+          return _buildContent(context, user, themePref.maybeWhen(
+            data: (p) => p,
+            orElse: () => ThemePreference.system,
+          ));
         },
       ),
     );
@@ -112,8 +116,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget _buildContent(
     BuildContext context,
     AuthUser? user,
-    ThemeMode themeMode,
-    bool isSaving,
+    ThemePreference themePreference,
   ) {
     return CustomScrollView(
       slivers: [
@@ -203,17 +206,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             title: 'Aparência',
             children: [
               ProfileThemeSelector(
-                themeMode: themeMode,
-                onChanged: (mode) {
-                  final notifier = ref.read(themeModeProvider.notifier);
-                  switch (mode) {
-                    case ThemeMode.system:
-                      notifier.setSystem();
-                    case ThemeMode.light:
-                      notifier.setLight();
-                    case ThemeMode.dark:
-                      notifier.setDark();
-                  }
+                themePreference: themePreference,
+                onChanged: (pref) {
+                  ref.read(themeNotifierProvider.notifier).setTheme(pref);
                 },
               ),
             ],

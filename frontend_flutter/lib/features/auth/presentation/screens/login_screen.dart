@@ -3,8 +3,11 @@ import 'dart:math' as math;
 
 import 'package:cadife_smart_travel/core/utils/extensions/string_extensions.dart';
 import 'package:cadife_smart_travel/design_system/design_system.dart';
-import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
-import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:cadife_smart_travel/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:cadife_smart_travel/features/auth/presentation/bloc/auth_event.dart';
+import 'package:cadife_smart_travel/features/auth/presentation/bloc/auth_state.dart';
+import 'package:cadife_smart_travel/features/settings/application/theme_notifier.dart';
+import 'package:cadife_smart_travel/features/settings/domain/entities/user_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -65,22 +68,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Show snackbar on login errors.
-    ref.listen<AsyncValue<AuthUser?>>(authNotifierProvider, (previous, next) {
-      if (next.hasError && !(previous?.hasError ?? false)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(next.error?.toString() ?? 'Erro ao fazer login.')),
-        );
-      }
-    });
-
-    final authState = ref.watch(authNotifierProvider);
-    final isLoggingIn = authState.isLoading;
-    final hasLoginError = authState.hasError;
-
-    final themeMode = ref.watch(themeModeProvider);
-    final isDark = themeMode == ThemeMode.dark ||
-        (themeMode == ThemeMode.system &&
+    final themePreference = ref.watch(themeNotifierProvider).valueOrNull ?? ThemePreference.system;
+    final isDark = themePreference == ThemePreference.dark ||
+        (themePreference == ThemePreference.system &&
             MediaQuery.platformBrightnessOf(context) == Brightness.dark);
 
     final cadife = context.cadife;
@@ -323,11 +313,7 @@ class _ThemeToggle extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return GestureDetector(
       onTap: () {
-        if (isDark) {
-          ref.read(themeModeProvider.notifier).setLight();
-        } else {
-          ref.read(themeModeProvider.notifier).setDark();
-        }
+        ref.read(themeNotifierProvider.notifier).toggleDarkMode(context);
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),

@@ -19,7 +19,7 @@ import 'package:intl/date_symbol_data_local.dart';
 late AppConfig _appConfig;
 late ProviderContainer _providerContainer;
 
-Future<void> initializeApp(AppConfig config) async {
+Future<void> initializeApp(AppConfig config, Widget rootWidget) async {
   _appConfig = config;
 
   await runZonedGuarded(() async {
@@ -66,6 +66,8 @@ Future<void> initializeApp(AppConfig config) async {
       ],
       observers: [AnalyticsProviderObserver()],
     );
+
+    runApp(rootWidget);
   }, (error, stack) {
     dev.log('Top level error', error: error, stackTrace: stack, name: 'main');
     if (!kIsWeb) {
