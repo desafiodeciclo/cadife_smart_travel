@@ -44,6 +44,7 @@ def _make_job(
     max_retries: int = 3,
     retry_delay_seconds: int = 60,
     next_retry_at=None,
+    processing_started_at=None,
 ) -> MagicMock:
     job = MagicMock()
     job.id = uuid.uuid4()
@@ -53,6 +54,7 @@ def _make_job(
     job.max_retries = max_retries
     job.retry_delay_seconds = retry_delay_seconds
     job.next_retry_at = next_retry_at
+    job.processing_started_at = processing_started_at
     job.payload = {
         "title": "Novo lead",
         "body": "Lead: Teste",
@@ -75,7 +77,7 @@ async def test_worker_no_jobs_exits_silently(worker, fake_db):
 
 @pytest.mark.asyncio
 async def test_worker_success_marks_completed(worker, fake_db):
-    """Envio FCM bem-sucedido → job status = completed."""
+    """Envio FCM bem-sucedido → job status = completed e processing_started_at limpo."""
     job = _make_job(status="pending")
 
     with (
@@ -86,6 +88,7 @@ async def test_worker_success_marks_completed(worker, fake_db):
 
     assert job.status == "completed"
     assert job.error_log is None
+    assert job.processing_started_at is None
 
 
 @pytest.mark.asyncio
@@ -167,6 +170,41 @@ async def test_worker_no_tokens_marks_failed(worker, fake_db):
     assert job.status == "failed"
     assert job.retry_count == 1
     assert "No FCM tokens available" in (job.error_log or "")
+
+
+@pytest.mark.asyncio
+async def test_worker_recovers_stuck_processing_job(worker, fake_db):
+    """Job preso em 'processing' por timeout deve ser reprocessado com sucesso."""
+    job = _make_job(
+        status="processing",
+        processing_started_at=dt.datetime.now(dt.timezone.utc)
+        - dt.timedelta(seconds=999),
+    )
+
+    with (
+        patch.object(worker, "_fetch_eligible_jobs", new=AsyncMock(return_value=[job])),
+        patch.object(worker, "_dispatch_fcm", new=AsyncMock(return_value=True)),
+    ):
+        await worker.run()
+
+    assert job.status == "completed"
+    assert job.processing_started_at is None
+
+
+@pytest.mark.asyncio
+async def test_worker_clears_processing_started_at_on_retry(worker, fake_db):
+    """Após falha (não DLQ), processing_started_at deve ser limpo."""
+    job = _make_job(status="pending", retry_count=0, retry_delay_seconds=60)
+
+    with (
+        patch.object(worker, "_fetch_eligible_jobs", new=AsyncMock(return_value=[job])),
+        patch.object(worker, "_dispatch_fcm", new=AsyncMock(return_value=False)),
+    ):
+        await worker.run()
+
+    assert job.status == "failed"
+    assert job.retry_count == 1
+    assert job.processing_started_at is None
 
 
 @pytest.mark.asyncio

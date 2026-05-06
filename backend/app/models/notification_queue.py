@@ -36,6 +36,10 @@ class NotificationQueue(Base):
     # payload para FCM
     payload: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     error_log: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    # worker crash recovery
+    processing_started_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

@@ -72,6 +72,22 @@ async def test_clear_removes_key(fake_redis):
 
 
 @pytest.mark.asyncio
+async def test_touch_uses_custom_ttl_from_settings(fake_redis):
+    """touch deve usar NOTIFICATION_DEBOUNCE_TTL_SECONDS do settings."""
+    custom_ttl = 300
+    with patch(
+        "app.services.notification_debounce_service.settings.NOTIFICATION_DEBOUNCE_TTL_SECONDS",
+        custom_ttl,
+    ):
+        service = NotificationDebounceService(redis=fake_redis)
+        await service.touch("lead-custom")
+
+    fake_redis.setex.assert_awaited_once_with(
+        "cadife:notification:debounce:lead-custom", custom_ttl, "1"
+    )
+
+
+@pytest.mark.asyncio
 async def test_lazy_redis_initialization():
     """Service deve inicializar Redis from_url quando não fornecido."""
     with patch(

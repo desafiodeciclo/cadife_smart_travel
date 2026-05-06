@@ -19,12 +19,14 @@ import structlog
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.infrastructure.config.settings import get_settings
 from app.infrastructure.persistence.database import AsyncSessionLocal
 from app.models.notification_queue import NotificationQueue
 from app.services import fcm_service
 from app.services.notification_queue_service import NotificationQueueService
 
 logger = structlog.get_logger()
+settings = get_settings()
 
 # Intervalo entre execuções do worker (segundos)
 WORKER_INTERVAL_SECONDS = 15
@@ -57,8 +59,13 @@ class NotificationWorker:
         Retorna jobs elegíveis para processamento:
           - status == 'pending' e next_retry_at IS NULL (nunca tentados)
           - status == 'failed' e next_retry_at <= NOW()
+          - status == 'processing' e processing_started_at <= NOW() - timeout
+            (recuperação de jobs presos após crash do worker)
         """
         now = dt.datetime.now(dt.timezone.utc)
+        stuck_threshold = now - dt.timedelta(
+            seconds=settings.NOTIFICATION_PROCESSING_TIMEOUT_SECONDS
+        )
         stmt = (
             select(NotificationQueue)
             .where(
@@ -69,6 +76,10 @@ class NotificationWorker:
                 | (
                     (NotificationQueue.status == "failed")
                     & (NotificationQueue.next_retry_at <= now)
+                )
+                | (
+                    (NotificationQueue.status == "processing")
+                    & (NotificationQueue.processing_started_at <= stuck_threshold)
                 )
             )
             .order_by(NotificationQueue.created_at.asc())
@@ -81,7 +92,9 @@ class NotificationWorker:
         """
         Processa um único job: envia FCM e atualiza estado ou move para DLQ.
         """
+        now = dt.datetime.now(dt.timezone.utc)
         job.status = "processing"
+        job.processing_started_at = now
         await db.commit()
 
         try:
@@ -98,6 +111,7 @@ class NotificationWorker:
         if success:
             job.status = "completed"
             job.error_log = None
+            job.processing_started_at = None
             await db.commit()
             logger.info(
                 "notification_completed",
@@ -116,6 +130,7 @@ class NotificationWorker:
         # Backoff exponencial: delay * 2^retry_count
         job.status = "failed"
         job.next_retry_at = job.compute_next_retry()
+        job.processing_started_at = None
         if not job.error_log:
             job.error_log = f"Retry {job.retry_count}/{job.max_retries}"
         await db.commit()

@@ -20,7 +20,6 @@ logger = structlog.get_logger()
 settings = get_settings()
 
 _DEBOUNCE_KEY_PREFIX = "cadife:notification:debounce"
-_DEBOUNCE_TTL_SECONDS = 60
 
 
 class NotificationDebounceService:
@@ -28,7 +27,7 @@ class NotificationDebounceService:
 
     def __init__(self, redis: Redis | None = None) -> None:
         self._redis = redis
-        self._ttl = _DEBOUNCE_TTL_SECONDS
+        self._ttl = settings.NOTIFICATION_DEBOUNCE_TTL_SECONDS
 
     async def _get_redis(self) -> Redis:
         if self._redis is None:
