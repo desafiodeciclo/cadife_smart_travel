@@ -3,7 +3,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import DateTime, ForeignKey, Numeric, Text, func
+from sqlalchemy import DateTime, ForeignKey, Integer, Numeric, Text, func
 from sqlalchemy.dialects.postgresql import ENUM as PgEnum, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from pydantic import BaseModel
@@ -25,6 +25,7 @@ class Proposta(Base):
     valor_estimado: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2))
     status: Mapped[PropostaStatus] = mapped_column(PgEnum(PropostaStatus, name="proposta_status_enum", create_type=False), nullable=False, default=PropostaStatus.rascunho)
     consultor_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
+    expiration_hours: Mapped[int] = mapped_column(Integer, nullable=False, server_default="48")
     criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     lead: Mapped["Lead"] = relationship("Lead", back_populates="propostas")
@@ -34,6 +35,7 @@ class PropostaCreate(BaseModel):
     lead_id: uuid.UUID
     descricao: str
     valor_estimado: Optional[Decimal] = None
+    expiration_hours: int = 48
 
 
 class PropostaUpdate(BaseModel):
@@ -49,6 +51,7 @@ class PropostaResponse(BaseModel):
     valor_estimado: Optional[Decimal]
     status: PropostaStatus
     consultor_id: Optional[uuid.UUID]
+    expiration_hours: int
     criado_em: datetime
 
     model_config = {"from_attributes": True}

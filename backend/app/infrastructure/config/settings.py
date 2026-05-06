@@ -125,6 +125,15 @@ class Settings(BaseSettings):
         ge=1,
         description="Days of inactivity before a lead is automatically transitioned to PERDIDO",
     )
+    PROPOSTA_EXPIRATION_HOURS_DEFAULT: int = Field(
+        default=48,
+        ge=1,
+        description="Default SLA in hours before a proposal (enviada/em_revisao) is auto-expired",
+    )
+    PROPOSTA_EXPIRATION_WEBHOOK_URL: str = Field(
+        default="",
+        description="Optional HTTP endpoint to POST when proposals are auto-expired (CRM, Slack, etc.)",
+    )
 
     # ── Request Timeout (spec.md §12.3 — webhook must respond in < 5s) ────
     REQUEST_TIMEOUT_SECONDS: float = Field(

@@ -30,6 +30,7 @@ from app.services.ingestion_pipeline import get_ingestion_pipeline
 
 # Scheduled Jobs
 from app.jobs.lead_expiration_job import expire_stale_leads
+from app.jobs.proposta_expiration_job import expire_stale_propostas_job
 
 # Routers
 from app.routes import agenda, auth, ia, leads, propostas, webhook
@@ -90,8 +91,16 @@ async def lifespan(app: FastAPI):
         id="lead_expiration",
         replace_existing=True,
     )
+    # Runs every 5 minutes — catches proposals whose SLA window just closed
+    _scheduler.add_job(
+        expire_stale_propostas_job,
+        trigger="interval",
+        minutes=5,
+        id="proposta_expiration",
+        replace_existing=True,
+    )
     _scheduler.start()
-    logger.info("scheduler_started", jobs=["lead_expiration"])
+    logger.info("scheduler_started", jobs=["lead_expiration", "proposta_expiration"])
 
     logger.info("startup_complete", version="1.0.0")
 

@@ -64,6 +64,7 @@ async def create_proposta(
         descricao=body.descricao,
         valor_estimado=body.valor_estimado,
         consultor_id=current_user.id,
+        expiration_hours=body.expiration_hours,
     )
     db.add(proposta)
     await db.commit()

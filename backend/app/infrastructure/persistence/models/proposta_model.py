@@ -22,6 +22,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Index,
+    Integer,
     Numeric,
     Text,
     func,
@@ -81,6 +82,11 @@ class PropostaModel(Base):
     )
     consultor_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL")
+    )
+    expiration_hours: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        server_default="48",
     )
     criado_em: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
