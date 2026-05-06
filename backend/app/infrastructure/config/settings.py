@@ -108,6 +108,17 @@ class Settings(BaseSettings):
     ENCRYPTION_KEY: str = Field(default="", description="Fernet key for PII encryption")
     HASH_KEY: str = Field(default="", description="HMAC-SHA256 key for searchable phone hash")
 
+    # ── Cache / Redis (spec.md §5.3) ──────────────────────────────────────
+    CACHE_TTL_SECONDS: int = Field(
+        default=300,
+        ge=1,
+        description="Default TTL for Redis-backed endpoint cache (seconds)",
+    )
+    CACHE_ENABLED: bool = Field(
+        default=True,
+        description="Global toggle for response caching via Redis",
+    )
+
     # ── Business Rules (spec.md §8.4) ─────────────────────────────────────
     LEAD_EXPIRATION_DAYS: int = Field(
         default=30,
