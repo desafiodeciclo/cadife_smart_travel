@@ -187,3 +187,16 @@ def invalid_jwt_token() -> str:
     }
     # Use a different secret to simulate a bad signature
     return jwt.encode(payload, "wrong-secret-key", algorithm=settings.JWT_ALGORITHM)
+
+# Eagerly import all ORM models so SQLAlchemy mapper configuration is complete
+# before any test instantiates a model class. This avoids "failed to locate a name"
+# errors when dependent models (e.g. Agendamento, Proposta) are referenced by
+# string in relationship() definitions but not yet imported.
+import app.models.lead  # noqa: F401
+import app.models.briefing  # noqa: F401
+import app.models.interacao  # noqa: F401
+import app.models.agendamento  # noqa: F401
+import app.models.proposta  # noqa: F401
+import app.models.user  # noqa: F401
+import app.models.notification_queue  # noqa: F401
+import app.models.dead_letter_queue  # noqa: F401

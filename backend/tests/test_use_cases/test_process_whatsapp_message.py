@@ -256,7 +256,7 @@ async def test_lead_qualified_receives_curadoria_offer():
         patch("app.application.use_cases.process_whatsapp_message.whatsapp_service") as mock_ws,
         patch("app.application.use_cases.process_whatsapp_message.fcm_service"),
         patch("app.application.use_cases.process_whatsapp_message.curadoria_service") as mock_cs,
-        patch("app.application.use_cases.process_whatsapp_message._notify_consultants", new=AsyncMock()),
+        patch("app.application.use_cases.process_whatsapp_message._enqueue_qualified_notification", new=AsyncMock()),
     ):
         mock_ls.upsert_lead_with_resilience = AsyncMock(return_value=lead)
         mock_ls.update_lead_status = AsyncMock(return_value=lead)
