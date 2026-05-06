@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.entities.enums import TipoMensagem
 from app.infrastructure.persistence.abstract_repository import AbstractRepository
-from app.infrastructure.persistence.models.interacao_model import InteracaoModel
+from app.models.interacao import Interacao as InteracaoModel
 
 
 class InteracaoRepository(AbstractRepository[InteracaoModel]):

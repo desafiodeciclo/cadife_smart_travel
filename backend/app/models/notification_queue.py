@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
+import sqlalchemy as sa
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -33,8 +34,8 @@ class NotificationQueue(Base):
     next_retry_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True, index=True
     )
-    # payload para FCM
-    payload: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    # payload para FCM - usa JSON genérico para compatibilidade SQLite/Postgres
+    payload: Mapped[dict] = mapped_column(sa.JSON, nullable=False, default=dict)
     error_log: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     # worker crash recovery
     processing_started_at: Mapped[Optional[datetime]] = mapped_column(

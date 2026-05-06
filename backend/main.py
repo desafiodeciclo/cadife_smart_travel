@@ -208,3 +208,14 @@ async def healthz():
             "version": app.version,
         }
     )
+
+
+@app.get("/", tags=["Health"])
+async def root():
+    """Friendly root endpoint for verification."""
+    return {
+        "message": "Cadife Smart Travel API is running",
+        "status": "online",
+        "health_check": "/healthz",
+        "metrics": "/metrics"
+    }

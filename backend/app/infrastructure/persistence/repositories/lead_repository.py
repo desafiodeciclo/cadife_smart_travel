@@ -20,7 +20,7 @@ from app.domain.entities.enums import LeadScore, LeadStatus
 from app.domain.interfaces.repositories import ILeadRepository
 from app.infrastructure.cache import invalidate_pattern
 from app.infrastructure.persistence.abstract_repository import AbstractRepository
-from app.infrastructure.persistence.models.lead_model import LeadModel
+from app.models.lead import Lead as LeadModel
 
 
 class LeadRepository(AbstractRepository[LeadModel], ILeadRepository):

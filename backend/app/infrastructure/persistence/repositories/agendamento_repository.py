@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.entities.enums import AgendamentoStatus, AgendamentoTipo
 from app.infrastructure.persistence.abstract_repository import AbstractRepository
-from app.infrastructure.persistence.models.agendamento_model import AgendamentoModel
+from app.models.agendamento import Agendamento as AgendamentoModel
 
 
 class AgendamentoRepository(AbstractRepository[AgendamentoModel]):

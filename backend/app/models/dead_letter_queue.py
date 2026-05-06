@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
+import sqlalchemy as sa
 from sqlalchemy import DateTime, ForeignKey, Integer, Text, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -23,7 +24,7 @@ class DeadLetterQueue(Base):
     lead_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("leads.id"), nullable=False, index=True
     )
-    original_payload: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    original_payload: Mapped[dict] = mapped_column(sa.JSON, nullable=False, default=dict)
     error_trace: Mapped[str] = mapped_column(Text, nullable=False)
     retry_count_exhausted: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     failed_at: Mapped[datetime] = mapped_column(

@@ -40,7 +40,7 @@ os.environ["ENCRYPTION_KEY"] = "858iXm1S2iXN5sH3W6V-q7W_U8U7z6T5S4R3Q2P1O0N="
 os.environ["HASH_KEY"] = "f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7"
 
 # Now import the app and models AFTER setting env vars
-from main import app
+from main import app as fastapi_app
 from app.infrastructure.persistence.database import Base, AsyncSessionLocal
 from app.core.dependencies import get_db
 from app.infrastructure.security.dependencies import get_current_user
@@ -114,15 +114,15 @@ def override_get_db(db_session: AsyncSession):
     async def _get_db():
         yield db_session
 
-    app.dependency_overrides[get_db] = _get_db
+    fastapi_app.dependency_overrides[get_db] = _get_db
     yield
-    app.dependency_overrides.pop(get_db, None)
+    fastapi_app.dependency_overrides.pop(get_db, None)
 
 
 @pytest.fixture()
 def override_get_current_user():
     """Override the `get_current_user` dependency with a mock user."""
-    from app.infrastructure.persistence.models.user_model import UserModel
+    from app.models.user import User as UserModel
 
     # Create a mock user object
     mock_user = UserModel(
@@ -139,22 +139,22 @@ def override_get_current_user():
     async def _get_current_user(*args, **kwargs):
         return mock_user
 
-    app.dependency_overrides[get_current_user] = _get_current_user
+    fastapi_app.dependency_overrides[get_current_user] = _get_current_user
     yield mock_user
-    app.dependency_overrides.pop(get_current_user, None)
+    fastapi_app.dependency_overrides.pop(get_current_user, None)
 
 
 # ── Test Client ─────────────────────────────────────────────────────────
 @pytest.fixture()
 def client(override_get_db, override_get_current_user) -> TestClient:
     """Return a TestClient configured with the test dependencies."""
-    return TestClient(app)
+    return TestClient(fastapi_app)
 
 
 @pytest.fixture()
 async def async_client(override_get_db, override_get_current_user) -> AsyncGenerator[AsyncClient, None]:
     """Return an AsyncClient for testing async endpoints."""
-    transport = ASGITransport(app=app)
+    transport = ASGITransport(app=fastapi_app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
 

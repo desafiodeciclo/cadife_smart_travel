@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.entities.enums import PropostaStatus
 from app.infrastructure.persistence.abstract_repository import AbstractRepository
-from app.infrastructure.persistence.models.proposta_model import PropostaModel
+from app.models.proposta import Proposta as PropostaModel
 
 
 class PropostaRepository(AbstractRepository[PropostaModel]):
