@@ -148,44 +148,221 @@ make build-staging # Gera APK de staging
 
 ---
 
-## Como Executar
+## Execução Local e Automação
 
-### Pré-requisitos
+O projeto utiliza dois scripts de inicialização que orquestram toda a infraestrutura de desenvolvimento e otimizam o uso de memória RAM antes de subir os serviços.
 
-| Ferramenta | Versão mínima |
-| :--- | :--- |
-| Docker Engine + Compose v2 | qualquer estável |
-| Python | 3.11+ |
-| Flutter SDK | estável |
-| ngrok | qualquer (conta gratuita recomendada) |
+### Qual script usar?
 
-### Backend — um único comando
+| Sistema Operacional | Script recomendado | Como rodar |
+| :--- | :--- | :--- |
+| **macOS** | `dev.sh` ou `dev.py` | `./dev.sh` |
+| **Linux** | `dev.sh` ou `dev.py` | `./dev.sh` |
+| **Windows** (PowerShell / Git Bash) | `dev.py` | `python dev.py` |
+| **Windows** (WSL2) | `dev.sh` | `./dev.sh` |
+
+> **Por que dois scripts?** O `dev.sh` é a opção clássica para ambientes POSIX (macOS/Linux). O `dev.py` foi adicionado para garantir suporte nativo ao Windows sem depender do Git Bash — ele usa apenas a biblioteca padrão do Python 3.11+, sem instalações extras.
+
+---
+
+### Pré-requisitos por sistema
+
+<details>
+<summary><strong>macOS</strong></summary>
+
+| Ferramenta | Versão mínima | Como instalar |
+| :--- | :--- | :--- |
+| Bash | **4.0+** | `brew install bash` (o macOS inclui Bash 3.2 por padrão — insuficiente) |
+| Docker Engine + Compose v2 | qualquer estável | [docs.docker.com](https://docs.docker.com/get-docker/) |
+| Python | 3.11+ | `brew install python` |
+| ngrok | qualquer | `brew install ngrok` ou [ngrok.com/download](https://ngrok.com/download) |
+
+**Permissão de administrador:** necessária apenas se a automação de RAM for acionada (`sudo purge`). O script avisa antes de tentar.
+
+</details>
+
+<details>
+<summary><strong>Linux</strong></summary>
+
+| Ferramenta | Versão mínima | Como instalar |
+| :--- | :--- | :--- |
+| Bash | 4.0+ | já incluso na maioria das distros |
+| Docker Engine + Compose v2 | qualquer estável | [docs.docker.com/engine/install](https://docs.docker.com/engine/install/) |
+| Python | 3.11+ | `apt install python3` / `dnf install python3` |
+| ngrok | qualquer | [ngrok.com/download](https://ngrok.com/download) |
+
+**Permissão de administrador:** necessária apenas se a automação de RAM for acionada (`sudo tee /proc/sys/vm/drop_caches`). O script pede confirmação antes.
+
+</details>
+
+<details>
+<summary><strong>Windows</strong></summary>
+
+| Ferramenta | Versão mínima | Como instalar |
+| :--- | :--- | :--- |
+| Python | 3.11+ | [python.org/downloads](https://python.org/downloads) — marque **"Add to PATH"** |
+| Docker Desktop | qualquer estável | [docs.docker.com](https://docs.docker.com/get-docker/) — habilite WSL2 backend |
+| ngrok | qualquer | [ngrok.com/download](https://ngrok.com/download) |
+| PowerShell | **7.0+** (para cores ANSI) | `winget install Microsoft.PowerShell` |
+
+**Política de execução:** não é necessária para o `dev.py` (executado como script Python padrão).
+
+</details>
+
+---
+
+### Passo a passo: configuração inicial (todos os sistemas)
 
 ```bash
-# 1. Copie e preencha as variáveis obrigatórias
+# 1. Clone o repositório
+git clone https://github.com/desafiodeciclo/cadife_smart_travel.git
+cd cadife_smart_travel
+
+# 2. Configure as variáveis de ambiente
 cp backend/.env.example backend/.env
-# Preencha: GEMINI_API_KEY, WHATSAPP_TOKEN, PHONE_NUMBER_ID, VERIFY_TOKEN, JWT_SECRET_KEY
+# Preencha OBRIGATORIAMENTE: GEMINI_API_KEY, WHATSAPP_TOKEN,
+# PHONE_NUMBER_ID, VERIFY_TOKEN, JWT_SECRET_KEY
 
-# 2. Crie e ative o virtualenv Python
-python3 -m venv .venv && source .venv/bin/activate  # macOS/Linux
-# .venv\Scripts\activate                             # Windows
+# 3. Crie e ative o virtualenv Python
+python3 -m venv .venv             # macOS/Linux
+# python -m venv .venv            # Windows
 
-# 3. Instale dependências
+source .venv/bin/activate         # macOS/Linux
+# .venv\Scripts\activate          # Windows PowerShell
+# source .venv/Scripts/activate   # Windows Git Bash
+
+# 4. Instale as dependências do backend
 pip install -r backend/requirements.txt
+```
 
-# 4. Suba tudo
+---
+
+### Como executar
+
+#### macOS e Linux — `dev.sh`
+
+```bash
+# Garanta permissão de execução (necessário apenas uma vez)
+chmod +x dev.sh
+
+# Inicie o ambiente completo
 ./dev.sh
 ```
 
-O `./dev.sh` executa em sequência:
-1. **Docker Compose** — sobe PostgreSQL 16, Redis 7 e ChromaDB (infraestrutura)
-2. **Alembic** — aplica migrações pendentes
-3. **Uvicorn** — inicia FastAPI com hot-reload na porta `8000`
-4. **ngrok** — abre túnel HTTPS público para `localhost:8000`
+#### Windows — `dev.py`
 
-Ao final você verá:
+```powershell
+# PowerShell ou Prompt de Comando
+python dev.py
+```
+
+#### Qualquer sistema — `dev.py`
+
+```bash
+python3 dev.py   # macOS/Linux
+python dev.py    # Windows
+```
+
+---
+
+### O que os scripts executam (sequência)
+
+Ambos os scripts executam **exatamente os mesmos passos** na mesma ordem:
+
+| Passo | Ação | Detalhe |
+| :---: | :--- | :--- |
+| 0 | **Verificação de RAM** | Mede a memória livre; se < 1 GB, exibe instrução de limpeza e pede confirmação |
+| 1 | **Checagem de dependências** | Valida `docker`, `uvicorn`, `ngrok`, `alembic`, `python3` |
+| 2 | **Validação do `.env`** | Garante que `backend/.env` existe e autentica o ngrok se `NGROK_AUTHTOKEN` estiver configurado |
+| 3 | **Docker Compose** | Sobe PostgreSQL 16, Redis 7 e ChromaDB com health checks |
+| 4 | **Migrações** | Executa `alembic upgrade head` |
+| 5 | **FastAPI** | Inicia `uvicorn` com `--reload` na porta `8000`, aguarda `/health` responder |
+| 6 | **ngrok** | Abre túnel HTTPS público e extrai a URL via API local |
+| — | **Resumo** | Exibe todos os endpoints e a URL do webhook para o Meta |
+
+Pressione **Ctrl+C** para encerrar todos os processos e containers com segurança.
+
+---
+
+### Automação de RAM — como funciona
+
+A stack de desenvolvimento (ChromaDB + LangChain + Redis + PostgreSQL + FastAPI) pode consumir entre **1,5 GB e 2,5 GB** de RAM. Antes de subir qualquer serviço, os scripts verificam a memória disponível e, se estiver abaixo de 1 GB, orientam a limpeza.
+
+#### macOS
 
 ```
+[WARN]  Memória disponível baixa: 612 MB (mínimo recomendado: 1024 MB)
+[INFO]  Para liberar RAM no macOS:
+        sudo purge
+```
+
+O `sudo purge` descarrega páginas inativas (arquivos de app em memória não utilizados) de volta ao disco, liberando RAM sem encerrar processos. Requer senha de administrador.
+
+#### Linux
+
+```
+[WARN]  Memória disponível baixa: 490 MB (mínimo recomendado: 1024 MB)
+[INFO]  Para liberar cache: sync && echo 3 | sudo tee /proc/sys/vm/drop_caches
+```
+
+O comando sincroniza buffers pendentes de escrita e limpa os caches de página, dentry e inode do kernel. Requer `sudo`. Não afeta dados de processos ativos.
+
+#### Windows (`dev.py`)
+
+```
+[WARN]  Memória disponível baixa: 720 MB (mínimo recomendado: 1024 MB)
+[INFO]  Para liberar RAM no Windows:
+        # Feche aplicações desnecessárias
+        # Se usar WSL2: wsl --shutdown  (libera memória do kernel WSL)
+        # PowerShell (admin): [System.GC]::Collect()
+```
+
+No Windows, o `dev.py` lê a RAM disponível via `wmic OS get FreePhysicalMemory`. A limpeza não é automática — o script apenas orienta as ações mais eficazes para o ambiente detectado.
+
+#### Processo de encerramento de órfãos
+
+Os scripts encerram instâncias anteriores do ngrok antes de iniciar uma nova (via `pkill -f "ngrok http"` no Unix ou `taskkill /IM ngrok.exe /F` no Windows), evitando conflito de porta `4040` e consumo desnecessário de RAM em reinicializações.
+
+#### Configurações de memória no uvicorn
+
+O `dev.py` passa variáveis de ambiente para o processo uvicorn que orientam o alocador de memória do CPython a devolver páginas liberadas ao sistema operacional mais rapidamente, útil em sessões longas com hot-reload ativo:
+
+```python
+env["MALLOC_TRIM_THRESHOLD_"] = "65536"  # 64 KB — devolve memória ao SO mais cedo
+env["PYTHONGC"] = "1"                    # ativa GC incremental do CPython
+```
+
+---
+
+### Saída esperada ao iniciar
+
+```
+══════════════════════════════════════════════════════════════════
+   Cadife Smart Travel  —  Iniciando Ambiente de Desenvolvimento
+══════════════════════════════════════════════════════════════════
+
+━━━  Verificando memória RAM disponível  ━━━
+[ OK ]  RAM disponível: 4096 MB — suficiente para o ambiente.
+
+━━━  Verificando dependências  ━━━
+[ OK ]  Todas as dependências encontradas.
+
+━━━  Iniciando infraestrutura Docker  ━━━
+  Aguardando PostgreSQL ........✓
+  Aguardando Redis .....✓
+[ OK ]  Infraestrutura Docker pronta.
+
+━━━  Aplicando migrações do banco de dados  ━━━
+[ OK ]  Migrações aplicadas.
+
+━━━  Iniciando servidor FastAPI  ━━━
+  Aguardando FastAPI inicializar .....✓
+[ OK ]  FastAPI respondendo em http://localhost:8000
+
+━━━  Iniciando túnel ngrok  ━━━
+  Aguardando túnel ngrok ....✓
+[ OK ]  Túnel ngrok ativo.
+
 ╔══════════════════════════════════════════════════════════════════╗
 ║      CADIFE SMART TRAVEL  —  Ambiente Dev Ativo  ✓               ║
 ╚══════════════════════════════════════════════════════════════════╝
@@ -195,15 +372,50 @@ Ao final você verá:
   ├─ Swagger Docs   →  http://localhost:8000/docs
   ├─ PostgreSQL     →  localhost:5433  (cadife / cadife)
   ├─ Redis          →  localhost:6379
+  ├─ ChromaDB       →  http://localhost:8001
   └─ ngrok UI       →  http://localhost:4040
 
-  ┌─ URL pública HTTPS do ngrok ──────────────────────────────────┐
-  │  https://abc123.ngrok-free.app                                 │
-  │  Webhook Meta: https://abc123.ngrok-free.app/webhook/whatsapp  │
-  └────────────────────────────────────────────────────────────────┘
+  ┌─ URL pública HTTPS do ngrok: ─────────────────────────────────────┐
+  │  https://abc123.ngrok-free.app
+  │
+  │  URL do Webhook para o Meta:
+  │  https://abc123.ngrok-free.app/webhook/whatsapp
+  └───────────────────────────────────────────────────────────────────┘
+
+  Logs em tempo real:
+  ├─ FastAPI:  tail -f .dev-logs/uvicorn.log
+  └─ ngrok:    tail -f .dev-logs/ngrok.log
+
+  Pressione Ctrl+C para encerrar todos os processos e containers.
 ```
 
-Pressione **Ctrl+C** para encerrar todos os processos.
+---
+
+### Logs em tempo real
+
+```bash
+# macOS / Linux
+tail -f .dev-logs/uvicorn.log   # FastAPI
+tail -f .dev-logs/ngrok.log     # túnel ngrok
+
+# Windows (PowerShell)
+Get-Content -Wait .dev-logs\uvicorn.log
+Get-Content -Wait .dev-logs\ngrok.log
+```
+
+---
+
+### Pré-requisitos — tabela consolidada
+
+| Ferramenta | Versão mínima | macOS | Linux | Windows |
+| :--- | :--- | :---: | :---: | :---: |
+| Docker Engine + Compose v2 | qualquer | ✓ | ✓ | ✓ |
+| Python | 3.11+ | ✓ | ✓ | ✓ |
+| ngrok | qualquer | ✓ | ✓ | ✓ |
+| Bash | **4.0+** | ✓ | ✓ | Git Bash/WSL |
+| Flutter SDK | estável | ✓ | ✓ | ✓ |
+
+---
 
 ### Frontend
 
@@ -214,7 +426,7 @@ make run-dev
 ```
 
 Para apontar o app para seu backend local via ngrok:
-1. Pegue a URL exibida pelo `./dev.sh`
+1. Pegue a URL exibida pelo `dev.sh` / `dev.py`
 2. Atualize `apiBaseUrl` em `lib/config/app_config.dart` (flavor `dev`)
 
 ---
@@ -295,7 +507,8 @@ cadife_smart_travel/
 │   ├── steering/                    # 10 docs de contexto do projeto
 │   └── rules/                       # Regras por camada (backend, flutter, IA)
 ├── .env.example                     # Template de variáveis de ambiente
-├── dev.sh                           # Script único de setup do ambiente dev
+├── dev.sh                           # Script de setup do ambiente dev (macOS/Linux)
+├── dev.py                           # Script de setup cross-platform (macOS/Linux/Windows)
 └── CLAUDE.md                        # Constituição do agente Claude
 ```
 
