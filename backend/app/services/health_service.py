@@ -13,6 +13,7 @@ from app.infrastructure.config.settings import get_settings
 logger = structlog.get_logger()
 settings = get_settings()
 
+
 async def check_database() -> bool:
     """Verifica se a conexão com o banco de dados está ativa."""
     try:
@@ -22,6 +23,7 @@ async def check_database() -> bool:
     except Exception as exc:
         logger.error("health_check_database_failed", error=str(exc))
         return False
+
 
 async def check_redis() -> bool:
     """Verifica se a conexão com o Redis está ativa."""
