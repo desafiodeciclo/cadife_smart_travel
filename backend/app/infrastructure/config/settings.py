@@ -47,9 +47,8 @@ class Settings(BaseSettings):
     META_APP_SECRET: str = Field(default="", description="Meta App Secret for X-Hub-Signature-256 validation")
     META_APP_ID: str = Field(default="", description="Meta App ID — required for token exchange")
 
-    # ── OpenAI / LangChain (spec.md) ─────────────────────────
-    OPENAI_API_KEY: str = Field(default="", description="OpenAI API key para LLM + embeddings")
-    GEMINI_API_KEY: str = Field(default="", description="Google Gemini API key para LLM (fallback/alternativo)")
+    # ── Google Gemini (exclusivo — não usa OpenAI) ─────────────────────────
+    GEMINI_API_KEY: str = Field(default="", description="Gemini API key para LLM + embeddings")
     LANGCHAIN_API_KEY: str = Field(default="", description="LangSmith observability key (optional)")
 
     # ── Langfuse Observability ────────────────────────────────────────────
@@ -113,6 +112,17 @@ class Settings(BaseSettings):
     NOTIFICATION_MAX_RETRIES: int = Field(default=3, ge=0)
     NOTIFICATION_RETRY_DELAY_SECONDS: int = Field(default=60, ge=1)
     NOTIFICATION_DEBOUNCE_TTL_SECONDS: int = Field(default=60, ge=1)
+
+    # ── Cache / Redis (spec.md §5.3) ──────────────────────────────────────
+    CACHE_TTL_SECONDS: int = Field(
+        default=300,
+        ge=1,
+        description="Default TTL for Redis-backed endpoint cache (seconds)",
+    )
+    CACHE_ENABLED: bool = Field(
+        default=True,
+        description="Global toggle for response caching via Redis",
+    )
 
     # ── Business Rules (spec.md §8.4) ─────────────────────────────────────
     LEAD_EXPIRATION_DAYS: int = Field(
