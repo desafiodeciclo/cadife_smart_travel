@@ -1,4 +1,3 @@
-import math
 import uuid
 from typing import Optional
 
@@ -6,12 +5,25 @@ import structlog
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.application.dto.lead_mapper import (
+    map_counts_to_metrics,
+    map_lead_to_detail,
+    map_leads_to_list_response,
+)
+from app.application.services.lead_state_machine import InvalidStateTransitionError, LeadStateMachine
+from app.domain.entities.enums import LeadStatus
+from app.infrastructure.cache.decorator import cached
 from app.infrastructure.security.dependencies import RequiresRole, get_current_user, get_db
 from app.models.briefing import BriefingResponse, BriefingUpdate, calculate_completude
 from app.models.interacao import InteracaoListResponse
-from app.models.lead import LeadCreate, LeadListItem, LeadListResponse, LeadResponse, LeadUpdate
-from app.application.services.lead_state_machine import InvalidStateTransitionError, LeadStateMachine
-from app.domain.entities.enums import LeadStatus
+from app.models.lead import Lead
+from app.presentation.schemas.leads import (
+    LeadCreateRequest,
+    LeadDetailDTO,
+    LeadListResponseDTO,
+    LeadMetricsDTO,
+    LeadUpdateRequest,
+)
 from app.services import lead_service
 
 logger = structlog.get_logger()
@@ -21,7 +33,12 @@ router = APIRouter(
 )
 
 
-@router.get("", response_model=LeadListResponse, dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))])
+# ── Cache helpers ──────────────────────────────────────────────────────────
+# We apply @cached on lightweight service calls that only touch the DB.
+# The decorator serialises the Pydantic response so FastAPI can re-validate it.
+
+@router.get("", response_model=LeadListResponseDTO, dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))])
+@cached()
 async def list_leads(
     status: Optional[str] = Query(None),
     score: Optional[str] = Query(None),
@@ -31,8 +48,7 @@ async def list_leads(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    # RBAC: Se o usuário for 'consultor', ele só vê os próprios leads.
-    # Se for 'admin' ou 'agencia', vê todos.
+    # RBAC: consultor sees only own leads; admin/agencia sees all.
     consultor_id = None
     if current_user.perfil == "consultor":
         consultor_id = current_user.id
@@ -40,25 +56,21 @@ async def list_leads(
     leads, total = await lead_service.list_leads(
         db, status=status, score=score, search=search, page=page, limit=limit, consultor_id=consultor_id
     )
-    pages = math.ceil(total / limit) if total else 1
-    items = []
-    for lead in leads:
-        completude = lead.briefing.completude_pct if lead.briefing else None
-        items.append(LeadListItem(
-            id=lead.id,
-            nome=lead.nome,
-            telefone=lead.telefone,
-            origem=lead.origem,
-            status=lead.status,
-            score=lead.score,
-            criado_em=lead.criado_em,
-            atualizado_em=lead.atualizado_em,
-            completude_pct=completude,
-        ))
-    return LeadListResponse(items=items, total=total, page=page, limit=limit, pages=pages)
+    return map_leads_to_list_response(leads, total=total, page=page, limit=limit)
 
 
-@router.get("/my-active", response_model=LeadResponse)
+@router.get("/metrics", response_model=LeadMetricsDTO, dependencies=[Depends(RequiresRole("admin", "agencia"))])
+@cached(ttl=60)
+async def get_lead_metrics(
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """Dashboard metrics — aggregated lead counts by status."""
+    counts = await lead_service.get_lead_metrics(db)
+    return map_counts_to_metrics(counts)
+
+
+@router.get("/my-active", response_model=LeadDetailDTO)
 async def get_my_active_lead(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
@@ -68,14 +80,13 @@ async def get_my_active_lead(
     Se não existir, cria um novo lead baseado no telefone do usuário.
     """
     if not current_user.telefone:
-         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, 
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail="Usuário não possui telefone cadastrado para vincular a uma viagem"
         )
-    
+
     from sqlalchemy import select
     from sqlalchemy.orm import selectinload
-    from app.models.lead import Lead
     from app.infrastructure.security.pii_encryption import hmac_hash
 
     phone_hash = hmac_hash(current_user.telefone)
@@ -85,37 +96,30 @@ async def get_my_active_lead(
         .options(selectinload(Lead.consultor))
     )
     lead = result.scalar_one_or_none()
-    
+
     if not lead:
         lead = await lead_service.get_or_create_by_phone(db, current_user.telefone, current_user.nome)
-        # Refresh to ensure relationships are handled correctly if needed, 
-        # but get_or_create doesn't load consultor since it's new.
 
-    response = LeadResponse.model_validate(lead)
-    if lead.consultor:
-        response.consultor_nome = lead.consultor.nome
-        response.consultor_avatar = lead.consultor.avatar_url
-        
-    return response
+    return map_lead_to_detail(lead)
 
 
-@router.post("", response_model=LeadResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))])
+@router.post("", response_model=LeadDetailDTO, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))])
 async def create_lead(
-    lead_in: LeadCreate,
+    lead_in: LeadCreateRequest,
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
     from sqlalchemy import select
-    from app.models.lead import Lead
     existing = await db.execute(select(Lead).where(Lead.telefone == lead_in.telefone))
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Telefone já cadastrado")
 
     lead = await lead_service.get_or_create_by_phone(db, lead_in.telefone, lead_in.nome)
-    return LeadResponse.model_validate(lead)
+    return map_lead_to_detail(lead)
 
 
-@router.get("/{lead_id}", response_model=LeadResponse, dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))])
+@router.get("/{lead_id}", response_model=LeadDetailDTO, dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))])
+@cached()
 async def get_lead(
     lead_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -129,13 +133,13 @@ async def get_lead(
     if current_user.perfil == "consultor" and lead.consultor_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado ao lead")
 
-    return LeadResponse.model_validate(lead)
+    return map_lead_to_detail(lead)
 
 
-@router.put("/{lead_id}", response_model=LeadResponse, dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))])
+@router.put("/{lead_id}", response_model=LeadDetailDTO, dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))])
 async def update_lead(
     lead_id: uuid.UUID,
-    lead_in: LeadUpdate,
+    lead_in: LeadUpdateRequest,
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
@@ -176,7 +180,7 @@ async def update_lead(
 
     await db.commit()
     await db.refresh(lead)
-    return LeadResponse.model_validate(lead)
+    return map_lead_to_detail(lead)
 
 
 @router.delete("/{lead_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))])
@@ -235,4 +239,3 @@ async def update_briefing(
     await db.commit()
     await db.refresh(briefing)
     return BriefingResponse.model_validate(briefing)
-

@@ -12,7 +12,6 @@ Features:
 """
 import hashlib
 import json
-import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
@@ -22,9 +21,7 @@ import tiktoken
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
-
-from pydantic import SecretStr
+from langchain_openai import OpenAIEmbeddings
 
 from app.core.config import get_settings
 from app.services.metadata_tagger import extract_tags, tags_to_metadata
@@ -190,19 +187,21 @@ class IngestionPipeline:
         knowledge_base_dir: str,
         chroma_persist_dir: str,
         cache_path: str,
-        gemini_api_key: str = "",
+        openrouter_api_key: str = "",
+        embedding_model: str = "google/gemini-embedding-2-preview",
     ) -> None:
         self._kb_dir = Path(knowledge_base_dir)
         self._persist_dir = chroma_persist_dir
         self._cache = IngestionCache(cache_path)
-        # Gemini embeddings exclusivo
-        if gemini_api_key:
-            self._embeddings = GoogleGenerativeAIEmbeddings(
-                model="models/gemini-embedding-001",
-                google_api_key=SecretStr(gemini_api_key),
-            )
-        else:
-            raise RuntimeError("Nenhuma GEMINI_API_KEY configurada para ingestão.")
+        if not openrouter_api_key:
+            raise RuntimeError("Nenhuma OPENROUTER_API_KEY configurada para ingestão.")
+        self._embeddings = OpenAIEmbeddings(
+            model=embedding_model,
+            openai_api_key=openrouter_api_key,
+            openai_api_base="https://openrouter.ai/api/v1",
+            check_embedding_ctx_length=False,
+            model_kwargs={"encoding_format": "float"},
+        )
         self._vectorstore: Optional[Chroma] = None
 
     # ------------------------------------------------------------------
@@ -362,6 +361,7 @@ def get_ingestion_pipeline() -> IngestionPipeline:
             knowledge_base_dir=settings.KNOWLEDGE_BASE_DIR,
             chroma_persist_dir=settings.CHROMA_PERSIST_DIR,
             cache_path=settings.INGESTION_CACHE_PATH,
-            gemini_api_key=settings.GEMINI_API_KEY,
+            openrouter_api_key=settings.OPENROUTER_API_KEY,
+            embedding_model=settings.OPENROUTER_EMBEDDING_MODEL,
         )
     return _pipeline

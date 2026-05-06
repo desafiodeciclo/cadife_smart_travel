@@ -15,6 +15,7 @@ class CadifeAppBar extends ConsumerWidget implements PreferredSizeWidget {
     this.centerTitle = true,
     this.transparent = true,
     this.showNotificationBell = true,
+    this.showBackButton = false,
   });
 
   final String title;
@@ -23,6 +24,7 @@ class CadifeAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final bool centerTitle;
   final bool transparent;
   final bool showNotificationBell;
+  final bool showBackButton;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -43,22 +45,27 @@ class CadifeAppBar extends ConsumerWidget implements PreferredSizeWidget {
             ),
           )
         : null,
-      leading: showProfile
-          ? Padding(
-              padding: const EdgeInsets.all(8),
-              child: GestureDetector(
-                onTap: () => context.go('/client/perfil'),
-                child: CircleAvatar(
-                  backgroundColor: theme.textPrimary.withValues(alpha: 0.1),
-                  child: Icon(
-                    LucideIcons.user, 
-                    color: theme.textPrimary, 
-                    size: 18
-                  ),
-                ),
-              ),
+      leading: showBackButton 
+          ? IconButton(
+              icon: const Icon(LucideIcons.arrowLeft),
+              onPressed: () => Navigator.maybePop(context),
             )
-          : null,
+          : (showProfile
+              ? Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: GestureDetector(
+                    onTap: () => context.go('/client/perfil'),
+                    child: CircleAvatar(
+                      backgroundColor: theme.textPrimary.withValues(alpha: 0.1),
+                      child: Icon(
+                        LucideIcons.user, 
+                        color: theme.textPrimary, 
+                        size: 18
+                      ),
+                    ),
+                  ),
+                )
+              : null),
       title: Text(
         title,
         style: GoogleFonts.inter(
