@@ -47,8 +47,15 @@ class Settings(BaseSettings):
     META_APP_SECRET: str = Field(default="", description="Meta App Secret for X-Hub-Signature-256 validation")
     META_APP_ID: str = Field(default="", description="Meta App ID — required for token exchange")
 
-    # ── Google Gemini (exclusivo — não usa OpenAI) ─────────────────────────
-    GEMINI_API_KEY: str = Field(default="", description="Gemini API key para LLM + embeddings")
+    # ── OpenRouter (chat LLM + embeddings) ───────────────────────────────
+    OPENROUTER_API_KEY: str = Field(default="", description="OpenRouter API key para chat LLM e embeddings")
+    OPENROUTER_MODEL: str = Field(default="google/gemini-2.0-flash-001", description="Modelo OpenRouter para chat (texto)")
+    OPENROUTER_AUDIO_MODEL: str = Field(default="google/gemini-2.0-flash-001", description="Modelo OpenRouter para transcrição de áudio (via chat completions multimodal)")
+    OPENROUTER_VISION_MODEL: str = Field(default="google/gemini-2.0-flash-001", description="Modelo OpenRouter para análise de imagens/visão")
+    OPENROUTER_EMBEDDING_MODEL: str = Field(default="google/gemini-embedding-2-preview", description="Modelo OpenRouter para embeddings RAG")
+
+    # ── Google Gemini (mantido para compatibilidade — não mais necessário) ─
+    GEMINI_API_KEY: str = Field(default="", description="Gemini API key (legado — substituído pelo OpenRouter)")
     LANGCHAIN_API_KEY: str = Field(default="", description="LangSmith observability key (optional)")
 
     # ── Langfuse Observability ────────────────────────────────────────────
