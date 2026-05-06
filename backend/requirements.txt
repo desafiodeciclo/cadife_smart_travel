@@ -16,7 +16,6 @@ pytest
 pytest-asyncio
 langchain
 langchain-community
-langchain-classic
 langchain-openai
 chromadb
 langchain-chroma
