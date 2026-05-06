@@ -3,13 +3,17 @@
 # dev.sh — Ambiente de Desenvolvimento Local — Cadife Smart Travel
 # =============================================================================
 # Orquestra em sequência:
-#   1. PostgreSQL + Redis + ChromaDB via Docker Compose (apenas infraestrutura)
-#   2. FastAPI com --reload para hot-reload de código (fora do Docker)
-#   3. Túnel ngrok apontando para porta 8000 (HTTPS público para o webhook)
+#   1. Verificação de RAM disponível (mínimo 1 GB livre)
+#   2. PostgreSQL + Redis + ChromaDB via Docker Compose (apenas infraestrutura)
+#   3. FastAPI com --reload para hot-reload de código (fora do Docker)
+#   4. Túnel ngrok apontando para porta 8000 (HTTPS público para o webhook)
 #
 # Uso:
-#   chmod +x dev.sh
-#   ./dev.sh
+#   chmod +x dev.sh && ./dev.sh     # macOS / Linux / Git Bash / WSL2
+#   python dev.py                   # RECOMENDADO no Windows (cross-platform)
+#
+# Nota macOS: o macOS inclui Bash 3.2 por padrão (GPL). Este script exige
+# Bash 4+. Instale via Homebrew: brew install bash
 #
 # Pré-requisitos:
 #   - Docker Engine + Docker Compose v2
@@ -77,6 +81,57 @@ cleanup() {
 }
 
 trap cleanup SIGINT SIGTERM
+
+# =============================================================================
+# Passo 0 — Verificar RAM disponível (macOS + Linux)
+# Windows: use dev.py, que tem suporte nativo via wmic.
+# =============================================================================
+MIN_FREE_RAM_MB=1024
+
+check_ram() {
+    log_section "Verificando memória RAM disponível"
+    local available_mb
+
+    case "$(uname -s)" in
+        Darwin)
+            # vm_stat usa páginas de 4096 bytes
+            local pages_free pages_inactive pages_spec
+            pages_free=$(vm_stat | awk '/Pages free/{gsub(/\./,"",$3); print $3}')
+            pages_inactive=$(vm_stat | awk '/Pages inactive/{gsub(/\./,"",$3); print $3}')
+            pages_spec=$(vm_stat | awk '/Pages speculative/{gsub(/\./,"",$3); print $3}')
+            available_mb=$(( (pages_free + pages_inactive + pages_spec) * 4096 / 1024 / 1024 ))
+            ;;
+        Linux)
+            available_mb=$(awk '/MemAvailable/{print int($2/1024)}' /proc/meminfo)
+            ;;
+        *)
+            log_warn "Verificação de RAM não suportada neste SO. Use dev.py para suporte completo."
+            return 0
+            ;;
+    esac
+
+    if [ "${available_mb:-0}" -lt "$MIN_FREE_RAM_MB" ]; then
+        log_warn "Memória disponível baixa: ${available_mb} MB (mínimo recomendado: ${MIN_FREE_RAM_MB} MB)"
+        log_warn "ChromaDB + LangChain + PostgreSQL + Redis exigem ~1.5 GB livres."
+        echo ""
+        case "$(uname -s)" in
+            Darwin)
+                log_info "Para liberar RAM no macOS: sudo purge"
+                ;;
+            Linux)
+                log_info "Para liberar cache: sync && echo 3 | sudo tee /proc/sys/vm/drop_caches"
+                ;;
+        esac
+        echo ""
+        read -r -p "  Continuar mesmo assim? [s/N] " answer
+        case "${answer,,}" in
+            s|sim|y|yes) ;;
+            *) exit 1 ;;
+        esac
+    else
+        log_ok "RAM disponível: ${available_mb} MB — suficiente para o ambiente."
+    fi
+}
 
 # =============================================================================
 # Passo 1 — Verificar dependências obrigatórias
@@ -361,6 +416,7 @@ main() {
     echo -e "${BOLD}${BLUE}   Cadife Smart Travel  —  Iniciando Ambiente de Desenvolvimento  ${NC}"
     echo -e "${BOLD}${BLUE}══════════════════════════════════════════════════════════════════${NC}"
 
+    check_ram
     check_dependencies
     check_env_file
     start_infrastructure
