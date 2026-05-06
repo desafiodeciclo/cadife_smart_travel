@@ -22,15 +22,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.domain.entities.enums import LeadStatus, TipoMensagem
 from app.models.lead import Lead
 from app.models.user import User
-from app.services import ai_service, curadoria_service, fcm_service, lead_service, whatsapp_service
+from app.services import ai_service, curadoria_service, fcm_service, lead_service, model_router, whatsapp_service
 from app.services.domain_validator import BriefingValidator
 
 logger = structlog.get_logger()
 
-# Message for unsupported media types (spec.md §12.3)
+# Fallback when media cannot be processed (download failure, model unavailable)
 MEDIA_FALLBACK_REPLY = (
-    "Recebi sua mensagem! No momento aceito apenas textos. "
-    "Um consultor irá te atender em breve. 😊"
+    "Recebi sua mensagem! Tive um problema ao processar esse arquivo. "
+    "Pode me enviar o conteúdo em texto? Um consultor também pode te ajudar em breve. 😊"
 )
 
 _validator = BriefingValidator()
@@ -69,25 +69,57 @@ async def execute(payload: dict, db: AsyncSession) -> None:
     interacoes_list = await lead_service.get_recent_interacoes(db, lead.id, limit=20)
     ai_service.preload_memory_from_db(phone, interacoes_list)
 
-    # ── Step 3: Generate AI reply or media fallback ────────────────────────
+    # ── Step 3: Generate AI reply — route by message type ─────────────────
     reply: str
     tipo: TipoMensagem
 
-    if msg_type != "text" or not text:
+    # For media messages: attempt to convert to text via the model router.
+    # On success, feed the transcript/description into the AI pipeline.
+    # On failure (download error, model unavailable), fall back gracefully.
+    effective_text: str | None = text
+    if msg_type in ("audio", "voice", "image"):
+        media_id: str | None = msg.get("media_id")
+        media_mime: str = msg.get("media_mime_type") or ""
+        caption: str | None = msg.get("text")  # image caption (may be None)
+
+        if media_id:
+            converted = await model_router.route_media_message(
+                msg_type=msg_type,
+                media_id=media_id,
+                mime_type=media_mime,
+                caption=caption,
+            )
+            if converted:
+                effective_text = converted
+                logger.info(
+                    "media_converted_to_text",
+                    lead_id=str(lead.id),
+                    msg_type=msg_type,
+                    chars=len(converted),
+                )
+            else:
+                logger.warning(
+                    "media_conversion_failed_using_fallback",
+                    lead_id=str(lead.id),
+                    msg_type=msg_type,
+                )
+
+    tipo = (
+        TipoMensagem(msg_type)
+        if msg_type in TipoMensagem.__members__
+        else TipoMensagem.texto
+    )
+
+    if not effective_text:
         reply = MEDIA_FALLBACK_REPLY
-        tipo = (
-            TipoMensagem(msg_type)
-            if msg_type in TipoMensagem.__members__
-            else TipoMensagem.texto
-        )
     else:
-        reply = await ai_service.process_message(phone, text)
+        reply = await ai_service.process_message(phone, effective_text)
         tipo = TipoMensagem.texto
 
         try:
             # ── Step 4: Extract briefing & update score ───────────────────
             status_antes = lead.status
-            extracted = await ai_service.extract_briefing([{"role": "user", "content": text}])
+            extracted = await ai_service.extract_briefing([{"role": "user", "content": effective_text}])
             briefing = await lead_service.update_briefing_from_extraction(db, lead, extracted)
 
             # ── Step 5: FCM notification when lead qualifies ──────────────
@@ -117,10 +149,12 @@ async def execute(payload: dict, db: AsyncSession) -> None:
             logger.error("briefing_update_error", lead_id=str(lead.id), error=str(exc))
 
     # ── Step 6: Persist interaction record (sempre executado) ─────────────
+    # Save AYA's reply whenever there was processable text (original text or
+    # transcribed/described media). For unprocessable media, reply is fallback.
     interacao = await lead_service.save_interacao(
         db, lead.id,
         msg_cliente=text,
-        msg_ia=reply if msg_type == "text" else None,
+        msg_ia=reply if effective_text else None,
         tipo=tipo,
     )
 
