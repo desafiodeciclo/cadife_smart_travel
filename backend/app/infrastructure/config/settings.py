@@ -115,6 +115,16 @@ class Settings(BaseSettings):
     ENCRYPTION_KEY: str = Field(default="", description="Fernet key for PII encryption")
     HASH_KEY: str = Field(default="", description="HMAC-SHA256 key for searchable phone hash")
 
+    # ── Notification Queue & DLQ ──────────────────────────────────────────
+    NOTIFICATION_MAX_RETRIES: int = Field(default=3, ge=0)
+    NOTIFICATION_RETRY_DELAY_SECONDS: int = Field(default=60, ge=1)
+    NOTIFICATION_DEBOUNCE_TTL_SECONDS: int = Field(default=60, ge=1)
+    NOTIFICATION_PROCESSING_TIMEOUT_SECONDS: int = Field(
+        default=120,
+        ge=1,
+        description="Timeout to recover jobs stuck in 'processing' after a worker crash (seconds)",
+    )
+
     # ── Cache / Redis (spec.md §5.3) ──────────────────────────────────────
     CACHE_TTL_SECONDS: int = Field(
         default=300,
