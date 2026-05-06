@@ -3,52 +3,56 @@
 # ---------------------------------------------------------
 FROM python:3.11-slim AS builder
 
-# Impede que o Python gere arquivos .pyc e permite logs em tempo real
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 WORKDIR /build
 
-# Instala dependências de compilação necessárias para pacotes como psycopg2 ou dependências C
+# Instala dependências de compilação
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Cria um Virtual Environment para isolar as dependências
-RUN python -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# ---------------------------------------------------------
-# Estágio 2: Runtime (Ambiente de Execução Seguro)
-# ---------------------------------------------------------
-FROM python:3.11-slim AS runtime
-
-WORKDIR /app
-
-# Copia apenas o Virtual Environment do estágio anterior
-COPY --from=builder /opt/venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-
-# Instala apenas as bibliotecas compartilhadas essenciais (libpq para o Postgres)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libpq5 \
-    && rm -rf /var/lib/apt/lists/*
-
-# Configuração de Usuário Rootless (Segurança K8s)
+# Cria usuário aqui (pois builder tem shell e comandos de sistema)
 RUN groupadd -g 1000 appgroup && \
     useradd -u 1000 -g appgroup -s /bin/sh -m appuser
 
-# Copia o código fonte e ajusta permissões
+# Instala dependências diretamente no site-packages do sistema do builder
+# para facilitar a cópia para o distroless depois
+COPY requirements.txt .
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+# ---------------------------------------------------------
+# Estágio 2: Runtime (Ambiente Distroless - Hardened)
+# ---------------------------------------------------------
+FROM gcr.io/distroless/python3-debian12 AS runtime
+
+WORKDIR /app
+
+# Copia as bibliotecas instaladas do builder
+COPY --from=builder /install /usr/local
+ENV PYTHONPATH=/usr/local/lib/python3.11/site-packages
+
+# Copia as definições de usuário (necessário pois distroless não tem groupadd/useradd)
+COPY --from=builder /etc/passwd /etc/passwd
+COPY --from=builder /etc/group /etc/group
+
+# Copia bibliotecas nativas essenciais (libpq para o Postgres)
+# Nota: Distroless debian12 já costuma vir com libs básicas, mas garantimos o necessário
+COPY --from=builder /usr/lib/x86_64-linux-gnu/libpq.so.5 /usr/lib/x86_64-linux-gnu/libpq.so.5
+COPY --from=builder /usr/lib/x86_64-linux-gnu/libldap_r-2.5.so.0 /usr/lib/x86_64-linux-gnu/libldap_r-2.5.so.0
+COPY --from=builder /usr/lib/x86_64-linux-gnu/liblber-2.5.so.0 /usr/lib/x86_64-linux-gnu/liblber-2.5.so.0
+COPY --from=builder /usr/lib/x86_64-linux-gnu/libsasl2.so.2 /usr/lib/x86_64-linux-gnu/libsasl2.so.2
+COPY --from=builder /usr/lib/x86_64-linux-gnu/libgnutls.so.30 /usr/lib/x86_64-linux-gnu/libgnutls.so.30
+
+# Copia o código fonte
 COPY . .
-RUN chmod +x entrypoint.sh && chown -R appuser:appgroup /app
 
 # Switch para o usuário não-privilegiado
 USER appuser
 
 EXPOSE 8000
 
-CMD ["./entrypoint.sh"]
+# No Distroless, chamamos o bootstrap.py que gerencia as migrações e o uvicorn
+ENTRYPOINT ["/usr/bin/python3", "bootstrap.py"]
