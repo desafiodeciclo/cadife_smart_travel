@@ -28,5 +28,6 @@ python-dotenv
 tiktoken
 pytest-cov
 pytest-mock
+prometheus-fastapi-instrumentator
 aiosqlite
 apscheduler>=3.10,<4.0
