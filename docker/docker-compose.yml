@@ -18,8 +18,14 @@ services:
       redis:
         condition: service_healthy
     volumes:
-      # Volume para persistência da base de conhecimento (RAG) se usada localmente
       - cadife_knowledge_base:/app/knowledge_base
+    healthcheck:
+      # Como usamos Distroless (sem curl), usamos o próprio Python para o healthcheck
+      test: ["CMD", "/usr/bin/python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz').getcode()"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     restart: unless-stopped
 
   db:
@@ -74,6 +80,15 @@ services:
       - cadife_chroma_data:/chroma/chroma
     restart: unless-stopped
 
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - cadife_prometheus_data:/prometheus
+    restart: unless-stopped
+
 # Centralização de Volumes Gerenciados pelo Docker
 volumes:
   cadife_postgres_data:
@@ -86,3 +101,5 @@ volumes:
     name: cadife_chroma_data
   cadife_knowledge_base:
     name: cadife_knowledge_base
+  cadife_prometheus_data:
+    name: cadife_prometheus_data
