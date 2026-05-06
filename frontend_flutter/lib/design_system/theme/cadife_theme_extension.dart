@@ -112,10 +112,10 @@ extension CadifeTheme on BuildContext {
   CadifeThemeExtension get cadife {
     final ext = Theme.of(this).extension<CadifeThemeExtension>();
     if (ext != null) return ext;
-    
+
     // Fallback to light or dark defaults if extension is missing
-    return Theme.of(this).brightness == Brightness.dark 
-        ? CadifeThemeExtension.dark 
+    return Theme.of(this).brightness == Brightness.dark
+        ? CadifeThemeExtension.dark
         : CadifeThemeExtension.light;
   }
       
