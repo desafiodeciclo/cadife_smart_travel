@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 class ComponentShowcase extends StatelessWidget {
   final ComponentShowcaseData component;
 
-  const ComponentShowcase({super.key, required this.component});
+  const ComponentShowcase({required this.component, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -115,7 +115,7 @@ class _SafePreviewState extends State<_SafePreview> {
     Widget preview;
     try {
       preview = widget.builder(context);
-    } catch (e) {
+    } on Exception catch (e) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) setState(() => _error = e);
       });
@@ -179,7 +179,7 @@ class _ErrorCard extends StatelessWidget {
 class CodeSnippet extends StatelessWidget {
   final String code;
 
-  const CodeSnippet({super.key, required this.code});
+  const CodeSnippet({required this.code, super.key});
 
   @override
   Widget build(BuildContext context) {

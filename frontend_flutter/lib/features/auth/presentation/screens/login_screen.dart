@@ -3,9 +3,7 @@ import 'dart:math' as math;
 
 import 'package:cadife_smart_travel/core/utils/extensions/string_extensions.dart';
 import 'package:cadife_smart_travel/design_system/design_system.dart';
-import 'package:cadife_smart_travel/features/auth/presentation/bloc/auth_bloc.dart';
-import 'package:cadife_smart_travel/features/auth/presentation/bloc/auth_event.dart';
-import 'package:cadife_smart_travel/features/auth/presentation/bloc/auth_state.dart';
+import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:cadife_smart_travel/features/settings/application/theme_notifier.dart';
 import 'package:cadife_smart_travel/features/settings/domain/entities/user_preferences.dart';
 import 'package:flutter/material.dart';
@@ -72,6 +70,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final isDark = themePreference == ThemePreference.dark ||
         (themePreference == ThemePreference.system &&
             MediaQuery.platformBrightnessOf(context) == Brightness.dark);
+
+    final authState = ref.watch(authNotifierProvider);
+    final isLoggingIn = authState.isLoading;
+    final hasLoginError = authState.hasError;
 
     final cadife = context.cadife;
 

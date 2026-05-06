@@ -481,7 +481,6 @@ class ProfilePassaporteCard extends StatelessWidget {
 
 class ProfileThemeSelector extends StatelessWidget {
   const ProfileThemeSelector({
-    super.key,
     required this.themePreference,
     required this.onChanged,
     super.key,

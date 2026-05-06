@@ -41,9 +41,7 @@ Future<void> initializeApp(AppConfig config, Widget rootWidget) async {
 
       // 4. Crashlytics — not available on Web
       if (!kIsWeb) {
-        FlutterError.onError = (errorDetails) {
-          FirebaseCrashlytics.instance.recordFlutterError(errorDetails);
-        };
+        FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterError;
 
         PlatformDispatcher.instance.onError = (error, stack) {
           FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);

@@ -3,6 +3,8 @@ import 'package:cadife_smart_travel/features/auth/providers/app_lock_provider.da
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+
+
 /// Observa o lifecycle do app e exibe [AppLockScreen] quando o tempo em
 /// background ultrapassa AppConstants.appLockTimeout.
 ///
