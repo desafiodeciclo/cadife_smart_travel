@@ -15,7 +15,7 @@ import asyncio
 import hashlib
 import hmac
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Optional
 
 import httpx
@@ -84,7 +84,11 @@ def verify_signature(body: bytes, signature_header: str) -> bool:
 
 
 def extract_message_from_payload(payload: dict[str, Any]) -> Optional[dict[str, Any]]:
-    """Extract the first message from a Meta webhook payload. Returns None if absent."""
+    """Extract the first message from a Meta webhook payload. Returns None if absent.
+
+    The returned dict always includes `media_id` (None for text messages) so
+    callers can dispatch on type without additional parsing.
+    """
     try:
         entry = payload["entry"][0]
         change = entry["changes"][0]
@@ -94,15 +98,82 @@ def extract_message_from_payload(payload: dict[str, Any]) -> Optional[dict[str, 
             return None
         msg = messages[0]
         contact = value.get("contacts", [{}])[0]
+        msg_type: str = msg.get("type", "text")
+
+        # Extract media ID from the type-specific sub-object (audio, image, etc.)
+        media_id: Optional[str] = None
+        media_data = msg.get(msg_type)
+        if isinstance(media_data, dict):
+            media_id = media_data.get("id")
+
         return {
             "phone": msg["from"],
             "message_id": msg["id"],
-            "type": msg.get("type", "text"),
+            "type": msg_type,
             "text": msg.get("text", {}).get("body"),
             "name": contact.get("profile", {}).get("name"),
+            "media_id": media_id,
         }
     except (KeyError, IndexError):
         return None
+
+
+async def download_media(media_id: str) -> Optional[bytes]:
+    """Download a media file from Meta's Media API by its ID.
+
+    Two-step process required by Meta:
+      1. GET /{media_id} → JSON with a short-lived `url`
+      2. GET {url} (with Auth header) → raw media bytes
+
+    Returns the raw bytes on success, or None on any failure so callers can
+    treat this as best-effort (the fallback reply is always sent regardless).
+    """
+    headers = {"Authorization": f"Bearer {settings.WHATSAPP_TOKEN}"}
+
+    async with httpx.AsyncClient(timeout=_TIMEOUT_S) as client:
+        # Step 1: resolve the temporary download URL
+        try:
+            meta_resp = await client.get(
+                f"{WHATSAPP_API_URL}/{media_id}", headers=headers
+            )
+        except httpx.RequestError as exc:
+            logger.warning("media_url_fetch_failed", media_id=media_id, error=str(exc))
+            return None
+
+        if meta_resp.status_code != 200:
+            logger.warning(
+                "media_url_non_200",
+                media_id=media_id,
+                status_code=meta_resp.status_code,
+            )
+            return None
+
+        download_url: Optional[str] = meta_resp.json().get("url")
+        if not download_url:
+            logger.warning("media_url_missing_in_response", media_id=media_id)
+            return None
+
+        # Step 2: download the raw media bytes
+        try:
+            media_resp = await client.get(download_url, headers=headers)
+        except httpx.RequestError as exc:
+            logger.warning("media_download_failed", media_id=media_id, error=str(exc))
+            return None
+
+        if media_resp.status_code != 200:
+            logger.warning(
+                "media_download_non_200",
+                media_id=media_id,
+                status_code=media_resp.status_code,
+            )
+            return None
+
+        logger.info(
+            "media_downloaded",
+            media_id=media_id,
+            bytes=len(media_resp.content),
+        )
+        return media_resp.content
 
 
 async def send_message(phone: str, text: str) -> SendResult:
