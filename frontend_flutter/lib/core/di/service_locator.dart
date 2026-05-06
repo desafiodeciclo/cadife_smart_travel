@@ -47,6 +47,8 @@ import 'package:dio/dio.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 
 /// Service Locator global — get_it com registro explícito e lifecycle controlado.
 final sl = GetIt.instance;
@@ -252,6 +254,9 @@ Future<void> initDependencies() async {
     }
   }
   
+  final prefs = await SharedPreferences.getInstance();
+  sl.registerSingleton<SharedPreferences>(prefs);
+
   ConnectivityService.init();
 }
 

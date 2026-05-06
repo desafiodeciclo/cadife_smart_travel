@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.entities.enums import LeadScore, LeadStatus
 from app.domain.interfaces.repositories import ILeadRepository
+from app.infrastructure.cache import invalidate_pattern
 from app.infrastructure.persistence.abstract_repository import AbstractRepository
 from app.infrastructure.persistence.models.lead_model import LeadModel
 
@@ -57,7 +58,9 @@ class LeadRepository(AbstractRepository[LeadModel], ILeadRepository):
             origem=origem,
             status=LeadStatus.novo.value,
         )
-        return await self.add(lead)
+        result = await self.add(lead)
+        await invalidate_pattern("cached:*list*")
+        return result
 
     async def update_status(self, lead_id: uuid.UUID, status: LeadStatus) -> LeadModel:
         lead = await self.get_by_id(lead_id)
@@ -65,6 +68,8 @@ class LeadRepository(AbstractRepository[LeadModel], ILeadRepository):
             raise ValueError(f"Lead {lead_id} não encontrado")
         lead.status = status.value
         await self._session.flush()
+        await invalidate_pattern(f"cached:*{lead_id}*")
+        await invalidate_pattern("cached:*list*")
         return lead
 
     async def update_score(self, lead_id: uuid.UUID, score: LeadScore) -> LeadModel:
@@ -73,6 +78,8 @@ class LeadRepository(AbstractRepository[LeadModel], ILeadRepository):
             raise ValueError(f"Lead {lead_id} não encontrado")
         lead.score = score.value
         await self._session.flush()
+        await invalidate_pattern(f"cached:*{lead_id}*")
+        await invalidate_pattern("cached:*list*")
         return lead
 
     async def list_all(
@@ -121,3 +128,5 @@ class LeadRepository(AbstractRepository[LeadModel], ILeadRepository):
             raise ValueError(f"Lead {lead_id} não encontrado")
         lead.is_archived = True
         await self._session.flush()
+        await invalidate_pattern(f"cached:*{lead_id}*")
+        await invalidate_pattern("cached:*list*")

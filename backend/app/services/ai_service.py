@@ -26,8 +26,13 @@ from app.services.prompt_security import (
 logger = structlog.get_logger()
 settings = get_settings()
 
-_llm: Optional[ChatOpenAI] = None
-_MEMORY_WINDOW_K = 10  # Mantém as últimas 10 interações como contexto
+_MEMORY_WINDOW_K = 20  # Mantém as últimas 20 interações como contexto
+_SUMMARY_SYSTEM_PROMPT = """
+You are a helpful assistant that summarizes a conversation between a customer and a travel agency.
+Include the main topics discussed and any important details.
+Do NOT include pleasantries such as "How can I help you?", "Thank you", etc.
+Keep it concise.
+"""
 
 
 # ---------------------------------------------------------------------------
