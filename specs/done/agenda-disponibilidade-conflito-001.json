@@ -1,0 +1,30 @@
+{
+  "task_id": "AGENDA-001",
+  "name": "Disponibilidade de Agenda e Validação de Conflitos",
+  "branch": "feat/agenda-disponibilidade-conflito",
+  "status": "done",
+  "description": "Implementar regras de negócio para agenda (Seg-Sex 09h-16h, máximo 6 atendimentos/dia, intervalo mínimo 60min). Ajustar GET /agenda/disponibilidade para query param 'data' obrigatório e retornar slots livres/ocupados. Ajustar POST /agenda para retornar HTTP 409 em caso de conflito de slot.",
+  "responsible": "Nikolas Tesch (Backend)",
+  "steps": [
+    {
+      "id": "step1",
+      "description": "Criar spec JSON e mover para specs/active/",
+      "status": "done"
+    },
+    {
+      "id": "step2",
+      "description": "Refatorar routes/agenda.py: GET disponibilidade com query param data, slots dinâmicos 09-15h, checagem de conflito 60min, max 6/dia. POST com validações completas e HTTP 409.",
+      "status": "done"
+    },
+    {
+      "id": "step3",
+      "description": "Escrever testes de integração para GET e POST de agenda com mocks de DB e JWT.",
+      "status": "done"
+    },
+    {
+      "id": "step4",
+      "description": "Executar testes e garantir que todos passam.",
+      "status": "done"
+    }
+  ]
+}

@@ -6,8 +6,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import get_current_user, get_db
 from app.infrastructure.security.dependencies import RequiresRole
+from app.infrastructure.security.scope_check import check_lead_access
 from app.domain.entities.enums import LeadStatus, PropostaStatus
 from app.models.proposta import Proposta, PropostaCreate, PropostaResponse, PropostaUpdate
+from app.models.user import User
 from app.services import lead_service
 
 router = APIRouter(
@@ -15,15 +17,6 @@ router = APIRouter(
     tags=["Propostas"],
     dependencies=[Depends(RequiresRole("consultor", "admin"))],
 )
-
-
-def _check_lead_access(current_user, lead) -> None:
-    """Raise 403 if the current user is not allowed to access the lead."""
-    if current_user.perfil == "consultor" and lead.consultor_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Acesso negado ao lead",
-        )
 
 
 @router.post(
@@ -35,7 +28,7 @@ def _check_lead_access(current_user, lead) -> None:
 async def create_proposta(
     body: PropostaCreate,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
     # 1. Validate lead exists
     lead = await lead_service.get_lead_by_id(db, body.lead_id)
@@ -46,7 +39,7 @@ async def create_proposta(
         )
 
     # 2. Scope check: consultor can only create proposals for their own leads
-    _check_lead_access(current_user, lead)
+    check_lead_access(current_user, lead)
 
     # 3. Lead status validation: must be qualificado, agendado or proposta
     if lead.status not in {
@@ -75,7 +68,7 @@ async def create_proposta(
 async def get_proposta(
     proposta_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
     result = await db.execute(select(Proposta).where(Proposta.id == proposta_id))
     proposta = result.scalar_one_or_none()
@@ -88,7 +81,7 @@ async def get_proposta(
     # Scope check via the associated lead
     lead = await lead_service.get_lead_by_id(db, proposta.lead_id)
     if lead:
-        _check_lead_access(current_user, lead)
+        check_lead_access(current_user, lead)
 
     return PropostaResponse.model_validate(proposta)
 
@@ -98,7 +91,7 @@ async def update_proposta(
     proposta_id: uuid.UUID,
     body: PropostaUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
     result = await db.execute(select(Proposta).where(Proposta.id == proposta_id))
     proposta = result.scalar_one_or_none()
@@ -111,7 +104,7 @@ async def update_proposta(
     # Scope check via the associated lead
     lead = await lead_service.get_lead_by_id(db, proposta.lead_id)
     if lead:
-        _check_lead_access(current_user, lead)
+        check_lead_access(current_user, lead)
 
     for field, value in body.model_dump(exclude_none=True).items():
         setattr(proposta, field, value)
