@@ -107,7 +107,7 @@ async def test_text_message_full_flow():
         patch("app.application.use_cases.process_whatsapp_message.whatsapp_service") as mock_ws,
         patch("app.application.use_cases.process_whatsapp_message.fcm_service"),
     ):
-        mock_ls.get_or_create_by_phone = AsyncMock(return_value=lead)
+        mock_ls.upsert_lead_with_resilience = AsyncMock(return_value=lead)
         mock_ls.update_lead_status = AsyncMock(return_value=lead)
         mock_ls.update_briefing_from_extraction = AsyncMock(
             return_value=MagicMock(completude_pct=30, destino=None)
@@ -151,7 +151,7 @@ async def test_media_message_uses_fallback_and_persists_result():
         patch("app.application.use_cases.process_whatsapp_message.whatsapp_service") as mock_ws,
         patch("app.application.use_cases.process_whatsapp_message.fcm_service"),
     ):
-        mock_ls.get_or_create_by_phone = AsyncMock(return_value=lead)
+        mock_ls.upsert_lead_with_resilience = AsyncMock(return_value=lead)
         mock_ls.update_lead_status = AsyncMock(return_value=lead)
         mock_ls.save_interacao = AsyncMock(return_value=interacao)
         mock_ls.update_interacao_send_result = AsyncMock()
@@ -186,7 +186,7 @@ async def test_empty_payload_early_return():
 
         await process_whatsapp_message.execute({}, db)
 
-    mock_ls.get_or_create_by_phone.assert_not_called()
+    mock_ls.upsert_lead_with_resilience.assert_not_called()
     mock_ws.send_message.assert_not_called()
 
 
@@ -210,7 +210,7 @@ async def test_send_failure_persisted_without_raising():
         patch("app.application.use_cases.process_whatsapp_message.whatsapp_service") as mock_ws,
         patch("app.application.use_cases.process_whatsapp_message.fcm_service"),
     ):
-        mock_ls.get_or_create_by_phone = AsyncMock(return_value=lead)
+        mock_ls.upsert_lead_with_resilience = AsyncMock(return_value=lead)
         mock_ls.update_lead_status = AsyncMock(return_value=lead)
         mock_ls.update_briefing_from_extraction = AsyncMock(
             return_value=MagicMock(completude_pct=20, destino=None)
@@ -258,7 +258,7 @@ async def test_lead_qualified_receives_curadoria_offer():
         patch("app.application.use_cases.process_whatsapp_message.curadoria_service") as mock_cs,
         patch("app.application.use_cases.process_whatsapp_message._notify_consultants", new=AsyncMock()),
     ):
-        mock_ls.get_or_create_by_phone = AsyncMock(return_value=lead)
+        mock_ls.upsert_lead_with_resilience = AsyncMock(return_value=lead)
         mock_ls.update_lead_status = AsyncMock(return_value=lead)
         mock_ls.get_recent_interacoes = AsyncMock(return_value=[])
 
@@ -321,7 +321,7 @@ async def test_lead_already_scheduled_no_curadoria_offer():
         patch("app.application.use_cases.process_whatsapp_message.fcm_service"),
         patch("app.application.use_cases.process_whatsapp_message.curadoria_service") as mock_cs,
     ):
-        mock_ls.get_or_create_by_phone = AsyncMock(return_value=lead)
+        mock_ls.upsert_lead_with_resilience = AsyncMock(return_value=lead)
         mock_ls.update_lead_status = AsyncMock(return_value=lead)
         mock_ls.update_briefing_from_extraction = AsyncMock(
             return_value=MagicMock(completude_pct=75, destino="Paris")
@@ -368,7 +368,7 @@ async def test_lead_below_60_no_curadoria_offer():
         patch("app.application.use_cases.process_whatsapp_message.fcm_service"),
         patch("app.application.use_cases.process_whatsapp_message.curadoria_service") as mock_cs,
     ):
-        mock_ls.get_or_create_by_phone = AsyncMock(return_value=lead)
+        mock_ls.upsert_lead_with_resilience = AsyncMock(return_value=lead)
         mock_ls.update_lead_status = AsyncMock(return_value=lead)
         mock_ls.update_briefing_from_extraction = AsyncMock(
             return_value=MagicMock(completude_pct=40, destino=None)
@@ -417,7 +417,7 @@ async def test_memory_preloaded_from_db():
         patch("app.application.use_cases.process_whatsapp_message.whatsapp_service") as mock_ws,
         patch("app.application.use_cases.process_whatsapp_message.fcm_service"),
     ):
-        mock_ls.get_or_create_by_phone = AsyncMock(return_value=lead)
+        mock_ls.upsert_lead_with_resilience = AsyncMock(return_value=lead)
         mock_ls.update_lead_status = AsyncMock(return_value=lead)
         mock_ls.get_recent_interacoes = AsyncMock(return_value=recent_interacoes)
         mock_ls.save_interacao = AsyncMock(return_value=interacao)

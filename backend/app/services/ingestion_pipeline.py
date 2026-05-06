@@ -22,9 +22,13 @@ import tiktoken
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
 from pydantic import SecretStr
+
+try:
+    from langchain_google_genai import GoogleGenerativeAIEmbeddings
+except ImportError:  # pragma: no cover
+    GoogleGenerativeAIEmbeddings = None
 
 from app.core.config import get_settings
 from app.services.metadata_tagger import extract_tags, tags_to_metadata
@@ -197,6 +201,10 @@ class IngestionPipeline:
         self._cache = IngestionCache(cache_path)
         # Gemini embeddings exclusivo
         if gemini_api_key:
+            if GoogleGenerativeAIEmbeddings is None:
+                raise RuntimeError(
+                    "langchain_google_genai is not installed; install it to use Gemini embeddings."
+                )
             self._embeddings = GoogleGenerativeAIEmbeddings(
                 model="models/gemini-embedding-001",
                 google_api_key=SecretStr(gemini_api_key),

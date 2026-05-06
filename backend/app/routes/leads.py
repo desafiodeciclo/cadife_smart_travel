@@ -153,7 +153,7 @@ async def update_lead(
             await lead_service.update_lead_status(db, lead, new_status, triggered_by="user_manual")
         except InvalidStateTransitionError as exc:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail=str(exc),
             ) from exc
 

@@ -18,13 +18,15 @@ langchain
 langchain-community
 langchain-classic
 langchain-openai
+langchain-google-genai
 chromadb
 langchain-chroma
 firebase-admin
 langfuse
 rank-bm25
 python-dotenv
-structlog
-slowapi
 tiktoken
+pytest-cov
+pytest-mock
+aiosqlite
 apscheduler>=3.10,<4.0

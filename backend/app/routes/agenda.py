@@ -62,7 +62,7 @@ async def create_agendamento(
 ):
     hora_str = str(body.hora)[:5]
     if hora_str not in HORARIOS_DISPONIVEIS:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Horário fora do período de atendimento")
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Horário fora do período de atendimento")
 
     result = await db.execute(
         select(Agendamento).where(
@@ -74,13 +74,13 @@ async def create_agendamento(
 
     if len(existentes) >= MAX_POR_DIA:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=f"Slot indisponível: máximo de {MAX_POR_DIA} atendimentos atingido para esta data",
         )
 
     hora_ocupada = any(str(a.hora)[:5] == hora_str for a in existentes)
     if hora_ocupada:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Horário já ocupado")
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Horário já ocupado")
 
     agendamento = Agendamento(
         lead_id=body.lead_id,

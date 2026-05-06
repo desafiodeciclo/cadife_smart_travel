@@ -225,28 +225,22 @@ class TestAuditTrail:
         ids = {client.get("/audit-test").headers["x-request-id"] for _ in range(5)}
         assert len(ids) == 5, "Cada request deve ter um request_id único"
 
-    def test_log_emitido_com_campos_obrigatorios(self, caplog):
+    def test_log_emitido_com_campos_obrigatorios(self):
         """Verifica que o logger emite eventos com campos vitais."""
-        import structlog
-
-        events = []
-
-        def capture(logger, method, event_dict):
-            events.append(event_dict)
-            raise structlog.DropEvent()
-
-        structlog.configure(processors=[capture])
+        from unittest.mock import ANY, patch, MagicMock
 
         _, client = _make_audit_app()
-        client.get("/audit-test")
-
-        structlog.reset_defaults()
-
-        # Pelo menos um evento deve conter 'request_finished'
-        finished = [e for e in events if e.get("event") == "request_finished"]
-        assert finished, "Deve emitir evento 'request_finished'"
-
-        event = finished[0]
-        assert "status_code" in event
-        assert "duration_ms" in event
-        assert "user_id" in event
+        
+        with patch("app.presentation.middlewares.audit_trail.logger.bind") as mock_bind:
+            mock_bound = MagicMock()
+            mock_bind.return_value = mock_bound
+            
+            client.get("/audit-test")
+            
+            # Checks if 'request_finished' was logged via info
+            mock_bound.info.assert_any_call(
+                "request_finished",
+                user_id=ANY,
+                status_code=ANY,
+                duration_ms=ANY,
+            )

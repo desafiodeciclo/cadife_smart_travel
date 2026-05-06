@@ -44,8 +44,8 @@ def _make_test_app() -> FastAPI:
     return app
 
 
-@pytest.fixture
-def test_app() -> FastAPI:
+@pytest.fixture()
+def app_fixture() -> FastAPI:
     return _make_test_app()
 
 
@@ -60,6 +60,9 @@ def fake_lead(status: LeadStatus) -> MagicMock:
     lead.status = status
     lead.score = None
     lead.consultor_id = None
+    lead.consultor = None
+    lead.consultor_nome = None
+    lead.consultor_avatar = None
     lead.is_archived = False
     lead.criado_em = datetime.now()
     lead.atualizado_em = datetime.now()
@@ -78,7 +81,7 @@ def fake_lead(status: LeadStatus) -> MagicMock:
     (LeadStatus.proposta, LeadStatus.fechado),
     (LeadStatus.novo, LeadStatus.perdido),
 ])
-async def test_valid_status_transition_returns_200(test_app: FastAPI, current: LeadStatus, target: LeadStatus) -> None:
+async def test_valid_status_transition_returns_200(app_fixture: FastAPI, current: LeadStatus, target: LeadStatus) -> None:
     lead = fake_lead(current)
 
     with pytest.MonkeyPatch().context() as mp:
@@ -86,7 +89,7 @@ async def test_valid_status_transition_returns_200(test_app: FastAPI, current: L
             "app.routes.leads.lead_service.get_lead_by_id",
             AsyncMock(return_value=lead),
         )
-        async with AsyncClient(transport=ASGITransport(app=test_app), base_url="http://test") as ac:
+        async with AsyncClient(transport=ASGITransport(app=app_fixture), base_url="http://test") as ac:
             response = await ac.put(f"/leads/{lead.id}", json={"status": target.value})
 
     assert response.status_code == 200
@@ -100,7 +103,7 @@ async def test_valid_status_transition_returns_200(test_app: FastAPI, current: L
     (LeadStatus.novo, LeadStatus.proposta),
     (LeadStatus.em_atendimento, LeadStatus.agendado),
 ])
-async def test_invalid_status_transition_returns_422(test_app: FastAPI, current: LeadStatus, target: LeadStatus) -> None:
+async def test_invalid_status_transition_returns_422(app_fixture: FastAPI, current: LeadStatus, target: LeadStatus) -> None:
     lead = fake_lead(current)
 
     with pytest.MonkeyPatch().context() as mp:
@@ -108,7 +111,7 @@ async def test_invalid_status_transition_returns_422(test_app: FastAPI, current:
             "app.routes.leads.lead_service.get_lead_by_id",
             AsyncMock(return_value=lead),
         )
-        async with AsyncClient(transport=ASGITransport(app=test_app), base_url="http://test") as ac:
+        async with AsyncClient(transport=ASGITransport(app=app_fixture), base_url="http://test") as ac:
             response = await ac.put(f"/leads/{lead.id}", json={"status": target.value})
 
     assert response.status_code == 422
@@ -118,7 +121,7 @@ async def test_invalid_status_transition_returns_422(test_app: FastAPI, current:
 
 
 @pytest.mark.asyncio
-async def test_update_without_status_change_returns_200(test_app: FastAPI) -> None:
+async def test_update_without_status_change_returns_200(app_fixture: FastAPI) -> None:
     lead = fake_lead(LeadStatus.qualificado)
 
     with pytest.MonkeyPatch().context() as mp:
@@ -126,7 +129,7 @@ async def test_update_without_status_change_returns_200(test_app: FastAPI) -> No
             "app.routes.leads.lead_service.get_lead_by_id",
             AsyncMock(return_value=lead),
         )
-        async with AsyncClient(transport=ASGITransport(app=test_app), base_url="http://test") as ac:
+        async with AsyncClient(transport=ASGITransport(app=app_fixture), base_url="http://test") as ac:
             response = await ac.put(f"/leads/{lead.id}", json={"nome": "Novo Nome"})
 
     assert response.status_code == 200

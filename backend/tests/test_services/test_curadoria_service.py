@@ -122,12 +122,11 @@ async def test_get_proximos_slots_respeita_max_por_dia():
         MagicMock(hora=time(15, 0)),
     ]
 
+    call_counter = {"count": 0}
     def _fake_execute(stmt):
+        call_counter["count"] += 1
         mock_result = MagicMock()
-        # Extract the date filter from the SQLAlchemy where clause
-        # For simplicity, alternate: first call → full, subsequent → empty
-        call_count = len([c for c in db.execute.call_args_list])
-        if call_count == 0:
+        if call_counter["count"] == 1:
             mock_result.scalars.return_value.all.return_value = agendamentos_full
         else:
             mock_result.scalars.return_value.all.return_value = []

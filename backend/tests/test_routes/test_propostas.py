@@ -59,6 +59,9 @@ def fake_lead(lead_id=None, consultor_id=None, status=LeadStatus.qualificado.val
     lead.status = status
     lead.origem = "whatsapp"
     lead.score = "quente"
+    lead.consultor = None
+    lead.consultor_nome = None
+    lead.consultor_avatar = None
     return lead
 
 

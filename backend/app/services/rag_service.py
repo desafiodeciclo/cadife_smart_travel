@@ -14,9 +14,13 @@ from typing import Optional
 import structlog
 from langchain_core.documents import Document
 from langchain_chroma import Chroma
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
 from pydantic import SecretStr
+
+try:
+    from langchain_google_genai import GoogleGenerativeAIEmbeddings
+except ImportError:  # pragma: no cover
+    GoogleGenerativeAIEmbeddings = None
 
 from app.core.config import get_settings
 from app.services.metadata_tagger import build_chroma_filter
@@ -40,6 +44,10 @@ _VECTOR_CANDIDATES_MULTIPLIER = 3  # How many candidates to fetch for reranking
 def _get_embeddings():
     """Return embeddings — Gemini exclusivo."""
     if settings.GEMINI_API_KEY:
+        if GoogleGenerativeAIEmbeddings is None:
+            raise RuntimeError(
+                "langchain_google_genai is not installed; install it to use Gemini embeddings."
+            )
         return GoogleGenerativeAIEmbeddings(
             model="models/gemini-embedding-001",
             google_api_key=SecretStr(settings.GEMINI_API_KEY),
