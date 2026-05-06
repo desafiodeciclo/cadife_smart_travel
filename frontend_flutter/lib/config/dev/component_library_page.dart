@@ -1,7 +1,8 @@
 import 'package:cadife_smart_travel/config/dev/component_library_models.dart';
 import 'package:cadife_smart_travel/config/dev/components/all_showcases.dart';
 import 'package:cadife_smart_travel/config/dev/widgets/component_showcase.dart';
-import 'package:cadife_smart_travel/design_system/theme/theme_provider.dart';
+import 'package:cadife_smart_travel/features/settings/application/theme_notifier.dart';
+import 'package:cadife_smart_travel/features/settings/domain/entities/user_preferences.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -60,7 +61,11 @@ class _ComponentLibraryPageState extends ConsumerState<ComponentLibraryPage> {
               ),
     );
 
-    final themeMode = ref.watch(themeModeProvider);
+    final themePreference =
+        ref.watch(themeNotifierProvider).valueOrNull ?? ThemePreference.system;
+    final isDark = themePreference == ThemePreference.dark ||
+        (themePreference == ThemePreference.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.dark);
     final isWide = MediaQuery.sizeOf(context).width > 1200;
 
     return Scaffold(
@@ -70,11 +75,10 @@ class _ComponentLibraryPageState extends ConsumerState<ComponentLibraryPage> {
         actions: [
           IconButton(
             icon: Icon(
-              themeMode == ThemeMode.dark
-                  ? Icons.light_mode
-                  : Icons.dark_mode,
+              isDark ? Icons.light_mode : Icons.dark_mode,
             ),
-            onPressed: () => ref.read(themeModeProvider.notifier).toggle(),
+            onPressed: () =>
+                ref.read(themeNotifierProvider.notifier).toggleDarkMode(context),
             tooltip: 'Toggle dark mode',
           ),
           const SizedBox(width: 16),

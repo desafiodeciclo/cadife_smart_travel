@@ -108,7 +108,7 @@ class CadifeThemeExtension extends ThemeExtension<CadifeThemeExtension> {
   }
 }
 
-extension CadifeTheme on BuildContext {
+extension CadifeThemeX on BuildContext {
   CadifeThemeExtension get cadife {
     final ext = Theme.of(this).extension<CadifeThemeExtension>();
     if (ext != null) return ext;
