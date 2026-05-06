@@ -27,7 +27,12 @@ from app.services.domain_validator import BriefingValidator
 
 logger = structlog.get_logger()
 
-# Message for unsupported media types (spec.md §12.3)
+# Message for audio messages specifically (task requirement)
+AUDIO_FALLBACK_REPLY = (
+    "Áudio não suportado nestes momentos, prefira o meio texto."
+)
+
+# Message for other unsupported media types (spec.md §12.3)
 MEDIA_FALLBACK_REPLY = (
     "Recebi sua mensagem! No momento aceito apenas textos. "
     "Um consultor irá te atender em breve. 😊"
@@ -49,6 +54,7 @@ async def execute(payload: dict, db: AsyncSession) -> None:
     phone: str = msg["phone"]
     text: str | None = msg.get("text")
     msg_type: str = msg.get("type", "text")
+    media_id: str | None = msg.get("media_id")
 
     logger.info("processing_whatsapp_message", phone=phone, msg_type=msg_type)
 
@@ -73,7 +79,21 @@ async def execute(payload: dict, db: AsyncSession) -> None:
     reply: str
     tipo: TipoMensagem
 
-    if msg_type != "text" or not text:
+    if msg_type == "audio":
+        # Best-effort download from Meta's Media API (logged; reply always sent)
+        if media_id:
+            audio_bytes = await whatsapp_service.download_media(media_id)
+            logger.info(
+                "audio_received",
+                lead_id=str(lead.id),
+                media_id=media_id,
+                downloaded=audio_bytes is not None,
+                size_bytes=len(audio_bytes) if audio_bytes else 0,
+            )
+        reply = AUDIO_FALLBACK_REPLY
+        tipo = TipoMensagem.audio
+
+    elif msg_type != "text" or not text:
         reply = MEDIA_FALLBACK_REPLY
         tipo = (
             TipoMensagem(msg_type)
