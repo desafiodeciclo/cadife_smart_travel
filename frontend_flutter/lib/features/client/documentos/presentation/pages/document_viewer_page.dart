@@ -11,7 +11,7 @@ import 'package:photo_view/photo_view.dart';
 import 'package:share_plus/share_plus.dart';
 
 class DocumentViewerPage extends StatefulWidget {
-  const DocumentViewerPage({super.key, required this.document});
+  const DocumentViewerPage({required this.document, super.key});
 
   final Documento document;
 
@@ -33,8 +33,8 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
       
       // ignore: deprecated_member_use
       await Share.shareXFiles([XFile(tempPath)], text: widget.document.name);
-    } catch (e) {
-      Fluttertoast.showToast(msg: 'Erro ao compartilhar documento');
+    } on Exception catch (_) {
+      await Fluttertoast.showToast(msg: 'Erro ao compartilhar documento');
     }
   }
 
@@ -46,7 +46,7 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
       
       if (Platform.isAndroid) {
         directory = Directory('/storage/emulated/0/Download');
-        if (!await directory.exists()) {
+        if (!directory.existsSync()) {
           directory = await getExternalStorageDirectory();
         }
       } else {
@@ -59,9 +59,9 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
 
       await dio.download(widget.document.url, savePath);
       
-      Fluttertoast.showToast(msg: 'Documento salvo em: $savePath');
-    } catch (e) {
-      Fluttertoast.showToast(msg: 'Erro ao baixar documento');
+      await Fluttertoast.showToast(msg: 'Documento salvo em: $savePath');
+    } on Exception catch (_) {
+      await Fluttertoast.showToast(msg: 'Erro ao baixar documento');
     } finally {
       if (mounted) setState(() => _isDownloading = false);
     }

@@ -1,7 +1,5 @@
 import 'package:cadife_smart_travel/design_system/design_system.dart';
-import 'package:cadife_smart_travel/features/auth/presentation/bloc/auth_event.dart';
-import 'package:cadife_smart_travel/features/auth/presentation/bloc/auth_state.dart';
-import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_bloc_provider.dart';
+import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/screens/onboarding_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -25,15 +23,19 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   void initState() {
     super.initState();
     _controller = AnimationController(vsync: this);
-    // Dispara validação JWT em background — não bloqueia a animação
+    // Wait for authNotifierProvider.build() to complete (checks JWT on startup).
     WidgetsBinding.instance.addPostFrameCallback((_) => _startValidation());
   }
 
   Future<void> _startValidation() async {
-    ref.read(authBlocProvider).add(const AuthEvent.authCheckRequested());
+    try {
+      await ref.read(authNotifierProvider.future);
+    } on Object catch (_) {
+      // Auth check failed — treat as unauthenticated.
+    }
     if (mounted) {
       setState(() => _validationDone = true);
-      _tryNavigate();
+      await _tryNavigate();
     }
   }
 
@@ -55,15 +57,15 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     if (!_animationDone || !_validationDone) return;
     if (!mounted) return;
 
-    final authBloc = ref.read(authBlocProvider);
-    final isLoggedIn = authBloc.state is AuthAuthenticated;
+    final authValue = ref.read(authNotifierProvider);
+    final isLoggedIn = authValue.valueOrNull != null;
 
     if (!isLoggedIn) {
       final seen = await hasSeenOnboarding();
       if (!mounted) return;
       context.go(seen ? '/auth/login' : '/onboarding');
     } else {
-      // GoRouter redirect encaminha para a rota correta conforme o perfil
+      // GoRouter redirect routes to the correct home based on role.
       context.go('/auth/login');
     }
   }

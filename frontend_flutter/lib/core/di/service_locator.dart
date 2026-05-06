@@ -227,7 +227,7 @@ Future<void> initDependencies() async {
   if (!kIsWeb || options != null) {
     try {
       await Firebase.initializeApp(options: options);
-    } catch (e) {
+    } on Exception catch (e) {
       debugPrint('Firebase initialization failed: $e');
     }
   }
@@ -239,7 +239,7 @@ Future<void> initDependencies() async {
   // Analytics e Notifications podem falhar no Web se não configurados
   try {
     await sl<AnalyticsService>().init();
-  } catch (e) {
+  } on Exception catch (e) {
     debugPrint('Analytics initialization failed: $e');
   }
 
@@ -247,7 +247,7 @@ Future<void> initDependencies() async {
     try {
       await LocalNotificationManager.init();
       await FCMManager.init();
-    } catch (e) {
+    } on Exception catch (e) {
       debugPrint('Notification managers initialization failed: $e');
     }
   }

@@ -15,8 +15,8 @@ class CadifeInput extends StatefulWidget {
   final int? maxLines;
 
   const CadifeInput({
-    super.key,
     required this.label,
+    super.key,
     this.hint,
     this.hintText,
     this.isPassword = false,

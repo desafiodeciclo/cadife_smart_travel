@@ -7,9 +7,9 @@ class ShimmerLoading extends StatelessWidget {
   final bool isLoading;
 
   const ShimmerLoading({
-    super.key,
     required this.child,
     required this.isLoading,
+    super.key,
   });
 
   @override
@@ -93,8 +93,8 @@ class LoadingOverlay extends StatelessWidget {
   final Widget child;
 
   const LoadingOverlay({
-    super.key,
     required this.child,
+    super.key,
     this.isLoading = false,
     this.message = 'Carregando...',
   });

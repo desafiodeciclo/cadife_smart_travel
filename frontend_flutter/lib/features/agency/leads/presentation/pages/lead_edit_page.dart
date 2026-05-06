@@ -7,7 +7,7 @@ import 'package:go_router/go_router.dart';
 /// Permite atualizar nome, status e score de um lead existente.
 class LeadEditPage extends ConsumerStatefulWidget {
   final String leadId;
-  const LeadEditPage({super.key, required this.leadId});
+  const LeadEditPage({required this.leadId, super.key});
 
   @override
   ConsumerState<LeadEditPage> createState() => _LeadEditPageState();

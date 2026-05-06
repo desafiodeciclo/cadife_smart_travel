@@ -6,12 +6,12 @@ part 'proposal_cache.g.dart';
 @Collection()
 class ProposalCache {
   ProposalCache({
-    this.id,
     required this.serverId,
     required this.leadId,
     required this.consultorId,
     required this.status,
     required this.totalValue,
+    this.id,
     this.destino,
     this.dataIda,
     this.dataVolta,

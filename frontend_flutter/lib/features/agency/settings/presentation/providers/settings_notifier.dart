@@ -2,6 +2,7 @@ import 'package:cadife_smart_travel/features/agency/settings/domain/entities/age
 import 'package:cadife_smart_travel/features/agency/settings/domain/repositories/i_agency_settings_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+// Override registrado em: lib/core/di/provider_overrides.dart
 final iAgencySettingsRepositoryProvider = Provider<IAgencySettingsRepository>((ref) {
   throw UnimplementedError('Override em ProviderScope');
 });

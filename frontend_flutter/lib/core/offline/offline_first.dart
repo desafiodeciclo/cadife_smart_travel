@@ -32,11 +32,11 @@ class OfflineFirst {
       try {
         final data = await remoteCall();
         return Right(data);
-      } catch (e) {
+      } on Exception catch (e) {
         if (returnExpiredOffline) {
           return _fromCacheOrFailure(cacheKey, fromCache);
         }
-        return Left(ServerFailure(e.toString()));
+        return Left(Failure.fromException(e));
       }
     }
 
@@ -56,7 +56,7 @@ class OfflineFirst {
     if (cached != null) {
       try {
         return Right(fromCache(cached));
-      } catch (_) {
+      } on Object catch (_) {
         // Cache corrupted, try fresh
       }
     }
@@ -67,7 +67,7 @@ class OfflineFirst {
       if (offlineData != null) {
         try {
           return Right(fromCache(offlineData));
-        } catch (_) {}
+        } on Object catch (_) {}
       }
       return const Left(CacheFailure('No cached data and device is offline'));
     }
@@ -75,8 +75,8 @@ class OfflineFirst {
     try {
       final data = await remoteCall();
       return Right(data);
-    } catch (e) {
-      return Left(ServerFailure(e.toString()));
+    } on Exception catch (e) {
+      return Left(Failure.fromException(e));
     }
   }
 
@@ -94,8 +94,8 @@ class OfflineFirst {
       try {
         final data = await remoteCall();
         return Right(data);
-      } catch (e) {
-        return Left(ServerFailure(e.toString()));
+      } on Exception catch (e) {
+        return Left(Failure.fromException(e));
       }
     }
 
@@ -118,7 +118,7 @@ class OfflineFirst {
     if (cached != null) {
       try {
         return Right(fromCache(cached));
-      } catch (_) {}
+      } on Object catch (_) {}
     }
 
     return const Left(CacheFailure('No cached data available offline'));

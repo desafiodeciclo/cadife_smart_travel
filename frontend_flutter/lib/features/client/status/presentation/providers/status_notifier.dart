@@ -1,22 +1,21 @@
-import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/client/status/data/providers/status_data_providers.dart';
+import 'package:cadife_smart_travel/features/client/status/domain/entities/client_travel_status.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 /// Provider que gerencia o status da viagem do cliente.
-/// Recebe o [leadId] como argumento.
+/// Recebe o ID do lead como argumento.
 final statusProvider =
-    AsyncNotifierProvider.family<StatusNotifier, Lead?, String>(
+    AsyncNotifierProvider.family<StatusNotifier, ClientTravelStatus?, String>(
   StatusNotifier.new,
 );
 
-class StatusNotifier extends FamilyAsyncNotifier<Lead?, String> {
+class StatusNotifier extends FamilyAsyncNotifier<ClientTravelStatus?, String> {
   @override
-  Future<Lead?> build(String arg) async {
+  Future<ClientTravelStatus?> build(String arg) async {
     final repository = ref.watch(statusRepositoryProvider);
     final result = await repository.getStatusById(arg);
     return result.fold(
       (failure) => throw failure,
-      (lead) => lead,
+      (status) => status,
     );
   }
 

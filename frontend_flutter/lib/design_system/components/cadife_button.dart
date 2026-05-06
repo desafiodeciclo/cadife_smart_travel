@@ -12,8 +12,8 @@ class CadifeButton extends StatelessWidget {
   final String? analyticsLabel;
 
   const CadifeButton({
-    super.key,
     required this.text,
+    super.key,
     this.onPressed,
     this.isLoading = false,
     this.isOutline = false,

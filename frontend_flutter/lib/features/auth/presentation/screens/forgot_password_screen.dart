@@ -1,7 +1,6 @@
 import 'package:cadife_smart_travel/core/utils/extensions/string_extensions.dart';
 import 'package:cadife_smart_travel/design_system/design_system.dart';
-import 'package:cadife_smart_travel/features/auth/presentation/bloc/auth_event.dart';
-import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_bloc_provider.dart';
+import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -36,19 +35,16 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       _isLoading = true;
       _errorMessage = null;
     });
-    try {
-      ref.read(authBlocProvider).add(AuthEvent.forgotPasswordRequested(
-            email: _emailController.text.trim(),
-          ));
-      if (mounted) setState(() => _step = _ForgotStep.confirmation);
-    } catch (_) {
-      if (mounted) {
-        setState(() =>
-            _errorMessage = 'Não foi possível enviar o e-mail. Tente novamente.');
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
+    final result = await ref
+        .read(authNotifierProvider.notifier)
+        .forgotPassword(_emailController.text.trim());
+    if (!mounted) return;
+    result.fold(
+      (failure) => setState(
+          () => _errorMessage = 'Não foi possível enviar o e-mail. Tente novamente.'),
+      (_) => setState(() => _step = _ForgotStep.confirmation),
+    );
+    setState(() => _isLoading = false);
   }
 
 
@@ -109,13 +105,13 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
 class _EmailStep extends StatelessWidget {
   const _EmailStep({
-    super.key,
     required this.formKey,
     required this.controller,
     required this.isLoading,
     required this.errorMessage,
     required this.primaryColor,
     required this.onSubmit,
+    super.key,
   });
 
   final GlobalKey<FormState> formKey;
@@ -187,10 +183,10 @@ class _EmailStep extends StatelessWidget {
 
 class _ConfirmationStep extends StatelessWidget {
   const _ConfirmationStep({
-    super.key,
     required this.email,
     required this.onResend,
     required this.isResending,
+    super.key,
   });
 
   final String email;
@@ -300,7 +296,7 @@ class _ConfirmationStep extends StatelessWidget {
 // ── Success Step ─────────────────────────────────────────────────────────────
 
 class _SuccessStep extends StatelessWidget {
-  const _SuccessStep({super.key, required this.onBackToLogin});
+  const _SuccessStep({required this.onBackToLogin, super.key});
   final VoidCallback onBackToLogin;
 
   @override

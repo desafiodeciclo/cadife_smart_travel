@@ -29,10 +29,10 @@ class DioClientFactory {
   ///   offlineInterceptor  → runs FIRST:  on network error for GETs, resolves from cache
   static Dio createPinned({
     required List<String> pinnedSha256,
-    List<String>? backupPinnedSha256,
     required AuthInterceptor authInterceptor,
     required ErrorInterceptor errorInterceptor,
     required OfflineInterceptor offlineInterceptor,
+    List<String>? backupPinnedSha256,
   }) {
     const isRelease = bool.fromEnvironment('dart.vm.product');
     if (isRelease && pinnedSha256.isEmpty) {

@@ -17,7 +17,7 @@ List<Override> getProviderOverrides() {
   return [
     authRepositoryProvider.overrideWithValue(sl<IAuthRepository>()),
     // Leads agora usa Riverpod DI diretamente (leadsRepositoryProvider)
-    agency_agenda.iAgendaRepositoryProvider.overrideWithValue(sl<IAgendaRepository>()),
+    agency_agenda.agendaRepositoryProvider.overrideWithValue(sl<IAgendaRepository>()),
     agency_proposals.iProposalsRepositoryProvider.overrideWithValue(sl<IProposalsRepository>()),
     client_profile.iProfileRepositoryProvider.overrideWithValue(sl<IProfileRepository>()),
     agency_profile.iConsultorRepositoryProvider.overrideWithValue(sl<IConsultorRepository>()),

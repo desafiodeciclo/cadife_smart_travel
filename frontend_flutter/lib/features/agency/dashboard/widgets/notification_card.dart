@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 
 class NotificationCard extends StatelessWidget {
   const NotificationCard({
-    super.key,
     required this.leadName,
     required this.timeAgo,
     required this.onClose,
+    super.key,
     this.onTap,
   });
 

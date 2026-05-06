@@ -1,7 +1,10 @@
+import 'package:cadife_smart_travel/config/responsive/master_detail_layout.dart';
+import 'package:cadife_smart_travel/config/responsive/responsive_breakpoints.dart';
 import 'package:cadife_smart_travel/core/utils/extensions/extensions.dart';
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/providers/leads_notifier.dart';
+import 'package:cadife_smart_travel/features/agency/leads/presentation/widgets/lead_detail_content.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/empty_state/empty_type.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/hero_image.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/state_container.dart';
@@ -32,8 +35,6 @@ final _filteredLeadsProvider = Provider<AsyncValue<List<Lead>>>((ref) {
         return true;
       }).toList());
 });
-
-// ─── Page ────────────────────────────────────────────────────────────────────────────────
 
 class LeadsPage extends ConsumerStatefulWidget {
   const LeadsPage({super.key});
@@ -66,16 +67,7 @@ class _LeadsPageState extends ConsumerState<LeadsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final filteredAsync = ref.watch(_filteredLeadsProvider);
-    final totalAsync = ref.watch(leadsNotifierProvider);
-    final activeStatus = ref.watch(_statusFilterProvider);
-    final activeScore = ref.watch(_scoreFilterProvider);
-
-    final totalCount = totalAsync.valueOrNull?.length ?? 0;
-    final filteredCount = filteredAsync.valueOrNull?.length ?? 0;
-    final isFiltered = activeStatus != null ||
-        activeScore != null ||
-        ref.watch(_searchQueryProvider).isNotEmpty;
+    final selectedLeadId = ref.watch(selectedLeadIdProvider);
 
     return Scaffold(
       backgroundColor: context.cadife.background,
@@ -89,31 +81,58 @@ class _LeadsPageState extends ConsumerState<LeadsPage> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          _SearchBar(
-            controller: _searchController,
-            onChanged: (v) => ref.read(_searchQueryProvider.notifier).state = v,
-            onClear: _clearFilters,
-          ),
-          _StatsRow(
-            totalCount: totalCount,
-            filteredCount: filteredCount,
-            isFiltered: isFiltered,
-            onClear: _clearFilters,
-          ),
-          _FilterStrip(activeStatus: activeStatus, activeScore: activeScore),
-          Divider(height: 1, thickness: 1, color: context.cadife.cardBorder),
-          Expanded(
-            child: StateListView<Lead>(
-              state: filteredAsync,
-              itemBuilder: (lead, _) => _LeadCard(lead: lead),
-              onRetry: () => ref.read(leadsNotifierProvider.notifier).refresh(),
-              emptyType: isFiltered ? EmptyType.emptySearch : EmptyType.noLeads,
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+      body: MasterDetailLayout(
+        master: (context) => Column(
+          children: [
+            _SearchBar(
+              controller: _searchController,
+              onChanged: (v) => ref.read(_searchQueryProvider.notifier).state = v,
+              onClear: _clearFilters,
             ),
-          ),
-        ],
+            _StatsRow(
+              totalCount: ref.watch(leadsNotifierProvider).valueOrNull?.length ?? 0,
+              filteredCount: ref.watch(_filteredLeadsProvider).valueOrNull?.length ?? 0,
+              isFiltered: ref.watch(_statusFilterProvider) != null ||
+                  ref.watch(_scoreFilterProvider) != null ||
+                  ref.watch(_searchQueryProvider).isNotEmpty,
+              onClear: _clearFilters,
+            ),
+            _FilterStrip(
+              activeStatus: ref.watch(_statusFilterProvider),
+              activeScore: ref.watch(_scoreFilterProvider),
+            ),
+            Divider(height: 1, thickness: 1, color: context.cadife.cardBorder),
+            Expanded(
+              child: StateListView<Lead>(
+                state: ref.watch(_filteredLeadsProvider),
+                itemBuilder: (lead, _) {
+                  final isSelected = lead.id == selectedLeadId;
+                  return _LeadCard(
+                    lead: lead,
+                    isSelected: isSelected,
+                    onTap: () {
+                      ref.read(selectedLeadIdProvider.notifier).state = lead.id;
+                      if (context.isMobile) {
+                        context.push('/agency/leads/${lead.id}');
+                      }
+                    },
+                  );
+                },
+                onRetry: () => ref.read(leadsNotifierProvider.notifier).refresh(),
+                emptyType: (ref.watch(_statusFilterProvider) != null ||
+                        ref.watch(_scoreFilterProvider) != null ||
+                        ref.watch(_searchQueryProvider).isNotEmpty)
+                    ? EmptyType.emptySearch
+                    : EmptyType.noLeads,
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+              ),
+            ),
+          ],
+        ),
+        detail: (context) => selectedLeadId != null
+            ? LeadDetailContent(leadId: selectedLeadId, showAppBar: false)
+            : const SizedBox.shrink(),
+        showDetail: selectedLeadId != null,
       ),
     );
   }
@@ -387,31 +406,44 @@ class _FilterChip extends StatelessWidget {
 // ─── Lead Card ────────────────────────────────────────────────────────────────────────────────
 
 class _LeadCard extends StatelessWidget {
-  const _LeadCard({required this.lead});
+  const _LeadCard({
+    required this.lead,
+    this.isSelected = false,
+    this.onTap,
+  });
 
   final Lead lead;
+  final bool isSelected;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final isDark = context.isDark;
     final statusColor = AppColors.statusColor(lead.status.name);
     final scoreColor = AppColors.scoreColor(lead.score.name);
-    final borderColor = isDark ? Colors.white10 : context.cadife.cardBorder;
+    final borderColor = isSelected 
+        ? context.cadife.primary 
+        : (isDark ? Colors.white10 : context.cadife.cardBorder);
     final dividerColor = isDark ? Colors.white10 : context.cadife.cardBorder;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: ShadCard(
         padding: EdgeInsets.zero,
-        backgroundColor: context.cadife.cardBackground,
+        backgroundColor: isSelected 
+            ? context.cadife.primary.withValues(alpha: 0.05)
+            : context.cadife.cardBackground,
         radius: BorderRadius.circular(12),
-        border: ShadBorder.all(color: borderColor, width: 1),
+        border: ShadBorder.all(
+          color: borderColor, 
+          width: isSelected ? 2 : 1,
+        ),
         child: Material(
           color: Colors.transparent,
           borderRadius: BorderRadius.circular(12),
           child: InkWell(
             borderRadius: BorderRadius.circular(12),
-            onTap: () => context.push('/agency/leads/${lead.id}'),
+            onTap: onTap,
             child: Stack(
               children: [
                 // Borda lateral colorida por status

@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 
 class TripSelectionCard extends StatelessWidget {
   const TripSelectionCard({
-    super.key,
     required this.trip,
+    super.key,
     this.onTap,
   });
 

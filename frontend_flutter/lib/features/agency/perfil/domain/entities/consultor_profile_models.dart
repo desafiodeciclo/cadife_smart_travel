@@ -6,11 +6,11 @@ class ConsultorProfile extends Equatable {
     required this.name,
     required this.email,
     required this.bio,
-    this.phone,
-    this.avatarUrl,
     required this.totalSales,
     required this.conversionRate,
     required this.activeMonths,
+    this.phone,
+    this.avatarUrl,
   });
 
   final String id;
