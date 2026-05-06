@@ -66,3 +66,15 @@ extension ThemeRef on WidgetRef {
     return read(themeNotifierProvider.notifier).toggleDarkMode(context);
   }
 }
+
+final themeModeProvider = Provider<ThemeMode>((ref) {
+  final pref = ref.watch(themeNotifierProvider).maybeWhen(
+        data: (p) => p,
+        orElse: () => ThemePreference.system,
+      );
+  return switch (pref) {
+    ThemePreference.light => ThemeMode.light,
+    ThemePreference.dark => ThemeMode.dark,
+    ThemePreference.system => ThemeMode.system,
+  };
+});

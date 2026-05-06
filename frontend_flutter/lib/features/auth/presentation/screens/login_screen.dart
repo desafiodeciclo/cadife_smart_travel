@@ -3,11 +3,10 @@ import 'dart:math' as math;
 
 import 'package:cadife_smart_travel/core/utils/extensions/string_extensions.dart';
 import 'package:cadife_smart_travel/design_system/design_system.dart';
-import 'package:cadife_smart_travel/features/auth/presentation/bloc/auth_bloc.dart';
-import 'package:cadife_smart_travel/features/auth/presentation/bloc/auth_event.dart';
-import 'package:cadife_smart_travel/features/auth/presentation/bloc/auth_state.dart';
+import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
+import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:cadife_smart_travel/features/settings/application/theme_notifier.dart';
-import 'package:cadife_smart_travel/features/settings/domain/entities/user_preferences.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';

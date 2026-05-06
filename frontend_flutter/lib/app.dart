@@ -9,6 +9,7 @@ import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_bl
 import 'package:cadife_smart_travel/features/settings/application/theme_notifier.dart';
 import 'package:cadife_smart_travel/features/settings/domain/entities/user_preferences.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class CadifeApp extends ConsumerWidget {

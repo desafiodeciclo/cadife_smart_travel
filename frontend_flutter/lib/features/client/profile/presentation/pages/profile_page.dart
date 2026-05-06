@@ -92,6 +92,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget build(BuildContext context) {
     final userAsync = ref.watch(userProfileProvider);
     final themePref = ref.watch(themeNotifierProvider);
+    final isSaving = ref.watch(profileSaveStateProvider).isLoading;
 
     return PageScaffold(
       title: 'MEU PERFIL',
@@ -104,10 +105,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ),
         data: (user) {
           if (!_isEditing) _syncFromUser(user);
-          return _buildContent(context, user, themePref.maybeWhen(
-            data: (p) => p,
-            orElse: () => ThemePreference.system,
-          ));
+          return _buildContent(
+            context,
+            user,
+            themePref.maybeWhen(
+              data: (p) => p,
+              orElse: () => ThemePreference.system,
+            ),
+            isSaving,
+          );
         },
       ),
     );
@@ -117,6 +123,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     BuildContext context,
     AuthUser? user,
     ThemePreference themePreference,
+    bool isSaving,
   ) {
     return CustomScrollView(
       slivers: [
