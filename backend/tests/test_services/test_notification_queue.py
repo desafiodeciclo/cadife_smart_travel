@@ -9,6 +9,7 @@ Coverage targets:
   - enqueue returns None when pending/processing job already exists for lead
   - move_to_dead_letter transfers job to DLQ and deletes from queue
 """
+
 import uuid
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -56,7 +57,9 @@ async def test_enqueue_creates_job_when_allowed(fake_db, fake_debounce):
     tokens = ["token_a", "token_b"]
 
     # simulate no existing pending job
-    fake_db.execute = AsyncMock(return_value=MagicMock(scalar_one_or_none=MagicMock(return_value=None)))
+    fake_db.execute = AsyncMock(
+        return_value=MagicMock(scalar_one_or_none=MagicMock(return_value=None))
+    )
 
     job = await service.enqueue_qualified_lead_notification(
         db=fake_db,
@@ -120,7 +123,9 @@ async def test_enqueue_blocked_by_existing_pending_job(fake_db, fake_debounce):
 async def test_enqueue_builds_body_with_and_without_destino(fake_db, fake_debounce):
     """Payload body deve incluir destino quando disponível."""
     service = NotificationQueueService(debounce_service=fake_debounce)
-    fake_db.execute = AsyncMock(return_value=MagicMock(scalar_one_or_none=MagicMock(return_value=None)))
+    fake_db.execute = AsyncMock(
+        return_value=MagicMock(scalar_one_or_none=MagicMock(return_value=None))
+    )
 
     job_with = await service.enqueue_qualified_lead_notification(
         db=fake_db,

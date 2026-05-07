@@ -11,6 +11,7 @@ because random embeddings cannot reproduce semantic relevance. Run
 scripts/ingest_and_validate_local.py (or the OpenAI version) for real
 semantic validation.
 """
+
 import json
 import shutil
 import tempfile
@@ -28,6 +29,7 @@ from app.services.metadata_tagger import extract_tags, tags_to_metadata
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture(scope="module")
 def knowledge_base_dir() -> Path:
@@ -67,10 +69,12 @@ def text_splitter() -> RecursiveCharacterTextSplitter:
 # 1. Document existence & content
 # ---------------------------------------------------------------------------
 
+
 class TestDocumentExistence:
     def test_all_seven_documents_present(self, knowledge_base_dir, expected_documents):
         missing = [
-            name for name in expected_documents
+            name
+            for name in expected_documents
             if not (knowledge_base_dir / name).is_file()
         ]
         assert not missing, f"Missing knowledge base files: {missing}"
@@ -90,8 +94,11 @@ class TestDocumentExistence:
 # 2. Chunking validation (300-500 tokens approximated by chars)
 # ---------------------------------------------------------------------------
 
+
 class TestChunkingSpec:
-    def test_chunk_size_within_spec(self, knowledge_base_dir, expected_documents, text_splitter):
+    def test_chunk_size_within_spec(
+        self, knowledge_base_dir, expected_documents, text_splitter
+    ):
         """
         Verify that the majority of chunks fall within the 300-500 token range.
         Small edge chunks are expected when documents contain short sections.
@@ -116,7 +123,9 @@ class TestChunkingSpec:
         # No chunk should be absurdly large (> 700 tokens)
         assert all(t <= 700 for t in all_token_counts), "Some chunks exceed 700 tokens"
 
-    def test_chunk_overlap_respected(self, knowledge_base_dir, expected_documents, text_splitter):
+    def test_chunk_overlap_respected(
+        self, knowledge_base_dir, expected_documents, text_splitter
+    ):
         for name in expected_documents:
             content = (knowledge_base_dir / name).read_text(encoding="utf-8")
             chunks = text_splitter.split_text(content)
@@ -124,7 +133,9 @@ class TestChunkingSpec:
                 overlap = set(chunks[0].split()) & set(chunks[1].split())
                 assert len(overlap) > 0, f"{name} chunks have no overlap"
 
-    def test_no_redundant_exact_duplicate_chunks(self, knowledge_base_dir, expected_documents, text_splitter):
+    def test_no_redundant_exact_duplicate_chunks(
+        self, knowledge_base_dir, expected_documents, text_splitter
+    ):
         for name in expected_documents:
             content = (knowledge_base_dir / name).read_text(encoding="utf-8")
             chunks = text_splitter.split_text(content)
@@ -137,6 +148,7 @@ class TestChunkingSpec:
 # ---------------------------------------------------------------------------
 # 3. Semantic retrieval validation (requires real embeddings)
 # ---------------------------------------------------------------------------
+
 
 class TestSemanticValidation:
     """
@@ -184,7 +196,11 @@ class TestSemanticValidation:
         {
             "id": 8,
             "query": "Quais os horários de atendimento dos consultores?",
-            "expected_sources": ["regras_negocio.txt", "fluxo_atendimento.txt", "faq.txt"],
+            "expected_sources": [
+                "regras_negocio.txt",
+                "fluxo_atendimento.txt",
+                "faq.txt",
+            ],
         },
         {
             "id": 9,
@@ -225,15 +241,21 @@ class TestSemanticValidation:
             except Exception:
                 pass
 
-    @pytest.mark.parametrize("case", VALIDATION_QUERIES, ids=lambda c: f"Q{c['id']:02d}")
+    @pytest.mark.parametrize(
+        "case", VALIDATION_QUERIES, ids=lambda c: f"Q{c['id']:02d}"
+    )
     def test_query_retrieves_expected_source(self, vectorstore, case):
         docs = vectorstore.similarity_search(case["query"], k=4)
         retrieved_sources = {d.metadata.get("source", "unknown") for d in docs}
         # With FakeEmbeddings this is probabilistic; we only assert structural correctness
         assert len(retrieved_sources) <= 4, "Retrieved more sources than k"
-        assert all(isinstance(s, str) for s in retrieved_sources), "Source metadata must be strings"
+        assert all(
+            isinstance(s, str) for s in retrieved_sources
+        ), "Source metadata must be strings"
 
-    def test_minimum_success_rate_with_fake_embeddings_is_structural_only(self, vectorstore):
+    def test_minimum_success_rate_with_fake_embeddings_is_structural_only(
+        self, vectorstore
+    ):
         # FakeEmbeddings cannot guarantee semantic relevance.
         # Real validation is done via scripts/ingest_and_validate_local.py
         docs = vectorstore.similarity_search("test query", k=4)
@@ -244,11 +266,14 @@ class TestSemanticValidation:
 # 4. Validation report schema
 # ---------------------------------------------------------------------------
 
+
 class TestValidationReportSchema:
     def test_report_contains_required_fields(self, knowledge_base_dir):
         report_path = knowledge_base_dir.parent / "validation_report_local.json"
         if not report_path.exists():
-            pytest.skip("validation_report_local.json not found -- run ingest_and_validate_local.py first")
+            pytest.skip(
+                "validation_report_local.json not found -- run ingest_and_validate_local.py first"
+            )
 
         report = json.loads(report_path.read_text(encoding="utf-8"))
         assert "embedding_model" in report

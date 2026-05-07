@@ -12,6 +12,7 @@ Key design decisions:
   - Creates all tables via `Base.metadata.create_all` (bypassing Alembic).
   - Automatically cleans up the DB session and tables after each test.
 """
+
 import asyncio
 import os
 import uuid
@@ -37,7 +38,9 @@ os.environ["JWT_ALGORITHM"] = "HS256"
 os.environ["ACCESS_TOKEN_EXPIRE_MINUTES"] = "15"
 os.environ["REFRESH_TOKEN_EXPIRE_DAYS"] = "7"
 os.environ["ENCRYPTION_KEY"] = "858iXm1S2iXN5sH3W6V-q7W_U8U7z6T5S4R3Q2P1O0N="
-os.environ["HASH_KEY"] = "f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7"
+os.environ["HASH_KEY"] = (
+    "f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7"
+)
 os.environ["REDIS_PREFIX"] = "CACHE"
 
 # Eagerly import all ORM models so SQLAlchemy mapper configuration is complete
@@ -104,6 +107,7 @@ def setup_database(event_loop) -> None:
 
     This keeps each test isolated without relying on savepoint rollback semantics.
     """
+
     async def _setup() -> None:
         async with test_engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
@@ -174,7 +178,9 @@ def client(override_get_db, override_get_current_user) -> TestClient:
 
 
 @pytest.fixture()
-async def async_client(override_get_db, override_get_current_user) -> AsyncGenerator[AsyncClient, None]:
+async def async_client(
+    override_get_db, override_get_current_user
+) -> AsyncGenerator[AsyncClient, None]:
     """Return an AsyncClient for testing async endpoints."""
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
@@ -197,7 +203,9 @@ def expired_jwt_token() -> str:
         "type": "access",
         "exp": datetime.now(timezone.utc) - timedelta(hours=1),
     }
-    return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+    return jwt.encode(
+        payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM
+    )
 
 
 @pytest.fixture()

@@ -3,6 +3,7 @@ Database Module — Infrastructure/Persistence Layer
 ===================================================
 Async SQLAlchemy engine and session factory for PostgreSQL (spec.md §3.3).
 """
+
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
@@ -37,6 +38,7 @@ AsyncSessionLocal = async_sessionmaker(
 
 class Base(DeclarativeBase):
     """SQLAlchemy declarative base — all ORM models inherit from this."""
+
     pass
 
 

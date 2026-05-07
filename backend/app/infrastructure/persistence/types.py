@@ -1,6 +1,7 @@
 """
 Database portable types for PostgreSQL and SQLite compatibility.
 """
+
 import uuid
 from typing import Any
 

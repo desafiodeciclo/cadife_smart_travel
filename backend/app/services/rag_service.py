@@ -8,6 +8,7 @@ retrieve_context()             — hybrid search with guardrails (default)
 retrieve_with_metadata_filter()— hybrid search + metadata filter + guardrails
 retrieve_hybrid()              — core hybrid retrieval with RRF reranking
 """
+
 import re
 from typing import Optional
 
@@ -37,7 +38,9 @@ _VECTOR_CANDIDATES_MULTIPLIER = 3  # How many candidates to fetch for reranking
 
 def _get_embeddings() -> OpenAIEmbeddings:
     if not settings.OPENROUTER_API_KEY:
-        raise RuntimeError("Nenhuma OPENROUTER_API_KEY configurada. Defina OPENROUTER_API_KEY no .env")
+        raise RuntimeError(
+            "Nenhuma OPENROUTER_API_KEY configurada. Defina OPENROUTER_API_KEY no .env"
+        )
     return OpenAIEmbeddings(
         model=settings.OPENROUTER_EMBEDDING_MODEL,
         openai_api_key=settings.OPENROUTER_API_KEY,
@@ -84,6 +87,7 @@ def get_rag_document_count() -> int:
 # ---------------------------------------------------------------------------
 # Hybrid Search — Vector + Keyword with RRF
 # ---------------------------------------------------------------------------
+
 
 def _tokenize(text: str) -> set[str]:
     """Simple tokenizer: lowercase, remove punctuation, split on whitespace."""
@@ -184,8 +188,7 @@ def retrieve_hybrid(
 
         # 2. Keyword scores on candidates
         keyword_scores = [
-            (_keyword_score(query, doc.page_content), doc)
-            for doc in vector_docs
+            (_keyword_score(query, doc.page_content), doc) for doc in vector_docs
         ]
         keyword_scores.sort(key=lambda x: x[0], reverse=True)
         keyword_ranked = [doc for _, doc in keyword_scores if _ > 0]
@@ -218,6 +221,7 @@ def retrieve_hybrid(
 # ---------------------------------------------------------------------------
 # Public API — Guardrailed retrieval wrappers
 # ---------------------------------------------------------------------------
+
 
 def retrieve_context(query: str, k: int = 3) -> str:
     """
@@ -282,6 +286,7 @@ def retrieve_with_metadata_filter(
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _join(docs: list[Document]) -> str:
     return "\n\n".join(d.page_content for d in docs)

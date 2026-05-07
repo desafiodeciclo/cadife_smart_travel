@@ -2,6 +2,7 @@
 Tests — model_router service
 Tests isolate network calls with unittest.mock so no real API keys are needed.
 """
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -10,8 +11,8 @@ import pytest
 
 from app.services import model_router
 
-
 # ── select_model ──────────────────────────────────────────────────────────────
+
 
 def test_select_model_text_returns_chat_model():
     model = model_router.select_model("text")
@@ -20,28 +21,42 @@ def test_select_model_text_returns_chat_model():
 
 
 def test_select_model_audio_returns_audio_model():
-    assert model_router.select_model("audio") == model_router.settings.OPENROUTER_AUDIO_MODEL
+    assert (
+        model_router.select_model("audio")
+        == model_router.settings.OPENROUTER_AUDIO_MODEL
+    )
 
 
 def test_select_model_voice_returns_audio_model():
-    assert model_router.select_model("voice") == model_router.settings.OPENROUTER_AUDIO_MODEL
+    assert (
+        model_router.select_model("voice")
+        == model_router.settings.OPENROUTER_AUDIO_MODEL
+    )
 
 
 def test_select_model_image_returns_vision_model():
-    assert model_router.select_model("image") == model_router.settings.OPENROUTER_VISION_MODEL
+    assert (
+        model_router.select_model("image")
+        == model_router.settings.OPENROUTER_VISION_MODEL
+    )
 
 
 def test_select_model_unknown_falls_back_to_chat():
-    assert model_router.select_model("sticker") == model_router.settings.OPENROUTER_MODEL
+    assert (
+        model_router.select_model("sticker") == model_router.settings.OPENROUTER_MODEL
+    )
 
 
 # ── transcribe_audio ──────────────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_transcribe_audio_returns_text():
     mock_response = MagicMock()
     mock_response.raise_for_status = MagicMock()
-    mock_response.json.return_value = {"choices": [{"message": {"content": "Quero viajar para Portugal"}}]}
+    mock_response.json.return_value = {
+        "choices": [{"message": {"content": "Quero viajar para Portugal"}}]
+    }
 
     with patch("app.services.model_router.httpx.AsyncClient") as mock_client_cls:
         mock_client = AsyncMock()
@@ -71,7 +86,9 @@ async def test_transcribe_audio_uses_correct_language():
         await model_router.transcribe_audio(b"fake_audio", "audio/mpeg")
 
         payload = mock_client.post.call_args.kwargs["json"]
-        text_part = next(p for p in payload["messages"][0]["content"] if p["type"] == "text")
+        text_part = next(
+            p for p in payload["messages"][0]["content"] if p["type"] == "text"
+        )
         assert "português" in text_part["text"]
 
 
@@ -91,11 +108,14 @@ async def test_transcribe_audio_maps_mime_to_extension():
         await model_router.transcribe_audio(b"data", "audio/mpeg")
 
         payload = mock_client.post.call_args.kwargs["json"]
-        audio_part = next(p for p in payload["messages"][0]["content"] if p["type"] == "input_audio")
+        audio_part = next(
+            p for p in payload["messages"][0]["content"] if p["type"] == "input_audio"
+        )
         assert audio_part["input_audio"]["format"] == "mp3"
 
 
 # ── analyze_image ─────────────────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_analyze_image_returns_description():
@@ -121,7 +141,9 @@ async def test_analyze_image_returns_description():
 async def test_analyze_image_includes_caption_in_prompt():
     mock_response = MagicMock()
     mock_response.raise_for_status = MagicMock()
-    mock_response.json.return_value = {"choices": [{"message": {"content": "descrição"}}]}
+    mock_response.json.return_value = {
+        "choices": [{"message": {"content": "descrição"}}]
+    }
 
     with patch("app.services.model_router.httpx.AsyncClient") as mock_client_cls:
         mock_client = AsyncMock()
@@ -140,11 +162,17 @@ async def test_analyze_image_includes_caption_in_prompt():
 
 # ── route_media_message ───────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_route_media_audio_calls_transcribe():
     with (
-        patch("app.services.whatsapp_service.download_whatsapp_media", new_callable=AsyncMock) as mock_dl,
-        patch("app.services.model_router.transcribe_audio", new_callable=AsyncMock) as mock_tr,
+        patch(
+            "app.services.whatsapp_service.download_whatsapp_media",
+            new_callable=AsyncMock,
+        ) as mock_dl,
+        patch(
+            "app.services.model_router.transcribe_audio", new_callable=AsyncMock
+        ) as mock_tr,
     ):
         mock_dl.return_value = (b"audio_bytes", "audio/ogg")
         mock_tr.return_value = "Quero ir para Lisboa"
@@ -162,8 +190,13 @@ async def test_route_media_audio_calls_transcribe():
 @pytest.mark.asyncio
 async def test_route_media_image_calls_analyze():
     with (
-        patch("app.services.whatsapp_service.download_whatsapp_media", new_callable=AsyncMock) as mock_dl,
-        patch("app.services.model_router.analyze_image", new_callable=AsyncMock) as mock_an,
+        patch(
+            "app.services.whatsapp_service.download_whatsapp_media",
+            new_callable=AsyncMock,
+        ) as mock_dl,
+        patch(
+            "app.services.model_router.analyze_image", new_callable=AsyncMock
+        ) as mock_an,
     ):
         mock_dl.return_value = (b"img_bytes", "image/jpeg")
         mock_an.return_value = "Passaporte brasileiro"

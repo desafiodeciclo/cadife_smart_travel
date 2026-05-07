@@ -12,6 +12,7 @@ Coverage targets:
   - Returns correct count of transitioned leads
   - Transition is routed through LeadStateMachine.validate_transition
 """
+
 import uuid
 from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -126,4 +127,6 @@ async def test_transition_goes_through_state_machine():
     ) as mock_validate:
         await mark_stale_leads_as_perdido(db, inactivity_days=30)
 
-        mock_validate.assert_called_once_with(LeadStatus.qualificado, LeadStatus.perdido)
+        mock_validate.assert_called_once_with(
+            LeadStatus.qualificado, LeadStatus.perdido
+        )

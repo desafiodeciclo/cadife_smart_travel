@@ -10,6 +10,7 @@ Constraints:
   - duracao_dias: DB CHECK >= 1
   - PostgreSQL native ENUM for perfil and orcamento fields
 """
+
 import uuid
 from datetime import date
 from typing import TYPE_CHECKING, Optional
@@ -47,8 +48,15 @@ orcamento_perfil_enum = SAEnum(
 )
 
 BRIEFING_REQUIRED_FIELDS = [
-    "destino", "data_ida", "data_volta", "qtd_pessoas", "perfil",
-    "tipo_viagem", "preferencias", "orcamento", "tem_passaporte",
+    "destino",
+    "data_ida",
+    "data_volta",
+    "qtd_pessoas",
+    "perfil",
+    "tipo_viagem",
+    "preferencias",
+    "orcamento",
+    "tem_passaporte",
 ]
 
 
@@ -65,14 +73,17 @@ class BriefingModel(Base):
             "completude_pct BETWEEN 0 AND 100",
             name="ck_briefings_completude_range",
         ),
-        CheckConstraint("qtd_pessoas IS NULL OR qtd_pessoas >= 1", name="ck_briefings_qtd_pessoas_min"),
-        CheckConstraint("duracao_dias IS NULL OR duracao_dias >= 1", name="ck_briefings_duracao_min"),
+        CheckConstraint(
+            "qtd_pessoas IS NULL OR qtd_pessoas >= 1",
+            name="ck_briefings_qtd_pessoas_min",
+        ),
+        CheckConstraint(
+            "duracao_dias IS NULL OR duracao_dias >= 1", name="ck_briefings_duracao_min"
+        ),
         {"extend_existing": True},
     )
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        GUID(), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(GUID(), primary_key=True, default=uuid.uuid4)
     lead_id: Mapped[uuid.UUID] = mapped_column(
         GUID(),
         ForeignKey("leads.id", ondelete="CASCADE"),
@@ -100,7 +111,8 @@ class BriefingModel(Base):
 def calculate_completude(briefing_data: dict) -> int:
     """Calculate briefing completeness percentage (0–100)."""
     filled = sum(
-        1 for field in BRIEFING_REQUIRED_FIELDS
+        1
+        for field in BRIEFING_REQUIRED_FIELDS
         if briefing_data.get(field) not in (None, [], "", 0)
     )
     return round((filled / len(BRIEFING_REQUIRED_FIELDS)) * 100)

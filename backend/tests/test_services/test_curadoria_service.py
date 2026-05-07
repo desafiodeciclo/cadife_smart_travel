@@ -4,6 +4,7 @@ Tests — Curadoria Service
 Tests the curation trigger logic: slot discovery, active appointment check,
 messaging, and qualification gate.
 """
+
 from datetime import date, time
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -17,8 +18,8 @@ from app.services.curadoria_service import (
     lead_tem_agendamento_ativo,
 )
 
-
 # ── deve_oferecer_curadoria ──────────────────────────────────────────────────
+
 
 @pytest.mark.parametrize(
     "status_antes,status_depois,completude,expected",
@@ -36,6 +37,7 @@ def test_deve_oferecer_curadoria(status_antes, status_depois, completude, expect
 
 
 # ── gerar_mensagem_oferta_curadoria ──────────────────────────────────────────
+
 
 def test_gerar_mensagem_com_slots():
     slots = [
@@ -67,6 +69,7 @@ def test_gerar_mensagem_sem_nome():
 
 # ── lead_tem_agendamento_ativo ───────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_lead_tem_agendamento_ativo_true():
     db = AsyncMock()
@@ -90,6 +93,7 @@ async def test_lead_tem_agendamento_ativo_false():
 
 
 # ── get_proximos_slots_disponiveis ───────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_get_proximos_slots_retorna_disponiveis():
@@ -123,6 +127,7 @@ async def test_get_proximos_slots_respeita_max_por_dia():
     ]
 
     call_counter = {"count": 0}
+
     def _fake_execute(stmt):
         call_counter["count"] += 1
         mock_result = MagicMock()
@@ -140,4 +145,5 @@ async def test_get_proximos_slots_respeita_max_por_dia():
     assert len(slots) == 3
     # All returned slots must be from days after the full one (today)
     from datetime import date
+
     assert all(s["data"] > date.today() for s in slots)

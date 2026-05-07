@@ -4,6 +4,7 @@ Tests — Infrastructure/Cache/Redis
 Unit tests for the @cached decorator and invalidation helpers.
 Redis itself is mocked so the suite runs without a live Redis server.
 """
+
 from __future__ import annotations
 
 import json
@@ -21,8 +22,8 @@ from app.infrastructure.cache.decorator import (
     invalidate_pattern,
 )
 
-
 # ── Fixtures ───────────────────────────────────────────────────────────────
+
 
 @pytest.fixture
 def fake_redis() -> AsyncMock:
@@ -36,6 +37,7 @@ def patch_get_redis(fake_redis: AsyncMock):
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────
+
 
 class DummyDTO(BaseModel):
     id: int
@@ -68,6 +70,7 @@ def test_deserialize():
 
 
 # ── Decorator ──────────────────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_cache_hit_returns_cached_value(fake_redis: AsyncMock):
@@ -108,6 +111,7 @@ async def test_cache_miss_executes_and_stores(fake_redis: AsyncMock):
 @pytest.mark.asyncio
 async def test_cache_disabled_bypasses_redis(fake_redis: AsyncMock):
     with patch("app.infrastructure.cache.decorator._settings.CACHE_ENABLED", False):
+
         @cached(ttl=60)
         async def fetch(x: int) -> DummyDTO:
             return DummyDTO(id=x, nome="live")
@@ -135,6 +139,7 @@ async def test_cache_graceful_degradation_on_redis_error(fake_redis: AsyncMock):
 
 # ── Invalidation ───────────────────────────────────────────────────────────
 
+
 async def _async_iter(items):
     for item in items:
         yield item
@@ -142,12 +147,16 @@ async def _async_iter(items):
 
 @pytest.mark.asyncio
 async def test_invalidate_pattern_deletes_matching_keys(fake_redis: AsyncMock):
-    fake_redis.scan_iter = lambda **kw: _async_iter(["CACHE:cached:fn:aaa", "CACHE:cached:fn:bbb"])
+    fake_redis.scan_iter = lambda **kw: _async_iter(
+        ["CACHE:cached:fn:aaa", "CACHE:cached:fn:bbb"]
+    )
     fake_redis.delete.return_value = 2
 
     deleted = await invalidate_pattern("cached:fn:*")
     assert deleted == 2
-    fake_redis.delete.assert_awaited_once_with("CACHE:cached:fn:aaa", "CACHE:cached:fn:bbb")
+    fake_redis.delete.assert_awaited_once_with(
+        "CACHE:cached:fn:aaa", "CACHE:cached:fn:bbb"
+    )
 
 
 @pytest.mark.asyncio

@@ -23,7 +23,6 @@ from slowapi.util import get_remote_address
 from app.presentation.middlewares.audit_trail import AuditTrailMiddleware
 from app.presentation.middlewares.security_headers import SecurityHeadersMiddleware
 
-
 # ──────────────────────────────────────────────────────────────────────────────
 # Fixtures
 # ──────────────────────────────────────────────────────────────────────────────
@@ -53,7 +52,9 @@ class TestEncryptedString:
 
     def test_roundtrip_cifra_e_decifra(self, test_key):
         """Valor persistido é devolvido intacto após encrypt/decrypt."""
-        with patch("app.infrastructure.security.pii_encryption.settings") as mock_settings:
+        with patch(
+            "app.infrastructure.security.pii_encryption.settings"
+        ) as mock_settings:
             mock_settings.ENCRYPTION_KEY = test_key
             from app.infrastructure.security.pii_encryption import EncryptedString
 
@@ -62,14 +63,18 @@ class TestEncryptedString:
 
             ciphertext = enc_type.process_bind_param(plaintext, dialect=None)
             assert ciphertext != plaintext, "Valor não deve ser armazenado em claro"
-            assert len(ciphertext) > len(plaintext), "Ciphertext deve ser maior que o original"
+            assert len(ciphertext) > len(
+                plaintext
+            ), "Ciphertext deve ser maior que o original"
 
             recovered = enc_type.process_result_value(ciphertext, dialect=None)
             assert recovered == plaintext
 
     def test_none_retorna_none(self, test_key):
         """Campos nulos não são processados."""
-        with patch("app.infrastructure.security.pii_encryption.settings") as mock_settings:
+        with patch(
+            "app.infrastructure.security.pii_encryption.settings"
+        ) as mock_settings:
             mock_settings.ENCRYPTION_KEY = test_key
             from app.infrastructure.security.pii_encryption import EncryptedString
 
@@ -79,7 +84,9 @@ class TestEncryptedString:
 
     def test_diferentes_valores_geram_ciphertexts_distintos(self, test_key):
         """Fernet é não-determinístico: mesma entrada → ciphertexts diferentes."""
-        with patch("app.infrastructure.security.pii_encryption.settings") as mock_settings:
+        with patch(
+            "app.infrastructure.security.pii_encryption.settings"
+        ) as mock_settings:
             mock_settings.ENCRYPTION_KEY = test_key
             from app.infrastructure.security.pii_encryption import EncryptedString
 
@@ -90,7 +97,9 @@ class TestEncryptedString:
 
     def test_sem_chave_levanta_runtime_error(self):
         """Sem ENCRYPTION_KEY configurada, deve falhar explicitamente."""
-        with patch("app.infrastructure.security.pii_encryption.settings") as mock_settings:
+        with patch(
+            "app.infrastructure.security.pii_encryption.settings"
+        ) as mock_settings:
             mock_settings.ENCRYPTION_KEY = ""
             from app.infrastructure.security.pii_encryption import EncryptedString
 
@@ -155,7 +164,9 @@ class TestSecurityHeaders:
 
 def _make_rate_limit_app(limit: str = "3/minute") -> TestClient:
     """App de teste com limiter em memória (sem Redis)."""
-    limiter = Limiter(key_func=get_remote_address, storage_uri="memory://", headers_enabled=True)
+    limiter = Limiter(
+        key_func=get_remote_address, storage_uri="memory://", headers_enabled=True
+    )
     app = FastAPI()
     app.state.limiter = limiter
     app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
@@ -230,13 +241,13 @@ class TestAuditTrail:
         from unittest.mock import ANY, patch, MagicMock
 
         _, client = _make_audit_app()
-        
+
         with patch("app.presentation.middlewares.audit_trail.logger.bind") as mock_bind:
             mock_bound = MagicMock()
             mock_bind.return_value = mock_bound
-            
+
             client.get("/audit-test")
-            
+
             # Checks if 'request_finished' was logged via info
             mock_bound.info.assert_any_call(
                 "request_finished",

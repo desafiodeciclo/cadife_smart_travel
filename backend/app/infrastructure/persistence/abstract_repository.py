@@ -10,6 +10,7 @@ Pattern: Repository + Data Mapper
   - ORM models live only in infrastructure
   - Conversion happens in _to_entity / _from_entity on each repository
 """
+
 from abc import abstractmethod
 from typing import Any, Generic, Optional, TypeVar
 from uuid import UUID

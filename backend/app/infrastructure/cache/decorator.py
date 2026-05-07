@@ -13,6 +13,7 @@ Usage:
     async def list_leads(...) -> LeadListResponse:
         ...
 """
+
 from __future__ import annotations
 
 import functools
@@ -34,11 +35,15 @@ F = TypeVar("F", bound=Callable[..., Any])
 def _make_cache_key(func_name: str, args: tuple, kwargs: dict) -> str:
     """Deterministic cache key from function name + arguments."""
     # Normalise kwargs order and stringify
-    payload = json.dumps({
-        "fn": func_name,
-        "args": [str(a) for a in args],
-        "kwargs": {k: str(v) for k, v in sorted(kwargs.items())},
-    }, sort_keys=True, ensure_ascii=False)
+    payload = json.dumps(
+        {
+            "fn": func_name,
+            "args": [str(a) for a in args],
+            "kwargs": {k: str(v) for k, v in sorted(kwargs.items())},
+        },
+        sort_keys=True,
+        ensure_ascii=False,
+    )
     hash_part = hashlib.sha256(payload.encode()).hexdigest()[:32]
     prefix = _settings.REDIS_PREFIX or "CACHE"
     return f"{prefix}:cached:{func_name}:{hash_part}"

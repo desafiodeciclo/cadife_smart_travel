@@ -7,7 +7,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.dependencies import get_current_user, get_db
 from app.infrastructure.security.dependencies import RequiresRole
 from app.domain.entities.enums import LeadStatus, PropostaStatus
-from app.models.proposta import Proposta, PropostaCreate, PropostaResponse, PropostaUpdate
+from app.models.proposta import (
+    Proposta,
+    PropostaCreate,
+    PropostaResponse,
+    PropostaUpdate,
+)
 from app.services import lead_service
 
 router = APIRouter(

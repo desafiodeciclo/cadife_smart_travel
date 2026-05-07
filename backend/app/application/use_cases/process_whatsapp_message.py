@@ -14,6 +14,7 @@ Orchestrates the full message-processing flow defined in spec.md §9.1:
   10. Reply via WhatsApp
   11. Update interaction with send outcome
 """
+
 from __future__ import annotations
 
 import structlog
@@ -22,7 +23,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.domain.entities.enums import LeadStatus, TipoMensagem
 from app.models.lead import Lead
 from app.models.user import User
-from app.services import ai_service, curadoria_service, lead_service, model_router, whatsapp_service
+from app.services import (
+    ai_service,
+    curadoria_service,
+    lead_service,
+    model_router,
+    whatsapp_service,
+)
 from app.services.notification_queue_service import NotificationQueueService
 from app.services.domain_validator import BriefingValidator
 
@@ -64,7 +71,11 @@ async def execute(payload: dict, db: AsyncSession) -> None:
     # ── Step 2: Advance status NOVO → EM_ATENDIMENTO ─────────────────────
     if lead.status == LeadStatus.novo:
         await lead_service.update_lead_status(db, lead, LeadStatus.em_atendimento)
-        logger.info("lead_status_updated", lead_id=str(lead.id), new_status=LeadStatus.em_atendimento)
+        logger.info(
+            "lead_status_updated",
+            lead_id=str(lead.id),
+            new_status=LeadStatus.em_atendimento,
+        )
 
     # ── Step 2.5: Ensure conversation memory is loaded (restart-resilient) ─
     interacoes_list = await lead_service.get_recent_interacoes(db, lead.id, limit=20)
@@ -120,8 +131,12 @@ async def execute(payload: dict, db: AsyncSession) -> None:
         try:
             # ── Step 4: Extract briefing & update score ───────────────────
             status_antes = lead.status
-            extracted = await ai_service.extract_briefing([{"role": "user", "content": effective_text}])
-            briefing = await lead_service.update_briefing_from_extraction(db, lead, extracted)
+            extracted = await ai_service.extract_briefing(
+                [{"role": "user", "content": effective_text}]
+            )
+            briefing = await lead_service.update_briefing_from_extraction(
+                db, lead, extracted
+            )
 
             # ── Step 5: Enqueue FCM notification when lead qualifies ─────
             if briefing.completude_pct >= 60 and lead.status == LeadStatus.qualificado:
@@ -132,7 +147,9 @@ async def execute(payload: dict, db: AsyncSession) -> None:
                 status_antes, lead.status, briefing.completude_pct
             ):
                 if not await curadoria_service.lead_tem_agendamento_ativo(db, lead.id):
-                    slots = await curadoria_service.get_proximos_slots_disponiveis(db, quantidade=3)
+                    slots = await curadoria_service.get_proximos_slots_disponiveis(
+                        db, quantidade=3
+                    )
                     reply = curadoria_service.gerar_mensagem_oferta_curadoria(
                         slots, nome_cliente=lead.nome
                     )
@@ -153,7 +170,8 @@ async def execute(payload: dict, db: AsyncSession) -> None:
     # Save AYA's reply whenever there was processable text (original text or
     # transcribed/described media). For unprocessable media, reply is fallback.
     interacao = await lead_service.save_interacao(
-        db, lead.id,
+        db,
+        lead.id,
         msg_cliente=text,
         msg_ia=reply if effective_text else None,
         tipo=tipo,
@@ -172,7 +190,9 @@ async def execute(payload: dict, db: AsyncSession) -> None:
     )
 
 
-async def _enqueue_qualified_notification(db: AsyncSession, lead: Lead, briefing) -> None:
+async def _enqueue_qualified_notification(
+    db: AsyncSession, lead: Lead, briefing
+) -> None:
     """Enqueue FCM push notification for all agency consultants via background queue."""
     from sqlalchemy import select
 

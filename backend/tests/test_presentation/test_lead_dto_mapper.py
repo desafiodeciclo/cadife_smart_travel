@@ -4,6 +4,7 @@ Tests — Presentation/DTO & DataLeak Prevention
 Unit tests for Lead DTO mappers and the contract that ORM instances
 are never returned directly from route handlers.
 """
+
 from __future__ import annotations
 
 import uuid
@@ -22,10 +23,15 @@ from app.application.dto.lead_mapper import (
     map_leads_to_list_response,
 )
 from app.domain.entities.enums import LeadOrigem, LeadScore, LeadStatus, PropostaStatus
-from app.presentation.schemas.leads import LeadDetailDTO, LeadListItemDTO, LeadListResponseDTO, LeadMetricsDTO
-
+from app.presentation.schemas.leads import (
+    LeadDetailDTO,
+    LeadListItemDTO,
+    LeadListResponseDTO,
+    LeadMetricsDTO,
+)
 
 # ── Helpers ────────────────────────────────────────────────────────────────
+
 
 def make_fake_lead(**overrides: Any) -> MagicMock:
     """Build a MagicMock that quacks like a Lead ORM instance."""
@@ -63,6 +69,7 @@ def make_fake_proposta(**overrides: Any) -> MagicMock:
 
 # ── List Item Mapper ───────────────────────────────────────────────────────
 
+
 def test_map_lead_to_list_item_masks_phone():
     lead = make_fake_lead(telefone="5584999990001")
     dto = map_lead_to_list_item(lead)
@@ -87,6 +94,7 @@ def test_map_lead_to_list_item_includes_completude():
 
 
 # ── Detail Mapper ──────────────────────────────────────────────────────────
+
 
 def test_map_lead_to_detail_exposes_phone_for_consultant():
     """Detail view may expose full phone because the consultant needs it."""
@@ -137,6 +145,7 @@ def test_map_lead_to_detail_safe_with_magicmock_propostas():
 
 # ── Paginated List Mapper ──────────────────────────────────────────────────
 
+
 def test_map_leads_to_list_response_computes_pages():
     leads = [make_fake_lead() for _ in range(5)]
     resp = map_leads_to_list_response(leads, total=23, page=1, limit=5)
@@ -148,6 +157,7 @@ def test_map_leads_to_list_response_computes_pages():
 
 
 # ── Metrics Mapper ─────────────────────────────────────────────────────────
+
 
 def test_map_counts_to_metrics():
     counts = {
@@ -166,6 +176,7 @@ def test_map_counts_to_metrics():
 
 
 # ── Schema Contract Enforcement ────────────────────────────────────────────
+
 
 def test_lead_detail_dto_rejects_extra_fields():
     """Ensure DTO schema is strict — extra fields cause validation errors."""

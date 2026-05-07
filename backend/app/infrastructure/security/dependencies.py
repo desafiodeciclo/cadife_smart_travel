@@ -3,6 +3,7 @@ Dependency Injection — Infrastructure/Security Layer
 =====================================================
 FastAPI dependency providers for DB session and authenticated user.
 """
+
 from typing import TYPE_CHECKING, AsyncGenerator
 
 if TYPE_CHECKING:
@@ -39,13 +40,19 @@ async def get_current_user(
         )
 
     if payload.get("type") != "access":
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido"
+        )
 
-    from app.services.user_service import get_user_by_id  # keep lazy import to avoid circular
+    from app.services.user_service import (
+        get_user_by_id,
+    )  # keep lazy import to avoid circular
 
     user = await get_user_by_id(db, payload["sub"])
     if not user or not user.is_active:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuário não encontrado")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuário não encontrado"
+        )
     return user
 
 

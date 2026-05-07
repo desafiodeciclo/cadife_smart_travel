@@ -5,6 +5,7 @@ Concrete implementation for appointment persistence.
 Enforces the unique-slot business rule at the repository layer
 (DB UNIQUE constraint is the safety net).
 """
+
 import uuid
 from datetime import date, time
 from typing import Optional

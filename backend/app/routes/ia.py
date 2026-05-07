@@ -60,11 +60,14 @@ class ReindexarRequest(BaseModel):
 # Existing endpoints
 # ---------------------------------------------------------------------------
 
+
 @router.post("/processar", response_model=ProcessarResponse)
 @limiter.limit(settings.RATE_LIMIT_IA)
 async def processar_mensagem(request: Request, body: ProcessarRequest):
     # 1. Extrair briefing
-    extracted = await ai_service.extract_briefing([{"role": "user", "content": body.message}])
+    extracted = await ai_service.extract_briefing(
+        [{"role": "user", "content": body.message}]
+    )
     completude = calculate_completude(extracted.model_dump())
 
     # 2. Validar domínio
@@ -123,6 +126,7 @@ async def ia_status():
 # Ingestion endpoints (JWT protected)
 # ---------------------------------------------------------------------------
 
+
 @router.post("/reindexar", dependencies=[Depends(get_current_user)])
 async def reindexar_base(body: ReindexarRequest, background_tasks: BackgroundTasks):
     """
@@ -135,7 +139,11 @@ async def reindexar_base(body: ReindexarRequest, background_tasks: BackgroundTas
     """
     pipeline = get_ingestion_pipeline()
     background_tasks.add_task(pipeline.ingest_all, body.force)
-    return {"status": "accepted", "message": "Reindexação iniciada em background", "force": body.force}
+    return {
+        "status": "accepted",
+        "message": "Reindexação iniciada em background",
+        "force": body.force,
+    }
 
 
 @router.get("/ingestion-status", dependencies=[Depends(get_current_user)])

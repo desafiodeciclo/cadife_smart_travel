@@ -3,6 +3,7 @@ Conftest for test_use_cases — stubs heavy optional dependencies (langchain,
 firebase_admin) that are not installed in CI / local venv but are imported
 transitively when loading process_whatsapp_message.
 """
+
 import sys
 import types
 from unittest.mock import MagicMock

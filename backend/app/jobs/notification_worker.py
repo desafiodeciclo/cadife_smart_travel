@@ -10,6 +10,7 @@ Gatilho:
   - Executado pelo AsyncIOScheduler a cada 15 segundos (main.py lifespan)
   - Reage a jobs com status 'pending' ou 'failed' cujo next_retry_at <= agora
 """
+
 from __future__ import annotations
 
 import datetime as dt
@@ -123,7 +124,9 @@ class NotificationWorker:
         # Falha — aplicar retry ou DLQ
         job.retry_count += 1
         if job.retry_count >= job.max_retries:
-            error_trace = job.error_log or "Max retries exceeded without explicit error log"
+            error_trace = (
+                job.error_log or "Max retries exceeded without explicit error log"
+            )
             await self._queue_service.move_to_dead_letter(db, job, error_trace)
             return
 
@@ -156,7 +159,9 @@ class NotificationWorker:
         data: dict = payload.get("data", {})
 
         if not tokens:
-            logger.warning("notification_no_tokens", job_id=str(job.id), lead_id=str(job.lead_id))
+            logger.warning(
+                "notification_no_tokens", job_id=str(job.id), lead_id=str(job.lead_id)
+            )
             job.error_log = "No FCM tokens available"
             return False
 

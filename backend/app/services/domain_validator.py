@@ -24,34 +24,114 @@ logger = structlog.get_logger()
 # Destinos internacionais de alto custo — orçamento mínimo "médio"
 DESTINOS_ALTO_CUSTO: set[str] = {
     # Europa
-    "europa", "frança", "paris", "itália", "italia", "roma", "milão",
-    "espanha", "madrid", "barcelona", "portugal", "lisboa", "porto",
-    "alemanha", "berlim", "londres", "inglaterra", "reino unido",
-    "suíça", "suiça", "holanda", "amsterdam", "grécia", "grecia",
-    "croácia", "croacia", "irlanda", "dublin", "escócia", "noruega",
-    "suécia", "dinamarca", "áustria", "austria", "viena", "praga",
-    "república tcheca", "turquia", "istambul",
+    "europa",
+    "frança",
+    "paris",
+    "itália",
+    "italia",
+    "roma",
+    "milão",
+    "espanha",
+    "madrid",
+    "barcelona",
+    "portugal",
+    "lisboa",
+    "porto",
+    "alemanha",
+    "berlim",
+    "londres",
+    "inglaterra",
+    "reino unido",
+    "suíça",
+    "suiça",
+    "holanda",
+    "amsterdam",
+    "grécia",
+    "grecia",
+    "croácia",
+    "croacia",
+    "irlanda",
+    "dublin",
+    "escócia",
+    "noruega",
+    "suécia",
+    "dinamarca",
+    "áustria",
+    "austria",
+    "viena",
+    "praga",
+    "república tcheca",
+    "turquia",
+    "istambul",
     # Ásia
-    "japão", "japao", "tóquio", "tokyo", "coreia do sul", "seul",
-    "china", "pequim", "xangai", "tailândia", "tailandia", "bangkok",
-    "singapura", "hong kong", "índia", "india", "vietnã", "vietna",
-    "indonésia", "indonesia", "bali", "maldivas",
+    "japão",
+    "japao",
+    "tóquio",
+    "tokyo",
+    "coreia do sul",
+    "seul",
+    "china",
+    "pequim",
+    "xangai",
+    "tailândia",
+    "tailandia",
+    "bangkok",
+    "singapura",
+    "hong kong",
+    "índia",
+    "india",
+    "vietnã",
+    "vietna",
+    "indonésia",
+    "indonesia",
+    "bali",
+    "maldivas",
     # América do Norte
-    "estados unidos", "eua", "usa", "nova york", "new york",
-    "miami", "orlando", "los angeles", "las vegas", "canadá", "canada",
-    "toronto", "vancouver",
+    "estados unidos",
+    "eua",
+    "usa",
+    "nova york",
+    "new york",
+    "miami",
+    "orlando",
+    "los angeles",
+    "las vegas",
+    "canadá",
+    "canada",
+    "toronto",
+    "vancouver",
     # Oceania
-    "austrália", "australia", "nova zelândia", "nova zelandia",
+    "austrália",
+    "australia",
+    "nova zelândia",
+    "nova zelandia",
     # África premium
-    "dubai", "emirados", "abu dhabi",
+    "dubai",
+    "emirados",
+    "abu dhabi",
 }
 
 # Destinos de custo moderado — orçamento mínimo "baixo" é aceitável
 DESTINOS_CUSTO_MODERADO: set[str] = {
-    "argentina", "buenos aires", "chile", "santiago", "uruguai",
-    "montevidéu", "montevideu", "colômbia", "colombia", "bogotá",
-    "cartagena", "peru", "lima", "cusco", "machu picchu",
-    "bolívia", "bolivia", "paraguai", "equador",
+    "argentina",
+    "buenos aires",
+    "chile",
+    "santiago",
+    "uruguai",
+    "montevidéu",
+    "montevideu",
+    "colômbia",
+    "colombia",
+    "bogotá",
+    "cartagena",
+    "peru",
+    "lima",
+    "cusco",
+    "machu picchu",
+    "bolívia",
+    "bolivia",
+    "paraguai",
+    "equador",
 }
 
 # Duração mínima razoável para destinos internacionais (em dias)
@@ -70,6 +150,7 @@ _ORCAMENTO_NIVEL: dict[str, int] = {
 @dataclass
 class ValidationResult:
     """Resultado da validação de domínio."""
+
     is_valid: bool
     errors: list[str] = field(default_factory=list)
 
@@ -100,14 +181,39 @@ def _destino_eh_internacional(destino: str) -> bool:
     """Verifica se o destino parece ser internacional (não é Brasil)."""
     normalizado = _normalizar_destino(destino)
     destinos_nacionais = {
-        "brasil", "são paulo", "sao paulo", "rio de janeiro",
-        "salvador", "recife", "fortaleza", "florianópolis", "florianopolis",
-        "curitiba", "belo horizonte", "brasília", "brasilia", "natal",
-        "maceió", "maceio", "porto alegre", "manaus", "belém", "belem",
-        "gramado", "campos do jordão", "campos do jordao", "bonito",
-        "fernando de noronha", "jericoacoara", "porto seguro",
-        "chapada diamantina", "foz do iguaçu", "foz do iguacu",
-        "lençóis maranhenses", "lencois maranhenses", "pantanal",
+        "brasil",
+        "são paulo",
+        "sao paulo",
+        "rio de janeiro",
+        "salvador",
+        "recife",
+        "fortaleza",
+        "florianópolis",
+        "florianopolis",
+        "curitiba",
+        "belo horizonte",
+        "brasília",
+        "brasilia",
+        "natal",
+        "maceió",
+        "maceio",
+        "porto alegre",
+        "manaus",
+        "belém",
+        "belem",
+        "gramado",
+        "campos do jordão",
+        "campos do jordao",
+        "bonito",
+        "fernando de noronha",
+        "jericoacoara",
+        "porto seguro",
+        "chapada diamantina",
+        "foz do iguaçu",
+        "foz do iguacu",
+        "lençóis maranhenses",
+        "lencois maranhenses",
+        "pantanal",
     }
     return not any(d in normalizado or normalizado in d for d in destinos_nacionais)
 
@@ -147,7 +253,9 @@ class BriefingValidator:
 
         return result
 
-    def _validar_datas(self, briefing: BriefingExtracted, result: ValidationResult) -> None:
+    def _validar_datas(
+        self, briefing: BriefingExtracted, result: ValidationResult
+    ) -> None:
         """Valida viabilidade temporal das datas informadas."""
         hoje = date.today()
 
@@ -201,7 +309,10 @@ class BriefingValidator:
 
         duracao = (briefing.data_volta - briefing.data_ida).days
 
-        if _destino_eh_internacional(briefing.destino) and duracao < DURACAO_MINIMA_INTERNACIONAL:
+        if (
+            _destino_eh_internacional(briefing.destino)
+            and duracao < DURACAO_MINIMA_INTERNACIONAL
+        ):
             result.add_error(
                 f"Para um destino internacional como '{briefing.destino}', uma viagem de "
                 f"apenas {duracao} dia(s) seria muito curta para aproveitar a experiência. "

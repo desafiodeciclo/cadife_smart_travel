@@ -4,11 +4,13 @@ Lead Domain Enums — Domain/Entities Layer
 Pure Python enums representing the Lead domain concepts from spec.md §4.1.
 No framework dependencies — reusable across layers.
 """
+
 from enum import Enum
 
 
 class LeadOrigem(str, Enum):
     """Channel through which the lead entered the system (spec.md §4.1)."""
+
     whatsapp = "whatsapp"
     app = "app"
     web = "web"
@@ -21,6 +23,7 @@ class LeadStatus(str, Enum):
       NOVO → EM_ATENDIMENTO → QUALIFICADO → AGENDADO → PROPOSTA → FECHADO
       Any state → PERDIDO (after 30 days inactivity)
     """
+
     novo = "novo"
     em_atendimento = "em_atendimento"
     qualificado = "qualificado"
@@ -37,6 +40,7 @@ class LeadScore(str, Enum):
     - MORNO: destino defined but dates/budget open → schedule curation
     - FRIO: only generic interest → nurture via WhatsApp follow-up
     """
+
     quente = "quente"
     morno = "morno"
     frio = "frio"
@@ -44,6 +48,7 @@ class LeadScore(str, Enum):
 
 class TipoMensagem(str, Enum):
     """Message types handled by the webhook (spec.md §4.3)."""
+
     texto = "texto"
     audio = "audio"
     imagem = "imagem"
@@ -52,6 +57,7 @@ class TipoMensagem(str, Enum):
 
 class AgendamentoStatus(str, Enum):
     """Appointment lifecycle (spec.md §4.4)."""
+
     pendente = "pendente"
     confirmado = "confirmado"
     realizado = "realizado"
@@ -60,12 +66,14 @@ class AgendamentoStatus(str, Enum):
 
 class AgendamentoTipo(str, Enum):
     """Curation session type (spec.md §4.4)."""
+
     online = "online"
     presencial = "presencial"
 
 
 class PropostaStatus(str, Enum):
     """Proposal lifecycle (spec.md §4.5)."""
+
     rascunho = "rascunho"
     enviada = "enviada"
     aprovada = "aprovada"
@@ -75,6 +83,7 @@ class PropostaStatus(str, Enum):
 
 class PerfilViagem(str, Enum):
     """Traveler profile types (spec.md §4.2)."""
+
     casal = "casal"
     familia = "família"
     solo = "solo"
@@ -84,6 +93,7 @@ class PerfilViagem(str, Enum):
 
 class OrcamentoPerfil(str, Enum):
     """Budget tier classification (spec.md §4.2)."""
+
     baixo = "baixo"
     medio = "médio"
     alto = "alto"

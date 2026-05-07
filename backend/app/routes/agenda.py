@@ -30,6 +30,7 @@ async def get_disponibilidade(
     current_user=Depends(get_current_user),
 ):
     from datetime import timedelta
+
     slots = []
     current = data_inicio
     while current <= data_fim:
@@ -44,17 +45,22 @@ async def get_disponibilidade(
             agendados_horas = {str(a.hora)[:5] for a in agendados}
 
             for hora in HORARIOS_DISPONIVEIS:
-                slots.append(SlotDisponivel(
-                    data=current,
-                    hora=hora,
-                    disponivel=hora not in agendados_horas and len(agendados) < MAX_POR_DIA,
-                ))
+                slots.append(
+                    SlotDisponivel(
+                        data=current,
+                        hora=hora,
+                        disponivel=hora not in agendados_horas
+                        and len(agendados) < MAX_POR_DIA,
+                    )
+                )
         current += timedelta(days=1)
 
     return DisponibilidadeResponse(slots=slots)
 
 
-@router.post("", response_model=AgendamentoResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "", response_model=AgendamentoResponse, status_code=status.HTTP_201_CREATED
+)
 async def create_agendamento(
     body: AgendamentoCreate,
     db: AsyncSession = Depends(get_db),
@@ -62,7 +68,10 @@ async def create_agendamento(
 ):
     hora_str = str(body.hora)[:5]
     if hora_str not in HORARIOS_DISPONIVEIS:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Horário fora do período de atendimento")
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="Horário fora do período de atendimento",
+        )
 
     result = await db.execute(
         select(Agendamento).where(
@@ -80,7 +89,10 @@ async def create_agendamento(
 
     hora_ocupada = any(str(a.hora)[:5] == hora_str for a in existentes)
     if hora_ocupada:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Horário já ocupado")
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="Horário já ocupado",
+        )
 
     agendamento = Agendamento(
         lead_id=body.lead_id,
@@ -101,10 +113,14 @@ async def get_agendamento(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    result = await db.execute(select(Agendamento).where(Agendamento.id == agendamento_id))
+    result = await db.execute(
+        select(Agendamento).where(Agendamento.id == agendamento_id)
+    )
     ag = result.scalar_one_or_none()
     if not ag:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agendamento não encontrado")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Agendamento não encontrado"
+        )
     return AgendamentoResponse.model_validate(ag)
 
 
@@ -115,10 +131,14 @@ async def update_agendamento(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    result = await db.execute(select(Agendamento).where(Agendamento.id == agendamento_id))
+    result = await db.execute(
+        select(Agendamento).where(Agendamento.id == agendamento_id)
+    )
     ag = result.scalar_one_or_none()
     if not ag:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agendamento não encontrado")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Agendamento não encontrado"
+        )
     ag.status = body.status
     await db.commit()
     await db.refresh(ag)

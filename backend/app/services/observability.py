@@ -29,6 +29,7 @@ def _is_langfuse_available() -> bool:
     if _langfuse_available is None:
         try:
             import langfuse  # noqa: F401
+
             _langfuse_available = True
         except ImportError:
             _langfuse_available = False

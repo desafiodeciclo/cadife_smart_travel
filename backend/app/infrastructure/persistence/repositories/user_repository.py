@@ -3,6 +3,7 @@ UserRepository — Infrastructure/Persistence Layer
 ==================================================
 Concrete async repository for user authentication and profile management.
 """
+
 import uuid
 from typing import Optional
 
@@ -28,7 +29,9 @@ class UserRepository(AbstractRepository[UserModel]):
 
     async def get_by_email(self, email: str) -> Optional[UserModel]:
         result = await self._session.execute(
-            select(UserModel).where(UserModel.email == email, UserModel.is_active.is_(True))
+            select(UserModel).where(
+                UserModel.email == email, UserModel.is_active.is_(True)
+            )
         )
         return result.scalar_one_or_none()
 
@@ -51,14 +54,18 @@ class UserRepository(AbstractRepository[UserModel]):
         logger.info("user_created", user_id=str(user.id), email=email, perfil=perfil)
         return user
 
-    async def update_fcm_token(self, user_id: uuid.UUID, fcm_token: str) -> Optional[UserModel]:
+    async def update_fcm_token(
+        self, user_id: uuid.UUID, fcm_token: str
+    ) -> Optional[UserModel]:
         user = await self.get_by_id(user_id)
         if user:
             user.fcm_token = fcm_token
             await self._session.flush()
         return user
 
-    async def list_active_with_fcm_token(self, perfil: Optional[str] = None) -> list[UserModel]:
+    async def list_active_with_fcm_token(
+        self, perfil: Optional[str] = None
+    ) -> list[UserModel]:
         stmt = select(UserModel).where(
             UserModel.is_active.is_(True),
             UserModel.fcm_token.isnot(None),

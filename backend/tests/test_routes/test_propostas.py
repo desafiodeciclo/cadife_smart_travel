@@ -8,6 +8,7 @@ Covers:
   - PUT  /propostas/{id} (existence, scope check, partial update)
 Uses dependency_overrides to mock DB and JWT on an isolated FastAPI app.
 """
+
 import uuid
 from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -39,6 +40,7 @@ client = TestClient(app)
 
 # ── Helpers ─────────────────────────────────────────────────────────────────
 
+
 def fake_user(perfil: UserPerfil = UserPerfil.consultor, user_id=None):
     user = MagicMock()
     user.id = user_id or uuid.uuid4()
@@ -65,7 +67,9 @@ def fake_lead(lead_id=None, consultor_id=None, status=LeadStatus.qualificado.val
     return lead
 
 
-def fake_proposta(proposta_id=None, lead_id=None, consultor_id=None, status=PropostaStatus.rascunho):
+def fake_proposta(
+    proposta_id=None, lead_id=None, consultor_id=None, status=PropostaStatus.rascunho
+):
     proposta = MagicMock()
     proposta.id = proposta_id or uuid.uuid4()
     proposta.lead_id = lead_id or uuid.uuid4()
@@ -89,9 +93,11 @@ def make_db_session(proposta=None):
             obj.id = uuid.uuid4()
         if hasattr(obj, "status") and obj.status is None:
             from app.domain.entities.enums import PropostaStatus
+
             obj.status = PropostaStatus.rascunho.value
         if hasattr(obj, "criado_em") and obj.criado_em is None:
             from datetime import datetime, timezone
+
             obj.criado_em = datetime.now(timezone.utc)
 
     session.add = MagicMock(side_effect=_add_side_effect)
@@ -103,6 +109,7 @@ def make_db_session(proposta=None):
 
 
 # ── Fixtures ────────────────────────────────────────────────────────────────
+
 
 @pytest.fixture(autouse=True)
 def clear_overrides():
@@ -116,6 +123,7 @@ def clear_overrides():
 # POST /propostas
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestCreateProposta:
 
     def test_consultor_creates_for_own_lead(self):
@@ -128,12 +136,19 @@ class TestCreateProposta:
         app.dependency_overrides[get_current_user] = lambda: user
         app.dependency_overrides[get_db] = lambda: make_db_session(proposta)
 
-        with patch("app.routes.propostas.lead_service.get_lead_by_id", new_callable=AsyncMock, return_value=lead):
-            response = client.post("/propostas", json={
-                "lead_id": str(lead_id),
-                "descricao": "Pacote teste",
-                "valor_estimado": "15000.00",
-            })
+        with patch(
+            "app.routes.propostas.lead_service.get_lead_by_id",
+            new_callable=AsyncMock,
+            return_value=lead,
+        ):
+            response = client.post(
+                "/propostas",
+                json={
+                    "lead_id": str(lead_id),
+                    "descricao": "Pacote teste",
+                    "valor_estimado": "15000.00",
+                },
+            )
 
         assert response.status_code == 201
         data = response.json()
@@ -151,11 +166,18 @@ class TestCreateProposta:
         app.dependency_overrides[get_current_user] = lambda: user
         app.dependency_overrides[get_db] = lambda: make_db_session(proposta)
 
-        with patch("app.routes.propostas.lead_service.get_lead_by_id", new_callable=AsyncMock, return_value=lead):
-            response = client.post("/propostas", json={
-                "lead_id": str(lead_id),
-                "descricao": "Pacote teste",
-            })
+        with patch(
+            "app.routes.propostas.lead_service.get_lead_by_id",
+            new_callable=AsyncMock,
+            return_value=lead,
+        ):
+            response = client.post(
+                "/propostas",
+                json={
+                    "lead_id": str(lead_id),
+                    "descricao": "Pacote teste",
+                },
+            )
 
         assert response.status_code == 201
         data = response.json()
@@ -171,11 +193,18 @@ class TestCreateProposta:
         app.dependency_overrides[get_current_user] = lambda: user
         app.dependency_overrides[get_db] = lambda: make_db_session(proposta)
 
-        with patch("app.routes.propostas.lead_service.get_lead_by_id", new_callable=AsyncMock, return_value=lead):
-            response = client.post("/propostas", json={
-                "lead_id": str(lead_id),
-                "descricao": "Pacote admin",
-            })
+        with patch(
+            "app.routes.propostas.lead_service.get_lead_by_id",
+            new_callable=AsyncMock,
+            return_value=lead,
+        ):
+            response = client.post(
+                "/propostas",
+                json={
+                    "lead_id": str(lead_id),
+                    "descricao": "Pacote admin",
+                },
+            )
 
         assert response.status_code == 201
 
@@ -189,11 +218,18 @@ class TestCreateProposta:
         app.dependency_overrides[get_current_user] = lambda: user
         app.dependency_overrides[get_db] = lambda: make_db_session()
 
-        with patch("app.routes.propostas.lead_service.get_lead_by_id", new_callable=AsyncMock, return_value=lead):
-            response = client.post("/propostas", json={
-                "lead_id": str(lead_id),
-                "descricao": "Pacote teste",
-            })
+        with patch(
+            "app.routes.propostas.lead_service.get_lead_by_id",
+            new_callable=AsyncMock,
+            return_value=lead,
+        ):
+            response = client.post(
+                "/propostas",
+                json={
+                    "lead_id": str(lead_id),
+                    "descricao": "Pacote teste",
+                },
+            )
 
         assert response.status_code == 403
         assert "Acesso negado" in response.json()["detail"]
@@ -206,11 +242,18 @@ class TestCreateProposta:
         app.dependency_overrides[get_current_user] = lambda: user
         app.dependency_overrides[get_db] = lambda: make_db_session()
 
-        with patch("app.routes.propostas.lead_service.get_lead_by_id", new_callable=AsyncMock, return_value=None):
-            response = client.post("/propostas", json={
-                "lead_id": str(lead_id),
-                "descricao": "Pacote teste",
-            })
+        with patch(
+            "app.routes.propostas.lead_service.get_lead_by_id",
+            new_callable=AsyncMock,
+            return_value=None,
+        ):
+            response = client.post(
+                "/propostas",
+                json={
+                    "lead_id": str(lead_id),
+                    "descricao": "Pacote teste",
+                },
+            )
 
         assert response.status_code == 404
         assert "Lead não encontrado" in response.json()["detail"]
@@ -220,10 +263,13 @@ class TestCreateProposta:
         app.dependency_overrides[get_current_user] = lambda: user
         app.dependency_overrides[get_db] = lambda: make_db_session()
 
-        response = client.post("/propostas", json={
-            "lead_id": str(uuid.uuid4()),
-            "descricao": "Pacote teste",
-        })
+        response = client.post(
+            "/propostas",
+            json={
+                "lead_id": str(uuid.uuid4()),
+                "descricao": "Pacote teste",
+            },
+        )
 
         assert response.status_code == 403
         assert "permissão insuficiente" in response.json()["detail"]
@@ -237,11 +283,18 @@ class TestCreateProposta:
         app.dependency_overrides[get_current_user] = lambda: user
         app.dependency_overrides[get_db] = lambda: make_db_session()
 
-        with patch("app.routes.propostas.lead_service.get_lead_by_id", new_callable=AsyncMock, return_value=lead):
-            response = client.post("/propostas", json={
-                "lead_id": str(lead_id),
-                "descricao": "Pacote teste",
-            })
+        with patch(
+            "app.routes.propostas.lead_service.get_lead_by_id",
+            new_callable=AsyncMock,
+            return_value=lead,
+        ):
+            response = client.post(
+                "/propostas",
+                json={
+                    "lead_id": str(lead_id),
+                    "descricao": "Pacote teste",
+                },
+            )
 
         assert response.status_code == 400
         assert "qualificado, agendado ou proposta" in response.json()["detail"]
@@ -256,11 +309,18 @@ class TestCreateProposta:
         app.dependency_overrides[get_current_user] = lambda: user
         app.dependency_overrides[get_db] = lambda: make_db_session(proposta)
 
-        with patch("app.routes.propostas.lead_service.get_lead_by_id", new_callable=AsyncMock, return_value=lead):
-            response = client.post("/propostas", json={
-                "lead_id": str(lead_id),
-                "descricao": "Nova tentativa",
-            })
+        with patch(
+            "app.routes.propostas.lead_service.get_lead_by_id",
+            new_callable=AsyncMock,
+            return_value=lead,
+        ):
+            response = client.post(
+                "/propostas",
+                json={
+                    "lead_id": str(lead_id),
+                    "descricao": "Nova tentativa",
+                },
+            )
 
         assert response.status_code == 201
 
@@ -268,6 +328,7 @@ class TestCreateProposta:
 # ══════════════════════════════════════════════════════════════════════════════
 # GET /propostas/{id}
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 class TestGetProposta:
 
@@ -282,7 +343,11 @@ class TestGetProposta:
         app.dependency_overrides[get_current_user] = lambda: user
         app.dependency_overrides[get_db] = lambda: make_db_session(proposta)
 
-        with patch("app.routes.propostas.lead_service.get_lead_by_id", new_callable=AsyncMock, return_value=lead):
+        with patch(
+            "app.routes.propostas.lead_service.get_lead_by_id",
+            new_callable=AsyncMock,
+            return_value=lead,
+        ):
             response = client.get(f"/propostas/{proposta_id}")
 
         assert response.status_code == 200
@@ -313,7 +378,11 @@ class TestGetProposta:
         app.dependency_overrides[get_current_user] = lambda: user
         app.dependency_overrides[get_db] = lambda: make_db_session(proposta)
 
-        with patch("app.routes.propostas.lead_service.get_lead_by_id", new_callable=AsyncMock, return_value=lead):
+        with patch(
+            "app.routes.propostas.lead_service.get_lead_by_id",
+            new_callable=AsyncMock,
+            return_value=lead,
+        ):
             response = client.get(f"/propostas/{proposta_id}")
 
         assert response.status_code == 403
@@ -323,6 +392,7 @@ class TestGetProposta:
 # ══════════════════════════════════════════════════════════════════════════════
 # PUT /propostas/{id}
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 class TestUpdateProposta:
 
@@ -337,11 +407,18 @@ class TestUpdateProposta:
         app.dependency_overrides[get_current_user] = lambda: user
         app.dependency_overrides[get_db] = lambda: make_db_session(proposta)
 
-        with patch("app.routes.propostas.lead_service.get_lead_by_id", new_callable=AsyncMock, return_value=lead):
-            response = client.put(f"/propostas/{proposta_id}", json={
-                "status": PropostaStatus.enviada.value,
-                "descricao": "Descrição atualizada",
-            })
+        with patch(
+            "app.routes.propostas.lead_service.get_lead_by_id",
+            new_callable=AsyncMock,
+            return_value=lead,
+        ):
+            response = client.put(
+                f"/propostas/{proposta_id}",
+                json={
+                    "status": PropostaStatus.enviada.value,
+                    "descricao": "Descrição atualizada",
+                },
+            )
 
         assert response.status_code == 200
         data = response.json()
@@ -356,9 +433,12 @@ class TestUpdateProposta:
         session.execute.return_value.scalar_one_or_none.return_value = None
         app.dependency_overrides[get_db] = lambda: session
 
-        response = client.put(f"/propostas/{uuid.uuid4()}", json={
-            "status": PropostaStatus.enviada.value,
-        })
+        response = client.put(
+            f"/propostas/{uuid.uuid4()}",
+            json={
+                "status": PropostaStatus.enviada.value,
+            },
+        )
         assert response.status_code == 404
         assert "Proposta não encontrada" in response.json()["detail"]
 
@@ -374,10 +454,17 @@ class TestUpdateProposta:
         app.dependency_overrides[get_current_user] = lambda: user
         app.dependency_overrides[get_db] = lambda: make_db_session(proposta)
 
-        with patch("app.routes.propostas.lead_service.get_lead_by_id", new_callable=AsyncMock, return_value=lead):
-            response = client.put(f"/propostas/{proposta_id}", json={
-                "status": PropostaStatus.enviada.value,
-            })
+        with patch(
+            "app.routes.propostas.lead_service.get_lead_by_id",
+            new_callable=AsyncMock,
+            return_value=lead,
+        ):
+            response = client.put(
+                f"/propostas/{proposta_id}",
+                json={
+                    "status": PropostaStatus.enviada.value,
+                },
+            )
 
         assert response.status_code == 403
         assert "Acesso negado" in response.json()["detail"]
@@ -393,10 +480,17 @@ class TestUpdateProposta:
         app.dependency_overrides[get_current_user] = lambda: user
         app.dependency_overrides[get_db] = lambda: make_db_session(proposta)
 
-        with patch("app.routes.propostas.lead_service.get_lead_by_id", new_callable=AsyncMock, return_value=lead):
-            response = client.put(f"/propostas/{proposta_id}", json={
-                "valor_estimado": "25000.50",
-            })
+        with patch(
+            "app.routes.propostas.lead_service.get_lead_by_id",
+            new_callable=AsyncMock,
+            return_value=lead,
+        ):
+            response = client.put(
+                f"/propostas/{proposta_id}",
+                json={
+                    "valor_estimado": "25000.50",
+                },
+            )
 
         assert response.status_code == 200
         data = response.json()
@@ -408,15 +502,24 @@ class TestUpdateProposta:
         proposta_id = uuid.uuid4()
         user = fake_user(UserPerfil.consultor, consultor_id)
         lead = fake_lead(lead_id, consultor_id, status=LeadStatus.proposta.value)
-        proposta = fake_proposta(proposta_id, lead_id, consultor_id, status=PropostaStatus.enviada)
+        proposta = fake_proposta(
+            proposta_id, lead_id, consultor_id, status=PropostaStatus.enviada
+        )
 
         app.dependency_overrides[get_current_user] = lambda: user
         app.dependency_overrides[get_db] = lambda: make_db_session(proposta)
 
-        with patch("app.routes.propostas.lead_service.get_lead_by_id", new_callable=AsyncMock, return_value=lead):
-            response = client.put(f"/propostas/{proposta_id}", json={
-                "status": PropostaStatus.aprovada.value,
-            })
+        with patch(
+            "app.routes.propostas.lead_service.get_lead_by_id",
+            new_callable=AsyncMock,
+            return_value=lead,
+        ):
+            response = client.put(
+                f"/propostas/{proposta_id}",
+                json={
+                    "status": PropostaStatus.aprovada.value,
+                },
+            )
 
         assert response.status_code == 200
         assert lead.status == LeadStatus.fechado.value
@@ -427,15 +530,24 @@ class TestUpdateProposta:
         proposta_id = uuid.uuid4()
         user = fake_user(UserPerfil.consultor, consultor_id)
         lead = fake_lead(lead_id, consultor_id, status=LeadStatus.proposta.value)
-        proposta = fake_proposta(proposta_id, lead_id, consultor_id, status=PropostaStatus.enviada)
+        proposta = fake_proposta(
+            proposta_id, lead_id, consultor_id, status=PropostaStatus.enviada
+        )
 
         app.dependency_overrides[get_current_user] = lambda: user
         app.dependency_overrides[get_db] = lambda: make_db_session(proposta)
 
-        with patch("app.routes.propostas.lead_service.get_lead_by_id", new_callable=AsyncMock, return_value=lead):
-            response = client.put(f"/propostas/{proposta_id}", json={
-                "status": PropostaStatus.recusada.value,
-            })
+        with patch(
+            "app.routes.propostas.lead_service.get_lead_by_id",
+            new_callable=AsyncMock,
+            return_value=lead,
+        ):
+            response = client.put(
+                f"/propostas/{proposta_id}",
+                json={
+                    "status": PropostaStatus.recusada.value,
+                },
+            )
 
         assert response.status_code == 200
         assert lead.status == LeadStatus.proposta.value
@@ -445,6 +557,7 @@ class TestUpdateProposta:
 # GET /leads/{id} — propostas relation
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestLeadPropostasRelation:
 
     def test_lead_response_includes_propostas(self):
@@ -452,14 +565,22 @@ class TestLeadPropostasRelation:
         lead_id = uuid.uuid4()
         user = fake_user(UserPerfil.consultor, consultor_id)
         lead = fake_lead(lead_id, consultor_id, status=LeadStatus.proposta.value)
-        proposta1 = fake_proposta(uuid.uuid4(), lead_id, consultor_id, PropostaStatus.enviada)
-        proposta2 = fake_proposta(uuid.uuid4(), lead_id, consultor_id, PropostaStatus.rascunho)
+        proposta1 = fake_proposta(
+            uuid.uuid4(), lead_id, consultor_id, PropostaStatus.enviada
+        )
+        proposta2 = fake_proposta(
+            uuid.uuid4(), lead_id, consultor_id, PropostaStatus.rascunho
+        )
         lead.propostas = [proposta1, proposta2]
 
         app.dependency_overrides[get_current_user] = lambda: user
         app.dependency_overrides[get_db] = lambda: make_db_session()
 
-        with patch("app.routes.leads.lead_service.get_lead_by_id", new_callable=AsyncMock, return_value=lead):
+        with patch(
+            "app.routes.leads.lead_service.get_lead_by_id",
+            new_callable=AsyncMock,
+            return_value=lead,
+        ):
             response = client.get(f"/leads/{lead_id}")
 
         assert response.status_code == 200

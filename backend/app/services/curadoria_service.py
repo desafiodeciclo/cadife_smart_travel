@@ -6,6 +6,7 @@ Responsabilidades:
   - Buscar próximos slots disponíveis para curadoria
   - Gerar mensagem da AYA oferecendo horários de forma natural
 """
+
 from datetime import date, datetime, time, timedelta
 from typing import Optional
 
@@ -74,7 +75,9 @@ async def get_proximos_slots_disponiveis(
     return slots_disponiveis
 
 
-def gerar_mensagem_oferta_curadoria(slots: list[dict], nome_cliente: Optional[str] = None) -> str:
+def gerar_mensagem_oferta_curadoria(
+    slots: list[dict], nome_cliente: Optional[str] = None
+) -> str:
     """
     Gera mensagem natural da AYA oferecendo horários de curadoria.
 

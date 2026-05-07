@@ -8,8 +8,20 @@ from app.core.security import (
     decode_token,
     verify_password,
 )
-from app.models.user import FcmTokenRequest, LoginRequest, RefreshRequest, TokenResponse, UserProfileUpdate, UserResponse
-from app.services.user_service import get_user_by_email, get_user_by_id, update_fcm_token, update_user_profile
+from app.models.user import (
+    FcmTokenRequest,
+    LoginRequest,
+    RefreshRequest,
+    TokenResponse,
+    UserProfileUpdate,
+    UserResponse,
+)
+from app.services.user_service import (
+    get_user_by_email,
+    get_user_by_id,
+    update_fcm_token,
+    update_user_profile,
+)
 
 router = APIRouter(tags=["Auth"])
 
@@ -18,9 +30,13 @@ router = APIRouter(tags=["Auth"])
 async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
     user = await get_user_by_email(db, body.email)
     if not user or not verify_password(body.password, user.hashed_password):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciais inválidas")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciais inválidas"
+        )
     if not user.is_active:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuário inativo")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuário inativo"
+        )
 
     return TokenResponse(
         access_token=create_access_token(str(user.id)),
@@ -33,14 +49,21 @@ async def refresh_token(body: RefreshRequest, db: AsyncSession = Depends(get_db)
     try:
         payload = decode_token(body.refresh_token)
     except ValueError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido ou expirado")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token inválido ou expirado",
+        )
 
     if payload.get("type") != "refresh":
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido"
+        )
 
     user = await get_user_by_id(db, payload["sub"])
     if not user or not user.is_active:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuário não encontrado")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuário não encontrado"
+        )
 
     return TokenResponse(
         access_token=create_access_token(str(user.id)),

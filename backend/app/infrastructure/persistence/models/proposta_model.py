@@ -12,6 +12,7 @@ Constraints:
   - status: native PostgreSQL ENUM
   - Index (lead_id, status): frequent query pattern for lead proposal view
 """
+
 import uuid
 from datetime import datetime
 from decimal import Decimal

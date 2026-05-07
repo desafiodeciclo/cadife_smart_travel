@@ -10,6 +10,7 @@ Features:
   - Incremental updates: only changed/new documents are re-indexed
   - Triggerable on-demand via API endpoint (BackgroundTasks) or daily scheduler
 """
+
 import hashlib
 import json
 from datetime import datetime, timezone
@@ -67,6 +68,7 @@ _splitter = RecursiveCharacterTextSplitter(
 #   }
 # }
 # ---------------------------------------------------------------------------
+
 
 class IngestionCache:
     def __init__(self, cache_path: str) -> None:
@@ -128,6 +130,7 @@ class IngestionCache:
 # Document loaders
 # ---------------------------------------------------------------------------
 
+
 def _load_txt(filepath: Path) -> str:
     return filepath.read_text(encoding="utf-8")
 
@@ -139,6 +142,7 @@ def _load_md(filepath: Path) -> str:
 def _load_pdf(filepath: Path) -> str:
     try:
         from pypdf import PdfReader  # optional dependency
+
         reader = PdfReader(str(filepath))
         return "\n\n".join(page.extract_text() or "" for page in reader.pages)
     except ImportError:
@@ -174,6 +178,7 @@ def _read_file(filepath: Path) -> Optional[str]:
 # ---------------------------------------------------------------------------
 # Core pipeline
 # ---------------------------------------------------------------------------
+
 
 class IngestionPipeline:
     """
@@ -340,9 +345,13 @@ class IngestionPipeline:
                 vs = self._get_vectorstore()
                 vs._collection.delete(ids=chunk_ids)
                 self._invalidate_vectorstore()
-                logger.info("document_removed", filename=filename, chunks=len(chunk_ids))
+                logger.info(
+                    "document_removed", filename=filename, chunks=len(chunk_ids)
+                )
             except Exception as exc:
-                logger.warning("document_remove_error", filename=filename, error=str(exc))
+                logger.warning(
+                    "document_remove_error", filename=filename, error=str(exc)
+                )
         self._cache.remove(filename)
 
 
