@@ -113,14 +113,14 @@ async def execute(payload: dict, db: AsyncSession) -> None:
             else TipoMensagem.texto
         )
     else:
-        reply = await ai_service.process_message(phone, effective_text)
+        reply = await ai_service.process_message(phone, text)
         tipo = TipoMensagem.texto
 
         try:
             # ── Step 4: Extract briefing & update score ───────────────────
             status_antes = lead.status
             extracted = await ai_service.extract_briefing(
-                [{"role": "user", "content": effective_text}]
+                [{"role": "user", "content": text}]
             )
             briefing = await lead_service.update_briefing_from_extraction(
                 db, lead, extracted
@@ -161,7 +161,7 @@ async def execute(payload: dict, db: AsyncSession) -> None:
         db,
         lead.id,
         msg_cliente=text,
-        msg_ia=reply if effective_text else None,
+        msg_ia=reply,
         tipo=tipo,
     )
 
