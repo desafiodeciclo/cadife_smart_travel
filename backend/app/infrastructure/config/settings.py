@@ -74,6 +74,18 @@ class Settings(BaseSettings):
         default="google/gemini-embedding-2-preview",
         description="Modelo OpenRouter para embeddings RAG",
     )
+    OPENROUTER_TRIAGEM_MODEL: str = Field(
+        default="openai/gpt-4o-mini",
+        description="Modelo leve/econômico para TriagemAgent (lookup CRM + determinação de stage)",
+    )
+    OPENROUTER_CONVERSION_MODEL: str = Field(
+        default="anthropic/claude-sonnet-4-5",
+        description="Modelo de alta capacidade para OrquestradorAgent (resposta final + conversão)",
+    )
+    OPENROUTER_WHISPER_MODEL: str = Field(
+        default="openai/whisper-large-v3",
+        description="Modelo Whisper para transcrição de áudio via /audio/transcriptions do OpenRouter",
+    )
 
     # ── Google Gemini (mantido para compatibilidade — não mais necessário) ─
     GEMINI_API_KEY: str = Field(
