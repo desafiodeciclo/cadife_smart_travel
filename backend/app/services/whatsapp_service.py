@@ -9,6 +9,7 @@ Retry policy (exponential backoff):
   Max retries: 3  |  Base delay: 0.5 s  |  Max delay: 4 s
   Timeout per attempt: 3 s (spec requirement)
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -38,6 +39,7 @@ _TIMEOUT_S = 3.0
 
 # ── Exceptions ────────────────────────────────────────────────────────────────
 
+
 class WhatsAppSendError(Exception):
     """Raised when the Meta API call fails after exhausting all retries."""
 
@@ -55,17 +57,20 @@ class WhatsAppSendError(Exception):
 
 # ── Result type ───────────────────────────────────────────────────────────────
 
+
 @dataclass
 class SendResult:
     """Outcome of a send_message call. Callers should persist this."""
+
     success: bool
-    wamid: Optional[str] = None       # WhatsApp message ID returned by Meta
-    error: Optional[str] = None       # human-readable failure reason
+    wamid: Optional[str] = None  # WhatsApp message ID returned by Meta
+    error: Optional[str] = None  # human-readable failure reason
     retries_used: int = 0
     latency_ms: int = 0
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 def _mask_phone(phone: str) -> str:
     """Mask last 4 digits for PII-safe logging (spec.md §5.1)."""
@@ -73,6 +78,7 @@ def _mask_phone(phone: str) -> str:
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
+
 
 def verify_signature(body: bytes, signature_header: str) -> bool:
     """Valida X-Hub-Signature-256 usando META_APP_SECRET conforme spec Meta."""
@@ -127,7 +133,9 @@ def extract_message_from_payload(payload: dict[str, Any]) -> Optional[dict[str, 
         elif msg_type in ("document", "video", "sticker"):
             media = msg.get(msg_type, {})
             result["media_id"] = media.get("id")
-            result["media_mime_type"] = media.get("mime_type", "application/octet-stream")
+            result["media_mime_type"] = media.get(
+                "mime_type", "application/octet-stream"
+            )
 
         return result
     except (KeyError, IndexError):

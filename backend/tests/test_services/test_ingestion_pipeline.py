@@ -3,19 +3,18 @@ Unit tests for ingestion_pipeline.py.
 
 All external I/O (ChromaDB, OpenAI embeddings) is mocked.
 """
-import json
-import tempfile
+
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from app.services.ingestion_pipeline import IngestionCache, IngestionPipeline
 
-
 # ---------------------------------------------------------------------------
 # IngestionCache tests
 # ---------------------------------------------------------------------------
+
 
 class TestIngestionCache:
     def test_empty_on_missing_file(self, tmp_path):
@@ -65,18 +64,19 @@ class TestIngestionCache:
 # IngestionPipeline tests
 # ---------------------------------------------------------------------------
 
+
 def _make_pipeline(tmp_path: Path) -> IngestionPipeline:
     kb_dir = tmp_path / "knowledge_base"
     kb_dir.mkdir()
     chroma_dir = str(tmp_path / "chroma")
     cache_path = str(tmp_path / "cache.json")
 
-    with patch("app.services.ingestion_pipeline.GoogleGenerativeAIEmbeddings"):
+    with patch("app.services.ingestion_pipeline.OpenAIEmbeddings"):
         pipeline = IngestionPipeline(
             knowledge_base_dir=str(kb_dir),
             chroma_persist_dir=chroma_dir,
             cache_path=cache_path,
-            gemini_api_key="test-key",
+            openrouter_api_key="test-key",
         )
     return pipeline, kb_dir
 
@@ -90,12 +90,12 @@ def pipeline_with_kb(tmp_path):
 class TestIngestionPipeline:
     @pytest.mark.asyncio
     async def test_ingest_all_missing_dir_returns_error(self, tmp_path):
-        with patch("app.services.ingestion_pipeline.GoogleGenerativeAIEmbeddings"):
+        with patch("app.services.ingestion_pipeline.OpenAIEmbeddings"):
             pipeline = IngestionPipeline(
                 knowledge_base_dir=str(tmp_path / "nonexistent"),
                 chroma_persist_dir=str(tmp_path / "chroma"),
                 cache_path=str(tmp_path / "cache.json"),
-                gemini_api_key="test-key",
+                openrouter_api_key="test-key",
             )
         result = await pipeline.ingest_all()
         assert result["status"] == "error"
@@ -211,24 +211,29 @@ class TestIngestionPipeline:
 
     def test_splitter_chunk_size_is_500(self):
         from app.services.ingestion_pipeline import _splitter
+
         assert _splitter._chunk_size == 500
 
     def test_splitter_overlap_is_50(self):
         from app.services.ingestion_pipeline import _splitter
+
         assert _splitter._chunk_overlap == 50
 
     def test_splitter_uses_token_length_function(self):
         from app.services.ingestion_pipeline import _token_length, _splitter
+
         assert _splitter._length_function is _token_length
 
     def test_token_length_counts_tokens_not_chars(self):
         from app.services.ingestion_pipeline import _token_length
+
         # "hello world" = 2 tokens but 11 characters
         assert _token_length("hello world") < 11
 
     def test_splitter_version_in_hash_differs_from_raw(self):
         import hashlib
         from app.services.ingestion_pipeline import _compute_hash
+
         content = "Natal é um destino do Nordeste."
         versioned_hash = _compute_hash(content)
         raw_hash = "sha256:" + hashlib.sha256(content.encode("utf-8")).hexdigest()
@@ -236,6 +241,7 @@ class TestIngestionPipeline:
 
     def test_hash_is_deterministic(self):
         from app.services.ingestion_pipeline import _compute_hash
+
         content = "Natal é um destino do Nordeste."
         assert _compute_hash(content) == _compute_hash(content)
 

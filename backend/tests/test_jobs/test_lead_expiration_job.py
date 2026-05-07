@@ -10,6 +10,7 @@ Coverage targets:
   - Job handles DB exceptions without re-raising (scheduler safety)
   - Job handles zero expired leads gracefully
 """
+
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -28,7 +29,10 @@ async def test_job_calls_mark_stale_with_configured_days():
 
     with (
         patch("app.jobs.lead_expiration_job.get_settings", return_value=mock_settings),
-        patch("app.jobs.lead_expiration_job.AsyncSessionLocal", return_value=mock_session_ctx),
+        patch(
+            "app.jobs.lead_expiration_job.AsyncSessionLocal",
+            return_value=mock_session_ctx,
+        ),
         patch(
             "app.jobs.lead_expiration_job.mark_stale_leads_as_perdido",
             new_callable=AsyncMock,
@@ -55,7 +59,10 @@ async def test_job_handles_db_exception_without_raising():
 
     with (
         patch("app.jobs.lead_expiration_job.get_settings", return_value=mock_settings),
-        patch("app.jobs.lead_expiration_job.AsyncSessionLocal", return_value=mock_session_ctx),
+        patch(
+            "app.jobs.lead_expiration_job.AsyncSessionLocal",
+            return_value=mock_session_ctx,
+        ),
         patch(
             "app.jobs.lead_expiration_job.mark_stale_leads_as_perdido",
             new_callable=AsyncMock,
@@ -81,7 +88,10 @@ async def test_job_with_zero_expired_leads_completes_normally():
 
     with (
         patch("app.jobs.lead_expiration_job.get_settings", return_value=mock_settings),
-        patch("app.jobs.lead_expiration_job.AsyncSessionLocal", return_value=mock_session_ctx),
+        patch(
+            "app.jobs.lead_expiration_job.AsyncSessionLocal",
+            return_value=mock_session_ctx,
+        ),
         patch(
             "app.jobs.lead_expiration_job.mark_stale_leads_as_perdido",
             new_callable=AsyncMock,

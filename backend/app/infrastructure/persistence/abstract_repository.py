@@ -10,6 +10,7 @@ Pattern: Repository + Data Mapper
   - ORM models live only in infrastructure
   - Conversion happens in _to_entity / _from_entity on each repository
 """
+
 from abc import abstractmethod
 from typing import Any, Generic, Optional, TypeVar
 from uuid import UUID
@@ -73,6 +74,6 @@ class AbstractRepository(Generic[ModelT]):
     # ── Hook — subclasses must implement ────────────────────────────────────
 
     @abstractmethod
-    async def get_by_id(self, pk: UUID) -> Optional[ModelT]:  # type: ignore[override]
+    async def get_by_id(self, pk: UUID) -> Optional[ModelT]:  # type: ignore[override]  # noqa: F811
         """Typed version ensures subclasses return the right domain type."""
         ...

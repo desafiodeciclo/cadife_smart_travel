@@ -4,6 +4,7 @@ PropostaRepository — Infrastructure/Persistence Layer
 Concrete implementation for proposal (Proposta) persistence.
 Supports lifecycle transitions and filtered queries by lead and status.
 """
+
 import uuid
 from decimal import Decimal
 from typing import Optional

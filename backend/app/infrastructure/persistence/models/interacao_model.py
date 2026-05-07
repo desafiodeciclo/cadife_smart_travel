@@ -7,6 +7,7 @@ Stores every WhatsApp message exchange between client and AI.
 Indexes:
   - (lead_id, timestamp) DESC — for loading conversation history
 """
+
 import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
@@ -40,6 +41,7 @@ class InteracaoModel(Base):
     __table_args__ = (
         # Composite index: fetch conversation history sorted by time
         Index("ix_interacoes_lead_timestamp", "lead_id", "timestamp"),
+        {"extend_existing": True},
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -59,7 +61,9 @@ class InteracaoModel(Base):
     timestamp: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
-    enviado_em: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    enviado_em: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     status_envio: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     erro_envio: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 

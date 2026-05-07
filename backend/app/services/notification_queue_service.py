@@ -9,6 +9,7 @@ Integração:
   - Usa NotificationDebounceService para throttle de 60s
   - Persiste job em notification_queue para processamento assíncrono pelo Worker
 """
+
 from __future__ import annotations
 
 import uuid
@@ -34,7 +35,9 @@ DEFAULT_RETRY_DELAY_SECONDS = 60
 class NotificationQueueService:
     """Service to enqueue and manage FCM notification jobs."""
 
-    def __init__(self, debounce_service: NotificationDebounceService | None = None) -> None:
+    def __init__(
+        self, debounce_service: NotificationDebounceService | None = None
+    ) -> None:
         self._debounce = debounce_service or NotificationDebounceService()
 
     async def enqueue_qualified_lead_notification(

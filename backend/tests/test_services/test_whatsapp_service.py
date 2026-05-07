@@ -10,6 +10,7 @@ Coverage targets:
   - extract_message_from_payload: text message, media message, empty/malformed payload
   - verify_signature: valid, invalid, missing prefix
 """
+
 import hashlib
 import hmac
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -22,7 +23,6 @@ from app.services.whatsapp_service import (
     send_message,
     verify_signature,
 )
-
 
 # ── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -69,7 +69,9 @@ def _make_media_payload(phone: str = PHONE, media_type: str = "image") -> dict:
                                     media_type: {"id": "img_id_123"},
                                 }
                             ],
-                            "contacts": [{}],  # empty contact is valid; contacts:[] raises IndexError
+                            "contacts": [
+                                {}
+                            ],  # empty contact is valid; contacts:[] raises IndexError
                         }
                     }
                 ]
@@ -79,6 +81,7 @@ def _make_media_payload(phone: str = PHONE, media_type: str = "image") -> dict:
 
 
 # ── extract_message_from_payload ─────────────────────────────────────────────
+
 
 def test_extract_text_message():
     result = extract_message_from_payload(_make_text_payload())
@@ -109,26 +112,34 @@ def test_extract_malformed_payload_returns_none():
 
 # ── verify_signature ─────────────────────────────────────────────────────────
 
+
 def test_verify_signature_valid(monkeypatch):
     secret = "test_token"
-    monkeypatch.setattr("app.services.whatsapp_service.settings.WHATSAPP_TOKEN", secret)
+    monkeypatch.setattr(
+        "app.services.whatsapp_service.settings.META_APP_SECRET", secret
+    )
     body = b'{"test": "payload"}'
     sig = "sha256=" + hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
     assert verify_signature(body, sig) is True
 
 
 def test_verify_signature_invalid(monkeypatch):
-    monkeypatch.setattr("app.services.whatsapp_service.settings.WHATSAPP_TOKEN", "test_token")
+    monkeypatch.setattr(
+        "app.services.whatsapp_service.settings.META_APP_SECRET", "test_token"
+    )
     body = b'{"test": "payload"}'
     assert verify_signature(body, "sha256=badhash") is False
 
 
 def test_verify_signature_missing_prefix(monkeypatch):
-    monkeypatch.setattr("app.services.whatsapp_service.settings.WHATSAPP_TOKEN", "test_token")
+    monkeypatch.setattr(
+        "app.services.whatsapp_service.settings.META_APP_SECRET", "test_token"
+    )
     assert verify_signature(b"body", "noprefixhash") is False
 
 
 # ── send_message ─────────────────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_send_message_success(monkeypatch):

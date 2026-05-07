@@ -13,6 +13,7 @@ The webhook route uses BackgroundTasks to respond immediately (200 OK)
 while processing the message async — this middleware protects the
 synchronous processing boundary.
 """
+
 import asyncio
 
 import structlog
@@ -39,7 +40,8 @@ class TimeoutMiddleware(BaseHTTPMiddleware):
         # Determine timeout based on route
         is_webhook = request.url.path.startswith("/webhook")
         timeout = (
-            settings.WEBHOOK_TIMEOUT_SECONDS if is_webhook
+            settings.WEBHOOK_TIMEOUT_SECONDS
+            if is_webhook
             else settings.REQUEST_TIMEOUT_SECONDS
         )
 
