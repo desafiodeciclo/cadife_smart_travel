@@ -14,7 +14,7 @@ class _SuitcaseTabState extends State<SuitcaseTab> {
   String _selectedTripId = 'essentials';
   late List<SuitcaseItem> _items;
 
-  Map<String, String> _trips = {
+  final Map<String, String> _trips = {
     'essentials': '✨ Essenciais',
   };
 
@@ -42,15 +42,6 @@ class _SuitcaseTabState extends State<SuitcaseTab> {
       builder: (ctx) => ShadDialog(
         title: const Text('Nova Mala'),
         description: const Text('Dê um nome para sua nova mala de viagem.'),
-        child: Container(
-          width: 300,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          child: ShadInput(
-            controller: controller,
-            placeholder: const Text('Ex: Férias na Bahia'),
-            autofocus: true,
-          ),
-        ),
         actions: [
           ShadButton.outline(
             onPressed: () => Navigator.pop(ctx),
@@ -61,6 +52,15 @@ class _SuitcaseTabState extends State<SuitcaseTab> {
             child: const Text('Criar'),
           ),
         ],
+        child: Container(
+          width: 300,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: ShadInput(
+            controller: controller,
+            placeholder: const Text('Ex: Férias na Bahia'),
+            autofocus: true,
+          ),
+        ),
       ),
     );
 

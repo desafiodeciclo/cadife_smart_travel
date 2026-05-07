@@ -7,7 +7,6 @@ import 'package:cadife_smart_travel/features/client/status/presentation/widgets/
 import 'package:cadife_smart_travel/features/client/status/presentation/widgets/trip_status_section.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 const _kAyaWhatsApp = '5511999999999';
