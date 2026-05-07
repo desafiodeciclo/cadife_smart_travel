@@ -58,6 +58,33 @@ _INJECTION_PATTERNS = [
     r"aja\s+como",
     r"pode\s+fazer\s+tudo",
     r"sem\s+restriç[õo]es",
+    r"mostre?\s+(o\s+)?(?:prompt|instru[çc][õo]es|sistema|system)",
+    r"revele?\s+(o\s+)?(?:prompt|instru[çc][õo]es|sistema)",
+    r"traduz\w*\s+(?:o\s+)?(?:\.env|arquivo|config|prompt|sistema)",
+    r"exiba\s+(?:o\s+)?(?:\.env|arquivo|config|prompt|sistema)",
+    # Comandos de sistema / terminal (ataque de persona "Linux terminal")
+    r"\bls\s+-la?\b",
+    r"\bcat\s+/(?:etc|proc|var|home|root|usr|\.env)\b",
+    r"\bcat\s+\.env\b",
+    r"\bexecute\s+(?:command|cmd|bash|sh|shell|terminal)",
+    r"\brun\s+(?:command|cmd|bash|sh|shell)\b",
+    r"(?:linux|windows|mac)\s+terminal",
+    r"agora\s+(?:você\s+é|seja)\s+(?:um\s+)?terminal",
+    r"\bos\.system\b",
+    r"\bsubprocess\b",
+    r"\beval\s*\(",
+    r"\bexec\s*\(",
+    r"__import__",
+    r"\bpython\s*-c\b",
+    # Exfiltração de arquivo de configuração / credenciais
+    r"(?:mostrar?|exibir?|revelar?|printar?|imprimir?)\s+(?:o\s+)?\.env",
+    r"(?:show|print|display|dump)\s+(?:the\s+)?\.env",
+    r"(?:api[_\s]?key|secret[_\s]?key|password|token|credential)\s*=",
+    r"OPENROUTER_API_KEY",
+    r"JWT_SECRET",
+    r"ENCRYPTION_KEY",
+    r"WHATSAPP_TOKEN",
+    r"DATABASE_URL",
     # Padrões de Injeção Indireta (escondidos em textos/anexos)
     r"system\s+override",
     r"attention\s*:\s*(ignore|read|execute)",
@@ -76,6 +103,14 @@ _INJECTION_PATTERNS = [
     # Exfiltração via Markdown/Codificação (Prevenção OWASP LLM06)
     r"!\[.*?\]\s*\(https?://.*?\)",
     r"encode.*?(base64|hex|url)",
+    # Ataques de unicode/homoglifo — substituição de letras por look-alikes
+    r"[ａ-ｚ]{3,}",  # fullwidth latin letters (U+FF41–U+FF5A)
+    # Multilíngue — comandos de injeção em outros idiomas
+    r"нов(?:ые|ая)\s+(?:инструкции|роль)",     # Russo: "novas instruções/papel"
+    r"忽略.*指令",                                # Chinês: "ignore instruções"
+    r"모든\s+지침\s+무시",                        # Coreano: "ignore todas as instruções"
+    r"سيستم\s+پرامپت",                          # Persa: "system prompt"
+    r"নির্দেশনা\s+উপেক্ষা",                     # Bengali: "ignore instruções"
 ]
 
 _INJECTION_REGEX = re.compile(
@@ -85,6 +120,77 @@ _INJECTION_REGEX = re.compile(
 
 # Marcação neutra para conteúdo suspeito
 _NEUTRALIZED_PREFIX = "[CONTEÚDO_NEUTRALIZADO] "
+
+# Resposta padrão quando um ataque é bloqueado antes de chegar à LLM
+SECURITY_REFUSAL_MESSAGE = (
+    "Sinto muito, não posso ajudar com solicitações técnicas ou de sistema. "
+    "Estou aqui para ajudar você a planejar a viagem dos seus sonhos! "
+    "Tem algum destino em mente? ✈️"
+)
+
+# Padrões de alto risco que disparam bloqueio imediato (sem neutralização — sem acesso à LLM)
+_BLOCKING_PATTERNS = [
+    r"ignore\s+(all\s+)?(previous\s+|above\s+)?instructions",
+    r"ignore\s+(todas\s+as\s+)?instruç[õo]es",
+    r"you\s+are\s+now\s+",
+    r"from\s+now\s+on\s+you\s+are\s+",
+    r"act\s+as\s+(if\s+)?you\s+(are|were)\s+",
+    r"pretend\s+to\s+be\s+",
+    r"jailbreak",
+    r"d[aá]n\s+mode",
+    r"developer\s+mode",
+    r"(?:linux|windows|mac)\s+terminal",
+    r"agora\s+(?:você\s+é|seja)\s+(?:um\s+)?terminal",
+    r"\bls\s+-la?\b",
+    r"\bcat\s+\.env\b",
+    r"\bcat\s+/(?:etc|proc|var|home|root)",
+    r"(?:mostrar?|exibir?|revelar?|printar?)\s+(?:o\s+)?\.env",
+    r"(?:show|print|display|dump)\s+(?:the\s+)?\.env",
+    r"\bos\.system\b",
+    r"\beval\s*\(",
+    r"\bexec\s*\(",
+    r"__import__",
+    r"OPENROUTER_API_KEY",
+    r"JWT_SECRET",
+    r"ENCRYPTION_KEY",
+    r"system\s+prompt\s*:",
+    r"print\s+(previous\s+|above\s+)?(instructions?|prompts?|system)",
+    r"show\s+(me\s+)?(the\s+)?(previous\s+|above\s+)?(instructions?|prompts?)",
+    r"repeat\s+(the\s+)?(previous\s+|above\s+)?(instructions?|prompts?)",
+    r"traduz\w*\s+(?:o\s+)?(?:\.env|arquivo|config|prompt|sistema)",
+    r"mostre?\s+(o\s+)?(?:prompt|instru[çc][õo]es\s+d[eo]\s+sistema)",
+]
+
+_BLOCKING_REGEX = re.compile(
+    "|".join(f"(?:{p})" for p in _BLOCKING_PATTERNS),
+    re.IGNORECASE | re.MULTILINE,
+)
+
+
+def should_block(text: Optional[str]) -> bool:
+    """
+    Verifica se o texto deve ser BLOQUEADO antes de chegar à LLM.
+
+    Diferente de sanitize_user_input (que neutraliza e prossegue), esta função
+    identifica os ataques de maior risco e retorna True para que o orquestrador
+    retorne SECURITY_REFUSAL_MESSAGE diretamente, sem acionar a LLM.
+
+    Args:
+        text: Mensagem bruta do usuário.
+
+    Returns:
+        True se o texto contém padrão de bloqueio imediato.
+    """
+    if not text:
+        return False
+    match = _BLOCKING_REGEX.search(text)
+    if match:
+        logger.warning(
+            "security_block_triggered",
+            pattern_snippet=text[max(0, match.start() - 10): match.end() + 10][:80],
+        )
+        return True
+    return False
 
 
 def sanitize_user_input(text: Optional[str]) -> str:
