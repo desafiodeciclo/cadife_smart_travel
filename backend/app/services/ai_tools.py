@@ -33,10 +33,77 @@ from app.services import rag_service
 
 logger = structlog.get_logger()
 
+from app.models.briefing import _PERFIL_ALIASES, _ORCAMENTO_ALIASES
+
+
+def _normalize_briefing_enums(data: dict[str, Any]) -> dict[str, Any]:
+    """Corrige valores de enum enviados pela IA sem acento ou em inglês."""
+    result = dict(data)
+    if isinstance(result.get("perfil"), str):
+        result["perfil"] = _PERFIL_ALIASES.get(result["perfil"].lower(), result["perfil"])
+    if isinstance(result.get("orcamento"), str):
+        result["orcamento"] = _ORCAMENTO_ALIASES.get(
+            result["orcamento"].lower(), result["orcamento"]
+        )
+    return result
+
 
 # ── Tool Schemas (OpenAI function-calling format) ────────────────────────────
 
 TOOL_SCHEMAS: list[dict[str, Any]] = [
+    {
+        "type": "function",
+        "function": {
+            "name": "get_lead_context_by_wa_id",
+            "description": (
+                "Busca contexto completo do lead no CRM PostgreSQL pelo WhatsApp ID (wa_id). "
+                "Retorna: nome, status atual, score, campos do briefing já preenchidos e as "
+                "últimas 5 interações. Use SEMPRE no início de cada atendimento para saber "
+                "quais campos já foram coletados e evitar perguntas repetidas."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "wa_id": {
+                        "type": "string",
+                        "description": (
+                            "WhatsApp ID do cliente — número de telefone em formato "
+                            "internacional sem '+' (ex: 5511999999999)."
+                        ),
+                    }
+                },
+                "required": ["wa_id"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "check_availability",
+            "description": (
+                "Verifica disponibilidade de horários para curadoria com um consultor Cadife. "
+                "Retorna até 3 slots disponíveis nos próximos dias úteis. "
+                "Use quando o briefing estiver completo (completude ≥ 60%) e for hora de "
+                "oferecer agendamento ao cliente. "
+                "NOTA: integração Google Calendar pendente — retorna slots simulados por ora."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "preferred_date": {
+                        "type": "string",
+                        "description": "Data preferida pelo cliente no formato YYYY-MM-DD (opcional).",
+                    },
+                    "duration_minutes": {
+                        "type": "integer",
+                        "description": "Duração da curadoria em minutos. Padrão: 45.",
+                        "default": 45,
+                    },
+                },
+                "required": [],
+            },
+        },
+    },
     {
         "type": "function",
         "function": {
@@ -98,14 +165,26 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
                     },
                     "data": {
                         "type": "object",
-                        "description": (
-                            "Campos do briefing a atualizar. Campos suportados: "
-                            "destino (str), data_ida (YYYY-MM-DD), data_volta (YYYY-MM-DD), "
-                            "qtd_pessoas (int), perfil (casal|família|solo|grupo|amigos), "
-                            "orcamento (baixo|médio|alto|premium), tem_passaporte (bool), "
-                            "observacoes (str)."
-                        ),
-                        "additionalProperties": True,
+                        "description": "Campos do briefing a atualizar (apenas campos listados abaixo são aceitos).",
+                        "properties": {
+                            "destino": {"type": "string", "description": "Cidade, país ou região de destino."},
+                            "data_ida": {"type": "string", "description": "Data de ida no formato YYYY-MM-DD."},
+                            "data_volta": {"type": "string", "description": "Data de volta no formato YYYY-MM-DD."},
+                            "qtd_pessoas": {"type": "integer", "description": "Número total de viajantes."},
+                            "perfil": {
+                                "type": "string",
+                                "enum": ["casal", "família", "solo", "grupo", "amigos"],
+                                "description": "Perfil do grupo viajante.",
+                            },
+                            "orcamento": {
+                                "type": "string",
+                                "enum": ["baixo", "médio", "alto", "premium"],
+                                "description": "Nível de orçamento do cliente.",
+                            },
+                            "tem_passaporte": {"type": "boolean", "description": "Cliente possui passaporte válido."},
+                            "observacoes": {"type": "string", "description": "Notas adicionais ou pedidos especiais."},
+                        },
+                        "additionalProperties": False,
                     },
                 },
                 "required": ["phone", "data"],
@@ -116,6 +195,131 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
 
 
 # ── Tool Implementations ──────────────────────────────────────────────────────
+
+
+async def _get_lead_context_by_wa_id(
+    wa_id: str, db: Optional[AsyncSession]
+) -> str:
+    """
+    Consulta PostgreSQL pelo wa_id (= número de telefone WhatsApp).
+    Retorna status do lead, campos do briefing preenchidos e histórico recente.
+    """
+    if not db:
+        return json.dumps({"exists": False, "reason": "db_unavailable"})
+    try:
+        from app.infrastructure.persistence.repositories.lead_repository import (
+            LeadRepository,
+        )
+        from app.infrastructure.persistence.repositories.briefing_repository import (
+            BriefingRepository,
+        )
+        from app.services import lead_service
+
+        repo = LeadRepository(db)
+        lead = await repo.get_by_phone(wa_id)
+
+        if not lead:
+            return json.dumps({"exists": False, "is_new_lead": True})
+
+        # Briefing fields
+        briefing_data: dict[str, Any] = {}
+        try:
+            b_repo = BriefingRepository(db)
+            briefing = await b_repo.get_by_lead_id(lead.id)
+            if briefing:
+                briefing_data = {
+                    "destino": briefing.destino,
+                    "data_ida": str(briefing.data_ida) if briefing.data_ida else None,
+                    "data_volta": str(briefing.data_volta) if briefing.data_volta else None,
+                    "qtd_pessoas": briefing.qtd_pessoas,
+                    "perfil": briefing.perfil.value if briefing.perfil else None,
+                    "orcamento": briefing.orcamento.value if briefing.orcamento else None,
+                    "tem_passaporte": briefing.tem_passaporte,
+                    "completude_pct": getattr(briefing, "completude_pct", None),
+                }
+        except Exception as exc:
+            logger.warning("briefing_lookup_failed", wa_id=wa_id, error=str(exc))
+
+        # Últimas 5 interações para contexto
+        interacoes = await lead_service.get_recent_interacoes(db, lead.id, limit=5)
+        history = [
+            {
+                "from": "cliente" if row.get("mensagem_cliente") else "aya",
+                "text": row.get("mensagem_cliente") or row.get("mensagem_ia", ""),
+            }
+            for row in interacoes
+            if row.get("mensagem_cliente") or row.get("mensagem_ia")
+        ]
+
+        return json.dumps(
+            {
+                "exists": True,
+                "is_new_lead": False,
+                "lead_id": str(lead.id),
+                "nome": lead.nome,
+                "status": lead.status.value if lead.status else None,
+                "score": lead.score.value if lead.score else None,
+                "briefing": briefing_data,
+                "recent_history": history,
+            }
+        )
+    except Exception as exc:
+        logger.error("tool_get_lead_context_failed", wa_id=wa_id, error=str(exc))
+        return json.dumps({"exists": False, "error": "crm_lookup_failed"})
+
+
+async def _check_availability(args: dict[str, Any]) -> str:
+    """
+    Placeholder para integração com Google Calendar.
+    Retorna slots simulados até GOOGLE_CALENDAR_CREDENTIALS estiver configurado.
+
+    TODO: substituir pela chamada real à Google Calendar API quando
+    as credenciais estiverem disponíveis em settings.GOOGLE_CALENDAR_CREDENTIALS.
+    """
+    from datetime import datetime, timedelta
+
+    duration = int(args.get("duration_minutes", 45))
+    preferred_date_str: Optional[str] = args.get("preferred_date")
+
+    # Gera até 3 slots em dias úteis a partir de amanhã (ou da data preferida)
+    try:
+        base = (
+            datetime.strptime(preferred_date_str, "%Y-%m-%d")
+            if preferred_date_str
+            else datetime.now()
+        )
+    except ValueError:
+        base = datetime.now()
+
+    slots = []
+    day_offset = 1
+    while len(slots) < 3 and day_offset <= 14:
+        candidate = base + timedelta(days=day_offset)
+        day_offset += 1
+        if candidate.weekday() > 4:  # pula fim de semana
+            continue
+        for hour in [9, 11, 14, 16]:
+            slot_dt = candidate.replace(hour=hour, minute=0, second=0, microsecond=0)
+            slots.append(
+                {
+                    "datetime": slot_dt.strftime("%Y-%m-%d %H:%M"),
+                    "duration_minutes": duration,
+                    "available": True,
+                }
+            )
+            if len(slots) >= 3:
+                break
+
+    return json.dumps(
+        {
+            "status": "placeholder",
+            "note": (
+                "Integração Google Calendar pendente. "
+                "Slots simulados para dias úteis (09h–16h, Seg–Sex)."
+            ),
+            "slots": slots,
+        }
+    )
 
 
 async def _query_project_scope(query: str) -> str:
@@ -155,6 +359,16 @@ async def _check_existing_lead(phone: str, db: Optional[AsyncSession]) -> str:
         return json.dumps({"exists": False, "error": "lookup_failed"})
 
 
+# Campos permitidos na tool persist_lead_data — defesa em profundidade
+_ALLOWED_PERSIST_FIELDS: frozenset[str] = frozenset({
+    "destino", "data_ida", "data_volta", "qtd_pessoas",
+    "perfil", "orcamento", "tem_passaporte", "observacoes",
+})
+
+# Comprimento máximo para campos de texto livre (defesa contra context stuffing)
+_MAX_FIELD_LENGTH = 500
+
+
 async def _persist_lead_data(
     phone: str,
     data: dict[str, Any],
@@ -166,11 +380,26 @@ async def _persist_lead_data(
         from app.services.lead_service import upsert_lead_with_resilience
         from app.models.briefing import BriefingExtracted
 
+        # Whitelist: remove campos não reconhecidos antes de qualquer persistência
+        sanitized: dict[str, Any] = {}
+        for key, value in data.items():
+            if key not in _ALLOWED_PERSIST_FIELDS:
+                logger.warning("persist_unknown_field_blocked", field=key, phone=phone)
+                continue
+            # Trunca strings longas demais
+            if isinstance(value, str) and len(value) > _MAX_FIELD_LENGTH:
+                value = value[:_MAX_FIELD_LENGTH]
+            sanitized[key] = value
+
+        if not sanitized:
+            return json.dumps({"success": False, "reason": "no_valid_fields"})
+
         lead = await upsert_lead_with_resilience(db, {"telefone": phone})
 
         from app.services.lead_service import update_briefing_from_extraction
 
-        briefing_in = BriefingExtracted.model_validate(data)
+        normalized = _normalize_briefing_enums(sanitized)
+        briefing_in = BriefingExtracted.model_validate(normalized)
         briefing = await update_briefing_from_extraction(db, lead, briefing_in)
 
         return json.dumps(
@@ -181,6 +410,12 @@ async def _persist_lead_data(
             }
         )
     except Exception as exc:
+        # Garante que a sessão volta a um estado limpo — evita PendingRollbackError
+        # em chamadas subsequentes que compartilham o mesmo AsyncSession.
+        try:
+            await db.rollback()
+        except Exception:
+            pass
         logger.error("tool_persist_lead_data_failed", error=str(exc))
         return json.dumps({"success": False, "error": "persist_failed"})
 
@@ -199,6 +434,12 @@ async def execute_tool(
     before sending the tool result back for the next completion turn.
     """
     logger.info("tool_dispatch", tool=tool_name, arg_keys=list(tool_args.keys()))
+
+    if tool_name == "get_lead_context_by_wa_id":
+        return await _get_lead_context_by_wa_id(tool_args["wa_id"], db)
+
+    if tool_name == "check_availability":
+        return await _check_availability(tool_args)
 
     if tool_name == "query_project_scope":
         return await _query_project_scope(tool_args["query"])
