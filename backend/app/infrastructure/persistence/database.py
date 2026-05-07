@@ -40,7 +40,6 @@ class Base(DeclarativeBase):
     """SQLAlchemy declarative base — all ORM models inherit from this."""
 
 
-
 async def create_tables() -> None:
     """Create all tables on startup (development/testing only).
     In production, use Alembic migrations instead.

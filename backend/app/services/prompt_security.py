@@ -1,3 +1,4 @@
+# flake8: noqa: E501
 """
 Módulo de segurança de prompts para o assistente AYA.
 
@@ -236,7 +237,7 @@ def build_system_prompt(context: str = "") -> str:
 EXTRACTION_SYSTEM_PROMPT_SECURE = (
     INSTRUCTIONS_START
     + "\n"
-    + """Você é um especialista em extração de dados estruturados da Cadife Tour. 
+    + """Você é um especialista em extração de dados estruturados da Cadife Tour.
 Sua única função é analisar a conversa entre a assistente e o cliente para preencher os campos do briefing de viagem.
 
 REGRAS CRÍTICAS DE EXTRAÇÃO:

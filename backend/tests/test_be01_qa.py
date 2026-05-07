@@ -104,7 +104,6 @@ async def test_upsert_lead_creation():
 @pytest.mark.asyncio
 async def test_lead_pii_nullable():
     """Verifica se o sistema aceita telefone_hash nulo (simulado)."""
-    db = AsyncMock(spec=AsyncSession)
     # Criando objeto diretamente para testar o modelo
     lead = Lead(telefone="+5511999999999", telefone_hash=None)
     assert lead.telefone_hash is None  # SQLAlchemy permite na instância

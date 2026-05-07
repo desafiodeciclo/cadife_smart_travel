@@ -106,7 +106,7 @@ def flush_langfuse() -> None:
     Força o flush de eventos pendentes para o servidor Langfuse.
     Útil chamar antes de encerrar o processo ou BackgroundTask.
     """
-    global _langfuse_handler
+    global _langfuse_handler  # noqa: F824
     if _langfuse_handler is not None:
         try:
             _langfuse_handler.flush()

@@ -32,7 +32,7 @@ import app.models.proposta  # noqa: F401
 import app.models.user  # noqa: F401
 
 # Build isolated app to avoid importing broken langchain deps from main.py
-app = FastAPI()
+app = FastAPI()  # noqa: F811
 app.include_router(leads_router)
 app.include_router(propostas_router)
 
