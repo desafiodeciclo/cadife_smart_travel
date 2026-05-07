@@ -53,6 +53,7 @@ class IsarCacheManager {
           BriefingCacheSchema,
           AgendaCacheSchema,
           ProposalCacheSchema,
+          OfferCacheSchema,
           InAppNotificationSchema,
           UserPreferencesIsarSchema,
         ],
@@ -250,6 +251,49 @@ class IsarCacheManager {
     });
   }
 
+  // ── OfferCache CRUD ────────────────────────────────────
+
+  Future<void> putOffer(OfferCache offer) async {
+    if (isar == null) return;
+    await isar!.writeTxn(() async {
+      await isar!.offerCaches.put(offer);
+    });
+  }
+
+  Future<void> putOffers(List<OfferCache> offers) async {
+    if (isar == null) return;
+    await isar!.writeTxn(() async {
+      await isar!.offerCaches.putAll(offers);
+    });
+  }
+
+  Future<OfferCache?> getOfferByServerId(String serverId) async {
+    if (isar == null) return null;
+    return await isar!.offerCaches.where().serverIdEqualTo(serverId).findFirst();
+  }
+
+  Future<List<OfferCache>> getAllOffers() async {
+    if (isar == null) return [];
+    return await isar!.offerCaches.where().findAll();
+  }
+
+  Future<void> deleteOfferByServerId(String serverId) async {
+    if (isar == null) return;
+    final id = await isar!.offerCaches.where().serverIdEqualTo(serverId).idProperty().findFirst();
+    if (id != null) {
+      await isar!.writeTxn(() async {
+        await isar!.offerCaches.delete(id);
+      });
+    }
+  }
+
+  Future<void> clearOffers() async {
+    if (isar == null) return;
+    await isar!.writeTxn(() async {
+      await isar!.offerCaches.clear();
+    });
+  }
+
   // ── Global Operations ──────────────────────────────────
 
   /// Remove todo o cache (todas as coleções).
@@ -260,6 +304,7 @@ class IsarCacheManager {
       await isar!.briefingCaches.clear();
       await isar!.agendaCaches.clear();
       await isar!.proposalCaches.clear();
+      await isar!.offerCaches.clear();
     });
   }
 
@@ -270,6 +315,7 @@ class IsarCacheManager {
     final briefings = await isar!.briefingCaches.count();
     final agendas = await isar!.agendaCaches.count();
     final proposals = await isar!.proposalCaches.count();
-    return leads + briefings + agendas + proposals;
+    final offers = await isar!.offerCaches.count();
+    return leads + briefings + agendas + proposals + offers;
   }
 }

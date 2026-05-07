@@ -16,6 +16,7 @@ class ClientShell extends StatefulWidget {
 class _ClientShellState extends State<ClientShell> {
   static const _tabs = [
     '/client/status',
+    '/client/offers',
     '/client/interactions',
     '/client/documents',
     '/client/profile',
@@ -71,6 +72,7 @@ class _ClientShellState extends State<ClientShell> {
         onTap: (i) => context.go(_tabs[i]),
         items: const [
           CadifeBottomNavItem(icon: LucideIcons.house, label: 'Início'),
+          CadifeBottomNavItem(icon: LucideIcons.tag, label: 'Ofertas'),
           CadifeBottomNavItem(icon: LucideIcons.history, label: 'Histórico'),
           CadifeBottomNavItem(icon: LucideIcons.fileText, label: 'Docs'),
           CadifeBottomNavItem(icon: LucideIcons.user, label: 'Perfil'),

@@ -16,7 +16,7 @@ extension GetUserPreferencesIsarCollection on Isar {
 
 const UserPreferencesIsarSchema = CollectionSchema(
   name: r'UserPreferencesIsar',
-  id: 123456789,
+  id: -2918659535799530546,
   properties: {
     r'themePreference': PropertySchema(
       id: 0,
