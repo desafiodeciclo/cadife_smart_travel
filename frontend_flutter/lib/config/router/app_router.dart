@@ -21,8 +21,10 @@ import 'package:cadife_smart_travel/features/client/documentos/presentation/page
 import 'package:cadife_smart_travel/features/client/documentos/presentation/pages/trip_documents_page.dart';
 import 'package:cadife_smart_travel/features/client/historico/presentation/pages/historico_page.dart';
 import 'package:cadife_smart_travel/features/client/profile/presentation/pages/profile_page.dart' as client_profile;
+import 'package:cadife_smart_travel/features/client/profile/presentation/pages/travel_journal_detail_screen.dart';
 import 'package:cadife_smart_travel/features/client/status/presentation/pages/status_page.dart';
 import 'package:cadife_smart_travel/features/notifications/presentation/screens/notification_center_screen.dart';
+import 'package:cadife_smart_travel/features/settings/presentation/screens/settings_page.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -228,6 +230,27 @@ final routerProvider = Provider<GoRouter>((ref) {
             pageBuilder: (context, state) => SlideTransitionPage(
               name: state.name,
               child: const client_profile.ProfileScreen(),
+            ),
+            routes: [
+              GoRoute(
+                path: 'diary/:tripId',
+                name: 'client_diary_detail',
+                pageBuilder: (context, state) {
+                  final tripId = state.pathParameters['tripId']!;
+                  return SlideTransitionPage(
+                    name: state.name,
+                    child: TravelJournalDetailScreen(tripId: tripId),
+                  );
+                },
+              ),
+            ],
+          ),
+          GoRoute(
+            path: '/client/settings',
+            name: 'client_settings',
+            pageBuilder: (context, state) => SlideTransitionPage(
+              name: state.name,
+              child: const SettingsPage(),
             ),
           ),
         ],
