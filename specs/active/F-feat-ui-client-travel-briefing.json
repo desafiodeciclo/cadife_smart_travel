@@ -1,0 +1,63 @@
+{
+  "id": "F-feat-ui-client-travel-briefing",
+  "title": "feat/ui-client-travel-briefing",
+  "status": "in-progress",
+  "priority": "critical",
+  "sprint": 5,
+  "points": 24,
+  "assignee": "Frontend Lead",
+  "branch": "feat/ui-client-travel-briefing",
+  "description": "Implementar a tela de briefing de viagem do cliente como aba reutilizável dentro de TravelDetailsPage, exibindo dados estruturados coletados pela AYA.",
+  "steps": [
+    {
+      "id": "step-1",
+      "name": "Spec JSON criado e task movida para active",
+      "status": "done"
+    },
+    {
+      "id": "step-2",
+      "name": "BriefingFlag entity (domain)",
+      "status": "done"
+    },
+    {
+      "id": "step-3",
+      "name": "ClientBriefingNotifier + BriefingFlagNotifier (providers)",
+      "status": "done"
+    },
+    {
+      "id": "step-4",
+      "name": "BriefingSection, BriefingDataCard, BriefingStatusTimeline, PendingInfoList widgets",
+      "status": "done"
+    },
+    {
+      "id": "step-5",
+      "name": "TravelBriefingTab widget (aba principal)",
+      "status": "done"
+    },
+    {
+      "id": "step-6",
+      "name": "TravelDetailsPage com TabBar + SliverAppBar",
+      "status": "done"
+    },
+    {
+      "id": "step-7",
+      "name": "Router: adicionar /client/travel/:leadId",
+      "status": "done"
+    },
+    {
+      "id": "step-8",
+      "name": "StatusPage: navegar para TravelDetailsPage ao tocar no card",
+      "status": "done"
+    }
+  ],
+  "acceptance_criteria": [
+    "Aba Briefing renderizada dentro de TravelDetailsPage",
+    "Header exibe imagem do destino, status badge e score de temperatura",
+    "6 seções expansíveis: Viagem, Passageiros, Orçamento, Preferências, Timeline, Pendentes",
+    "Cliente consegue marcar Incerto ou Incorreto em qualquer informação",
+    "Ao marcar Incorreto, opção de abrir WhatsApp é oferecida",
+    "Briefing persiste offline via Isar e sincroniza ao reconectar",
+    "Timeline mostra progresso atual",
+    "Campos pendentes aparecem em destaque"
+  ]
+}
