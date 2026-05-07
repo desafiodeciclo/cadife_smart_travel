@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 
 class PerformanceSection extends StatelessWidget {
   const PerformanceSection({
-    super.key,
     required this.stats,
+    super.key,
   });
 
   final DashboardStats stats;

@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 
 class TripHistoryCard extends StatelessWidget {
   const TripHistoryCard({
-    super.key,
     required this.trip,
+    super.key,
     this.onTap,
   });
 

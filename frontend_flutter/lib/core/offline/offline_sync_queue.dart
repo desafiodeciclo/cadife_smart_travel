@@ -112,7 +112,7 @@ class OfflineSyncQueue {
       for (final entry in entries) {
         try {
           await _syncBox.delete(entry.id);
-        } catch (e) {
+        } on Object catch (e) {
           final updated = SyncQueueEntry(
             id: entry.id,
             method: entry.method,

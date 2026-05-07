@@ -19,8 +19,8 @@ class CadifeCard extends StatelessWidget {
   final CardVariant variant;
 
   const CadifeCard({
-    super.key,
     required this.child,
+    super.key,
     this.padding,
     this.width,
     this.height,

@@ -8,8 +8,8 @@ import 'package:google_fonts/google_fonts.dart';
 
 class CadifeAppBar extends ConsumerWidget implements PreferredSizeWidget {
   const CadifeAppBar({
-    super.key,
     required this.title,
+    super.key,
     this.showProfile = true,
     this.actions,
     this.centerTitle = true,

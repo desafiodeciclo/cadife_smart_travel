@@ -8,7 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class ScheduleAppointmentModal extends ConsumerStatefulWidget {
   final Lead lead;
 
-  const ScheduleAppointmentModal({super.key, required this.lead});
+  const ScheduleAppointmentModal({required this.lead, super.key});
 
   static Future<bool?> show(BuildContext context, Lead lead) {
     return showModalBottomSheet<bool>(
