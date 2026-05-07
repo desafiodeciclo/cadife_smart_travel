@@ -6,6 +6,9 @@ abstract class IProfileRepository {
   Future<Either<Failure, AuthUser>> getCurrentUser();
   Future<Either<Failure, AuthUser>> updateProfile({
     String? name,
+    String? email,
+    String? phone,
+    String? avatarUrl,
     List<String>? tipoViagem,
     List<String>? preferencias,
     bool? temPassaporte,

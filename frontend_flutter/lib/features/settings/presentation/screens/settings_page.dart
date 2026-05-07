@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:cadife_smart_travel/design_system/design_system.dart';
+import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:cadife_smart_travel/features/client/profile/presentation/providers/profile_provider.dart';
 import 'package:cadife_smart_travel/features/client/settings/domain/entities/client_settings.dart';
 import 'package:cadife_smart_travel/features/client/settings/infrastructure/mocks/client_settings_mocks.dart';
 import 'package:cadife_smart_travel/features/settings/application/theme_notifier.dart';
@@ -28,10 +30,25 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   bool _isSaving = false;
   bool _personalDataValid = true;
 
+  bool _isInitialized = false;
+
   @override
   void initState() {
     super.initState();
     _settings = ClientSettingsMocks.mockSettings();
+  }
+
+  void _initFromUser(AuthUser? user) {
+    if (_isInitialized) return;
+    if (user != null) {
+      _settings = _settings.copyWith(
+        name: user.name,
+        email: user.email,
+        phone: user.phone ?? '',
+        avatarUrl: user.avatarUrl,
+      );
+    }
+    _isInitialized = true;
   }
 
   Future<void> _save() async {
@@ -39,13 +56,25 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     setState(() => _isSaving = true);
 
     try {
-      // Tarefa pendente: PATCH /users/me with _settings
-      await Future.delayed(const Duration(milliseconds: 900));
+      final success = await ref.read(userProfileProvider.notifier).updateProfile(
+            name: _settings.name,
+            email: _settings.email,
+            phone: _settings.phone,
+            avatarUrl: _settings.avatarUrl,
+          );
 
       if (mounted) {
-        ShadToaster.of(context).show(
-          const ShadToast(description: Text('Configurações salvas com sucesso')),
-        );
+        if (success) {
+          ShadToaster.of(context).show(
+            const ShadToast(
+                description: Text('Configurações salvas com sucesso')),
+          );
+        } else {
+          ShadToaster.of(context).show(
+            const ShadToast.destructive(
+                description: Text('Erro ao salvar no servidor.')),
+          );
+        }
       }
     } on Exception catch (e) {
       if (mounted) {
@@ -60,114 +89,122 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final userAsync = ref.watch(userProfileProvider);
     final cadife = context.cadife;
     final theme = Theme.of(context);
 
-    return Scaffold(
-      backgroundColor: cadife.background,
-      appBar: AppBar(
-        backgroundColor: cadife.background,
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
-        leading: IconButton(
-          icon: Icon(LucideIcons.arrowLeft, color: cadife.textPrimary, size: 20),
-          onPressed: () => context.pop(),
-        ),
-        title: Text(
-          'Configurações',
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: cadife.textPrimary,
-          ),
-        ),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-        children: [
-          _SettingsSection(
-            title: 'Meus Dados',
-            icon: LucideIcons.user,
-            child: _PersonalDataSection(
-              settings: _settings,
-              onChanged: (updated, {required isValid}) {
-                setState(() {
-                  _settings = updated;
-                  _personalDataValid = isValid;
-                });
-              },
+    return userAsync.when(
+      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (e, _) => Scaffold(body: Center(child: Text('Erro ao carregar dados: $e'))),
+      data: (user) {
+        _initFromUser(user);
+        return Scaffold(
+          backgroundColor: cadife.background,
+          appBar: AppBar(
+            backgroundColor: cadife.background,
+            elevation: 0,
+            surfaceTintColor: Colors.transparent,
+            leading: IconButton(
+              icon: Icon(LucideIcons.arrowLeft, color: cadife.textPrimary, size: 20),
+              onPressed: () => context.pop(),
+            ),
+            title: Text(
+              'Configurações',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: cadife.textPrimary,
+              ),
             ),
           ),
-          const SizedBox(height: 20),
-          _SettingsSection(
-            title: 'Notificações',
-            icon: LucideIcons.bell,
-            child: _NotificationsSection(
-              settings: _settings,
-              onChanged: (updated) => setState(() => _settings = updated),
-            ),
-          ),
-          const SizedBox(height: 20),
-          const _SettingsSection(
-            title: 'Aparência',
-            icon: LucideIcons.palette,
-            child: _ThemeSection(),
-          ),
-          const SizedBox(height: 20),
-          _SettingsSection(
-            title: 'Segurança',
-            icon: LucideIcons.shield,
-            child: _SecuritySection(ref: ref),
-          ),
-          const SizedBox(height: 20),
-          _SettingsSection(
-            title: 'Conta',
-            icon: LucideIcons.settings,
-            child: _AccountSection(ref: ref),
-          ),
-          const SizedBox(height: 20),
-          _SettingsSection(
-            title: 'Idioma',
-            icon: LucideIcons.languages,
-            child: _LanguageSection(),
-          ),
-          const SizedBox(height: 20),
-          _SettingsSection(
-            title: 'Suporte e Legal',
-            icon: LucideIcons.lifeBuoy,
-            child: const _SupportSection(),
-          ),
-          const SizedBox(height: 28),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.5),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+          body: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+            children: [
+              _SettingsSection(
+                title: 'Meus Dados',
+                icon: LucideIcons.user,
+                child: _PersonalDataSection(
+                  settings: _settings,
+                  onChanged: (updated, {required isValid}) {
+                    setState(() {
+                      _settings = updated;
+                      _personalDataValid = isValid;
+                    });
+                  },
                 ),
               ),
-              onPressed: (_isSaving || !_personalDataValid) ? null : _save,
-              icon: _isSaving
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Icon(LucideIcons.save, size: 18),
-              label: Text(
-                _isSaving ? 'Salvando...' : 'Salvar Alterações',
-                style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+              const SizedBox(height: 20),
+              _SettingsSection(
+                title: 'Notificações',
+                icon: LucideIcons.bell,
+                child: _NotificationsSection(
+                  settings: _settings,
+                  onChanged: (updated) => setState(() => _settings = updated),
+                ),
               ),
-            ),
+              const SizedBox(height: 20),
+              const _SettingsSection(
+                title: 'Aparência',
+                icon: LucideIcons.palette,
+                child: _ThemeSection(),
+              ),
+              const SizedBox(height: 20),
+              _SettingsSection(
+                title: 'Segurança',
+                icon: LucideIcons.shield,
+                child: _SecuritySection(ref: ref),
+              ),
+              const SizedBox(height: 20),
+              _SettingsSection(
+                title: 'Conta',
+                icon: LucideIcons.settings,
+                child: _AccountSection(ref: ref),
+              ),
+              const SizedBox(height: 20),
+              _SettingsSection(
+                title: 'Idioma',
+                icon: LucideIcons.languages,
+                child: _LanguageSection(),
+              ),
+              const SizedBox(height: 20),
+              const _SettingsSection(
+                title: 'Suporte e Legal',
+                icon: LucideIcons.lifeBuoy,
+                child: _SupportSection(),
+              ),
+              const SizedBox(height: 28),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.5),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: (_isSaving || !_personalDataValid) ? null : _save,
+                  icon: _isSaving
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(LucideIcons.save, size: 18),
+                  label: Text(
+                    _isSaving ? 'Salvando...' : 'Salvar Alterações',
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -1051,10 +1088,18 @@ class _ThemeOption extends StatelessWidget {
 // 4 — Security
 // ---------------------------------------------------------------------------
 
-class _SecuritySection extends StatelessWidget {
+class _SecuritySection extends StatefulWidget {
   const _SecuritySection({required this.ref});
 
   final WidgetRef ref;
+
+  @override
+  State<_SecuritySection> createState() => _SecuritySectionState();
+}
+
+class _SecuritySectionState extends State<_SecuritySection> {
+  bool _biometrics = true;
+  bool _twoFactor = false;
 
   @override
   Widget build(BuildContext context) {
@@ -1065,7 +1110,8 @@ class _SecuritySection extends StatelessWidget {
       children: [
         ListTile(
           contentPadding: EdgeInsets.zero,
-          leading: Icon(LucideIcons.keyRound, color: cadife.textSecondary, size: 20),
+          leading:
+              Icon(LucideIcons.keyRound, color: cadife.textSecondary, size: 20),
           title: Text(
             'Alterar Senha',
             style: theme.textTheme.bodyMedium?.copyWith(
@@ -1090,30 +1136,26 @@ class _SecuritySection extends StatelessWidget {
           },
         ),
         Divider(color: cadife.divider, height: 1),
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: Icon(LucideIcons.shieldCheck, color: cadife.textSecondary, size: 20),
-          title: Text(
-            'Segurança',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: cadife.textPrimary,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          subtitle: Text(
-            'Autenticação e privacidade',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: cadife.textSecondary,
-            ),
-          ),
-          trailing: Icon(LucideIcons.chevronRight,
-              size: 16, color: cadife.textSecondary),
-          onTap: () {},
+        _SecurityToggle(
+          title: 'Biometria',
+          subtitle: 'Usar FaceID ou Digital para entrar',
+          icon: Icons.fingerprint_rounded,
+          value: _biometrics,
+          onChanged: (v) => setState(() => _biometrics = v),
+        ),
+        Divider(color: cadife.divider, height: 1),
+        _SecurityToggle(
+          title: 'Autenticação em duas etapas',
+          subtitle: 'Mais segurança para sua conta',
+          icon: LucideIcons.shieldCheck,
+          value: _twoFactor,
+          onChanged: (v) => setState(() => _twoFactor = v),
         ),
         Divider(color: cadife.divider, height: 1),
         ListTile(
           contentPadding: EdgeInsets.zero,
-          leading: Icon(LucideIcons.logOut, color: cadife.textSecondary, size: 20),
+          leading:
+              Icon(LucideIcons.logOut, color: cadife.textSecondary, size: 20),
           title: Text(
             'Sair desta Conta',
             style: theme.textTheme.bodyMedium?.copyWith(
@@ -1129,9 +1171,52 @@ class _SecuritySection extends StatelessWidget {
           ),
           trailing: Icon(LucideIcons.chevronRight,
               size: 16, color: cadife.textSecondary),
-          onTap: () => _confirmLogout(context, ref),
+          onTap: () => _confirmLogout(context, widget.ref),
         ),
       ],
+    );
+  }
+}
+
+class _SecurityToggle extends StatelessWidget {
+  const _SecurityToggle({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final cadife = context.cadife;
+    final theme = Theme.of(context);
+
+    return SwitchListTile.adaptive(
+      contentPadding: EdgeInsets.zero,
+      activeTrackColor: AppColors.primary,
+      secondary: Icon(icon, color: cadife.textSecondary, size: 20),
+      title: Text(
+        title,
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: cadife.textPrimary,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: cadife.textSecondary,
+        ),
+      ),
+      value: value,
+      onChanged: onChanged,
     );
   }
 }
@@ -1359,7 +1444,8 @@ class _LanguageSection extends StatelessWidget {
 
     return ListTile(
       contentPadding: EdgeInsets.zero,
-      leading: Icon(LucideIcons.languages, color: cadife.textSecondary, size: 20),
+      leading:
+          Icon(LucideIcons.languages, color: cadife.textSecondary, size: 20),
       title: Text(
         'Idioma',
         style: theme.textTheme.bodyMedium?.copyWith(
@@ -1375,7 +1461,72 @@ class _LanguageSection extends StatelessWidget {
       ),
       trailing: Icon(LucideIcons.chevronRight,
           size: 16, color: cadife.textSecondary),
-      onTap: () {},
+      onTap: () => _showLanguageModal(context),
+    );
+  }
+
+  void _showLanguageModal(BuildContext context) {
+    showShadDialog<void>(
+      context: context,
+      builder: (ctx) => ShadDialog(
+        title: const Text('Selecionar Idioma'),
+        description:
+            const Text('Escolha o idioma de preferência para o aplicativo.'),
+        actions: [
+          ShadButton.outline(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Fechar'),
+          ),
+        ],
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _LanguageOption(
+                label: 'Português (Brasil)',
+                isSelected: true,
+                onTap: () => Navigator.pop(ctx)),
+            _LanguageOption(
+                label: 'English (US)',
+                isSelected: false,
+                onTap: () => Navigator.pop(ctx)),
+            _LanguageOption(
+                label: 'Español',
+                isSelected: false,
+                onTap: () => Navigator.pop(ctx)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LanguageOption extends StatelessWidget {
+  const _LanguageOption({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cadife = context.cadife;
+    return ListTile(
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+      title: Text(
+        label,
+        style: GoogleFonts.inter(
+          color: cadife.textPrimary,
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+        ),
+      ),
+      trailing: isSelected
+          ? const Icon(LucideIcons.check, color: AppColors.primary, size: 18)
+          : null,
     );
   }
 }
@@ -1396,7 +1547,8 @@ class _SupportSection extends StatelessWidget {
       children: [
         ListTile(
           contentPadding: EdgeInsets.zero,
-          leading: Icon(LucideIcons.lifeBuoy, color: cadife.textSecondary, size: 20),
+          leading:
+              Icon(LucideIcons.lifeBuoy, color: cadife.textSecondary, size: 20),
           title: Text(
             'Central de Ajuda',
             style: theme.textTheme.bodyMedium?.copyWith(
@@ -1406,12 +1558,13 @@ class _SupportSection extends StatelessWidget {
           ),
           trailing: Icon(LucideIcons.chevronRight,
               size: 16, color: cadife.textSecondary),
-          onTap: () {},
+          onTap: () => _showHelpCenterModal(context),
         ),
         Divider(color: cadife.divider, height: 1),
         ListTile(
           contentPadding: EdgeInsets.zero,
-          leading: Icon(LucideIcons.fileText, color: cadife.textSecondary, size: 20),
+          leading:
+              Icon(LucideIcons.fileText, color: cadife.textSecondary, size: 20),
           title: Text(
             'Termos e Privacidade',
             style: theme.textTheme.bodyMedium?.copyWith(
@@ -1421,9 +1574,122 @@ class _SupportSection extends StatelessWidget {
           ),
           trailing: Icon(LucideIcons.chevronRight,
               size: 16, color: cadife.textSecondary),
-          onTap: () {},
+          onTap: () => _showTermsModal(context),
         ),
       ],
+    );
+  }
+
+  void _showHelpCenterModal(BuildContext context) {
+    showShadDialog<void>(
+      context: context,
+      builder: (ctx) => ShadDialog(
+        title: const Text('Central de Ajuda'),
+        description: const Text('Principais dúvidas e regras do negócio.'),
+        actions: [
+          ShadButton.outline(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Fechar'),
+          ),
+        ],
+        child: const SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _FaqItem(
+                  question: 'Como funciona o acompanhamento da viagem?',
+                  answer:
+                      'Toda a sua jornada é monitorada pela nossa equipe 24/7. Você receberá atualizações em tempo real via notificações push e pode falar com a AYA a qualquer momento.',
+                ),
+                _FaqItem(
+                  question: 'Como faço para cancelar uma reserva?',
+                  answer:
+                      'Cancelamentos devem ser solicitados via chat com seu consultor ou pela Central de Atendimento, respeitando as políticas de cada fornecedor (hotel, aérea, etc).',
+                ),
+                _FaqItem(
+                  question: 'O que é a AYA?',
+                  answer:
+                      'A AYA é sua assistente de inteligência artificial especializada em viagens, capaz de responder dúvidas sobre seu roteiro, clima, moedas e curiosidades locais.',
+                ),
+                _FaqItem(
+                  question: 'Regras de Reembolso',
+                  answer:
+                      'Os reembolsos seguem a legislação vigente e as condições contratuais aceitas no momento da compra. Taxas administrativas podem ser aplicadas em caso de desistência.',
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showTermsModal(BuildContext context) {
+    showShadDialog<void>(
+      context: context,
+      builder: (ctx) => ShadDialog(
+        title: const Text('Termos e Privacidade'),
+        description: const Text('Última atualização: 07 de Maio de 2026'),
+        actions: [
+          ShadButton.outline(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Fechar'),
+          ),
+        ],
+        child: SizedBox(
+          height: 400,
+          child: SingleChildScrollView(
+            child: Text(
+              '1. Aceitação dos Termos\nAo utilizar o Cadife Smart Travel, você concorda com estes termos de uso e nossa política de privacidade...\n\n'
+              '2. Privacidade de Dados\nSeus dados são coletados apenas para a finalidade de gestão de suas viagens e personalização de ofertas. Não compartilhamos dados sensíveis com terceiros sem consentimento...\n\n'
+              '3. Responsabilidades\nA Cadife atua como intermediária entre o cliente e os prestadores de serviço final. Garantimos a melhor curadoria e suporte, mas a execução final depende dos fornecedores selecionados...\n\n'
+              '4. Propriedade Intelectual\nTodo o conteúdo do aplicativo, incluindo a tecnologia AYA, é de propriedade exclusiva da Cadife Smart Travel...\n\n'
+              '5. Alterações nos Termos\nReservamo-nos o direito de atualizar estes termos a qualquer momento, notificando os usuários via aplicativo.',
+              style: GoogleFonts.inter(fontSize: 14, height: 1.5),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FaqItem extends StatelessWidget {
+  const _FaqItem({required this.question, required this.answer});
+
+  final String question;
+  final String answer;
+
+  @override
+  Widget build(BuildContext context) {
+    final cadife = context.cadife;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            question,
+            style: GoogleFonts.inter(
+              fontWeight: FontWeight.w700,
+              fontSize: 14,
+              color: cadife.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            answer,
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              color: cadife.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Divider(color: cadife.divider.withValues(alpha: 0.5)),
+        ],
+      ),
     );
   }
 }

@@ -134,9 +134,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
           // ── Header: avatar + greeting + stats ──────────────────────────
           _ProfileStatsHeader(
             user: user,
-            isEditing: _isEditing,
-            nameController: _nameController,
-            onToggleEdit: () => setState(() => _isEditing = !_isEditing),
           ),
 
           // ── Pinned TabBar ───────────────────────────────────────────────
@@ -220,15 +217,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
 class _ProfileStatsHeader extends StatelessWidget {
   const _ProfileStatsHeader({
     required this.user,
-    required this.isEditing,
-    required this.nameController,
-    required this.onToggleEdit,
   });
 
   final AuthUser? user;
-  final bool isEditing;
-  final TextEditingController nameController;
-  final VoidCallback onToggleEdit;
 
   static String _greeting() {
     final hour = DateTime.now().hour;
@@ -276,26 +267,6 @@ class _ProfileStatsHeader extends StatelessWidget {
                       fontSize: 22,
                       fontWeight: FontWeight.w800,
                       color: isDark ? Colors.white : AppColors.primary,
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: GestureDetector(
-                  onTap: onToggleEdit,
-                  child: Container(
-                    padding: const EdgeInsets.all(5),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: AppColors.primary,
-                      border: Border.all(color: cadife.background, width: 2),
-                    ),
-                    child: Icon(
-                      isEditing ? LucideIcons.check : LucideIcons.pencil,
-                      size: 12,
-                      color: Colors.white,
                     ),
                   ),
                 ),
