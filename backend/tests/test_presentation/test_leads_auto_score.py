@@ -10,6 +10,7 @@ Coverage targets:
   - FRIO: destino not filled
   - Score persisted and returned in LeadResponse
 """
+
 import uuid
 from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock
@@ -19,11 +20,10 @@ from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
 from app.domain.entities.enums import LeadScore, LeadStatus
-from app.models.briefing import Briefing
 from app.routes import leads as leads_router
 
-
 # ── Test App with Dependency Overrides ─────────────────────────────────────
+
 
 def _make_test_app() -> FastAPI:
     app = FastAPI()
@@ -35,6 +35,7 @@ def _make_test_app() -> FastAPI:
     fake_user.id = uuid.uuid4()
 
     from app.infrastructure.security.dependencies import get_current_user, get_db
+
     app.dependency_overrides[get_db] = lambda: fake_db
     app.dependency_overrides[get_current_user] = lambda: fake_user
 
@@ -48,6 +49,7 @@ def app_fixture() -> FastAPI:
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────
+
 
 def fake_lead(status: LeadStatus, score: LeadScore | None = None) -> MagicMock:
     lead = MagicMock()
@@ -83,6 +85,7 @@ def fake_briefing(
 
 # ── Tests ──────────────────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_transition_to_qualificado_score_quente(app_fixture: FastAPI) -> None:
     """All hot fields filled → score QUENTE."""
@@ -99,7 +102,9 @@ async def test_transition_to_qualificado_score_quente(app_fixture: FastAPI) -> N
             "app.routes.leads.lead_service.get_lead_by_id",
             AsyncMock(return_value=lead),
         )
-        async with AsyncClient(transport=ASGITransport(app=app_fixture), base_url="http://test") as ac:
+        async with AsyncClient(
+            transport=ASGITransport(app=app_fixture), base_url="http://test"
+        ) as ac:
             response = await ac.put(
                 f"/leads/{lead.id}",
                 json={"status": LeadStatus.qualificado.value},
@@ -121,7 +126,9 @@ async def test_transition_to_qualificado_score_morno(app_fixture: FastAPI) -> No
             "app.routes.leads.lead_service.get_lead_by_id",
             AsyncMock(return_value=lead),
         )
-        async with AsyncClient(transport=ASGITransport(app=app_fixture), base_url="http://test") as ac:
+        async with AsyncClient(
+            transport=ASGITransport(app=app_fixture), base_url="http://test"
+        ) as ac:
             response = await ac.put(
                 f"/leads/{lead.id}",
                 json={"status": LeadStatus.qualificado.value},
@@ -142,7 +149,9 @@ async def test_transition_to_qualificado_score_frio(app_fixture: FastAPI) -> Non
             "app.routes.leads.lead_service.get_lead_by_id",
             AsyncMock(return_value=lead),
         )
-        async with AsyncClient(transport=ASGITransport(app=app_fixture), base_url="http://test") as ac:
+        async with AsyncClient(
+            transport=ASGITransport(app=app_fixture), base_url="http://test"
+        ) as ac:
             response = await ac.put(
                 f"/leads/{lead.id}",
                 json={"status": LeadStatus.qualificado.value},
@@ -153,7 +162,9 @@ async def test_transition_to_qualificado_score_frio(app_fixture: FastAPI) -> Non
 
 
 @pytest.mark.asyncio
-async def test_transition_to_qualificado_without_briefing_score_none(app_fixture: FastAPI) -> None:
+async def test_transition_to_qualificado_without_briefing_score_none(
+    app_fixture: FastAPI,
+) -> None:
     """No briefing attached → score remains None."""
     lead = fake_lead(LeadStatus.em_atendimento)
     lead.briefing = None
@@ -163,7 +174,9 @@ async def test_transition_to_qualificado_without_briefing_score_none(app_fixture
             "app.routes.leads.lead_service.get_lead_by_id",
             AsyncMock(return_value=lead),
         )
-        async with AsyncClient(transport=ASGITransport(app=app_fixture), base_url="http://test") as ac:
+        async with AsyncClient(
+            transport=ASGITransport(app=app_fixture), base_url="http://test"
+        ) as ac:
             response = await ac.put(
                 f"/leads/{lead.id}",
                 json={"status": LeadStatus.qualificado.value},

@@ -14,6 +14,7 @@ def _init_firebase() -> bool:
         import firebase_admin
         from firebase_admin import credentials
         from app.core.config import get_settings
+
         s = get_settings()
         cred = credentials.Certificate(s.FIREBASE_CREDENTIALS)
         firebase_admin.initialize_app(cred)
@@ -34,6 +35,7 @@ async def send_push_notification(
         return False
     try:
         from firebase_admin import messaging
+
         message = messaging.Message(
             notification=messaging.Notification(title=title, body=body),
             data=data or {},
@@ -47,7 +49,9 @@ async def send_push_notification(
         return False
 
 
-async def notify_new_lead(fcm_token: str, lead_nome: str, destino: Optional[str]) -> bool:
+async def notify_new_lead(
+    fcm_token: str, lead_nome: str, destino: Optional[str]
+) -> bool:
     body = f"Lead: {lead_nome or 'Novo contato'}"
     if destino:
         body += f" — Destino: {destino}"

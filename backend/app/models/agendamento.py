@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Optional
 from sqlalchemy import Date, DateTime, ForeignKey, Time, func
 from sqlalchemy.dialects.postgresql import ENUM as PgEnum, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.core.database import Base
 from app.domain.entities.enums import AgendamentoStatus, AgendamentoTipo
@@ -16,16 +16,32 @@ if TYPE_CHECKING:
 
 class Agendamento(Base):
     __tablename__ = "agendamentos"
-    __table_args__ = {'extend_existing': True}
+    __table_args__ = {"extend_existing": True}
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    lead_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("leads.id"), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    lead_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("leads.id"), nullable=False, index=True
+    )
     data: Mapped[date] = mapped_column(Date, nullable=False)
     hora: Mapped[time] = mapped_column(Time, nullable=False)
-    status: Mapped[AgendamentoStatus] = mapped_column(PgEnum(AgendamentoStatus, name="agendamento_status_enum", create_type=False), nullable=False, default=AgendamentoStatus.pendente)
-    tipo: Mapped[AgendamentoTipo] = mapped_column(PgEnum(AgendamentoTipo, name="agendamento_tipo_enum", create_type=False), nullable=False, default=AgendamentoTipo.online)
-    consultor_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
-    criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    status: Mapped[AgendamentoStatus] = mapped_column(
+        PgEnum(AgendamentoStatus, name="agendamento_status_enum", create_type=False),
+        nullable=False,
+        default=AgendamentoStatus.pendente,
+    )
+    tipo: Mapped[AgendamentoTipo] = mapped_column(
+        PgEnum(AgendamentoTipo, name="agendamento_tipo_enum", create_type=False),
+        nullable=False,
+        default=AgendamentoTipo.online,
+    )
+    consultor_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id")
+    )
+    criado_em: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
 
     lead: Mapped["Lead"] = relationship("Lead", back_populates="agendamentos")
 
@@ -35,7 +51,10 @@ class AgendamentoCreate(BaseModel):
     data: date
     hora: time
     tipo: AgendamentoTipo = AgendamentoTipo.online
-    consultor_id: Optional[uuid.UUID] = None
+    consultor_id: Optional[uuid.UUID] = Field(
+        default=None,
+        description="Read-only: definido automaticamente pelo backend com base no usuário autenticado.",
+    )
 
 
 class AgendamentoUpdate(BaseModel):

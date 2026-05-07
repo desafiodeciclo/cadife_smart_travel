@@ -4,7 +4,8 @@ Semantic Metadata Tagger — Rule-based topic extraction for RAG chunks.
 Assigns semantic metadata tags to document chunks for ChromaDB hard-constraint
 filtering. Tags narrow bot queries to topically relevant content only.
 """
-from dataclasses import dataclass, field
+
+from dataclasses import dataclass
 
 # ---------------------------------------------------------------------------
 # Topic taxonomy — Cadife Tour knowledge domain
@@ -12,151 +13,439 @@ from dataclasses import dataclass, field
 
 DESTINO_KEYWORDS: dict[str, list[str]] = {
     "Nordeste": [
-        "nordeste", "natal", "fortaleza", "recife", "salvador", "maceió",
-        "joão pessoa", "aracaju", "teresina", "são luís", "lençóis",
-        "noronha", "fernando de noronha", "jericoacoara", "porto de galinhas",
-        "carneiros", "praia do forte", "arraial d'ajuda",
+        "nordeste",
+        "natal",
+        "fortaleza",
+        "recife",
+        "salvador",
+        "maceió",
+        "joão pessoa",
+        "aracaju",
+        "teresina",
+        "são luís",
+        "lençóis",
+        "noronha",
+        "fernando de noronha",
+        "jericoacoara",
+        "porto de galinhas",
+        "carneiros",
+        "praia do forte",
+        "arraial d'ajuda",
     ],
     "Sudeste": [
-        "sudeste", "rio de janeiro", "são paulo", "belo horizonte", "búzios",
-        "angra dos reis", "ilhabela", "arraial do cabo", "cabo frio", "paraty",
-        "petrópolis", "visconde de mauá",
+        "sudeste",
+        "rio de janeiro",
+        "são paulo",
+        "belo horizonte",
+        "búzios",
+        "angra dos reis",
+        "ilhabela",
+        "arraial do cabo",
+        "cabo frio",
+        "paraty",
+        "petrópolis",
+        "visconde de mauá",
     ],
     "Sul": [
-        "sul", "florianópolis", "curitiba", "porto alegre", "foz do iguaçu",
-        "bombinhas", "balneário camboriú", "gramado", "canela", "bento gonçalves",
-        "blumenau", "joinville",
+        "sul",
+        "florianópolis",
+        "curitiba",
+        "porto alegre",
+        "foz do iguaçu",
+        "bombinhas",
+        "balneário camboriú",
+        "gramado",
+        "canela",
+        "bento gonçalves",
+        "blumenau",
+        "joinville",
     ],
     "Centro-Oeste": [
-        "centro-oeste", "brasília", "goiânia", "campo grande", "cuiabá",
-        "pantanal", "chapada dos guimarães", "chapada diamantina", "bonito",
+        "centro-oeste",
+        "brasília",
+        "goiânia",
+        "campo grande",
+        "cuiabá",
+        "pantanal",
+        "chapada dos guimarães",
+        "chapada diamantina",
+        "bonito",
         "corumbá",
     ],
     "Norte": [
-        "norte", "manaus", "belém", "amazon", "amazônia", "santarém",
-        "alter do chão", "marajó",
+        "norte",
+        "manaus",
+        "belém",
+        "amazon",
+        "amazônia",
+        "santarém",
+        "alter do chão",
+        "marajó",
     ],
     "Europa": [
-        "europa", "paris", "roma", "lisboa", "madrid", "barcelona", "amsterdam",
-        "praga", "viena", "london", "londra", "berlim", "veneza", "grécia",
-        "atenas", "dublin", "edimburgo", "zurique", "genebra", "bruxelas",
-        "copenhague", "estocolmo", "oslo", "helsinki", "budapest", "varsóvia",
-        "istanbul", "moscou",
+        "europa",
+        "paris",
+        "roma",
+        "lisboa",
+        "madrid",
+        "barcelona",
+        "amsterdam",
+        "praga",
+        "viena",
+        "london",
+        "londra",
+        "berlim",
+        "veneza",
+        "grécia",
+        "atenas",
+        "dublin",
+        "edimburgo",
+        "zurique",
+        "genebra",
+        "bruxelas",
+        "copenhague",
+        "estocolmo",
+        "oslo",
+        "helsinki",
+        "budapest",
+        "varsóvia",
+        "istanbul",
+        "moscou",
     ],
     "América do Norte": [
-        "estados unidos", "eua", "usa", "miami", "orlando", "nova york",
-        "new york", "los angeles", "las vegas", "chicago", "disney", "universal",
-        "canadá", "toronto", "vancouver", "montreal", "cancún", "cancun",
-        "méxico", "cidade do méxico",
+        "estados unidos",
+        "eua",
+        "usa",
+        "miami",
+        "orlando",
+        "nova york",
+        "new york",
+        "los angeles",
+        "las vegas",
+        "chicago",
+        "disney",
+        "universal",
+        "canadá",
+        "toronto",
+        "vancouver",
+        "montreal",
+        "cancún",
+        "cancun",
+        "méxico",
+        "cidade do méxico",
     ],
     "América do Sul": [
-        "argentina", "buenos aires", "bariloche", "iguazú", "chile", "santiago",
-        "atacama", "peru", "lima", "machu picchu", "cusco", "colômbia", "bogotá",
-        "cartagena", "uruguai", "montevidéu", "punta del este", "bolívia",
-        "equador", "galápagos",
+        "argentina",
+        "buenos aires",
+        "bariloche",
+        "iguazú",
+        "chile",
+        "santiago",
+        "atacama",
+        "peru",
+        "lima",
+        "machu picchu",
+        "cusco",
+        "colômbia",
+        "bogotá",
+        "cartagena",
+        "uruguai",
+        "montevidéu",
+        "punta del este",
+        "bolívia",
+        "equador",
+        "galápagos",
     ],
     "Caribe": [
-        "caribe", "punta cana", "cuba", "havana", "aruba", "jamaica", "bahamas",
-        "ilhas virgens", "curaçao", "barbados", "trinidad", "antilhas",
+        "caribe",
+        "punta cana",
+        "cuba",
+        "havana",
+        "aruba",
+        "jamaica",
+        "bahamas",
+        "ilhas virgens",
+        "curaçao",
+        "barbados",
+        "trinidad",
+        "antilhas",
     ],
     "Ásia": [
-        "ásia", "asia", "japão", "tokyo", "kyoto", "osaka", "china", "pequim",
-        "xangai", "tailândia", "bangkok", "phuket", "bali", "indonésia",
-        "dubai", "emirados árabes", "índia", "cingapura", "hong kong",
-        "coreia do sul", "seul", "vietnã", "hanói", "ho chi minh", "maldivas",
+        "ásia",
+        "asia",
+        "japão",
+        "tokyo",
+        "kyoto",
+        "osaka",
+        "china",
+        "pequim",
+        "xangai",
+        "tailândia",
+        "bangkok",
+        "phuket",
+        "bali",
+        "indonésia",
+        "dubai",
+        "emirados árabes",
+        "índia",
+        "cingapura",
+        "hong kong",
+        "coreia do sul",
+        "seul",
+        "vietnã",
+        "hanói",
+        "ho chi minh",
+        "maldivas",
     ],
     "África": [
-        "áfrica", "quênia", "tanzânia", "safari", "cape town", "cidade do cabo",
-        "marrocos", "marrakech", "egito", "cairo",
+        "áfrica",
+        "quênia",
+        "tanzânia",
+        "safari",
+        "cape town",
+        "cidade do cabo",
+        "marrocos",
+        "marrakech",
+        "egito",
+        "cairo",
     ],
     "Oceania": [
-        "oceania", "austrália", "sydney", "melbourne", "nova zelândia", "auckland",
+        "oceania",
+        "austrália",
+        "sydney",
+        "melbourne",
+        "nova zelândia",
+        "auckland",
         "fiji",
     ],
 }
 
 TEMA_KEYWORDS: dict[str, list[str]] = {
     "Financiamento": [
-        "financiamento", "parcelamento", "parcelas", "entrada", "crédito",
-        "pagamento", "forma de pagamento", "boleto", "cartão", "pix",
-        "sinal", "antecipação", "refinanciamento",
+        "financiamento",
+        "parcelamento",
+        "parcelas",
+        "entrada",
+        "crédito",
+        "pagamento",
+        "forma de pagamento",
+        "boleto",
+        "cartão",
+        "pix",
+        "sinal",
+        "antecipação",
+        "refinanciamento",
     ],
     "Passagens": [
-        "passagem", "voo", "aéreo", "voos", "companhia aérea", "embarque",
-        "conexão", "escala", "milhas", "programa de milhas", "smiles", "tudoazul",
-        "latam pass", "despacho de bagagem", "bagagem",
+        "passagem",
+        "voo",
+        "aéreo",
+        "voos",
+        "companhia aérea",
+        "embarque",
+        "conexão",
+        "escala",
+        "milhas",
+        "programa de milhas",
+        "smiles",
+        "tudoazul",
+        "latam pass",
+        "despacho de bagagem",
+        "bagagem",
     ],
     "Hospedagem": [
-        "hotel", "pousada", "resort", "hospedagem", "acomodação", "quarto",
-        "all inclusive", "café da manhã", "check-in", "check-out", "suite",
-        "chalé", "airbnb", "hostel",
+        "hotel",
+        "pousada",
+        "resort",
+        "hospedagem",
+        "acomodação",
+        "quarto",
+        "all inclusive",
+        "café da manhã",
+        "check-in",
+        "check-out",
+        "suite",
+        "chalé",
+        "airbnb",
+        "hostel",
     ],
     "Pacotes": [
-        "pacote", "pacote completo", "pacote turístico", "combo", "roteiro",
-        "itinerário", "programação", "transfer", "rodoviário", "incluso",
+        "pacote",
+        "pacote completo",
+        "pacote turístico",
+        "combo",
+        "roteiro",
+        "itinerário",
+        "programação",
+        "transfer",
+        "rodoviário",
+        "incluso",
     ],
     "Cruzeiros": [
-        "cruzeiro", "navio", "msc", "costa", "royal caribbean", "norwegian",
-        "porto", "embarcação", "camarote", "excursão de porto",
+        "cruzeiro",
+        "navio",
+        "msc",
+        "costa",
+        "royal caribbean",
+        "norwegian",
+        "porto",
+        "embarcação",
+        "camarote",
+        "excursão de porto",
     ],
     "Seguro Viagem": [
-        "seguro viagem", "seguro", "assistência médica", "emergência médica",
-        "cobertura", "sinistro", "repatriação", "cancelamento",
+        "seguro viagem",
+        "seguro",
+        "assistência médica",
+        "emergência médica",
+        "cobertura",
+        "sinistro",
+        "repatriação",
+        "cancelamento",
     ],
     "Documentação": [
-        "passaporte", "visto", "documentos", "documentação", "rcn",
-        "certidão", "autenticação", "apostila", "consulado", "embaixada",
+        "passaporte",
+        "visto",
+        "documentos",
+        "documentação",
+        "rcn",
+        "certidão",
+        "autenticação",
+        "apostila",
+        "consulado",
+        "embaixada",
         "validade do passaporte",
     ],
     "Lua de Mel": [
-        "lua de mel", "honeymoon", "romântico", "romance", "viagem a dois",
-        "aniversário de casamento", "noivos", "casamento", "surpresa",
+        "lua de mel",
+        "honeymoon",
+        "romântico",
+        "romance",
+        "viagem a dois",
+        "aniversário de casamento",
+        "noivos",
+        "casamento",
+        "surpresa",
         "jantar romântico",
     ],
     "Aventura": [
-        "aventura", "ecoturismo", "trilha", "rapel", "rafting", "mergulho",
-        "snorkel", "kitesurf", "surf", "windsurf", "escalada", "bungee",
-        "parapente", "tirolesa", "canyoning",
+        "aventura",
+        "ecoturismo",
+        "trilha",
+        "rapel",
+        "rafting",
+        "mergulho",
+        "snorkel",
+        "kitesurf",
+        "surf",
+        "windsurf",
+        "escalada",
+        "bungee",
+        "parapente",
+        "tirolesa",
+        "canyoning",
     ],
     "Gastronomia": [
-        "gastronomia", "culinária", "restaurante", "comida típica", "degustação",
-        "vinhos", "vinícola", "tour gastronômico", "food tour", "mercado",
+        "gastronomia",
+        "culinária",
+        "restaurante",
+        "comida típica",
+        "degustação",
+        "vinhos",
+        "vinícola",
+        "tour gastronômico",
+        "food tour",
+        "mercado",
     ],
     "Destinos": [
-        "destino", "destinos", "onde ir", "onde viajar", "opções de viagem",
-        "melhores destinos", "sugestões",
+        "destino",
+        "destinos",
+        "onde ir",
+        "onde viajar",
+        "opções de viagem",
+        "melhores destinos",
+        "sugestões",
     ],
 }
 
 PERFIL_KEYWORDS: dict[str, list[str]] = {
     "Família": [
-        "família", "criança", "filho", "filhos", "crianças", "kids", "infantil",
-        "parque temático", "bebê", "bebe", "adolescente", "escola",
+        "família",
+        "criança",
+        "filho",
+        "filhos",
+        "crianças",
+        "kids",
+        "infantil",
+        "parque temático",
+        "bebê",
+        "bebe",
+        "adolescente",
+        "escola",
     ],
     "Casal": [
-        "casal", "lua de mel", "honeymoon", "noivos", "dois", "romântico",
-        "aniversário de casamento", "parceiro", "cônjuge",
+        "casal",
+        "lua de mel",
+        "honeymoon",
+        "noivos",
+        "dois",
+        "romântico",
+        "aniversário de casamento",
+        "parceiro",
+        "cônjuge",
     ],
     "Solo": [
-        "solo", "sozinho", "mochileiro", "backpacker", "solo travel",
-        "viagem sozinha", "viagem sozinho",
+        "solo",
+        "sozinho",
+        "mochileiro",
+        "backpacker",
+        "solo travel",
+        "viagem sozinha",
+        "viagem sozinho",
     ],
     "Grupo": [
-        "grupo", "turma", "amigos", "confraternização", "corporativo",
-        "incentivo", "time", "equipe", "escola", "faculdade",
+        "grupo",
+        "turma",
+        "amigos",
+        "confraternização",
+        "corporativo",
+        "incentivo",
+        "time",
+        "equipe",
+        "escola",
+        "faculdade",
     ],
     "Luxo": [
-        "luxo", "premium", "5 estrelas", "cinco estrelas", "vip", "exclusivo",
-        "primeira classe", "business class", "suite presidencial", "iate",
+        "luxo",
+        "premium",
+        "5 estrelas",
+        "cinco estrelas",
+        "vip",
+        "exclusivo",
+        "primeira classe",
+        "business class",
+        "suite presidencial",
+        "iate",
         "helicóptero",
     ],
     "Econômico": [
-        "econômico", "barato", "low cost", "menor preço", "acessível",
-        "promoção", "desconto", "orçamento limitado",
+        "econômico",
+        "barato",
+        "low cost",
+        "menor preço",
+        "acessível",
+        "promoção",
+        "desconto",
+        "orçamento limitado",
     ],
     "Aventura": [
-        "aventureiro", "adrenalina", "ecoturismo", "trilha", "natureza",
-        "off-road", "mochileiro",
+        "aventureiro",
+        "adrenalina",
+        "ecoturismo",
+        "trilha",
+        "natureza",
+        "off-road",
+        "mochileiro",
     ],
 }
 
@@ -164,6 +453,7 @@ PERFIL_KEYWORDS: dict[str, list[str]] = {
 # ---------------------------------------------------------------------------
 # Tag extraction result
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class DocumentTags:
@@ -176,6 +466,7 @@ class DocumentTags:
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
+
 
 def extract_tags(text: str, filename: str = "") -> DocumentTags:
     """
@@ -206,7 +497,9 @@ def extract_tags(text: str, filename: str = "") -> DocumentTags:
     )
 
 
-def tags_to_metadata(tags: DocumentTags, source: str, chunk_index: int, doc_hash: str) -> dict:
+def tags_to_metadata(
+    tags: DocumentTags, source: str, chunk_index: int, doc_hash: str
+) -> dict:
     """Build the full ChromaDB-compatible metadata dict for a chunk."""
     return {
         "source": source,
@@ -234,26 +527,32 @@ def build_chroma_filter(
     conditions: list[dict] = []
 
     if destino:
-        conditions.append({
-            "$or": [
-                {"topico_destino": {"$eq": destino}},
-                {"topico_destino": {"$eq": ""}},
-            ]
-        })
+        conditions.append(
+            {
+                "$or": [
+                    {"topico_destino": {"$eq": destino}},
+                    {"topico_destino": {"$eq": ""}},
+                ]
+            }
+        )
     if tema:
-        conditions.append({
-            "$or": [
-                {"topico_tema": {"$eq": tema}},
-                {"topico_tema": {"$eq": ""}},
-            ]
-        })
+        conditions.append(
+            {
+                "$or": [
+                    {"topico_tema": {"$eq": tema}},
+                    {"topico_tema": {"$eq": ""}},
+                ]
+            }
+        )
     if perfil:
-        conditions.append({
-            "$or": [
-                {"topico_perfil": {"$eq": perfil}},
-                {"topico_perfil": {"$eq": ""}},
-            ]
-        })
+        conditions.append(
+            {
+                "$or": [
+                    {"topico_perfil": {"$eq": perfil}},
+                    {"topico_perfil": {"$eq": ""}},
+                ]
+            }
+        )
 
     if not conditions:
         return None
@@ -265,6 +564,7 @@ def build_chroma_filter(
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _normalize(text: str) -> str:
     return text.lower()

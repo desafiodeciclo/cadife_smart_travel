@@ -5,6 +5,7 @@ Concrete implementation for WhatsApp interaction persistence.
 Provides paginated conversation history retrieval optimised by
 the composite index (lead_id, timestamp).
 """
+
 import uuid
 from typing import Optional
 

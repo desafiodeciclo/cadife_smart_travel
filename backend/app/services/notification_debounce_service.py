@@ -9,6 +9,7 @@ Regra de negócio (spec.md):
   - Se uma notificação para o mesmo lead for solicitada dentro do TTL,
     ela é silenciosamente descartada.
 """
+
 from __future__ import annotations
 
 import structlog

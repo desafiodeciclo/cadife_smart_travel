@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field, field_validator
 import uuid
 from app.domain.entities.enums import PerfilViagem, OrcamentoPerfil
 
+
 class BriefingSchema(BaseModel):
     destino: Optional[str] = Field(None, min_length=2, max_length=255)
     data_ida: Optional[date] = None
@@ -24,6 +25,7 @@ class BriefingSchema(BaseModel):
         return v
 
     model_config = {"from_attributes": True}
+
 
 class BriefingResponse(BriefingSchema):
     lead_id: uuid.UUID

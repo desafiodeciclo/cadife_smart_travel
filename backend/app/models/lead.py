@@ -21,33 +21,65 @@ from decimal import Decimal
 from app.domain.entities.enums import LeadOrigem, LeadStatus, LeadScore, PropostaStatus
 
 
-
 class Lead(Base):
     __tablename__ = "leads"
-    __table_args__ = {'extend_existing': True}
+    __table_args__ = {"extend_existing": True}
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
     # PII: campos criptografados at-rest via Fernet (AES-128)
     nome: Mapped[Optional[str]] = mapped_column(EncryptedString(512))
     telefone: Mapped[str] = mapped_column(EncryptedString(512), nullable=False)
-    telefone_hash: Mapped[Optional[str]] = mapped_column(String(64), unique=True, nullable=True, index=True)
-    origem: Mapped[LeadOrigem] = mapped_column(PgEnum(LeadOrigem, name="lead_origem_enum", create_type=False), nullable=False, default=LeadOrigem.whatsapp)
-    status: Mapped[LeadStatus] = mapped_column(PgEnum(LeadStatus, name="lead_status_enum", create_type=False), nullable=False, default=LeadStatus.novo)
-    score: Mapped[Optional[LeadScore]] = mapped_column(PgEnum(LeadScore, name="lead_score_enum", create_type=False))
+    telefone_hash: Mapped[Optional[str]] = mapped_column(
+        String(64), unique=True, nullable=True, index=True
+    )
+    origem: Mapped[LeadOrigem] = mapped_column(
+        PgEnum(LeadOrigem, name="lead_origem_enum", create_type=False),
+        nullable=False,
+        default=LeadOrigem.whatsapp,
+    )
+    status: Mapped[LeadStatus] = mapped_column(
+        PgEnum(LeadStatus, name="lead_status_enum", create_type=False),
+        nullable=False,
+        default=LeadStatus.novo,
+    )
+    score: Mapped[Optional[LeadScore]] = mapped_column(
+        PgEnum(LeadScore, name="lead_score_enum", create_type=False)
+    )
 
-    consultor_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
+    consultor_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id")
+    )
     is_archived: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    atualizado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    criado_em: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    atualizado_em: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
 
-    briefing: Mapped[Optional["Briefing"]] = relationship("Briefing", back_populates="lead", uselist=False)
-    interacoes: Mapped[list["Interacao"]] = relationship("Interacao", back_populates="lead")
-    agendamentos: Mapped[list["Agendamento"]] = relationship("Agendamento", back_populates="lead")
-    propostas: Mapped[list["Proposta"]] = relationship("Proposta", back_populates="lead")
-    consultor: Mapped[Optional["User"]] = relationship("User", primaryjoin="foreign(Lead.consultor_id) == User.id", overlaps="consultor")
+    briefing: Mapped[Optional["Briefing"]] = relationship(
+        "Briefing", back_populates="lead", uselist=False
+    )
+    interacoes: Mapped[list["Interacao"]] = relationship(
+        "Interacao", back_populates="lead"
+    )
+    agendamentos: Mapped[list["Agendamento"]] = relationship(
+        "Agendamento", back_populates="lead"
+    )
+    propostas: Mapped[list["Proposta"]] = relationship(
+        "Proposta", back_populates="lead"
+    )
+    consultor: Mapped[Optional["User"]] = relationship(
+        "User",
+        primaryjoin="foreign(Lead.consultor_id) == User.id",
+        overlaps="consultor",
+    )
 
 
 # Pydantic schemas
+
 
 class LeadCreate(BaseModel):
     nome: Optional[str] = None

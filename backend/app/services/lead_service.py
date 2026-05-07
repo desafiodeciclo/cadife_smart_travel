@@ -58,40 +58,43 @@ async def upsert_lead_with_resilience(db: AsyncSession, lead_data: dict) -> Lead
         phone = lead_data.get("telefone")
         if not phone:
             raise ValueError("Telefone é obrigatório para upsert de lead")
-            
+
         phone_hash = hmac_hash(phone)
-        
+
         # Tenta inserir ou atualizar no conflito do telefone_hash
-        stmt = insert(Lead).values(
-            telefone=phone,
-            telefone_hash=phone_hash,
-            nome=lead_data.get("nome"),
-            status=lead_data.get("status", LeadStatus.novo),
-            origem=lead_data.get("origem", LeadOrigem.whatsapp)
-        ).on_conflict_do_update(
-            index_elements=[Lead.telefone_hash],
-            set_={
-                "nome": lead_data.get("nome"),
-                "atualizado_em": func.now()
-            }
-        ).returning(Lead)
-        
+        stmt = (
+            insert(Lead)
+            .values(
+                telefone=phone,
+                telefone_hash=phone_hash,
+                nome=lead_data.get("nome"),
+                status=lead_data.get("status", LeadStatus.novo),
+                origem=lead_data.get("origem", LeadOrigem.whatsapp),
+            )
+            .on_conflict_do_update(
+                index_elements=[Lead.telefone_hash],
+                set_={"nome": lead_data.get("nome"), "atualizado_em": func.now()},
+            )
+            .returning(Lead)
+        )
+
         result = await db.execute(stmt)
         lead = result.scalar_one()
-        
+
         # Garante que o briefing exista
-        briefing_stmt = insert(Briefing).values(
-            lead_id=lead.id,
-            completude_pct=0
-        ).on_conflict_do_nothing()
+        briefing_stmt = (
+            insert(Briefing)
+            .values(lead_id=lead.id, completude_pct=0)
+            .on_conflict_do_nothing()
+        )
         await db.execute(briefing_stmt)
-        
+
         await db.commit()
         await db.refresh(lead)
         return lead
-        
+
     except ProgrammingError as e:
-        if "relation \"leads\" does not exist" in str(e):
+        if 'relation "leads" does not exist' in str(e):
             logger.error("database_table_missing", table="leads", error=str(e))
             # Fallback ou raise informativo
             raise RuntimeError("Banco de dados não inicializado. Execute as migrações.")
@@ -107,7 +110,9 @@ async def upsert_lead_with_resilience(db: AsyncSession, lead_data: dict) -> Lead
         raise e
 
 
-async def get_or_create_by_phone(db: AsyncSession, phone: str, name: Optional[str] = None) -> Lead:
+async def get_or_create_by_phone(
+    db: AsyncSession, phone: str, name: Optional[str] = None
+) -> Lead:
     try:
         phone_hash = hmac_hash(phone)
         result = await db.execute(select(Lead).where(Lead.telefone_hash == phone_hash))
@@ -125,11 +130,11 @@ async def get_or_create_by_phone(db: AsyncSession, phone: str, name: Optional[st
             status=LeadStatus.novo,
         )
         db.add(lead)
-        await db.flush() # Para pegar o ID do lead sem commit total ainda
-        
+        await db.flush()  # Para pegar o ID do lead sem commit total ainda
+
         briefing = Briefing(lead_id=lead.id)
         db.add(briefing)
-        
+
         await db.commit()
         await db.refresh(lead)
         logger.info("lead_created", lead_id=str(lead.id), phone=phone)
@@ -141,13 +146,17 @@ async def get_or_create_by_phone(db: AsyncSession, phone: str, name: Optional[st
 
 
 async def get_lead_by_id(db: AsyncSession, lead_id: uuid.UUID) -> Optional[Lead]:
-    result = await db.execute(select(Lead).where(Lead.id == lead_id, Lead.is_archived.is_(False)))
+    result = await db.execute(
+        select(Lead).where(Lead.id == lead_id, Lead.is_archived.is_(False))
+    )
     return result.scalar_one_or_none()
 
 
 async def get_lead_metrics(db: AsyncSession) -> dict[str, int]:
     """Return aggregated lead counts by status for dashboard metrics."""
-    total_ativos_stmt = select(func.count()).select_from(Lead).where(Lead.is_archived.is_(False))
+    total_ativos_stmt = (
+        select(func.count()).select_from(Lead).where(Lead.is_archived.is_(False))
+    )
     total_ativos = (await db.execute(total_ativos_stmt)).scalar_one()
 
     metrics: dict[str, int] = {"total_ativos": total_ativos}
@@ -186,31 +195,37 @@ async def list_leads(
     total_result = await db.execute(count_query)
     total = total_result.scalar_one()
 
-    query = query.order_by(Lead.criado_em.desc()).offset((page - 1) * limit).limit(limit)
+    query = (
+        query.order_by(Lead.criado_em.desc()).offset((page - 1) * limit).limit(limit)
+    )
     result = await db.execute(query)
     return list(result.scalars().all()), total
 
 
 async def update_lead_status(
-    db: AsyncSession, 
-    lead: Lead, 
+    db: AsyncSession,
+    lead: Lead,
     new_status: LeadStatus,
-    triggered_by: str = "user_manual"
+    triggered_by: str = "user_manual",
 ) -> Lead:
     old_status = lead.status
     if old_status == new_status:
         return lead
-        
+
     lead.status = new_status
     await db.commit()
     await db.refresh(lead)
-    
+
     logger.info(
         "lead_status_transition",
         lead_id=str(lead.id),
-        old_status=old_status.value if hasattr(old_status, 'value') else str(old_status),
-        new_status=new_status.value if hasattr(new_status, 'value') else str(new_status),
-        triggered_by=triggered_by
+        old_status=(
+            old_status.value if hasattr(old_status, "value") else str(old_status)
+        ),
+        new_status=(
+            new_status.value if hasattr(new_status, "value") else str(new_status)
+        ),
+        triggered_by=triggered_by,
     )
     return lead
 
@@ -238,8 +253,12 @@ async def update_briefing_from_extraction(
     lead.score = calculate_score_from_briefing(briefing)
 
     if briefing.completude_pct >= 60 and lead.status == LeadStatus.em_atendimento:
-        await update_lead_status(db, lead, LeadStatus.qualificado, triggered_by="ai_auto")
-        logger.info("lead_qualified", lead_id=str(lead.id), completude=briefing.completude_pct)
+        await update_lead_status(
+            db, lead, LeadStatus.qualificado, triggered_by="ai_auto"
+        )
+        logger.info(
+            "lead_qualified", lead_id=str(lead.id), completude=briefing.completude_pct
+        )
 
     await db.commit()
     await db.refresh(briefing)
@@ -301,11 +320,14 @@ async def get_recent_interacoes(
 
 async def get_user_by_id(db: AsyncSession, user_id: str):
     from app.models.user import User
+
     result = await db.execute(select(User).where(User.id == uuid.UUID(user_id)))
     return result.scalar_one_or_none()
 
 
-async def mark_stale_leads_as_perdido(db: AsyncSession, inactivity_days: int = 30) -> int:
+async def mark_stale_leads_as_perdido(
+    db: AsyncSession, inactivity_days: int = 30
+) -> int:
     """
     Transition leads without client response for `inactivity_days` to PERDIDO.
 
@@ -339,7 +361,8 @@ async def mark_stale_leads_as_perdido(db: AsyncSession, inactivity_days: int = 3
         .where(Lead.status.notin_([LeadStatus.perdido.value, LeadStatus.fechado.value]))
         .outerjoin(latest_interacao_subq, Lead.id == latest_interacao_subq.c.lead_id)
         .where(
-            func.coalesce(latest_interacao_subq.c.last_interaction, Lead.criado_em) < cutoff
+            func.coalesce(latest_interacao_subq.c.last_interaction, Lead.criado_em)
+            < cutoff
         )
     )
 

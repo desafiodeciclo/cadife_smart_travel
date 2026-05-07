@@ -1,31 +1,31 @@
 import 'package:cadife_smart_travel/core/error/failures.dart';
-import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/client/status/data/datasources/status_datasource.dart';
+import 'package:cadife_smart_travel/features/client/status/domain/entities/client_travel_status.dart';
 import 'package:cadife_smart_travel/features/client/status/domain/repositories/i_status_repository.dart';
 import 'package:fpdart/fpdart.dart';
 
 class StatusRepositoryImpl implements IStatusRepository {
+  const StatusRepositoryImpl(this._datasource);
+
   final IStatusDatasource _datasource;
 
-  StatusRepositoryImpl(this._datasource);
-
   @override
-  Future<Either<Failure, Lead?>> getMyStatus() async {
+  Future<Either<Failure, ClientTravelStatus?>> getMyStatus() async {
     try {
       final result = await _datasource.getMyStatus();
       return Right(result);
-    } catch (e) {
-      return Left(ServerFailure(e.toString()));
+    } on Exception catch (e) {
+      return Left(Failure.fromException(e));
     }
   }
 
   @override
-  Future<Either<Failure, Lead?>> getStatusById(String id) async {
+  Future<Either<Failure, ClientTravelStatus?>> getStatusById(String id) async {
     try {
       final result = await _datasource.getStatusById(id);
       return Right(result);
-    } catch (e) {
-      return Left(ServerFailure(e.toString()));
+    } on Exception catch (e) {
+      return Left(Failure.fromException(e));
     }
   }
 }

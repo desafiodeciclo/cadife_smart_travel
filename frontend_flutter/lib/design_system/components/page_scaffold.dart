@@ -19,9 +19,9 @@ class PageScaffold extends StatelessWidget {
   final bool showProfile;
 
   const PageScaffold({
+    required this.body,
     super.key,
     this.title,
-    required this.body,
     this.actions,
     this.floatingActionButton,
     this.bottomNavigationBar,

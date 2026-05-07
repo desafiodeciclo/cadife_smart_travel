@@ -4,6 +4,7 @@ Redis Cache Client — Infrastructure/Cache Layer
 Async Redis client singleton with health-check helper.
 Used by the @cached decorator and explicit invalidation calls.
 """
+
 from __future__ import annotations
 
 import structlog

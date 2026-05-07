@@ -38,7 +38,6 @@ AsyncSessionLocal = async_sessionmaker(
 
 class Base(DeclarativeBase):
     """SQLAlchemy declarative base — all ORM models inherit from this."""
-    pass
 
 
 async def create_tables() -> None:

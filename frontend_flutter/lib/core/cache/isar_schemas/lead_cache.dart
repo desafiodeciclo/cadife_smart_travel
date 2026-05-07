@@ -6,13 +6,13 @@ part 'lead_cache.g.dart';
 @Collection()
 class LeadCache {
   LeadCache({
-    this.id,
     required this.serverId,
     required this.name,
     required this.phone,
     required this.status,
     required this.score,
     required this.completudePct,
+    this.id,
     this.email,
     this.destino,
     this.dataIda,

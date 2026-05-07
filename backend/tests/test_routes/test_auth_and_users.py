@@ -21,7 +21,10 @@ from jose import jwt
 
 from main import app
 from app.infrastructure.config.settings import get_settings
-from app.infrastructure.security.jwt import create_access_token, create_refresh_token, hash_password
+from app.infrastructure.security.jwt import (
+    create_access_token,
+    hash_password,
+)
 from app.models.user import User, UserPerfil
 
 settings = get_settings()
@@ -41,7 +44,12 @@ async def async_client_no_auth(override_get_db) -> AsyncGenerator[AsyncClient, N
         yield client
 
 
-async def create_user(db_session, email: str = "test@cadife.com", password: str = "TestPass123!", perfil: UserPerfil = UserPerfil.admin):
+async def create_user(
+    db_session,
+    email: str = "test@cadife.com",
+    password: str = "TestPass123!",
+    perfil: UserPerfil = UserPerfil.admin,
+):
     user = User(
         email=email,
         nome="Test User",
@@ -58,7 +66,9 @@ async def create_user(db_session, email: str = "test@cadife.com", password: str 
 
 @pytest.mark.asyncio
 async def test_auth_login_missing_password_returns_422(async_client_no_auth):
-    response = await async_client_no_auth.post("/auth/login", json={"email": "test@cadife.com"})
+    response = await async_client_no_auth.post(
+        "/auth/login", json={"email": "test@cadife.com"}
+    )
 
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
     assert response.json()["detail"]
@@ -76,7 +86,9 @@ async def test_auth_login_invalid_credentials_returns_401(async_client_no_auth):
 
 
 @pytest.mark.asyncio
-async def test_auth_login_valid_credentials_returns_tokens(async_client_no_auth, db_session):
+async def test_auth_login_valid_credentials_returns_tokens(
+    async_client_no_auth, db_session
+):
     password = "Secret123!"
     user = await create_user(db_session, password=password)
 
@@ -126,7 +138,9 @@ async def test_users_me_with_expired_jwt_returns_401(async_client_no_auth, db_se
 
 
 @pytest.mark.asyncio
-async def test_auth_refresh_with_access_token_returns_401(async_client_no_auth, db_session):
+async def test_auth_refresh_with_access_token_returns_401(
+    async_client_no_auth, db_session
+):
     user = await create_user(db_session)
     access_token = create_access_token(str(user.id))
 
@@ -140,7 +154,9 @@ async def test_auth_refresh_with_access_token_returns_401(async_client_no_auth, 
 
 
 @pytest.mark.asyncio
-async def test_register_fcm_token_missing_payload_returns_422(async_client_no_auth, db_session):
+async def test_register_fcm_token_missing_payload_returns_422(
+    async_client_no_auth, db_session
+):
     user = await create_user(db_session)
     token = create_access_token(str(user.id))
 

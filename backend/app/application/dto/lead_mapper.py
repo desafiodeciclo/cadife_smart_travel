@@ -8,14 +8,13 @@ leaks internal DB fields or ORM objects.
 All mapping is explicit: every field in the DTO is assigned by hand,
 preventing accidental exposure when the ORM model changes.
 """
+
 from __future__ import annotations
 
-import uuid
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from app.models.lead import Lead
-    from app.models.briefing import Briefing
 
 from app.presentation.schemas.leads import (
     LeadDetailDTO,
@@ -33,7 +32,9 @@ def _mascara_telefone(telefone: str | None) -> str | None:
     return telefone[:4] + "*****" + telefone[-4:] if len(telefone) > 8 else "********"
 
 
-def map_lead_to_list_item(lead: "Lead", completude_pct: int | None = None) -> LeadListItemDTO:
+def map_lead_to_list_item(
+    lead: "Lead", completude_pct: int | None = None
+) -> LeadListItemDTO:
     """Map a Lead ORM instance to the list-item DTO.
 
     The phone number is masked in list views to reduce PII exposure

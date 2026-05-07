@@ -19,8 +19,8 @@ class CadifeInput extends StatefulWidget {
   final String? errorText;
 
   const CadifeInput({
-    super.key,
     required this.label,
+    super.key,
     this.hint,
     this.hintText,
     this.initialValue,

@@ -3,5 +3,5 @@ export 'package:cadife_smart_travel/features/settings/domain/entities/user_prefe
 export 'agenda_cache.dart';
 export 'briefing_cache.dart';
 export 'lead_cache.dart';
+export 'offer_cache.dart';
 export 'proposal_cache.dart';
-

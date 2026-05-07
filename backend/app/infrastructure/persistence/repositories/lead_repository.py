@@ -10,6 +10,7 @@ Since Lead domain entity is currently represented by the ORM model
 (transitional phase), _to_entity returns the model directly. When
 pure domain entities are introduced, only _to_entity needs updating.
 """
+
 import uuid
 from typing import Optional
 

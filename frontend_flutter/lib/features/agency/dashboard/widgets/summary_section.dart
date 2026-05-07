@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 
 class SummarySection extends StatelessWidget {
   const SummarySection({
-    super.key,
     required this.stats,
+    super.key,
   });
 
   final DashboardStats stats;

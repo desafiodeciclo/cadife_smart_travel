@@ -11,6 +11,7 @@ Coverage targets:
   - No eligible jobs → worker exits silently
   - Exception during dispatch is caught and treated as failure
 """
+
 import datetime as dt
 import uuid
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -62,7 +63,9 @@ def _make_job(
         "fcm_tokens": ["token_1", "token_2"],
     }
     job.error_log = None
-    job.compute_next_retry = MagicMock(return_value=dt.datetime.now(dt.timezone.utc) + dt.timedelta(seconds=120))
+    job.compute_next_retry = MagicMock(
+        return_value=dt.datetime.now(dt.timezone.utc) + dt.timedelta(seconds=120)
+    )
     return job
 
 
@@ -110,7 +113,9 @@ async def test_worker_failure_schedules_retry_with_backoff(worker, fake_db):
 @pytest.mark.asyncio
 async def test_worker_backoff_exponential_growth(worker, fake_db):
     """Backoff deve crescer exponencialmente: delay * 2^retry_count."""
-    job = _make_job(status="failed", retry_count=2, max_retries=5, retry_delay_seconds=30)
+    job = _make_job(
+        status="failed", retry_count=2, max_retries=5, retry_delay_seconds=30
+    )
     job.next_retry_at = dt.datetime.now(dt.timezone.utc) - dt.timedelta(seconds=1)
 
     with (
@@ -126,7 +131,9 @@ async def test_worker_backoff_exponential_growth(worker, fake_db):
 @pytest.mark.asyncio
 async def test_worker_max_retries_moves_to_dlq(worker, fake_db, fake_queue_service):
     """Ao atingir max_retries, job deve ser movido para DLQ."""
-    job = _make_job(status="failed", retry_count=2, max_retries=3, retry_delay_seconds=10)
+    job = _make_job(
+        status="failed", retry_count=2, max_retries=3, retry_delay_seconds=10
+    )
     job.next_retry_at = dt.datetime.now(dt.timezone.utc) - dt.timedelta(seconds=1)
 
     with (
@@ -164,7 +171,9 @@ async def test_worker_no_tokens_marks_failed(worker, fake_db):
     job = _make_job(status="pending")
     job.payload["fcm_tokens"] = []
 
-    with patch.object(worker, "_fetch_eligible_jobs", new=AsyncMock(return_value=[job])):
+    with patch.object(
+        worker, "_fetch_eligible_jobs", new=AsyncMock(return_value=[job])
+    ):
         await worker.run()
 
     assert job.status == "failed"

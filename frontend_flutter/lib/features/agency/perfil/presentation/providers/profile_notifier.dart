@@ -2,6 +2,7 @@ import 'package:cadife_smart_travel/features/agency/perfil/domain/entities/consu
 import 'package:cadife_smart_travel/features/agency/perfil/domain/repositories/i_consultor_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+// Override registrado em: lib/core/di/provider_overrides.dart
 final iConsultorRepositoryProvider = Provider<IConsultorRepository>((ref) {
   throw UnimplementedError('Override em ProviderScope');
 });
