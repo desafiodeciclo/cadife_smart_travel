@@ -4,12 +4,30 @@ from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import Boolean, Date, Enum as SAEnum, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.infrastructure.persistence.types import GUID, StringArray
 
 from app.core.database import Base
 from app.domain.entities.enums import PerfilViagem, OrcamentoPerfil as OrcamentoNivel
+
+# Aliases the LLM commonly returns (without accent or in English).
+# Used as pre-validators so both the extraction and tool paths are covered.
+_PERFIL_ALIASES: dict[str, str] = {
+    "familia": "família",
+    "famíla": "família",
+    "group": "grupo",
+    "couple": "casal",
+    "alone": "solo",
+    "friends": "amigos",
+    "grupo de amigos": "amigos",
+}
+_ORCAMENTO_ALIASES: dict[str, str] = {
+    "medio": "médio",
+    "medium": "médio",
+    "low": "baixo",
+    "high": "alto",
+}
 
 if TYPE_CHECKING:
     from app.models.lead import Lead
@@ -103,6 +121,8 @@ def calculate_completude(briefing_data: dict) -> int:
 class BriefingExtracted(BaseModel):
     """Schema para Structured Outputs API — extração automática pela IA."""
 
+    model_config = ConfigDict(extra="forbid")
+
     destino: Optional[str] = Field(
         None,
         description="Cidade, país ou região de destino. Extraia APENAS se mencionado explicitamente pelo cliente.",
@@ -144,6 +164,20 @@ class BriefingExtracted(BaseModel):
         None,
         description="Notas adicionais, restrições alimentares, celebrações ou pedidos especiais.",
     )
+
+    @field_validator("perfil", mode="before")
+    @classmethod
+    def _normalize_perfil(cls, v: object) -> object:
+        if isinstance(v, str):
+            return _PERFIL_ALIASES.get(v.lower(), v)
+        return v
+
+    @field_validator("orcamento", mode="before")
+    @classmethod
+    def _normalize_orcamento(cls, v: object) -> object:
+        if isinstance(v, str):
+            return _ORCAMENTO_ALIASES.get(v.lower(), v)
+        return v
 
 
 class BriefingUpdate(BaseModel):
