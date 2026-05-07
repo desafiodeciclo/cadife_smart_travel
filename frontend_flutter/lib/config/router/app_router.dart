@@ -20,6 +20,9 @@ import 'package:cadife_smart_travel/features/client/documentos/presentation/page
 import 'package:cadife_smart_travel/features/client/documentos/presentation/pages/documentos_page.dart';
 import 'package:cadife_smart_travel/features/client/documentos/presentation/pages/trip_documents_page.dart';
 import 'package:cadife_smart_travel/features/client/historico/presentation/pages/historico_page.dart';
+import 'package:cadife_smart_travel/features/client/offers/domain/entities/offer.dart';
+import 'package:cadife_smart_travel/features/client/offers/presentation/screens/offer_details_page.dart';
+import 'package:cadife_smart_travel/features/client/offers/presentation/screens/offers_list_page.dart';
 import 'package:cadife_smart_travel/features/client/profile/presentation/pages/profile_page.dart' as client_profile;
 import 'package:cadife_smart_travel/features/client/profile/presentation/pages/travel_journal_detail_screen.dart';
 import 'package:cadife_smart_travel/features/client/status/presentation/pages/status_page.dart';
@@ -183,6 +186,28 @@ final routerProvider = Provider<GoRouter>((ref) {
               name: state.name,
               child: const StatusPage(),
             ),
+          ),
+          GoRoute(
+            path: '/client/offers',
+            name: 'client_offers',
+            pageBuilder: (context, state) => SlideTransitionPage(
+              name: state.name,
+              child: const OffersListPage(),
+            ),
+            routes: [
+              GoRoute(
+                path: ':offerId',
+                name: 'client_offer_details',
+                pageBuilder: (context, state) {
+                  final offerId = state.pathParameters['offerId']!;
+                  final offer = state.extra as Offer?;
+                  return SlideTransitionPage(
+                    name: state.name,
+                    child: OfferDetailsPage(offerId: offerId, offer: offer),
+                  );
+                },
+              ),
+            ],
           ),
           GoRoute(
             path: '/client/interactions',
