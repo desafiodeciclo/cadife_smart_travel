@@ -79,6 +79,7 @@ class PropostaStatus(str, Enum):
     aprovada = "aprovada"
     recusada = "recusada"
     em_revisao = "em_revisao"
+    expirada = "expirada"
 
 
 class PerfilViagem(str, Enum):
