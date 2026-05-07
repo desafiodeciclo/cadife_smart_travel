@@ -4,6 +4,7 @@ from typing import Optional
 
 import structlog
 from sqlalchemy import func, select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from sqlalchemy.exc import IntegrityError, ProgrammingError
@@ -174,21 +175,44 @@ async def list_leads(
     db: AsyncSession,
     status: Optional[str] = None,
     score: Optional[str] = None,
-    search: Optional[str] = None,
+    destino: Optional[str] = None,
+    data_inicio: Optional[datetime] = None,
+    data_fim: Optional[datetime] = None,
+    q: Optional[str] = None,
     page: int = 1,
     limit: int = 20,
     consultor_id: Optional[uuid.UUID] = None,
 ) -> tuple[list[Lead], int]:
-    query = select(Lead).where(Lead.is_archived.is_(False))
+    # Filtro base: não deletados e não arquivados
+    query = (
+        select(Lead)
+        .options(selectinload(Lead.briefing))
+        .where(Lead.deleted_at.is_(None), Lead.is_archived.is_(False))
+    )
+    
     if status:
         query = query.where(Lead.status == status)
     if score:
         query = query.where(Lead.score == score)
     if consultor_id:
         query = query.where(Lead.consultor_id == consultor_id)
-    if search:
+    
+    # Filtro parcial por destino (via Briefing)
+    if destino:
+        query = query.join(Lead.briefing).where(Briefing.destino.ilike(f"%{destino}%"))
+    
+    # Filtro por período
+    if data_inicio:
+        query = query.where(Lead.criado_em >= data_inicio)
+    if data_fim:
+        query = query.where(Lead.criado_em <= data_fim)
+        
+    # Busca full-text simplificada (q)
+    if q:
+        search_pattern = f"%{q}%"
         query = query.where(
-            (Lead.nome.ilike(f"%{search}%")) | (Lead.telefone.ilike(f"%{search}%"))
+            (Lead.nome.ilike(search_pattern)) | 
+            (Lead.telefone.ilike(search_pattern))
         )
 
     count_query = select(func.count()).select_from(query.subquery())
@@ -231,8 +255,64 @@ async def update_lead_status(
 
 
 async def soft_delete(db: AsyncSession, lead: Lead) -> None:
+    lead.deleted_at = datetime.now(timezone.utc)
     lead.is_archived = True
     await db.commit()
+
+
+async def get_lead_interacoes(
+    db: AsyncSession,
+    lead_id: uuid.UUID,
+    page: int = 1,
+    limit: int = 20
+) -> tuple[list[Interacao], int]:
+    """Retorna histórico paginado de interações de um lead."""
+    query = select(Interacao).where(Interacao.lead_id == lead_id)
+    
+    count_query = select(func.count()).select_from(query.subquery())
+    total_result = await db.execute(count_query)
+    total = total_result.scalar_one()
+    
+    # Mais antigas primeiro para o chat ou mais recentes? 
+    # Geralmente histórico paginado em API é mais recente primeiro.
+    query = query.order_by(Interacao.timestamp.desc()).offset((page - 1) * limit).limit(limit)
+    result = await db.execute(query)
+    return list(result.scalars().all()), total
+
+
+async def get_lead_briefing(db: AsyncSession, lead_id: uuid.UUID) -> Optional[Briefing]:
+    result = await db.execute(select(Briefing).where(Briefing.lead_id == lead_id))
+    return result.scalar_one_or_none()
+
+
+async def update_lead_briefing(
+    db: AsyncSession, 
+    lead_id: uuid.UUID, 
+    update_data: dict
+) -> Briefing:
+    result = await db.execute(select(Briefing).where(Briefing.lead_id == lead_id))
+    briefing = result.scalar_one_or_none()
+    
+    if not briefing:
+        briefing = Briefing(lead_id=lead_id)
+        db.add(briefing)
+        
+    for field, value in update_data.items():
+        if value is not None:
+            setattr(briefing, field, value)
+            
+    # Recalcular completude e score
+    briefing.completude_pct = calculate_completude(briefing.__dict__)
+    
+    # Buscar o lead para atualizar o score
+    lead_result = await db.execute(select(Lead).where(Lead.id == lead_id))
+    lead = lead_result.scalar_one_or_none()
+    if lead:
+        lead.score = calculate_score_from_briefing(briefing)
+        
+    await db.commit()
+    await db.refresh(briefing)
+    return briefing
 
 
 async def update_briefing_from_extraction(

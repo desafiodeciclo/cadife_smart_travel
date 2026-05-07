@@ -45,7 +45,10 @@ class ILeadRepository(ABC):
         self,
         status: Optional[str] = None,
         score: Optional[str] = None,
-        search: Optional[str] = None,
+        destino: Optional[str] = None,
+        data_inicio: Optional[date] = None,
+        data_fim: Optional[date] = None,
+        q: Optional[str] = None,
         page: int = 1,
         limit: int = 20,
     ) -> tuple[list, int]: ...
@@ -62,6 +65,10 @@ class IBriefingRepository(ABC):
 
     @abstractmethod
     async def upsert(self, lead_id: uuid.UUID, data: dict) -> object: ...
+
+    @abstractmethod
+    async def update(self, lead_id: uuid.UUID, data: dict) -> object:
+        ...
 
 
 class IInteracaoRepository(ABC):

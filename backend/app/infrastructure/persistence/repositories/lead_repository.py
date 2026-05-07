@@ -12,6 +12,7 @@ pure domain entities are introduced, only _to_entity needs updating.
 """
 
 import uuid
+from datetime import date
 from typing import Optional
 
 from sqlalchemy import func, or_, select
@@ -87,22 +88,39 @@ class LeadRepository(AbstractRepository[LeadModel], ILeadRepository):
         self,
         status: Optional[str] = None,
         score: Optional[str] = None,
-        search: Optional[str] = None,
+        destino: Optional[str] = None,
+        data_inicio: Optional[date] = None,
+        data_fim: Optional[date] = None,
+        q: Optional[str] = None,
         page: int = 1,
         limit: int = 20,
     ) -> tuple[list[LeadModel], int]:
         """
-        Paginated lead list with optional filters.
-        Returns (items, total_count).
+        Paginated lead list with advanced filters.
         """
-        stmt = select(LeadModel).where(LeadModel.is_archived.is_(False))
+        # Filter base: not archived and not logically deleted
+        stmt = select(LeadModel).where(
+            LeadModel.deleted_at.is_(None), 
+            LeadModel.is_archived.is_(False)
+        )
 
         if status:
             stmt = stmt.where(LeadModel.status == status)
         if score:
             stmt = stmt.where(LeadModel.score == score)
-        if search:
-            pattern = f"%{search}%"
+        
+        if destino:
+            # Join with briefing to filter by destination
+            from app.infrastructure.persistence.models.briefing_model import BriefingModel
+            stmt = stmt.join(LeadModel.briefing).where(BriefingModel.destino.ilike(f"%{destino}%"))
+            
+        if data_inicio:
+            stmt = stmt.where(LeadModel.criado_em >= data_inicio)
+        if data_fim:
+            stmt = stmt.where(LeadModel.criado_em <= data_fim)
+
+        if q:
+            pattern = f"%{q}%"
             stmt = stmt.where(
                 or_(
                     LeadModel.nome.ilike(pattern),
@@ -124,10 +142,12 @@ class LeadRepository(AbstractRepository[LeadModel], ILeadRepository):
         return items, total
 
     async def soft_delete(self, lead_id: uuid.UUID) -> None:
+        from datetime import datetime, timezone
         lead = await self.get_by_id(lead_id)
         if lead is None:
             raise ValueError(f"Lead {lead_id} não encontrado")
         lead.is_archived = True
+        lead.deleted_at = datetime.now(timezone.utc)
         await self._session.flush()
         await invalidate_pattern(f"cached:*{lead_id}*")
         await invalidate_pattern("cached:*list*")

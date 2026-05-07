@@ -68,6 +68,8 @@ class LeadModel(Base):
     __table_args__ = (
         # Composite index: CRM dashboard queries by status + date (most frequent)
         Index("ix_leads_status_criado_em", "status", "criado_em"),
+        # Composite index: optimized for status + score filters
+        Index("ix_leads_status_score_criado_em", "status", "score", "criado_em"),
         # Composite index: consultant view queries
         Index("ix_leads_consultor_status", "consultor_id", "status"),
         # Note: ck_leads_telefone_min_length was dropped in migration a1b2c3d4e5f6
@@ -96,6 +98,9 @@ class LeadModel(Base):
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL")
     )
     is_archived: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
+    )
     criado_em: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

@@ -47,6 +47,9 @@ class Lead(Base):
     score: Mapped[Optional[LeadScore]] = mapped_column(
         PgEnum(LeadScore, name="lead_score_enum", create_type=False)
     )
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
+    )
 
     consultor_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id")
@@ -142,3 +145,12 @@ class LeadListResponse(BaseModel):
     page: int
     limit: int
     pages: int
+
+
+class LeadFilterParams(BaseModel):
+    status: Optional[LeadStatus] = None
+    score: Optional[LeadScore] = None
+    destino: Optional[str] = None
+    data_inicio: Optional[datetime] = None
+    data_fim: Optional[datetime] = None
+    q: Optional[str] = None # Busca full-text por nome ou telefone

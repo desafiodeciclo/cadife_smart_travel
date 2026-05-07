@@ -16,6 +16,12 @@ def test_settings_load_defaults(monkeypatch):
     assert settings.APP_ENV == "development"
     assert settings.WHATSAPP_TOKEN == "test_token"
 
+def test_settings_missing_required_field(monkeypatch):
+    """Testa se o Pydantic reclama quando DATABASE_URL usa driver síncrono."""
+    monkeypatch.setenv("DATABASE_URL", "postgresql://user:pass@localhost/db")  # sem asyncpg
+
+    with pytest.raises(ValidationError):
+        Settings()
 
 def test_settings_production_invalid_jwt(monkeypatch):
     """Testa se o validador rejeita a secret padrão em produção."""
