@@ -24,7 +24,6 @@ class AppTheme {
             background: Color(0xFFFAFAFA), // Cadife Light Surface
             primary: Color(0xFFDD0B0E),    // Red Cadife
           ),
-      textTheme: ShadTextTheme.fromGoogleFont(GoogleFonts.inter),
     );
   }
 
@@ -42,12 +41,16 @@ class AppTheme {
       outline:   ext.cardBorder,
     );
 
-    return ThemeData(
-      useMaterial3: true,
-      brightness: brightness,
+    final baseTheme = ThemeData.from(
       colorScheme: colorScheme,
+      useMaterial3: true,
+    );
+
+    return baseTheme.copyWith(
       scaffoldBackgroundColor: ext.background,
       extensions: [ext],
+      iconTheme: IconThemeData(color: ext.textPrimary, size: 24),
+      primaryIconTheme: IconThemeData(color: ext.primary, size: 24),
       textTheme: _buildTextTheme(brightness, ext),
       pageTransitionsTheme: PageTransitionsTheme(
         builders: {
@@ -60,6 +63,7 @@ class AppTheme {
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         foregroundColor: ext.textPrimary,
+        iconTheme: IconThemeData(color: ext.textPrimary),
         elevation: 0,
         centerTitle: true,
         titleTextStyle: GoogleFonts.inter(

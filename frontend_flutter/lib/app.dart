@@ -30,18 +30,17 @@ class CadifeApp extends ConsumerWidget {
                 ThemePreference.system => ThemeMode.system,
               };
 
-              return AnimatedTheme(
-                duration: const Duration(milliseconds: 200),
-                data: themeMode == ThemeMode.dark ? AppTheme.dark : AppTheme.light,
-                child: ShadApp.router(
+              final brightness = themeMode == ThemeMode.dark ? Brightness.dark : Brightness.light;
+              
+              return ShadTheme(
+                data: AppTheme.shadTheme(context, brightness),
+                child: MaterialApp.router(
                   title: appConfig.appName,
                   debugShowCheckedModeBanner: false,
-                  theme: AppTheme.shadTheme(context, Brightness.light),
-                  darkTheme: AppTheme.shadTheme(context, Brightness.dark),
+                  theme: AppTheme.light,
+                  darkTheme: AppTheme.dark,
                   themeMode: themeMode,
                   routerConfig: ref.watch(routerProvider),
-                  materialThemeBuilder: (context, theme) =>
-                      theme.brightness == Brightness.light ? AppTheme.light : AppTheme.dark,
                 ),
               );
             },

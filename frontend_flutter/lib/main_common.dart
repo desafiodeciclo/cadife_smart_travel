@@ -14,6 +14,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 late AppConfig _appConfig;
@@ -24,6 +25,7 @@ Future<void> initializeApp(AppConfig config, Widget rootWidget) async {
 
   await runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
+    GoogleFonts.config.allowRuntimeFetching = true;
     await initializeDateFormatting('pt_BR', null);
 
     // 1. Setup Service Locator first (contains AnalyticsService)
