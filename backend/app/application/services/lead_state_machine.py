@@ -14,6 +14,7 @@ Valid transitions:
 
 PERDIDO is a terminal state — no outbound transitions.
 """
+
 from __future__ import annotations
 
 from app.domain.entities.enums import LeadStatus
@@ -22,7 +23,9 @@ from app.domain.entities.enums import LeadStatus
 class InvalidStateTransitionError(ValueError):
     """Raised when a lead status transition violates the lifecycle rules."""
 
-    def __init__(self, current: LeadStatus, target: LeadStatus, message: str | None = None) -> None:
+    def __init__(
+        self, current: LeadStatus, target: LeadStatus, message: str | None = None
+    ) -> None:
         self.current = current
         self.target = target
         default_msg = (
@@ -43,7 +46,11 @@ class LeadStateMachine:
     _transitions: dict[LeadStatus, set[LeadStatus]] = {
         LeadStatus.novo: {LeadStatus.em_atendimento, LeadStatus.perdido},
         LeadStatus.em_atendimento: {LeadStatus.qualificado, LeadStatus.perdido},
-        LeadStatus.qualificado: {LeadStatus.agendado, LeadStatus.proposta, LeadStatus.perdido},
+        LeadStatus.qualificado: {
+            LeadStatus.agendado,
+            LeadStatus.proposta,
+            LeadStatus.perdido,
+        },
         LeadStatus.agendado: {LeadStatus.proposta, LeadStatus.perdido},
         LeadStatus.proposta: {LeadStatus.fechado, LeadStatus.perdido},
         LeadStatus.fechado: {LeadStatus.perdido},

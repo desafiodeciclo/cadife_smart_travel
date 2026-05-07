@@ -68,6 +68,7 @@ _PRICE_KEYWORD_REGEX = re.compile(
 # Guardrail Protocol
 # ---------------------------------------------------------------------------
 
+
 class Guardrail(Protocol):
     """Protocolo para guardrails de contexto."""
 
@@ -84,6 +85,7 @@ class Guardrail(Protocol):
 # ---------------------------------------------------------------------------
 # Implementações
 # ---------------------------------------------------------------------------
+
 
 class PriceGuardrail:
     """
@@ -103,7 +105,9 @@ class PriceGuardrail:
         # 1. Detecção de padrões numéricos monetários (alto risco)
         numeric_match = _PRICE_REGEX.search(text)
         if numeric_match:
-            snippet = text[max(0, numeric_match.start() - 20):numeric_match.end() + 20]
+            snippet = text[
+                max(0, numeric_match.start() - 20) : numeric_match.end() + 20
+            ]
             return True, f"Menção a valor monetário detectado: '...{snippet}...'"
 
         # 2. Se block_keywords_only=False, também bloqueia keywords de preço isoladas
@@ -116,7 +120,10 @@ class PriceGuardrail:
                 end = min(len(text), keyword_match.end() + 30)
                 surrounding = text[start:end]
                 if re.search(r"\d{3,}|[R$€]\s*\d+", surrounding):
-                    return True, f"Keyword de preço próxima a número: '...{surrounding}...'"
+                    return (
+                        True,
+                        f"Keyword de preço próxima a número: '...{surrounding}...'",
+                    )
 
         return False, None
 
@@ -144,7 +151,7 @@ class AvailabilityGuardrail:
     def check(self, text: str) -> tuple[bool, Optional[str]]:
         match = self._AVAILABILITY_REGEX.search(text)
         if match:
-            snippet = text[max(0, match.start() - 20):match.end() + 20]
+            snippet = text[max(0, match.start() - 20) : match.end() + 20]
             return True, f"Confirmação de disponibilidade detectada: '...{snippet}...'"
         return False, None
 
@@ -204,11 +211,13 @@ class ContextFilter:
                     reasons.append(reason)
 
             if blocked:
-                violations.append({
-                    "source": doc.metadata.get("source", "unknown"),
-                    "chunk_index": doc.metadata.get("chunk_index", -1),
-                    "reasons": reasons,
-                })
+                violations.append(
+                    {
+                        "source": doc.metadata.get("source", "unknown"),
+                        "chunk_index": doc.metadata.get("chunk_index", -1),
+                        "reasons": reasons,
+                    }
+                )
                 if self.strategy == "remove":
                     continue
                 elif self.strategy == "mask":
@@ -246,6 +255,7 @@ class ContextFilter:
 # ---------------------------------------------------------------------------
 # Funções de conveniência
 # ---------------------------------------------------------------------------
+
 
 def apply_guardrails(
     docs: list[Document],

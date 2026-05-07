@@ -1,15 +1,16 @@
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
+import 'package:cadife_smart_travel/features/settings/domain/entities/user_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class ProfileHeader extends StatelessWidget {
   const ProfileHeader({
-    super.key,
     required this.user,
     required this.isEditing,
     required this.nameController,
     required this.onToggleEdit,
+    super.key,
   });
 
   final AuthUser? user;
@@ -153,9 +154,9 @@ class ProfileHeader extends StatelessWidget {
 
 class ProfileSectionCard extends StatelessWidget {
   const ProfileSectionCard({
-    super.key,
     required this.title,
     required this.children,
+    super.key,
   });
 
   final String title;
@@ -211,10 +212,10 @@ class ProfileSectionCard extends StatelessWidget {
 
 class ProfileInfoRow extends StatelessWidget {
   const ProfileInfoRow({
-    super.key,
     required this.icon,
     required this.label,
     required this.value,
+    super.key,
     this.readOnly = false,
   });
 
@@ -289,10 +290,10 @@ class ProfileInfoRow extends StatelessWidget {
 
 class ProfileChipGroup extends StatelessWidget {
   const ProfileChipGroup({
-    super.key,
     required this.label,
     required this.options,
     required this.selected,
+    super.key,
     this.onTap,
   });
 
@@ -376,8 +377,8 @@ class ProfileChipGroup extends StatelessWidget {
 
 class ProfilePassaporteCard extends StatelessWidget {
   const ProfilePassaporteCard({
-    super.key,
     required this.value,
+    super.key,
     this.onToggle,
   });
 
@@ -480,49 +481,106 @@ class ProfilePassaporteCard extends StatelessWidget {
 
 class ProfileThemeSelector extends StatelessWidget {
   const ProfileThemeSelector({
-    super.key,
-    required this.themeMode,
+    required this.themePreference,
     required this.onChanged,
+    super.key,
   });
 
-  final ThemeMode themeMode;
-  final ValueChanged<ThemeMode> onChanged;
+  final ThemePreference themePreference;
+  final ValueChanged<ThemePreference> onChanged;
 
   @override
   Widget build(BuildContext context) {
     return Column(
-      children: ThemeMode.values
-          .map((mode) => _ProfileThemeOption(
-                mode: mode,
-                isSelected: themeMode == mode,
-                onTap: () => onChanged(mode),
+      children: ThemePreference.values
+          .map((pref) => _ProfileThemeOption(
+                pref: pref,
+                isSelected: themePreference == pref,
+                onTap: () => onChanged(pref),
               ))
           .toList(),
     );
   }
 }
 
+class ProfileActionsSection extends StatelessWidget {
+  const ProfileActionsSection({
+    required this.isEditing,
+    required this.isSaving,
+    required this.onSave,
+    required this.onCancel,
+    required this.onLogout,
+    required this.onDeleteAccount,
+    super.key,
+  });
+
+  final bool isEditing;
+  final bool isSaving;
+  final VoidCallback onSave;
+  final VoidCallback onCancel;
+  final VoidCallback onLogout;
+  final VoidCallback onDeleteAccount;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      child: Column(
+        children: [
+          if (isEditing) ...[
+            CadifeButton(
+              onPressed: isSaving ? null : onSave,
+              isLoading: isSaving,
+              text: 'Salvar alterações',
+            ),
+            const SizedBox(height: 12),
+            CadifeButton(
+              onPressed: onCancel,
+              text: 'Cancelar',
+              isOutline: true,
+            ),
+            const SizedBox(height: 12),
+          ],
+          CadifeButton(
+            onPressed: onLogout,
+            text: 'Sair da conta',
+            icon: Icons.logout,
+            isOutline: true,
+          ),
+          const SizedBox(height: 12),
+          CadifeButton(
+            onPressed: onDeleteAccount,
+            text: 'Apagar conta',
+            icon: Icons.delete_outline,
+            isOutline: true,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ProfileThemeOption extends StatelessWidget {
   const _ProfileThemeOption({
-    required this.mode,
+    required this.pref,
     required this.isSelected,
     required this.onTap,
   });
 
-  final ThemeMode mode;
+  final ThemePreference pref;
   final bool isSelected;
   final VoidCallback onTap;
 
-  String get _label => switch (mode) {
-        ThemeMode.system => 'Padrão do sistema',
-        ThemeMode.light => 'Modo Claro',
-        ThemeMode.dark => 'Modo Escuro',
+  String get _label => switch (pref) {
+        ThemePreference.system => 'Padrão do sistema',
+        ThemePreference.light => 'Modo Claro',
+        ThemePreference.dark => 'Modo Escuro',
       };
 
-  IconData get _icon => switch (mode) {
-        ThemeMode.system => Icons.settings_brightness_rounded,
-        ThemeMode.light => Icons.light_mode_rounded,
-        ThemeMode.dark => Icons.dark_mode_rounded,
+  IconData get _icon => switch (pref) {
+        ThemePreference.system => Icons.settings_brightness_rounded,
+        ThemePreference.light => Icons.light_mode_rounded,
+        ThemePreference.dark => Icons.dark_mode_rounded,
       };
 
   @override

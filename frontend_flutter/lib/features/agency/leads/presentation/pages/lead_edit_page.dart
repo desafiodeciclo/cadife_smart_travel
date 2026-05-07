@@ -7,7 +7,7 @@ import 'package:go_router/go_router.dart';
 /// Permite atualizar nome, status e score de um lead existente.
 class LeadEditPage extends ConsumerStatefulWidget {
   final String leadId;
-  const LeadEditPage({super.key, required this.leadId});
+  const LeadEditPage({required this.leadId, super.key});
 
   @override
   ConsumerState<LeadEditPage> createState() => _LeadEditPageState();
@@ -61,11 +61,10 @@ class _LeadEditPageState extends ConsumerState<LeadEditPage>
     await Future.delayed(const Duration(milliseconds: 800));
     setState(() => _saving = false);
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Lead atualizado com sucesso!'),
+      ShadToaster.of(context).show(
+        const ShadToast(
+          description: Text('Lead atualizado com sucesso!'),
           backgroundColor: AppColors.success,
-          behavior: SnackBarBehavior.floating,
         ),
       );
       context.pop();
@@ -76,7 +75,10 @@ class _LeadEditPageState extends ConsumerState<LeadEditPage>
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    return Scaffold(
+    return PageScaffold(
+      showBackgroundEffects: false,
+      extendBodyBehindAppBar: false,
+      useSafeArea: false,
       body: CustomScrollView(
         slivers: [
           // ── Header gradient ──────────────────────────────────────────────
@@ -130,13 +132,10 @@ class _LeadEditPageState extends ConsumerState<LeadEditPage>
                             const SizedBox(height: 16),
 
                             // Nome
-                            TextFormField(
+                            CadifeInput(
+                              label: 'Nome do lead',
+                              hint: 'Nome completo',
                               controller: _nomeController,
-                              decoration: const InputDecoration(
-                                labelText: 'Nome do lead',
-                                prefixIcon: Icon(Icons.badge_outlined),
-                              ),
-                              textCapitalization: TextCapitalization.words,
                             ),
                             const SizedBox(height: 20),
 
@@ -262,49 +261,11 @@ class _LeadEditPageState extends ConsumerState<LeadEditPage>
                       const SizedBox(height: 28),
 
                       // Save button
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        height: 56,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [AppColors.primary, AppColors.primaryDark],
-                          ),
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primary.withValues(alpha: 0.4),
-                              blurRadius: 16,
-                              offset: const Offset(0, 6),
-                            ),
-                          ],
-                        ),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(16),
-                            onTap: _saving ? null : _save,
-                            child: Center(
-                              child: _saving
-                                  ? const SizedBox(
-                                      height: 22,
-                                      width: 22,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2.5,
-                                        color: Colors.white,
-                                      ),
-                                    )
-                                  : const Text(
-                                      'Salvar Alterações',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
-                                        letterSpacing: 0.5,
-                                      ),
-                                    ),
-                            ),
-                          ),
-                        ),
+                      CadifeButton(
+                        text: 'Salvar Alterações',
+                        isLoading: _saving,
+                        analyticsLabel: 'lead_edit_save',
+                        onPressed: _saving ? null : _save,
                       ),
                     ],
                   ),

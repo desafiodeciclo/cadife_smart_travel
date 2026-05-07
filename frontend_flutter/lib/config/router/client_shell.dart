@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 class ClientShell extends StatefulWidget {
-  const ClientShell({super.key, required this.child, required this.location});
+  const ClientShell({required this.child, required this.location, super.key});
 
   final Widget child;
   final String location;
@@ -16,9 +16,9 @@ class ClientShell extends StatefulWidget {
 class _ClientShellState extends State<ClientShell> {
   static const _tabs = [
     '/client/status',
-    '/client/historico',
-    '/client/documentos',
-    '/client/perfil',
+    '/client/interactions',
+    '/client/documents',
+    '/client/profile',
   ];
 
   int _currentIndex = 0;

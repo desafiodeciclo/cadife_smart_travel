@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 class CreateProposalModal extends StatefulWidget {
   final String leadId;
 
-  const CreateProposalModal({super.key, required this.leadId});
+  const CreateProposalModal({required this.leadId, super.key});
 
   static Future<void> show(BuildContext context, String leadId) {
     return showModalBottomSheet(

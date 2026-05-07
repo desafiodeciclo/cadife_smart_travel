@@ -15,7 +15,7 @@ class OfflineEventRepositoryImpl implements IOfflineEventRepository {
       final db = await _databaseHelper.database;
       await db.insert('offline_events', event.toMap());
       return const Right(null);
-    } catch (e) {
+    } on Exception catch (e) {
       return Left(CacheFailure(e.toString()));
     }
   }
@@ -33,7 +33,7 @@ class OfflineEventRepositoryImpl implements IOfflineEventRepository {
       return Right(List.generate(maps.length, (i) {
         return OfflineEvent.fromMap(maps[i]);
       }));
-    } catch (e) {
+    } on Exception catch (e) {
       return Left(CacheFailure(e.toString()));
     }
   }
@@ -49,7 +49,7 @@ class OfflineEventRepositoryImpl implements IOfflineEventRepository {
         whereArgs: [id],
       );
       return const Right(null);
-    } catch (e) {
+    } on Exception catch (e) {
       return Left(CacheFailure(e.toString()));
     }
   }

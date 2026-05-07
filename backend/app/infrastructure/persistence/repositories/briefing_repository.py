@@ -5,6 +5,7 @@ Concrete implementation of IBriefingRepository using SQLAlchemy async.
 Supports upsert pattern (create-or-update in a single call) since a lead
 always has at most one briefing.
 """
+
 import uuid
 from typing import Optional
 
@@ -50,8 +51,17 @@ class BriefingRepository(AbstractRepository[BriefingModel], IBriefingRepository)
             # Recalculate completude after merge
             merged = {
                 f: getattr(existing, f)
-                for f in ["destino", "data_ida", "data_volta", "qtd_pessoas",
-                          "perfil", "tipo_viagem", "preferencias", "orcamento", "tem_passaporte"]
+                for f in [
+                    "destino",
+                    "data_ida",
+                    "data_volta",
+                    "qtd_pessoas",
+                    "perfil",
+                    "tipo_viagem",
+                    "preferencias",
+                    "orcamento",
+                    "tem_passaporte",
+                ]
             }
             existing.completude_pct = calculate_completude(merged)
             await self._session.flush()

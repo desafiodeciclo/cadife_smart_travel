@@ -1,0 +1,29 @@
+{
+  "id": "multimodal-model-router-001",
+  "title": "Multimodal Model Router — OpenRouter Audio/Vision + Tool Calling (spec §3.3, §12.3)",
+  "status": "done",
+  "priority": "high",
+  "assignee": "Claude",
+  "created_at": "2026-05-06T00:00:00Z",
+  "completed_at": "2026-05-06T00:00:00Z",
+  "context": "O sistema atual responde áudio e imagens com a mensagem estática 'No momento aceito apenas textos'. O gap é que WhatsApp é multimodal — leads enviam fotos de passaportes, áudios de interesse. O plano de roteamento de modelos 2026 define: texto → OPENROUTER_MODEL, áudio → whisper (transcrição), imagem → modelo de visão. Além disso, o roteador central deve expor 3 tools via function calling: query_project_scope (RAG), check_existing_lead (BD), persist_lead_data (BD). Isso elimina o fallback estático e torna AYA multimodal.",
+  "steps": [
+    { "id": 1, "task": "Criar spec JSON em specs/active/ (este arquivo)", "status": "done" },
+    { "id": 2, "task": "Adicionar OPENROUTER_AUDIO_MODEL e OPENROUTER_VISION_MODEL em settings.py", "status": "done" },
+    { "id": 3, "task": "Atualizar whatsapp_service.py — adicionar download_whatsapp_media() e extrair media_id/mime_type no extract_message_from_payload()", "status": "done" },
+    { "id": 4, "task": "Criar backend/app/services/model_router.py — transcribe_audio(), analyze_image(), route_media_message(), select_model()", "status": "done" },
+    { "id": 5, "task": "Criar backend/app/services/ai_tools.py — TOOL_SCHEMAS, execute_tool(), query_project_scope(), check_existing_lead()", "status": "done" },
+    { "id": 6, "task": "Atualizar process_whatsapp_message.py — substituir fallback estático por chamada ao model_router", "status": "done" },
+    { "id": 7, "task": "Criar tests/test_services/test_model_router.py — testes unitários com mocks", "status": "done" }
+  ],
+  "acceptance_criteria": [
+    "Áudio enviado no WhatsApp é transcrito e processado como texto pela AYA ✓",
+    "Imagem enviada é descrita/analisada pelo modelo de visão antes de responder ao cliente ✓",
+    "model_router.select_model() retorna modelo correto para texto/áudio/imagem ✓",
+    "download_whatsapp_media() baixa o arquivo via Meta API corretamente ✓",
+    "TOOL_SCHEMAS define 3 tools: query_project_scope, check_existing_lead, persist_lead_data ✓",
+    "execute_tool() despacha query_project_scope corretamente para o rag_service ✓",
+    "Fallback gracioso se transcrição/análise falhar — AYA informa ao cliente ✓",
+    "14/14 testes passando ✓"
+  ]
+}

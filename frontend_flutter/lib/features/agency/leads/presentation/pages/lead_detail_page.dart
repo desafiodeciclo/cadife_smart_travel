@@ -14,7 +14,7 @@ import 'package:go_router/go_router.dart';
 
 class LeadDetailPage extends ConsumerStatefulWidget {
   final String leadId;
-  const LeadDetailPage({super.key, required this.leadId});
+  const LeadDetailPage({required this.leadId, super.key});
 
   @override
   ConsumerState<LeadDetailPage> createState() => _LeadDetailPageState();
@@ -49,8 +49,10 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> with SingleTick
 
     final detailAsync = ref.watch(leadDetailProvider(widget.leadId));
 
-    return Scaffold(
-      backgroundColor: context.cadife.background,
+    return PageScaffold(
+      showBackgroundEffects: false,
+      extendBodyBehindAppBar: false,
+      useSafeArea: false,
       body: StateContainer<Lead?>(
         state: detailAsync,
         onRetry: () => ref.refresh(leadDetailProvider(widget.leadId)),
@@ -228,20 +230,24 @@ class _ActionButtons extends ConsumerWidget {
         Row(
           children: [
             Expanded(
-              child: ShadButton(
+              child: CadifeButton(
+                text: 'Aprovar',
+                icon: Icons.check_circle_outline,
+                analyticsLabel: 'lead_detail_approve',
                 onPressed: () {},
-                leading: const Icon(Icons.check_circle_outline, size: 18),
-                child: const Text('Aprovar'),
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: ShadButton.outline(
+              child: CadifeButton(
+                text: 'Criar Proposta',
+                icon: Icons.description_outlined,
+                variant: ButtonVariant.secondary,
+                isOutline: true,
+                analyticsLabel: 'lead_detail_create_proposal',
                 onPressed: () {
                   CreateProposalModal.show(context, lead.id);
                 },
-                leading: const Icon(Icons.description_outlined, size: 18),
-                child: const Text('Criar Proposta'),
               ),
             ),
           ],
@@ -250,11 +256,16 @@ class _ActionButtons extends ConsumerWidget {
         Row(
           children: [
             Expanded(
-              child: ShadButton.outline(
+              child: CadifeButton(
+                text: 'Agendar',
+                icon: Icons.calendar_today_outlined,
+                variant: ButtonVariant.secondary,
+                isOutline: true,
+                analyticsLabel: 'lead_detail_schedule',
                 onPressed: () async {
                   final result = await ScheduleAppointmentModal.show(context, lead);
                   if (result == true) {
-                    ref.read(leadDetailProvider(lead.id).notifier).updateStatus(LeadStatus.agendado);
+                    await ref.read(leadDetailProvider(lead.id).notifier).updateStatus(LeadStatus.agendado);
                     if (context.mounted) {
                       ShadToaster.of(context).show(
                         const ShadToast(description: Text('Agendamento realizado com sucesso!')),
@@ -262,16 +273,17 @@ class _ActionButtons extends ConsumerWidget {
                     }
                   }
                 },
-                leading: const Icon(Icons.calendar_today_outlined, size: 18),
-                child: const Text('Agendar'),
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: ShadButton.outline(
+              child: CadifeButton(
+                text: 'WhatsApp',
+                icon: Icons.chat_bubble_outline,
+                variant: ButtonVariant.secondary,
+                isOutline: true,
+                analyticsLabel: 'lead_detail_whatsapp',
                 onPressed: () {},
-                leading: const Icon(Icons.chat_bubble_outline, size: 18),
-                child: const Text('WhatsApp'),
               ),
             ),
           ],

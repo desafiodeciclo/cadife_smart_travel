@@ -8,15 +8,14 @@ retrieve_context()             — hybrid search with guardrails (default)
 retrieve_with_metadata_filter()— hybrid search + metadata filter + guardrails
 retrieve_hybrid()              — core hybrid retrieval with RRF reranking
 """
+
 import re
 from typing import Optional
 
 import structlog
 from langchain_core.documents import Document
 from langchain_chroma import Chroma
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
-
-from pydantic import SecretStr
+from langchain_openai import OpenAIEmbeddings
 
 from app.core.config import get_settings
 from app.services.metadata_tagger import build_chroma_filter
@@ -37,14 +36,18 @@ _KEYWORD_WEIGHT = 0.5  # Weight of keyword signal relative to vector signal
 _VECTOR_CANDIDATES_MULTIPLIER = 3  # How many candidates to fetch for reranking
 
 
-def _get_embeddings():
-    """Return embeddings — Gemini exclusivo."""
-    if settings.GEMINI_API_KEY:
-        return GoogleGenerativeAIEmbeddings(
-            model="models/gemini-embedding-001",
-            google_api_key=SecretStr(settings.GEMINI_API_KEY),
+def _get_embeddings() -> OpenAIEmbeddings:
+    if not settings.OPENROUTER_API_KEY:
+        raise RuntimeError(
+            "Nenhuma OPENROUTER_API_KEY configurada. Defina OPENROUTER_API_KEY no .env"
         )
-    raise RuntimeError("Nenhuma GEMINI_API_KEY configurada. Defina GEMINI_API_KEY no .env")
+    return OpenAIEmbeddings(
+        model=settings.OPENROUTER_EMBEDDING_MODEL,
+        openai_api_key=settings.OPENROUTER_API_KEY,
+        openai_api_base="https://openrouter.ai/api/v1",
+        check_embedding_ctx_length=False,
+        model_kwargs={"encoding_format": "float"},
+    )
 
 
 def get_vectorstore() -> Chroma:
@@ -84,6 +87,7 @@ def get_rag_document_count() -> int:
 # ---------------------------------------------------------------------------
 # Hybrid Search — Vector + Keyword with RRF
 # ---------------------------------------------------------------------------
+
 
 def _tokenize(text: str) -> set[str]:
     """Simple tokenizer: lowercase, remove punctuation, split on whitespace."""
@@ -184,8 +188,7 @@ def retrieve_hybrid(
 
         # 2. Keyword scores on candidates
         keyword_scores = [
-            (_keyword_score(query, doc.page_content), doc)
-            for doc in vector_docs
+            (_keyword_score(query, doc.page_content), doc) for doc in vector_docs
         ]
         keyword_scores.sort(key=lambda x: x[0], reverse=True)
         keyword_ranked = [doc for _, doc in keyword_scores if _ > 0]
@@ -218,6 +221,7 @@ def retrieve_hybrid(
 # ---------------------------------------------------------------------------
 # Public API — Guardrailed retrieval wrappers
 # ---------------------------------------------------------------------------
+
 
 def retrieve_context(query: str, k: int = 3) -> str:
     """
@@ -282,6 +286,7 @@ def retrieve_with_metadata_filter(
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _join(docs: list[Document]) -> str:
     return "\n\n".join(d.page_content for d in docs)

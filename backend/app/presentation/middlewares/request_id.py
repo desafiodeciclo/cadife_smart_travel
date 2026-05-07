@@ -8,6 +8,7 @@ Usage in logs:
     structlog.contextvars.bind_contextvars(request_id=request_id)
     logger.info("event_name")  # automatically includes request_id
 """
+
 import uuid
 
 import structlog

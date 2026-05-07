@@ -8,12 +8,12 @@ Constraints:
   - (lead_id, data, hora) UNIQUE — one appointment per slot per lead
   - DB ENUM for status and tipo
 """
+
 import uuid
 from datetime import date, datetime, time
 from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import (
-    CheckConstraint,
     Date,
     DateTime,
     ForeignKey,
@@ -58,6 +58,7 @@ class AgendamentoModel(Base):
         Index("ix_agendamentos_consultor_data", "consultor_id", "data"),
         # Business rule: a lead cannot have duplicate slot bookings
         UniqueConstraint("lead_id", "data", "hora", name="uq_agendamento_lead_slot"),
+        {"extend_existing": True},
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -72,7 +73,9 @@ class AgendamentoModel(Base):
     data: Mapped[date] = mapped_column(Date, nullable=False)
     hora: Mapped[time] = mapped_column(Time, nullable=False)
     status: Mapped[str] = mapped_column(
-        agendamento_status_enum, nullable=False, default=AgendamentoStatus.pendente.value
+        agendamento_status_enum,
+        nullable=False,
+        default=AgendamentoStatus.pendente.value,
     )
     tipo: Mapped[str] = mapped_column(
         agendamento_tipo_enum, nullable=False, default=AgendamentoTipo.online.value

@@ -13,6 +13,7 @@ router = APIRouter(prefix="/webhook", tags=["Webhook"])
 
 # ── Dependência: valida HMAC X-Hub-Signature-256 ─────────────────────────────
 
+
 async def require_meta_signature(
     request: Request,
     settings: Settings = Depends(get_settings),
@@ -24,11 +25,14 @@ async def require_meta_signature(
     signature = request.headers.get("X-Hub-Signature-256", "")
     if not whatsapp_service.verify_signature(body, signature):
         logger.warning("webhook_invalid_signature", path=str(request.url))
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid signature")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Invalid signature"
+        )
     return body
 
 
 # ── GET: verificação do Challenge Token (Meta App Dashboard) ─────────────────
+
 
 @router.get("/whatsapp")
 async def verify_webhook(
@@ -49,6 +53,7 @@ async def verify_webhook(
 
 
 # ── POST: recebe mensagens — 200 garantido, validação HMAC via Depends ────────
+
 
 @router.post("/whatsapp")
 async def receive_whatsapp(

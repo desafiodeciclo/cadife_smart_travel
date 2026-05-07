@@ -4,8 +4,9 @@ Tests — Curadoria Service
 Tests the curation trigger logic: slot discovery, active appointment check,
 messaging, and qualification gate.
 """
+
 from datetime import date, time
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -17,8 +18,8 @@ from app.services.curadoria_service import (
     lead_tem_agendamento_ativo,
 )
 
-
 # ── deve_oferecer_curadoria ──────────────────────────────────────────────────
+
 
 @pytest.mark.parametrize(
     "status_antes,status_depois,completude,expected",
@@ -36,6 +37,7 @@ def test_deve_oferecer_curadoria(status_antes, status_depois, completude, expect
 
 
 # ── gerar_mensagem_oferta_curadoria ──────────────────────────────────────────
+
 
 def test_gerar_mensagem_com_slots():
     slots = [
@@ -67,6 +69,7 @@ def test_gerar_mensagem_sem_nome():
 
 # ── lead_tem_agendamento_ativo ───────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_lead_tem_agendamento_ativo_true():
     db = AsyncMock()
@@ -91,6 +94,7 @@ async def test_lead_tem_agendamento_ativo_false():
 
 # ── get_proximos_slots_disponiveis ───────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_get_proximos_slots_retorna_disponiveis():
     db = AsyncMock()
@@ -110,7 +114,6 @@ async def test_get_proximos_slots_retorna_disponiveis():
 @pytest.mark.asyncio
 async def test_get_proximos_slots_respeita_max_por_dia():
     db = AsyncMock()
-    from app.models.agendamento import Agendamento
 
     # Full day of bookings only for the first queried date
     agendamentos_full = [
@@ -122,12 +125,12 @@ async def test_get_proximos_slots_respeita_max_por_dia():
         MagicMock(hora=time(15, 0)),
     ]
 
+    call_counter = {"count": 0}
+
     def _fake_execute(stmt):
+        call_counter["count"] += 1
         mock_result = MagicMock()
-        # Extract the date filter from the SQLAlchemy where clause
-        # For simplicity, alternate: first call → full, subsequent → empty
-        call_count = len([c for c in db.execute.call_args_list])
-        if call_count == 0:
+        if call_counter["count"] == 1:
             mock_result.scalars.return_value.all.return_value = agendamentos_full
         else:
             mock_result.scalars.return_value.all.return_value = []
@@ -141,4 +144,5 @@ async def test_get_proximos_slots_respeita_max_por_dia():
     assert len(slots) == 3
     # All returned slots must be from days after the full one (today)
     from datetime import date
+
     assert all(s["data"] > date.today() for s in slots)

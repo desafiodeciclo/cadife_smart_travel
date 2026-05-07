@@ -36,7 +36,9 @@ try:
     logger.info("rate_limiter_ready", storage=settings.REDIS_URL)
 except Exception as exc:
     # Redis indisponível — usa memória local (não compartilhada entre workers)
-    logger.warning("rate_limiter_redis_unavailable", error=str(exc), fallback="memory://")
+    logger.warning(
+        "rate_limiter_redis_unavailable", error=str(exc), fallback="memory://"
+    )
     limiter = Limiter(
         key_func=get_remote_address,
         storage_uri="memory://",

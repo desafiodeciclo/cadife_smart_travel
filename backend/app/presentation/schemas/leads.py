@@ -10,6 +10,7 @@ This module enforces the IDOR / DataLeak defence rule:
   * No ORM instances are returned directly from route handlers.
   * Mappers in app/application/dto/lead_mapper.py translate ORM → DTO.
 """
+
 from __future__ import annotations
 
 import uuid
@@ -21,8 +22,8 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.domain.entities.enums import LeadOrigem, LeadScore, LeadStatus, PropostaStatus
 
-
 # ── Shared sub-items ───────────────────────────────────────────────────────
+
 
 class PropostaListItemDTO(BaseModel):
     id: uuid.UUID
@@ -35,6 +36,7 @@ class PropostaListItemDTO(BaseModel):
 
 
 # ── Request bodies ─────────────────────────────────────────────────────────
+
 
 class LeadCreateRequest(BaseModel):
     nome: Optional[str] = None
@@ -55,8 +57,10 @@ class LeadUpdateRequest(BaseModel):
 
 # ── Response DTOs ──────────────────────────────────────────────────────────
 
+
 class LeadListItemDTO(BaseModel):
     """DTO for paginated list (GET /leads)."""
+
     id: uuid.UUID
     nome: Optional[str] = None
     telefone_mascarado: Optional[str] = None
@@ -72,6 +76,7 @@ class LeadListItemDTO(BaseModel):
 
 class LeadDetailDTO(BaseModel):
     """DTO for single-lead detail (GET /leads/{id})."""
+
     id: uuid.UUID
     nome: Optional[str] = None
     telefone: str
@@ -101,6 +106,7 @@ class LeadListResponseDTO(BaseModel):
 
 class LeadMetricsDTO(BaseModel):
     """DTO for lead dashboard metrics."""
+
     total_ativos: int
     total_novos: int
     total_em_atendimento: int

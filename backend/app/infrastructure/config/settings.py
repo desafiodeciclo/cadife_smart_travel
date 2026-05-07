@@ -9,6 +9,7 @@ In production, secrets can be loaded from:
   - HashiCorp Vault (via `hvac`)
 by overriding `_load_external_secrets()`.
 """
+
 from functools import lru_cache
 from typing import Literal
 
@@ -31,7 +32,7 @@ class Settings(BaseSettings):
     )
 
     # ── Application Behaviour ─────────────────────────────────────────────
-    APP_ENV: Literal["development", "staging", "production"] = Field(
+    APP_ENV: Literal["development", "staging", "production", "test"] = Field(
         default="development",
         description="Current environment — controls secret loading strategy",
     )
@@ -39,27 +40,64 @@ class Settings(BaseSettings):
 
     # ── WhatsApp Cloud API (spec.md §15) ──────────────────────────────────
     WHATSAPP_TOKEN: str = Field(default="", description="Meta WhatsApp access token")
-    PHONE_NUMBER_ID: str = Field(default="", description="Meta registered phone number ID")
+    PHONE_NUMBER_ID: str = Field(
+        default="", description="Meta registered phone number ID"
+    )
     VERIFY_TOKEN: str = Field(
         default="cadife_verify_token",
         description="Secret token for Meta webhook verification",
     )
-    META_APP_SECRET: str = Field(default="", description="Meta App Secret for X-Hub-Signature-256 validation")
-    META_APP_ID: str = Field(default="", description="Meta App ID — required for token exchange")
+    META_APP_SECRET: str = Field(
+        default="", description="Meta App Secret for X-Hub-Signature-256 validation"
+    )
+    META_APP_ID: str = Field(
+        default="", description="Meta App ID — required for token exchange"
+    )
 
-    # ── Google Gemini (exclusivo — não usa OpenAI) ─────────────────────────
-    GEMINI_API_KEY: str = Field(default="", description="Gemini API key para LLM + embeddings")
-    LANGCHAIN_API_KEY: str = Field(default="", description="LangSmith observability key (optional)")
+    # ── OpenRouter (chat LLM + embeddings) ───────────────────────────────
+    OPENROUTER_API_KEY: str = Field(
+        default="", description="OpenRouter API key para chat LLM e embeddings"
+    )
+    OPENROUTER_MODEL: str = Field(
+        default="google/gemini-2.0-flash-001",
+        description="Modelo OpenRouter para chat (texto)",
+    )
+    OPENROUTER_AUDIO_MODEL: str = Field(
+        default="google/gemini-2.0-flash-001",
+        description="Modelo OpenRouter para transcrição de áudio (via chat completions multimodal)",
+    )
+    OPENROUTER_VISION_MODEL: str = Field(
+        default="google/gemini-2.0-flash-001",
+        description="Modelo OpenRouter para análise de imagens/visão",
+    )
+    OPENROUTER_EMBEDDING_MODEL: str = Field(
+        default="google/gemini-embedding-2-preview",
+        description="Modelo OpenRouter para embeddings RAG",
+    )
+
+    # ── Google Gemini (mantido para compatibilidade — não mais necessário) ─
+    GEMINI_API_KEY: str = Field(
+        default="", description="Gemini API key (legado — substituído pelo OpenRouter)"
+    )
+    LANGCHAIN_API_KEY: str = Field(
+        default="", description="LangSmith observability key (optional)"
+    )
 
     # ── Langfuse Observability ────────────────────────────────────────────
-    LANGFUSE_PUBLIC_KEY: str = Field(default="", description="Langfuse public key for tracing")
-    LANGFUSE_SECRET_KEY: str = Field(default="", description="Langfuse secret key for tracing")
+    LANGFUSE_PUBLIC_KEY: str = Field(
+        default="", description="Langfuse public key for tracing"
+    )
+    LANGFUSE_SECRET_KEY: str = Field(
+        default="", description="Langfuse secret key for tracing"
+    )
     LANGFUSE_HOST: str = Field(
         default="https://cloud.langfuse.com",
         description="Langfuse API host (self-hosted or cloud)",
     )
-    
-    SLACK_WEBHOOK_URL: str = Field(default="", description="Slack webhook URL for critical alerts")
+
+    SLACK_WEBHOOK_URL: str = Field(
+        default="", description="Slack webhook URL for critical alerts"
+    )
 
     # ── Database (spec.md §3.3 — PostgreSQL preferred) ────────────────────
     DATABASE_URL: str = Field(
@@ -98,7 +136,9 @@ class Settings(BaseSettings):
     REDIS_PORT: int = Field(default=6379)
     REDIS_PASSWORD: str = Field(default="")
     REDIS_DB: int = Field(default=0)
-    REDIS_PREFIX: str = Field(default="", description="Prefix for redis keys (e.g. STG_)")
+    REDIS_PREFIX: str = Field(
+        default="", description="Prefix for redis keys (e.g. STG_)"
+    )
     REDIS_URL: str = Field(default="redis://localhost:6379/0")
     RATE_LIMIT_WEBHOOK: str = Field(default="100/minute")
     RATE_LIMIT_IA: str = Field(default="30/minute")
@@ -106,7 +146,19 @@ class Settings(BaseSettings):
 
     # ── PII Encryption at-rest (Fernet/AES-128) ───────────────────────────
     ENCRYPTION_KEY: str = Field(default="", description="Fernet key for PII encryption")
-    HASH_KEY: str = Field(default="", description="HMAC-SHA256 key for searchable phone hash")
+    HASH_KEY: str = Field(
+        default="", description="HMAC-SHA256 key for searchable phone hash"
+    )
+
+    # ── Notification Queue & DLQ ──────────────────────────────────────────
+    NOTIFICATION_MAX_RETRIES: int = Field(default=3, ge=0)
+    NOTIFICATION_RETRY_DELAY_SECONDS: int = Field(default=60, ge=1)
+    NOTIFICATION_DEBOUNCE_TTL_SECONDS: int = Field(default=60, ge=1)
+    NOTIFICATION_PROCESSING_TIMEOUT_SECONDS: int = Field(
+        default=120,
+        ge=1,
+        description="Timeout to recover jobs stuck in 'processing' after a worker crash (seconds)",
+    )
 
     # ── Cache / Redis (spec.md §5.3) ──────────────────────────────────────
     CACHE_TTL_SECONDS: int = Field(
@@ -147,7 +199,7 @@ class Settings(BaseSettings):
         if app_env == "production" and v == "change-me-in-production":
             raise ValueError(
                 "JWT_SECRET_KEY must be set to a secure random value in production. "
-                "Generate one with: python -c \"import secrets; print(secrets.token_hex(32))\""
+                'Generate one with: python -c "import secrets; print(secrets.token_hex(32))"'
             )
         return v
 
@@ -156,7 +208,9 @@ class Settings(BaseSettings):
         """Compute REDIS_URL if individual connection params are provided."""
         if self.REDIS_PASSWORD or self.REDIS_HOST != "localhost":
             pwd = f":{self.REDIS_PASSWORD}@" if self.REDIS_PASSWORD else ""
-            self.REDIS_URL = f"redis://{pwd}{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
+            self.REDIS_URL = (
+                f"redis://{pwd}{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
+            )
         return self
 
     @field_validator("DATABASE_URL")
