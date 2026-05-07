@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Optional
 from sqlalchemy import Date, DateTime, ForeignKey, Time, func
 from sqlalchemy.dialects.postgresql import ENUM as PgEnum, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.core.database import Base
 from app.domain.entities.enums import AgendamentoStatus, AgendamentoTipo
@@ -35,7 +35,10 @@ class AgendamentoCreate(BaseModel):
     data: date
     hora: time
     tipo: AgendamentoTipo = AgendamentoTipo.online
-    consultor_id: Optional[uuid.UUID] = None
+    consultor_id: Optional[uuid.UUID] = Field(
+        default=None,
+        description="Read-only: definido automaticamente pelo backend com base no usuário autenticado.",
+    )
 
 
 class AgendamentoUpdate(BaseModel):
