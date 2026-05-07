@@ -28,7 +28,12 @@ from app.services.domain_validator import BriefingValidator
 
 logger = structlog.get_logger()
 
-# Fallback when media cannot be processed (download failure, model unavailable)
+# Message for audio messages specifically (task requirement)
+AUDIO_FALLBACK_REPLY = (
+    "Áudio não suportado nestes momentos, prefira o meio texto."
+)
+
+# Message for other unsupported media types (spec.md §12.3)
 MEDIA_FALLBACK_REPLY = (
     "Recebi sua mensagem! Tive um problema ao processar esse arquivo. "
     "Pode me enviar o conteúdo em texto? Um consultor também pode te ajudar em breve. 😊"
@@ -50,6 +55,7 @@ async def execute(payload: dict, db: AsyncSession) -> None:
     phone: str = msg["phone"]
     text: str | None = msg.get("text")
     msg_type: str = msg.get("type", "text")
+    media_id: str | None = msg.get("media_id")
 
     logger.info("processing_whatsapp_message", phone=phone, msg_type=msg_type)
 
@@ -74,45 +80,27 @@ async def execute(payload: dict, db: AsyncSession) -> None:
     reply: str
     tipo: TipoMensagem
 
-    # For media messages: attempt to convert to text via the model router.
-    # On success, feed the transcript/description into the AI pipeline.
-    # On failure (download error, model unavailable), fall back gracefully.
-    effective_text: str | None = text
-    if msg_type in ("audio", "voice", "image"):
-        media_id: str | None = msg.get("media_id")
-        media_mime: str = msg.get("media_mime_type") or ""
-        caption: str | None = msg.get("text")  # image caption (may be None)
-
+    if msg_type == "audio":
+        # Best-effort download from Meta's Media API (logged; reply always sent)
         if media_id:
-            converted = await model_router.route_media_message(
-                msg_type=msg_type,
+            audio_bytes = await whatsapp_service.download_media(media_id)
+            logger.info(
+                "audio_received",
+                lead_id=str(lead.id),
                 media_id=media_id,
-                mime_type=media_mime,
-                caption=caption,
+                downloaded=audio_bytes is not None,
+                size_bytes=len(audio_bytes) if audio_bytes else 0,
             )
-            if converted:
-                effective_text = converted
-                logger.info(
-                    "media_converted_to_text",
-                    lead_id=str(lead.id),
-                    msg_type=msg_type,
-                    chars=len(converted),
-                )
-            else:
-                logger.warning(
-                    "media_conversion_failed_using_fallback",
-                    lead_id=str(lead.id),
-                    msg_type=msg_type,
-                )
+        reply = AUDIO_FALLBACK_REPLY
+        tipo = TipoMensagem.audio
 
-    tipo = (
-        TipoMensagem(msg_type)
-        if msg_type in TipoMensagem.__members__
-        else TipoMensagem.texto
-    )
-
-    if not effective_text:
+    elif msg_type != "text" or not text:
         reply = MEDIA_FALLBACK_REPLY
+        tipo = (
+            TipoMensagem(msg_type)
+            if msg_type in TipoMensagem.__members__
+            else TipoMensagem.texto
+        )
     else:
         reply = await ai_service.process_message(phone, effective_text)
         tipo = TipoMensagem.texto

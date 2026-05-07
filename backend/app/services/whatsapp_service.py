@@ -86,10 +86,8 @@ def verify_signature(body: bytes, signature_header: str) -> bool:
 def extract_message_from_payload(payload: dict[str, Any]) -> Optional[dict[str, Any]]:
     """Extract the first message from a Meta webhook payload. Returns None if absent.
 
-    For media messages (audio, image, document, video), the result includes:
-      - media_id: Meta media object ID — pass to download_whatsapp_media()
-      - media_mime_type: MIME type declared by the sender
-    For image messages, 'text' is populated with the caption if present.
+    The returned dict always includes `media_id` (None for text messages) so
+    callers can dispatch on type without additional parsing.
     """
     try:
         entry = payload["entry"][0]
@@ -102,79 +100,80 @@ def extract_message_from_payload(payload: dict[str, Any]) -> Optional[dict[str, 
         contact = value.get("contacts", [{}])[0]
         msg_type: str = msg.get("type", "text")
 
-        result: dict[str, Any] = {
+        # Extract media ID from the type-specific sub-object (audio, image, etc.)
+        media_id: Optional[str] = None
+        media_data = msg.get(msg_type)
+        if isinstance(media_data, dict):
+            media_id = media_data.get("id")
+
+        return {
             "phone": msg["from"],
             "message_id": msg["id"],
             "type": msg_type,
             "text": msg.get("text", {}).get("body"),
             "name": contact.get("profile", {}).get("name"),
-            "media_id": None,
-            "media_mime_type": None,
+            "media_id": media_id,
         }
-
-        if msg_type in ("audio", "voice"):
-            media = msg.get("audio") or msg.get("voice") or {}
-            result["media_id"] = media.get("id")
-            result["media_mime_type"] = media.get("mime_type", "audio/ogg; codecs=opus")
-
-        elif msg_type == "image":
-            media = msg.get("image", {})
-            result["media_id"] = media.get("id")
-            result["media_mime_type"] = media.get("mime_type", "image/jpeg")
-            # Use caption as text context if provided alongside the image
-            result["text"] = media.get("caption") or result["text"]
-
-        elif msg_type in ("document", "video", "sticker"):
-            media = msg.get(msg_type, {})
-            result["media_id"] = media.get("id")
-            result["media_mime_type"] = media.get("mime_type", "application/octet-stream")
-
-        return result
     except (KeyError, IndexError):
         return None
 
 
-async def download_whatsapp_media(media_id: str) -> tuple[bytes, str]:
-    """Download a media file from the WhatsApp Cloud API.
+async def download_media(media_id: str) -> Optional[bytes]:
+    """Download a media file from Meta's Media API by its ID.
 
     Two-step process required by Meta:
-      1. GET /{media_id} to retrieve the temporary download URL + mime_type.
-      2. GET {url} (with auth header) to fetch the binary content.
+      1. GET /{media_id} → JSON with a short-lived `url`
+      2. GET {url} (with Auth header) → raw media bytes
 
-    Returns:
-        (file_bytes, mime_type) — mime_type sourced from Meta's metadata response.
-
-    Raises:
-        httpx.HTTPStatusError: if either HTTP request fails.
-        httpx.TimeoutException: if download exceeds timeout.
+    Returns the raw bytes on success, or None on any failure so callers can
+    treat this as best-effort (the fallback reply is always sent regardless).
     """
-    headers = {
-        "Authorization": f"Bearer {settings.WHATSAPP_TOKEN}",
-    }
+    headers = {"Authorization": f"Bearer {settings.WHATSAPP_TOKEN}"}
 
-    async with httpx.AsyncClient(timeout=15.0) as client:
-        # Step 1: resolve media URL
-        meta_resp = await client.get(
-            f"{WHATSAPP_API_URL}/{media_id}",
-            headers=headers,
+    async with httpx.AsyncClient(timeout=_TIMEOUT_S) as client:
+        # Step 1: resolve the temporary download URL
+        try:
+            meta_resp = await client.get(
+                f"{WHATSAPP_API_URL}/{media_id}", headers=headers
+            )
+        except httpx.RequestError as exc:
+            logger.warning("media_url_fetch_failed", media_id=media_id, error=str(exc))
+            return None
+
+        if meta_resp.status_code != 200:
+            logger.warning(
+                "media_url_non_200",
+                media_id=media_id,
+                status_code=meta_resp.status_code,
+            )
+            return None
+
+        download_url: Optional[str] = meta_resp.json().get("url")
+        if not download_url:
+            logger.warning("media_url_missing_in_response", media_id=media_id)
+            return None
+
+        # Step 2: download the raw media bytes
+        try:
+            media_resp = await client.get(download_url, headers=headers)
+        except httpx.RequestError as exc:
+            logger.warning("media_download_failed", media_id=media_id, error=str(exc))
+            return None
+
+        if media_resp.status_code != 200:
+            logger.warning(
+                "media_download_non_200",
+                media_id=media_id,
+                status_code=media_resp.status_code,
+            )
+            return None
+
+        logger.info(
+            "media_downloaded",
+            media_id=media_id,
+            bytes=len(media_resp.content),
         )
-        meta_resp.raise_for_status()
-        meta = meta_resp.json()
-
-        download_url: str = meta["url"]
-        mime_type: str = meta.get("mime_type", "application/octet-stream")
-
-        # Step 2: download binary
-        media_resp = await client.get(download_url, headers=headers)
-        media_resp.raise_for_status()
-
-    logger.info(
-        "whatsapp_media_downloaded",
-        media_id=media_id,
-        mime_type=mime_type,
-        size_bytes=len(media_resp.content),
-    )
-    return media_resp.content, mime_type
+        return media_resp.content
 
 
 async def send_message(phone: str, text: str) -> SendResult:
