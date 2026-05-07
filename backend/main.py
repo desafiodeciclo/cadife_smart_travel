@@ -67,7 +67,7 @@ async def lifespan(app: FastAPI):
     )
 
     # Database
-    await create_tables()
+    # await create_tables()
     logger.info("database_ready")
 
     # Firebase

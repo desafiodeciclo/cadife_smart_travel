@@ -147,17 +147,17 @@ class BriefingExtracted(BaseModel):
 
 
 class BriefingUpdate(BaseModel):
-    destino: Optional[str] = None
-    origem: Optional[str] = None
+    destino: Optional[str] = Field(None, min_length=2, max_length=100)
+    origem: Optional[str] = Field(None, min_length=2, max_length=100)
     data_ida: Optional[date] = None
     data_volta: Optional[date] = None
-    qtd_pessoas: Optional[int] = None
+    qtd_pessoas: Optional[int] = Field(None, gt=0, lt=100)
     perfil: Optional[PerfilViagem] = None
     tipo_viagem: Optional[list[str]] = None
     preferencias: Optional[list[str]] = None
     orcamento: Optional[OrcamentoNivel] = None
     tem_passaporte: Optional[bool] = None
-    observacoes: Optional[str] = None
+    observacoes: Optional[str] = Field(None, max_length=1000)
 
 
 class BriefingResponse(BaseModel):

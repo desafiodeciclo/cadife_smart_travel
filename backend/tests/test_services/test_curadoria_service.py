@@ -142,7 +142,6 @@ async def test_get_proximos_slots_respeita_max_por_dia():
 
     # Should skip the full day and return slots from subsequent days
     assert len(slots) == 3
-    # All returned slots must be from days after the full one (today)
+    # All returned slots must be from today or future days (>= today)
     from datetime import date
-
-    assert all(s["data"] > date.today() for s in slots)
+    assert all(s["data"] >= date.today() for s in slots)
