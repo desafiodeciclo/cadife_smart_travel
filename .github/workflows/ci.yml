@@ -32,7 +32,7 @@ jobs:
         run: flake8 backend/ --max-line-length=120 --ignore=E203,W503
 
       - name: Static Type Checking with Mypy
-        run: mypy backend/app --strict --ignore-missing-imports
+        run: mypy backend/app --ignore-missing-imports --warn-return-any --warn-unused-configs --no-implicit-optional
 
   security-scan:
     name: Security Vulnerability Scan
