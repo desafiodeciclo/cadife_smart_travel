@@ -67,11 +67,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Show snackbar on login errors.
+    // Show toast on login errors.
     ref.listen<AsyncValue<AuthUser?>>(authNotifierProvider, (previous, next) {
       if (next.hasError && !(previous?.hasError ?? false)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(next.error?.toString() ?? 'Erro ao fazer login.')),
+        ShadToaster.of(context).show(
+          ShadToast.destructive(
+            description: Text(next.error?.toString() ?? 'Erro ao fazer login.'),
+          ),
         );
       }
     });
@@ -92,6 +94,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     // ── FIX: Column layout instead of Stack — avoids unbounded constraints
     //         and hit-testing issues that blocked all interactions.
+    // NOTE: exceção ao DS — tela de autenticação sem AppBar é padrão de mercado.
+    // A splash e login são telas pre-auth que não usam a navegação padrão do app.
     return Scaffold(
       body: SafeArea(
         child: Column(

@@ -77,8 +77,7 @@ class _LeadsPageState extends ConsumerState<LeadsPage> {
         activeScore != null ||
         ref.watch(_searchQueryProvider).isNotEmpty;
 
-    return Scaffold(
-      backgroundColor: context.cadife.background,
+    return PageScaffold(
       appBar: CadifeAppBar(
         title: 'Leads',
         actions: [

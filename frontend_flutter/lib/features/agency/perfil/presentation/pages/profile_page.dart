@@ -12,7 +12,7 @@ class ConsultorProfileScreen extends ConsumerWidget {
     final profileAsync = ref.watch(consultorProfileProvider);
     final goalsAsync = ref.watch(saleGoalsProvider);
 
-    return Scaffold(
+    return PageScaffold(
       appBar: CadifeAppBar(
         title: 'Meu Perfil',
         showProfile: false,
@@ -25,24 +25,10 @@ class ConsultorProfileScreen extends ConsumerWidget {
         ],
       ),
       body: profileAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.error_outline,
-                  size: 48, color: AppColors.error),
-              const SizedBox(height: 12),
-              Text('Erro ao carregar perfil',
-                  style: AppTextStyles.bodyMedium),
-              const SizedBox(height: 8),
-              ShadButton.outline(
-                onPressed: () =>
-                    ref.invalidate(consultorProfileProvider),
-                child: const Text('Tentar novamente'),
-              ),
-            ],
-          ),
+        loading: () => const AppLoadingWidget(),
+        error: (e, _) => AppErrorWidget(
+          message: 'Erro ao carregar perfil',
+          onRetry: () => ref.invalidate(consultorProfileProvider),
         ),
         data: (profile) => RefreshIndicator(
           onRefresh: () async {

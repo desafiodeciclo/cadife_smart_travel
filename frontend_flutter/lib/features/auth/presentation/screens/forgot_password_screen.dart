@@ -52,50 +52,50 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   Widget build(BuildContext context) {
     final cadife = context.cadife;
 
-    return Scaffold(
+    return PageScaffold(
       appBar: const CadifeAppBar(
         title: 'Recuperar senha',
         showProfile: false,
-        actions: [], // Empty list to override default notifications if needed
+        showBackButton: true,
+        showNotificationBell: false,
+        actions: [],
       ),
-      body: SafeArea(
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 300),
-          transitionBuilder: (child, animation) => FadeTransition(
-            opacity: animation,
-            child: SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0.08, 0),
-                end: Offset.zero,
-              ).animate(CurvedAnimation(
-                parent: animation,
-                curve: Curves.easeOut,
-              )),
-              child: child,
-            ),
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        transitionBuilder: (child, animation) => FadeTransition(
+          opacity: animation,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0.08, 0),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOut,
+            )),
+            child: child,
           ),
-          child: switch (_step) {
-            _ForgotStep.email => _EmailStep(
-                key: const ValueKey('email-step'),
-                formKey: _formKey,
-                controller: _emailController,
-                isLoading: _isLoading,
-                errorMessage: _errorMessage,
-                primaryColor: cadife.primary,
-                onSubmit: _sendReset,
-              ),
-            _ForgotStep.confirmation => _ConfirmationStep(
-                key: const ValueKey('confirmation-step'),
-                email: _emailController.text.trim(),
-                onResend: _sendReset,
-                isResending: _isLoading,
-              ),
-            _ForgotStep.success => _SuccessStep(
-                key: const ValueKey('success-step'),
-                onBackToLogin: () => context.go('/auth/login'),
-              ),
-          },
         ),
+        child: switch (_step) {
+          _ForgotStep.email => _EmailStep(
+              key: const ValueKey('email-step'),
+              formKey: _formKey,
+              controller: _emailController,
+              isLoading: _isLoading,
+              errorMessage: _errorMessage,
+              primaryColor: cadife.primary,
+              onSubmit: _sendReset,
+            ),
+          _ForgotStep.confirmation => _ConfirmationStep(
+              key: const ValueKey('confirmation-step'),
+              email: _emailController.text.trim(),
+              onResend: _sendReset,
+              isResending: _isLoading,
+            ),
+          _ForgotStep.success => _SuccessStep(
+              key: const ValueKey('success-step'),
+              onBackToLogin: () => context.go('/auth/login'),
+            ),
+        },
       ),
     );
   }
