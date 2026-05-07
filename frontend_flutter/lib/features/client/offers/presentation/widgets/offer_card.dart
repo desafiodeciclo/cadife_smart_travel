@@ -43,17 +43,20 @@ class OfferCard extends StatelessWidget {
               children: [
                 AspectRatio(
                   aspectRatio: 16 / 10,
-                  child: Image.network(
-                    offer.imageUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: theme.colorScheme.border,
-                        child: Center(
-                          child: Icon(Icons.image_not_supported, color: theme.colorScheme.mutedForeground),
-                        ),
-                      );
-                    },
+                  child: Hero(
+                    tag: 'offer_hero_${offer.id}',
+                    child: Image.network(
+                      offer.imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: theme.colorScheme.border,
+                          child: Center(
+                            child: Icon(Icons.image_not_supported, color: theme.colorScheme.mutedForeground),
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ),
                 Positioned(
