@@ -135,13 +135,11 @@ class LeadRepository(AbstractRepository[LeadModel], ILeadRepository):
             stmt = stmt.where(LeadModel.criado_em <= data_fim)
 
         if q:
-            pattern = f"%{q}%"
-            stmt = stmt.where(
-                or_(
-                    LeadModel.nome.ilike(pattern),
-                    LeadModel.telefone.ilike(pattern),
-                )
-            )
+            # PII fields (nome, telefone) are encrypted at-rest via EncryptedString.
+            # ilike on ciphertext is not supported by PostgreSQL.
+            # We search telefone_hash by HMAC exact match (telefone_hash is not encrypted).
+            from app.infrastructure.security.pii_encryption import hmac_hash
+            stmt = stmt.where(LeadModel.telefone_hash == hmac_hash(q))
 
         # Count query
         count_stmt = select(func.count()).select_from(stmt.subquery())

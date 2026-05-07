@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import structlog
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from sqlalchemy.exc import IntegrityError, ProgrammingError
@@ -164,7 +164,10 @@ async def get_lead_metrics(db: AsyncSession) -> dict[str, int]:
         stmt = (
             select(func.count())
             .select_from(Lead)
-            .where(Lead.is_archived.is_(False), Lead.status == st)
+            .where(
+                Lead.is_archived.is_(False),
+                text(f"leads.status = '{st.value}'"),
+            )
         )
         metrics[st.value] = (await db.execute(stmt)).scalar_one()
     return metrics
