@@ -106,11 +106,13 @@ def extract_message_from_payload(payload: dict[str, Any]) -> Optional[dict[str, 
         contact = value.get("contacts", [{}])[0]
         msg_type: str = msg.get("type", "text")
 
-        # Extract media ID from the type-specific sub-object (audio, image, etc.)
+        # Extract media ID and mime_type from the type-specific sub-object (audio, image, etc.)
         media_id: Optional[str] = None
+        mime_type: Optional[str] = None
         media_data = msg.get(msg_type)
         if isinstance(media_data, dict):
             media_id = media_data.get("id")
+            mime_type = media_data.get("mime_type")  # e.g. "audio/ogg; codecs=opus"
 
         return {
             "phone": msg["from"],
@@ -119,6 +121,7 @@ def extract_message_from_payload(payload: dict[str, Any]) -> Optional[dict[str, 
             "text": msg.get("text", {}).get("body"),
             "name": contact.get("profile", {}).get("name"),
             "media_id": media_id,
+            "mime_type": mime_type,
         }
     except (KeyError, IndexError):
         return None
