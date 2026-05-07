@@ -52,7 +52,7 @@ class _DocumentsCarouselState extends State<DocumentsCarousel> {
               ),
             ),
             GestureDetector(
-              onTap: () => context.push('/client/documents/${widget.tripId}'),
+              onTap: () => context.go('/client/documents'),
               child: Text(
                 'Ver todos',
                 style: TextStyle(

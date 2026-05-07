@@ -21,13 +21,6 @@ class StatusPage extends ConsumerWidget {
 
     return PageScaffold(
       title: 'Minha Viagem',
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.notifications_none_rounded),
-          onPressed: () => context.push('/notifications'),
-          tooltip: 'Notificações',
-        ),
-      ],
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         child: Padding(

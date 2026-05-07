@@ -27,9 +27,9 @@ class RecommendationsSection extends StatelessWidget {
               ),
             ),
             GestureDetector(
-              onTap: () => context.push('/client/offers'),
+              onTap: () => context.go('/client/offers'),
               child: Text(
-                'Ver ofertas',
+                'Ver todos',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
