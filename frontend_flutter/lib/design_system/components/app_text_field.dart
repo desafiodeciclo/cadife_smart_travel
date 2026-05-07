@@ -17,8 +17,8 @@ class AppTextField extends StatefulWidget {
   final IconData? prefixIcon;
 
   const AppTextField({
-    super.key,
     required this.label,
+    super.key,
     this.hint,
     this.isPassword = false,
     this.keyboardType,

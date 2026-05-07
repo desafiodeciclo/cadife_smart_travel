@@ -5,10 +5,8 @@ from typing import Optional
 
 import structlog
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_openai import ChatOpenAI
 from langchain_classic.memory import ConversationBufferWindowMemory
-from langchain_community.chat_message_histories import RedisChatMessageHistory
-from pydantic import SecretStr
 
 from app.core.config import get_settings
 from app.models.briefing import BriefingExtracted, calculate_completude
@@ -26,8 +24,13 @@ from app.services.prompt_security import (
 logger = structlog.get_logger()
 settings = get_settings()
 
-_llm: Optional[ChatOpenAI] = None
-_MEMORY_WINDOW_K = 10  # Mantém as últimas 10 interações como contexto
+_MEMORY_WINDOW_K = 20  # Mantém as últimas 20 interações como contexto
+_SUMMARY_SYSTEM_PROMPT = """
+You are a helpful assistant that summarizes a conversation between a customer and a travel agency.
+Include the main topics discussed and any important details.
+Do NOT include pleasantries such as "How can I help you?", "Thank you", etc.
+Keep it concise.
+"""
 
 
 # ---------------------------------------------------------------------------
@@ -61,7 +64,7 @@ class SimpleWindowMemory:
     def has_pending_summary(self) -> bool:
         return len(self._pending_for_summary) > 0
 
-    async def compress_pending(self, llm: ChatGoogleGenerativeAI) -> None:
+    async def compress_pending(self, llm: ChatOpenAI) -> None:
         """Summarise overflowed messages and merge into the running summary."""
         if not self._pending_for_summary:
             return
@@ -104,40 +107,40 @@ class SimpleWindowMemory:
         return {self.memory_key: messages}
 
 
-_memories: dict[str, SimpleWindowMemory] = {}
-_llm: Optional[ChatGoogleGenerativeAI] = None
+_memories: dict[str, ConversationBufferWindowMemory] = {}
+_llm: Optional[ChatOpenAI] = None
 
 
-def get_llm() -> ChatGoogleGenerativeAI:
-    """Return LLM instance — Gemini exclusivo."""
+def get_llm() -> ChatOpenAI:
+    """Return LLM instance via OpenRouter."""
     global _llm
     if _llm is None:
-        if settings.GEMINI_API_KEY:
-            _llm = ChatGoogleGenerativeAI(
-                model="gemini-2.0-flash",
-                temperature=0.3,
-                timeout=25,
-                max_retries=2,
-                google_api_key=SecretStr(settings.GEMINI_API_KEY),
-            )
-            logger.info("llm_initialized", provider="google", model="gemini-2.0-flash")
-        else:
-            raise RuntimeError("Nenhuma GEMINI_API_KEY configurada. Defina GEMINI_API_KEY no .env")
+        if not settings.OPENROUTER_API_KEY:
+            raise RuntimeError("Nenhuma OPENROUTER_API_KEY configurada. Defina OPENROUTER_API_KEY no .env")
+        _llm = ChatOpenAI(
+            model=settings.OPENROUTER_MODEL,
+            temperature=0.3,
+            timeout=25,
+            max_retries=2,
+            openai_api_key=settings.OPENROUTER_API_KEY,
+            openai_api_base="https://openrouter.ai/api/v1",
+            default_headers={
+                "HTTP-Referer": "https://cadifetour.com",
+                "X-Title": "Cadife Smart Travel",
+            },
+        )
+        logger.info("llm_initialized", provider="openrouter", model=settings.OPENROUTER_MODEL)
     return _llm
 
 
 def get_memory(phone: str) -> ConversationBufferWindowMemory:
-    message_history = RedisChatMessageHistory(
-        url=settings.REDIS_URL,
-        ttl=86400, # 24 hours
-        session_id=f"chat_history_{phone}"
-    )
-    return ConversationBufferWindowMemory(
-        chat_memory=message_history,
-        k=_MEMORY_WINDOW_K,
-        memory_key="chat_history",
-        return_messages=True
-    )
+    if phone not in _memories:
+        _memories[phone] = ConversationBufferWindowMemory(
+            k=_MEMORY_WINDOW_K,
+            memory_key="chat_history",
+            return_messages=True,
+        )
+    return _memories[phone]
 
 
 def preload_memory_from_db(
@@ -365,7 +368,7 @@ async def extract_briefing(conversation: list[dict]) -> BriefingExtracted:
     Returns:
         Instância de BriefingExtracted, possivelmente vazia.
     """
-    if not settings.GEMINI_API_KEY:
+    if not settings.OPENROUTER_API_KEY:
         return BriefingExtracted()
 
     # Sanitizar conversa antes de enviar à extração
@@ -422,13 +425,17 @@ async def extract_briefing(conversation: list[dict]) -> BriefingExtracted:
     # TENTATIVA 2 — Fallback: autocorreção com prompt explícito (Gemini)
     # -----------------------------------------------------------------------
     try:
-        # Usa Gemini com temperatura 0 para máxima determinismo na correção
-        fallback_llm = ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash",
+        fallback_llm = ChatOpenAI(
+            model=settings.OPENROUTER_MODEL,
             temperature=0.0,
             timeout=15,
             max_retries=1,
-            google_api_key=SecretStr(settings.GEMINI_API_KEY) if settings.GEMINI_API_KEY else None,
+            openai_api_key=settings.OPENROUTER_API_KEY,
+            openai_api_base="https://openrouter.ai/api/v1",
+            default_headers={
+                "HTTP-Referer": "https://cadifetour.com",
+                "X-Title": "Cadife Smart Travel",
+            },
         )
 
         autocorrect_prompt = ChatPromptTemplate.from_messages([

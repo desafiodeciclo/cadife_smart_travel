@@ -112,7 +112,7 @@ async def extrair_briefing(request: Request, body: ExtrairBriefingRequest):
 async def ia_status():
     return {
         "status": "ok",
-        "model": "gemini-2.0-flash",
+        "model": settings.OPENROUTER_MODEL,
         "rag_documents": rag_service.get_rag_document_count(),
         "vector_db": "chromadb",
         "domain_validator": "active",

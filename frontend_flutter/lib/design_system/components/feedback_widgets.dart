@@ -24,7 +24,7 @@ class AppLoadingWidget extends StatelessWidget {
 }
 
 class AppErrorWidget extends StatelessWidget {
-  const AppErrorWidget({super.key, required this.message, this.onRetry});
+  const AppErrorWidget({required this.message, super.key, this.onRetry});
 
   final String message;
   final VoidCallback? onRetry;
@@ -87,9 +87,9 @@ class AppOfflineBanner extends StatelessWidget {
 
 class AppEmptyStateWidget extends StatelessWidget {
   const AppEmptyStateWidget({
-    super.key,
     required this.icon,
     required this.title,
+    super.key,
     this.subtitle,
     this.action,
   });

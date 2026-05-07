@@ -14,13 +14,7 @@ from typing import Optional
 import structlog
 from langchain_core.documents import Document
 from langchain_chroma import Chroma
-
-from pydantic import SecretStr
-
-try:
-    from langchain_google_genai import GoogleGenerativeAIEmbeddings
-except ImportError:  # pragma: no cover
-    GoogleGenerativeAIEmbeddings = None
+from langchain_openai import OpenAIEmbeddings
 
 from app.core.config import get_settings
 from app.services.metadata_tagger import build_chroma_filter
@@ -41,18 +35,16 @@ _KEYWORD_WEIGHT = 0.5  # Weight of keyword signal relative to vector signal
 _VECTOR_CANDIDATES_MULTIPLIER = 3  # How many candidates to fetch for reranking
 
 
-def _get_embeddings():
-    """Return embeddings — Gemini exclusivo."""
-    if settings.GEMINI_API_KEY:
-        if GoogleGenerativeAIEmbeddings is None:
-            raise RuntimeError(
-                "langchain_google_genai is not installed; install it to use Gemini embeddings."
-            )
-        return GoogleGenerativeAIEmbeddings(
-            model="models/gemini-embedding-001",
-            google_api_key=SecretStr(settings.GEMINI_API_KEY),
-        )
-    raise RuntimeError("Nenhuma GEMINI_API_KEY configurada. Defina GEMINI_API_KEY no .env")
+def _get_embeddings() -> OpenAIEmbeddings:
+    if not settings.OPENROUTER_API_KEY:
+        raise RuntimeError("Nenhuma OPENROUTER_API_KEY configurada. Defina OPENROUTER_API_KEY no .env")
+    return OpenAIEmbeddings(
+        model=settings.OPENROUTER_EMBEDDING_MODEL,
+        openai_api_key=settings.OPENROUTER_API_KEY,
+        openai_api_base="https://openrouter.ai/api/v1",
+        check_embedding_ctx_length=False,
+        model_kwargs={"encoding_format": "float"},
+    )
 
 
 def get_vectorstore() -> Chroma:

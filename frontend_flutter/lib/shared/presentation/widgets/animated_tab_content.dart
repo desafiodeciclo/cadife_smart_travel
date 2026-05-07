@@ -5,9 +5,9 @@ class AnimatedTabContent extends StatelessWidget {
   final int tabIndex;
   
   const AnimatedTabContent({
-    super.key,
     required this.child,
     required this.tabIndex,
+    super.key,
   });
   
   @override

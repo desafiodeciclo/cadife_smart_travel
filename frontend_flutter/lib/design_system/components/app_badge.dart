@@ -9,8 +9,8 @@ class ScoreBadge extends StatelessWidget {
   final bool showLabel;
 
   const ScoreBadge({
-    super.key,
     required this.score,
+    super.key,
     this.showLabel = true,
   });
 

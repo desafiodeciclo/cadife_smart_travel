@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 
 class CadifeDocumentCard extends StatelessWidget {
   const CadifeDocumentCard({
-    super.key,
     required this.document,
+    super.key,
     this.onView,
     this.onDownload,
   });
@@ -126,9 +126,9 @@ class _ActionButton extends StatelessWidget {
 
   const _ActionButton({
     required this.label,
+    required this.isPrimary,
     this.icon,
     this.onPressed,
-    required this.isPrimary,
   });
 
   @override

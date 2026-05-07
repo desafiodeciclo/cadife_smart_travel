@@ -6,13 +6,13 @@ part 'agenda_cache.g.dart';
 @Collection()
 class AgendaCache {
   AgendaCache({
-    this.id,
     required this.serverId,
     required this.leadId,
     required this.consultorId,
     required this.dateTime,
     required this.durationMinutes,
     required this.status,
+    this.id,
     this.notes,
     this.createdAt,
     this.updatedAt,

@@ -7,8 +7,8 @@ import 'package:go_router/go_router.dart';
 
 class TripDocumentsPage extends ConsumerWidget {
   const TripDocumentsPage({
-    super.key,
     required this.tripId,
+    super.key,
   });
 
   final String tripId;

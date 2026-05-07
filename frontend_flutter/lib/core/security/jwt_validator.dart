@@ -31,7 +31,7 @@ class JwtValidator {
         isUtc: true,
       );
       return DateTime.now().toUtc().isBefore(expiry);
-    } catch (_) {
+    } on Object catch (_) {
       // Token malformado — trata como não autenticado sem propagar erro
       return false;
     }

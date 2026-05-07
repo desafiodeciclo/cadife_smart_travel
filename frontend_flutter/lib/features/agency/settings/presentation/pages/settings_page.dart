@@ -1,6 +1,8 @@
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/agency/settings/domain/entities/agency_settings.dart';
 import 'package:cadife_smart_travel/features/agency/settings/presentation/providers/settings_notifier.dart';
+import 'package:cadife_smart_travel/features/settings/application/theme_notifier.dart';
+import 'package:cadife_smart_travel/features/settings/domain/entities/user_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -37,6 +39,9 @@ class SettingsScreen extends ConsumerWidget {
         data: (settings) => ListView(
           padding: const EdgeInsets.symmetric(vertical: 8),
           children: [
+            const _SectionHeader(title: 'Aparência'),
+            _ThemeSection(),
+            const SizedBox(height: 8),
             const _SectionHeader(title: 'Horários de Atendimento'),
             _OfficeHoursSection(hours: settings.officeHours),
             const SizedBox(height: 8),
@@ -69,6 +74,50 @@ class _SectionHeader extends StatelessWidget {
           color: context.cadife.textSecondary,
         ),
       ),
+    );
+  }
+}
+
+// ── Theme Section ─────────────────────────────────────────────────────────────
+
+class _ThemeSection extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themePref = ref.watch(themeNotifierProvider);
+
+    return themePref.maybeWhen(
+      data: (pref) => ShadCard(
+        padding: EdgeInsets.zero,
+        radius: BorderRadius.circular(12),
+        border: ShadBorder.all(color: context.cadife.cardBorder, width: 1),
+        child: Column(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.settings_brightness_rounded),
+              title: const Text('Tema'),
+              subtitle: Text(
+                pref == ThemePreference.system
+                    ? 'Padrão do Sistema'
+                    : (pref == ThemePreference.dark ? 'Escuro' : 'Claro'),
+              ),
+              trailing: Switch(
+                value: pref == ThemePreference.dark,
+                onChanged: (_) => ref.read(themeNotifierProvider.notifier).toggleDarkMode(context),
+              ),
+            ),
+            if (pref != ThemePreference.system)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: ShadButton.outline(
+                  width: double.infinity,
+                  onPressed: () => ref.read(themeNotifierProvider.notifier).setTheme(ThemePreference.system),
+                  child: const Text('Usar Padrão do Sistema'),
+                ),
+              ),
+          ],
+        ),
+      ),
+      orElse: () => const SizedBox.shrink(),
     );
   }
 }

@@ -22,8 +22,8 @@ subprojects {
             project.plugins.hasPlugin("com.android.library")) {
             val android = project.extensions.findByName("android") as? com.android.build.gradle.BaseExtension
             android?.apply {
-                buildToolsVersion = "34.0.0"
-                compileSdkVersion(34)
+                buildToolsVersion = "35.0.0"
+                compileSdkVersion(36)
             }
         }
     }
@@ -38,7 +38,7 @@ subprojects {
         val library = extensions.getByType<com.android.build.gradle.LibraryExtension>()
         
         // Force a modern build tools version to avoid old plugins crashing the build
-        library.buildToolsVersion = "34.0.0"
+        library.buildToolsVersion = "35.0.0"
         
         if (library.namespace == null) {
             val manifestFile = projectDir.resolve("src/main/AndroidManifest.xml")
@@ -55,7 +55,7 @@ subprojects {
     }
     plugins.withId("com.android.application") {
         val app = extensions.getByType<com.android.build.gradle.AppExtension>()
-        app.buildToolsVersion = "34.0.0"
+        app.buildToolsVersion = "35.0.0"
     }
 }
 

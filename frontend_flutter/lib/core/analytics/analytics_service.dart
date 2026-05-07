@@ -52,7 +52,7 @@ class AnalyticsService {
         
         await _crashlytics!.setCustomKey('is_debug', kDebugMode);
       }
-    } catch (e) {
+    } on Exception catch (e) {
       debugPrint('AnalyticsService.init failed: $e');
     }
   }
@@ -61,7 +61,7 @@ class AnalyticsService {
     try {
       await _analytics?.setUserId(id: userId);
       await _crashlytics?.setUserIdentifier(userId ?? '');
-    } catch (e) {
+    } on Exception catch (e) {
       debugPrint('AnalyticsService.setUser failed: $e');
     }
   }
@@ -71,7 +71,7 @@ class AnalyticsService {
       final sanitizedParams = parameters != null ? _sanitizeParams(parameters) : null;
       await _analytics?.logEvent(name: name, parameters: sanitizedParams);
       await _crashlytics?.log('Event: $name ${sanitizedParams ?? ''}');
-    } catch (e) {
+    } on Exception catch (e) {
       debugPrint('AnalyticsService.logEvent failed: $name, $e');
     }
   }
@@ -80,7 +80,7 @@ class AnalyticsService {
     try {
       await _analytics?.logScreenView(screenName: screenName);
       await _crashlytics?.log('ScreenView: $screenName');
-    } catch (e) {
+    } on Exception catch (e) {
       debugPrint('AnalyticsService.logScreenView failed: $screenName, $e');
     }
   }
@@ -88,7 +88,7 @@ class AnalyticsService {
   Future<void> logError(dynamic error, StackTrace? stack, {bool fatal = false}) async {
     try {
       await _crashlytics?.recordError(error, stack, fatal: fatal);
-    } catch (e) {
+    } on Exception catch (e) {
       debugPrint('AnalyticsService.logError failed: $e');
     }
   }
@@ -96,7 +96,7 @@ class AnalyticsService {
   Future<void> logBreadcrumb(String message) async {
     try {
       await _crashlytics?.log(message);
-    } catch (e) {
+    } on Exception catch (e) {
       debugPrint('AnalyticsService.logBreadcrumb failed: $e');
     }
   }

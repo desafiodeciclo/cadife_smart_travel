@@ -14,7 +14,7 @@ import 'package:go_router/go_router.dart';
 
 class LeadDetailPage extends ConsumerStatefulWidget {
   final String leadId;
-  const LeadDetailPage({super.key, required this.leadId});
+  const LeadDetailPage({required this.leadId, super.key});
 
   @override
   ConsumerState<LeadDetailPage> createState() => _LeadDetailPageState();
@@ -254,7 +254,7 @@ class _ActionButtons extends ConsumerWidget {
                 onPressed: () async {
                   final result = await ScheduleAppointmentModal.show(context, lead);
                   if (result == true) {
-                    ref.read(leadDetailProvider(lead.id).notifier).updateStatus(LeadStatus.agendado);
+                    await ref.read(leadDetailProvider(lead.id).notifier).updateStatus(LeadStatus.agendado);
                     if (context.mounted) {
                       ShadToaster.of(context).show(
                         const ShadToast(description: Text('Agendamento realizado com sucesso!')),
