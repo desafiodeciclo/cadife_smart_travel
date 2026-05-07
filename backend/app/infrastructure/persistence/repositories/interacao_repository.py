@@ -5,6 +5,7 @@ Concrete implementation for WhatsApp interaction persistence.
 Provides paginated conversation history retrieval optimised by
 the composite index (lead_id, timestamp).
 """
+
 import uuid
 from typing import Optional
 
@@ -13,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.entities.enums import TipoMensagem
 from app.infrastructure.persistence.abstract_repository import AbstractRepository
-from app.infrastructure.persistence.models.interacao_model import InteracaoModel
+from app.models.interacao import Interacao as InteracaoModel
 
 
 class InteracaoRepository(AbstractRepository[InteracaoModel]):

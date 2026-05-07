@@ -1,0 +1,108 @@
+name: Cadife Smart Travel — Staging Deploy
+
+on:
+  push:
+    branches: [ developer ]
+  workflow_dispatch: # Permite rodar manualmente
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  backend-staging:
+    name: Backend — Test & Docker Build
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Instalar dependências
+        run: |
+          cd backend
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio httpx
+
+      - name: Rodar Testes
+        env:
+          DATABASE_URL: sqlite+aiosqlite:///./test.db # DB temporário para testes
+          ENVIRONMENT: testing
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          cd backend
+          python -m pytest
+
+      - name: Login no GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build e Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/backend:staging
+            ghcr.io/${{ github.repository }}/backend:${{ github.sha }}
+
+  frontend-staging:
+    name: Frontend — Test & Build Web
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Instalar dependências
+        run: |
+          cd frontend_flutter
+          flutter pub get
+
+      - name: Rodar Testes do Flutter
+        run: |
+          cd frontend_flutter
+          flutter test
+
+      - name: Build Web
+        run: |
+          cd frontend_flutter
+          flutter build web --web-renderer canvaskit --release
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter-web-staging-build
+          path: frontend_flutter/build/web/
+
+  notify-status:
+    name: Finalizar Staging Pipeline
+    needs: [backend-staging, frontend-staging]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check Status
+        run: |
+          if [[ "${{ needs.backend-staging.result }}" == "success" && "${{ needs.frontend-staging.result }}" == "success" ]]; then
+            echo "✅ Pipeline de Staging concluído com sucesso!"
+          else
+            echo "❌ Falha no Pipeline de Staging."
+            exit 1
+          fi

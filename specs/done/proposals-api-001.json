@@ -1,0 +1,30 @@
+{
+  "task_id": "PROP-001",
+  "name": "CRUD de Propostas com Validação de Permissão",
+  "branch": "feat/proposals-api",
+  "status": "done",
+  "description": "Implementar endpoints POST /propostas (somente Consultor/Admin), GET /propostas/{id} e PUT /propostas/{id}. Validar que o lead_id referenciado existe e que o usuário solicitante tem permissão de acesso ao lead. valor_estimado é opcional (gerado pelo consultor humano, nunca pela IA).",
+  "responsible": "Nikolas Tesch (Backend)",
+  "steps": [
+    {
+      "id": "step1",
+      "description": "Criar spec JSON e mover para specs/active/",
+      "status": "done"
+    },
+    {
+      "id": "step2",
+      "description": "Atualizar routes/propostas.py: adicionar validação de permissão (RequiresRole no POST), verificar existência de lead_id e escopo de acesso do usuário ao lead.",
+      "status": "done"
+    },
+    {
+      "id": "step3",
+      "description": "Escrever testes unitários/integração para os 3 endpoints (POST, GET, PUT) com mocks de DB e JWT.",
+      "status": "done"
+    },
+    {
+      "id": "step4",
+      "description": "Executar testes e garantir que todos passam.",
+      "status": "done"
+    }
+  ]
+}

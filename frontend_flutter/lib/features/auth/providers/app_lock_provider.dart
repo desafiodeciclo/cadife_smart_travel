@@ -1,6 +1,6 @@
 import 'package:cadife_smart_travel/core/constants/app_constants.dart';
 import 'package:cadife_smart_travel/core/security/biometric_service.dart';
-import 'package:cadife_smart_travel/features/auth/providers/auth_provider.dart';
+import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final biometricServiceProvider = Provider<BiometricService>(
@@ -75,7 +75,7 @@ class AppLockNotifier extends Notifier<AppLockState> {
         final newFailures = state.failures + 1;
         if (newFailures >= AppConstants.appLockMaxFailures) {
           // Máximo de tentativas atingido — logout forçado por segurança
-          await ref.read(authProvider.notifier).logout();
+          await ref.read(authNotifierProvider.notifier).logout();
           state = const AppLockState();
         } else {
           state = state.copyWith(failures: newFailures);

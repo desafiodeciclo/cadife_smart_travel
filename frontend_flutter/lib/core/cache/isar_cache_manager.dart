@@ -7,7 +7,7 @@ import 'package:path_provider/path_provider.dart';
 
 /// Gerenciador de pre-cache estruturado usando Isar.
 ///
-/// Complementa o [OfflineManager] (Hive) fornecendo queries tipadas
+/// Complementa o OfflineManager (Hive) fornecendo queries tipadas
 /// e performance para objetos complexos: leads, briefings, agenda, propostas.
 class IsarCacheManager {
   IsarCacheManager({Isar? isar}) : _isar = isar {
@@ -53,12 +53,15 @@ class IsarCacheManager {
           BriefingCacheSchema,
           AgendaCacheSchema,
           ProposalCacheSchema,
+          OfferCacheSchema,
+          InAppNotificationSchema,
+          UserPreferencesIsarSchema,
         ],
         directory: path,
         name: 'cadife_cache_v3',
       );
       debugPrint('Isar initialized successfully (v3)');
-    } catch (e, stack) {
+    } on Exception catch (e, stack) {
       debugPrint('CRITICAL: Isar failed to open: $e');
       debugPrint(stack.toString());
       // On failure, we don't set _isar, but we mark as initialized
@@ -248,6 +251,49 @@ class IsarCacheManager {
     });
   }
 
+  // ── OfferCache CRUD ────────────────────────────────────
+
+  Future<void> putOffer(OfferCache offer) async {
+    if (isar == null) return;
+    await isar!.writeTxn(() async {
+      await isar!.offerCaches.put(offer);
+    });
+  }
+
+  Future<void> putOffers(List<OfferCache> offers) async {
+    if (isar == null) return;
+    await isar!.writeTxn(() async {
+      await isar!.offerCaches.putAll(offers);
+    });
+  }
+
+  Future<OfferCache?> getOfferByServerId(String serverId) async {
+    if (isar == null) return null;
+    return await isar!.offerCaches.where().serverIdEqualTo(serverId).findFirst();
+  }
+
+  Future<List<OfferCache>> getAllOffers() async {
+    if (isar == null) return [];
+    return await isar!.offerCaches.where().findAll();
+  }
+
+  Future<void> deleteOfferByServerId(String serverId) async {
+    if (isar == null) return;
+    final id = await isar!.offerCaches.where().serverIdEqualTo(serverId).idProperty().findFirst();
+    if (id != null) {
+      await isar!.writeTxn(() async {
+        await isar!.offerCaches.delete(id);
+      });
+    }
+  }
+
+  Future<void> clearOffers() async {
+    if (isar == null) return;
+    await isar!.writeTxn(() async {
+      await isar!.offerCaches.clear();
+    });
+  }
+
   // ── Global Operations ──────────────────────────────────
 
   /// Remove todo o cache (todas as coleções).
@@ -258,6 +304,7 @@ class IsarCacheManager {
       await isar!.briefingCaches.clear();
       await isar!.agendaCaches.clear();
       await isar!.proposalCaches.clear();
+      await isar!.offerCaches.clear();
     });
   }
 
@@ -268,6 +315,7 @@ class IsarCacheManager {
     final briefings = await isar!.briefingCaches.count();
     final agendas = await isar!.agendaCaches.count();
     final proposals = await isar!.proposalCaches.count();
-    return leads + briefings + agendas + proposals;
+    final offers = await isar!.offerCaches.count();
+    return leads + briefings + agendas + proposals + offers;
   }
 }

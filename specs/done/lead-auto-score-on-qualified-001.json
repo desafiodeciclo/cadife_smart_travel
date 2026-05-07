@@ -1,0 +1,43 @@
+{
+  "id": "lead-auto-score-on-qualified-001",
+  "title": "Gatilho Automático de Score na Transição para QUALIFICADO",
+  "description": "Na transição de status para QUALIFICADO (via PUT /leads/{id} ou extração de briefing), calcular automaticamente o score do lead baseado nos critérios da spec §8.3: QUENTE = destino + datas + pessoas + orçamento; MORNO = destino definido mas datas/orçamento ausentes; FRIO = dados insuficientes. Score persistido e exposto nos DTOs.",
+  "status": "done",
+  "assignee": "Nikolas Tesch",
+  "created_at": "2026-04-27",
+  "completed_at": "2026-04-27",
+  "priority": "high",
+  "epic": "Backend — Leads CRM",
+  "source": "spec.md §8.3",
+  "acceptance_criteria": [
+    "Transição para QUALIFICADO via PUT /leads/{id} calcula score automaticamente com base no briefing existente",
+    "Score QUENTE quando destino + data_ida + qtd_pessoas + orcamento estão preenchidos",
+    "Score MORNO quando apenas destino está preenchido (datas/orçamento ausentes)",
+    "Score FRIO quando destino não está preenchido",
+    "Score persistido no banco e exposto nos DTOs LeadResponse e LeadListItem",
+    "Testes pytest cobrem os 3 cenários de score na transição manual"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "title": "Expor função de cálculo de score no lead_service",
+      "description": "Renomear _score_from_briefing para calculate_score_from_briefing e torná-la pública com docstring",
+      "status": "done",
+      "files": ["backend/app/services/lead_service.py"]
+    },
+    {
+      "step": 2,
+      "title": "Integrar cálculo de score no update_lead",
+      "description": "Quando status muda para QUALIFICADO via PUT, calcular e persistir score automaticamente; corrigir import de LeadStatus no topo do route",
+      "status": "done",
+      "files": ["backend/app/routes/leads.py"]
+    },
+    {
+      "step": 3,
+      "title": "Escrever testes",
+      "description": "Testes de integração para PUT /leads/{id} com transição para QUALIFICADO cobrindo quente/morno/frio/sem briefing",
+      "status": "done",
+      "files": ["backend/tests/test_presentation/test_leads_auto_score.py"]
+    }
+  ]
+}

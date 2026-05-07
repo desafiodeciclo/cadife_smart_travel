@@ -74,11 +74,11 @@ class SecureConfig {
   /// antes do deploy de produção.
   Future<List<String>> getCertificatePinsWithFallback() async {
     final dynamicPins = await getCertificatePins();
-    if (dynamicPins.isNotEmpty) {
-      return dynamicPins.toList();
-    }
-    // Fallback estático — ofuscado para dificultar extração do binário.
-    return _decodeFallbackPins();
+    if (dynamicPins.isNotEmpty) return dynamicPins.toList();
+    final fallback = _decodeFallbackPins();
+    // BUG-001: falha rápida em debug se os pins não forem configurados antes do deploy.
+    assert(fallback.isNotEmpty, 'Certificate pins not configured — populate _fallbackPinsObf before release.');
+    return fallback;
   }
 
   // ── Fallback Pins (obfuscated) ─────────────────────────
@@ -106,7 +106,7 @@ class SecureConfig {
     return base64Url.encode(bytes).replaceAll('=', '');
   }
 
-  /// Limpa TODO o secure storage (logout, reset).
+  /// Limpa todo o secure storage (logout, reset).
   Future<void> wipeAll() async {
     await _storage.deleteAll();
   }

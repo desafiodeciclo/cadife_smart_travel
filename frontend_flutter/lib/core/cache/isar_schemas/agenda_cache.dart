@@ -2,16 +2,17 @@ import 'package:isar/isar.dart';
 
 part 'agenda_cache.g.dart';
 
+@Name('ag')
 @Collection()
 class AgendaCache {
   AgendaCache({
-    this.id,
     required this.serverId,
     required this.leadId,
     required this.consultorId,
     required this.dateTime,
     required this.durationMinutes,
     required this.status,
+    this.id,
     this.notes,
     this.createdAt,
     this.updatedAt,
@@ -20,7 +21,7 @@ class AgendaCache {
 
   Id? id;
 
-  @Index(unique: true)
+  @Index(name: 's1', unique: true)
   late String serverId;
 
   late String leadId;

@@ -5,6 +5,7 @@ Concrete implementation of IBriefingRepository using SQLAlchemy async.
 Supports upsert pattern (create-or-update in a single call) since a lead
 always has at most one briefing.
 """
+
 import uuid
 from typing import Optional
 
@@ -13,8 +14,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.interfaces.repositories import IBriefingRepository
 from app.infrastructure.persistence.abstract_repository import AbstractRepository
-from app.infrastructure.persistence.models.briefing_model import (
-    BriefingModel,
+from app.models.briefing import (
+    Briefing as BriefingModel,
     calculate_completude,
 )
 
@@ -50,8 +51,17 @@ class BriefingRepository(AbstractRepository[BriefingModel], IBriefingRepository)
             # Recalculate completude after merge
             merged = {
                 f: getattr(existing, f)
-                for f in ["destino", "data_ida", "data_volta", "qtd_pessoas",
-                          "perfil", "tipo_viagem", "preferencias", "orcamento", "tem_passaporte"]
+                for f in [
+                    "destino",
+                    "data_ida",
+                    "data_volta",
+                    "qtd_pessoas",
+                    "perfil",
+                    "tipo_viagem",
+                    "preferencias",
+                    "orcamento",
+                    "tem_passaporte",
+                ]
             }
             existing.completude_pct = calculate_completude(merged)
             await self._session.flush()
@@ -63,3 +73,10 @@ class BriefingRepository(AbstractRepository[BriefingModel], IBriefingRepository)
             **{k: v for k, v in data.items() if hasattr(BriefingModel, k)},
         )
         return await self.add(briefing)
+
+    async def update(self, lead_id: uuid.UUID, data: dict) -> BriefingModel:
+        """
+        Update an existing briefing. Delegates to upsert which handles
+        both create and update cases transparently.
+        """
+        return await self.upsert(lead_id, data)

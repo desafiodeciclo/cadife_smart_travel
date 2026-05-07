@@ -1,6 +1,6 @@
-export 'presentation/screens/app_lock_screen.dart';
-export 'presentation/screens/login_screen.dart';
-export 'presentation/screens/splash_screen.dart';
-export 'presentation/widgets/app_lock_wrapper.dart';
-export 'providers/app_lock_provider.dart';
-export 'providers/auth_provider.dart';
+export 'domain/entities/auth_user.dart';
+export 'domain/repositories/i_auth_repository.dart';
+export 'presentation/bloc/auth_bloc.dart';
+export 'presentation/bloc/auth_event.dart';
+export 'presentation/bloc/auth_state.dart';
+// auth_provider.dart was removed in favor of AuthBloc

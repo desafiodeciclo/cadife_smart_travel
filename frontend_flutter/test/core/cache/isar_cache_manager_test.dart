@@ -158,8 +158,18 @@ void main() {
     test('briefing CRUD funciona corretamente', () async {
       final briefing = BriefingCache(
         leadId: 'lead-007',
-        completudePct: 60,
         destino: 'Paris',
+        dataIda: DateTime.now(),
+        dataVolta: DateTime.now().add(const Duration(days: 7)),
+        numPessoas: 2,
+        perfil: 'Casal',
+        tipoViagem: 'Lazer',
+        preferencias: 'Praia, Luxo',
+        orcamentoFaixa: '10k-20k',
+        passaporteValido: true,
+        experienciaInternacional: true,
+        resumoConversa: 'Interesse em Paris para lua de mel',
+        completudePct: 60,
         cachedAt: DateTime.now(),
       );
 

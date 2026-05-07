@@ -1,0 +1,59 @@
+{
+  "id": "agency-profile-settings-001",
+  "title": "Perfil do Consultor e Configurações de Agência",
+  "status": "in-progress",
+  "priority": "medium",
+  "points": 5,
+  "assignee": "Frontend",
+  "branch": "feat/ui-manager-agenda",
+  "steps": [
+    {
+      "id": "step-1",
+      "title": "Spec e planejamento",
+      "status": "done"
+    },
+    {
+      "id": "step-2",
+      "title": "Profile repository + notifier",
+      "status": "done",
+      "files": [
+        "frontend_flutter/lib/features/agency/profile/profile_repository.dart",
+        "frontend_flutter/lib/features/agency/profile/profile_notifier.dart"
+      ]
+    },
+    {
+      "id": "step-3",
+      "title": "ProfileScreen (foto, bio, histórico metas/vendas)",
+      "status": "done",
+      "files": [
+        "frontend_flutter/lib/features/agency/profile/profile_screen.dart"
+      ]
+    },
+    {
+      "id": "step-4",
+      "title": "Settings repository + notifier",
+      "status": "done",
+      "files": [
+        "frontend_flutter/lib/features/agency/settings/settings_repository.dart",
+        "frontend_flutter/lib/features/agency/settings/settings_notifier.dart"
+      ]
+    },
+    {
+      "id": "step-5",
+      "title": "SettingsScreen (horários, templates, notificações)",
+      "status": "done",
+      "files": [
+        "frontend_flutter/lib/features/agency/settings/settings_screen.dart"
+      ]
+    },
+    {
+      "id": "step-6",
+      "title": "Integração no router + AgencyShell (aba Perfil)",
+      "status": "done",
+      "files": [
+        "frontend_flutter/lib/core/router/agency_shell.dart",
+        "frontend_flutter/lib/core/router/app_router.dart"
+      ]
+    }
+  ]
+}

@@ -3,6 +3,7 @@ Conftest for test_use_cases — stubs heavy optional dependencies (langchain,
 firebase_admin) that are not installed in CI / local venv but are imported
 transitively when loading process_whatsapp_message.
 """
+
 import sys
 import types
 from unittest.mock import MagicMock
@@ -32,12 +33,19 @@ for _mod in [
     "langchain.text_splitter",
     "langchain.chains",
     "langchain.chat_models",
-    "langchain_openai",
+    "langchain_google_genai",
     "langchain_community",
     "langchain_community.vectorstores",
+    "langchain_chroma",
+    "langchain_text_splitters",
     "langchain_core",
+    "langchain_core.documents",
+    "langchain_core.embeddings",
     "langchain_core.messages",
     "langchain_core.prompts",
+    "langchain_core.runnables",
+    "langchain_chroma",
+    "langchain_chroma.vectorstores",
     "langgraph",
     "langgraph.graph",
     # firebase_admin used by fcm_service

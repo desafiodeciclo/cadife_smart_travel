@@ -3,7 +3,6 @@ Unit tests for metadata_tagger.py — rule-based topic extraction.
 
 All tests run without external dependencies (no OpenAI, no ChromaDB).
 """
-import pytest
 
 from app.services.metadata_tagger import (
     DocumentTags,

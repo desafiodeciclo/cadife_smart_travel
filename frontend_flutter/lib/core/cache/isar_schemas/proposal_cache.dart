@@ -2,15 +2,16 @@ import 'package:isar/isar.dart';
 
 part 'proposal_cache.g.dart';
 
+@Name('pr')
 @Collection()
 class ProposalCache {
   ProposalCache({
-    this.id,
     required this.serverId,
     required this.leadId,
     required this.consultorId,
     required this.status,
     required this.totalValue,
+    this.id,
     this.destino,
     this.dataIda,
     this.dataVolta,
@@ -24,7 +25,7 @@ class ProposalCache {
 
   Id? id;
 
-  @Index(unique: true)
+  @Index(name: 's3', unique: true)
   late String serverId;
 
   late String leadId;

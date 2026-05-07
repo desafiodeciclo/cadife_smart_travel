@@ -1,7 +1,7 @@
 from typing import Optional
 import uuid
 
-from fastapi import APIRouter, BackgroundTasks, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends, Request
 from pydantic import BaseModel
 
 from app.infrastructure.security.dependencies import get_current_user
@@ -9,6 +9,10 @@ from app.models.briefing import calculate_completude
 from app.services import ai_service, rag_service
 from app.services.domain_validator import BriefingValidator
 from app.services.ingestion_pipeline import get_ingestion_pipeline
+from app.infrastructure.security.rate_limiter import limiter
+from app.core.config import get_settings
+
+settings = get_settings()
 
 router = APIRouter(prefix="/ia", tags=["IA"])
 
@@ -56,10 +60,14 @@ class ReindexarRequest(BaseModel):
 # Existing endpoints
 # ---------------------------------------------------------------------------
 
+
 @router.post("/processar", response_model=ProcessarResponse)
-async def processar_mensagem(body: ProcessarRequest):
+@limiter.limit(settings.RATE_LIMIT_IA)
+async def processar_mensagem(request: Request, body: ProcessarRequest):
     # 1. Extrair briefing
-    extracted = await ai_service.extract_briefing([{"role": "user", "content": body.message}])
+    extracted = await ai_service.extract_briefing(
+        [{"role": "user", "content": body.message}]
+    )
     completude = calculate_completude(extracted.model_dump())
 
     # 2. Validar domínio
@@ -86,7 +94,8 @@ async def processar_mensagem(body: ProcessarRequest):
 
 
 @router.post("/extrair-briefing", response_model=ExtrairBriefingResponse)
-async def extrair_briefing(body: ExtrairBriefingRequest):
+@limiter.limit(settings.RATE_LIMIT_IA)
+async def extrair_briefing(request: Request, body: ExtrairBriefingRequest):
     conversation = [{"role": m.role, "content": m.content} for m in body.conversation]
     briefing = await ai_service.extract_briefing(conversation)
     completude = calculate_completude(briefing.model_dump())
@@ -106,7 +115,7 @@ async def extrair_briefing(body: ExtrairBriefingRequest):
 async def ia_status():
     return {
         "status": "ok",
-        "model": "gpt-4o-mini",
+        "model": settings.OPENROUTER_MODEL,
         "rag_documents": rag_service.get_rag_document_count(),
         "vector_db": "chromadb",
         "domain_validator": "active",
@@ -116,6 +125,7 @@ async def ia_status():
 # ---------------------------------------------------------------------------
 # Ingestion endpoints (JWT protected)
 # ---------------------------------------------------------------------------
+
 
 @router.post("/reindexar", dependencies=[Depends(get_current_user)])
 async def reindexar_base(body: ReindexarRequest, background_tasks: BackgroundTasks):
@@ -129,7 +139,11 @@ async def reindexar_base(body: ReindexarRequest, background_tasks: BackgroundTas
     """
     pipeline = get_ingestion_pipeline()
     background_tasks.add_task(pipeline.ingest_all, body.force)
-    return {"status": "accepted", "message": "Reindexação iniciada em background", "force": body.force}
+    return {
+        "status": "accepted",
+        "message": "Reindexação iniciada em background",
+        "force": body.force,
+    }
 
 
 @router.get("/ingestion-status", dependencies=[Depends(get_current_user)])

@@ -10,19 +10,19 @@ Features:
   - Incremental updates: only changed/new documents are re-indexed
   - Triggerable on-demand via API endpoint (BackgroundTasks) or daily scheduler
 """
+
 import hashlib
 import json
-import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
 import structlog
-from langchain.schema import Document
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import Chroma
+import tiktoken
+from langchain_core.documents import Document
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
-from pydantic import SecretStr
 
 from app.core.config import get_settings
 from app.services.metadata_tagger import extract_tags, tags_to_metadata
@@ -30,12 +30,29 @@ from app.services.metadata_tagger import extract_tags, tags_to_metadata
 logger = structlog.get_logger()
 
 # ---------------------------------------------------------------------------
-# Text splitter — matches .claude/rules/ai_langchain.md spec
+# Token-based length function (cl100k_base ≈ GPT-4/Gemini vocabulary)
+# ---------------------------------------------------------------------------
+_tiktoken_enc = tiktoken.get_encoding("cl100k_base")
+
+
+def _token_length(text: str) -> int:
+    return len(_tiktoken_enc.encode(text))
+
+
+# ---------------------------------------------------------------------------
+# Splitter version — bump this whenever chunk_size, overlap, or
+# length_function changes so the hash-based cache detects the config drift
+# and forces automatic re-indexing of all documents.
+# ---------------------------------------------------------------------------
+_SPLITTER_VERSION = "v2_chunk500_overlap50_tiktoken"
+
+# ---------------------------------------------------------------------------
+# Text splitter — 500 tokens / 50-token overlap (spec: 300–500 tokens)
 # ---------------------------------------------------------------------------
 _splitter = RecursiveCharacterTextSplitter(
-    chunk_size=400,
+    chunk_size=500,
     chunk_overlap=50,
-    length_function=len,
+    length_function=_token_length,
     separators=["\n\n", "\n", ". ", " ", ""],
 )
 
@@ -51,6 +68,7 @@ _splitter = RecursiveCharacterTextSplitter(
 #   }
 # }
 # ---------------------------------------------------------------------------
+
 
 class IngestionCache:
     def __init__(self, cache_path: str) -> None:
@@ -112,6 +130,7 @@ class IngestionCache:
 # Document loaders
 # ---------------------------------------------------------------------------
 
+
 def _load_txt(filepath: Path) -> str:
     return filepath.read_text(encoding="utf-8")
 
@@ -123,6 +142,7 @@ def _load_md(filepath: Path) -> str:
 def _load_pdf(filepath: Path) -> str:
     try:
         from pypdf import PdfReader  # optional dependency
+
         reader = PdfReader(str(filepath))
         return "\n\n".join(page.extract_text() or "" for page in reader.pages)
     except ImportError:
@@ -140,7 +160,8 @@ SUPPORTED_EXTENSIONS = set(_LOADERS.keys())
 
 
 def _compute_hash(content: str) -> str:
-    return "sha256:" + hashlib.sha256(content.encode("utf-8")).hexdigest()
+    versioned = f"{_SPLITTER_VERSION}:{content}"
+    return "sha256:" + hashlib.sha256(versioned.encode("utf-8")).hexdigest()
 
 
 def _read_file(filepath: Path) -> Optional[str]:
@@ -158,6 +179,7 @@ def _read_file(filepath: Path) -> Optional[str]:
 # Core pipeline
 # ---------------------------------------------------------------------------
 
+
 class IngestionPipeline:
     """
     Manages incremental re-ingestion of the Cadife Tour knowledge base.
@@ -170,14 +192,20 @@ class IngestionPipeline:
         knowledge_base_dir: str,
         chroma_persist_dir: str,
         cache_path: str,
-        openai_api_key: str,
+        openrouter_api_key: str = "",
+        embedding_model: str = "google/gemini-embedding-2-preview",
     ) -> None:
         self._kb_dir = Path(knowledge_base_dir)
         self._persist_dir = chroma_persist_dir
         self._cache = IngestionCache(cache_path)
+        if not openrouter_api_key:
+            raise RuntimeError("Nenhuma OPENROUTER_API_KEY configurada para ingestão.")
         self._embeddings = OpenAIEmbeddings(
-            model="text-embedding-3-small",
-            api_key=SecretStr(openai_api_key),
+            model=embedding_model,
+            openai_api_key=openrouter_api_key,
+            openai_api_base="https://openrouter.ai/api/v1",
+            check_embedding_ctx_length=False,
+            model_kwargs={"encoding_format": "float"},
         )
         self._vectorstore: Optional[Chroma] = None
 
@@ -317,9 +345,13 @@ class IngestionPipeline:
                 vs = self._get_vectorstore()
                 vs._collection.delete(ids=chunk_ids)
                 self._invalidate_vectorstore()
-                logger.info("document_removed", filename=filename, chunks=len(chunk_ids))
+                logger.info(
+                    "document_removed", filename=filename, chunks=len(chunk_ids)
+                )
             except Exception as exc:
-                logger.warning("document_remove_error", filename=filename, error=str(exc))
+                logger.warning(
+                    "document_remove_error", filename=filename, error=str(exc)
+                )
         self._cache.remove(filename)
 
 
@@ -338,6 +370,7 @@ def get_ingestion_pipeline() -> IngestionPipeline:
             knowledge_base_dir=settings.KNOWLEDGE_BASE_DIR,
             chroma_persist_dir=settings.CHROMA_PERSIST_DIR,
             cache_path=settings.INGESTION_CACHE_PATH,
-            openai_api_key=settings.OPENAI_API_KEY,
+            openrouter_api_key=settings.OPENROUTER_API_KEY,
+            embedding_model=settings.OPENROUTER_EMBEDDING_MODEL,
         )
     return _pipeline

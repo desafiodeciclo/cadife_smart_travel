@@ -31,50 +31,55 @@ depends_on = None
 
 
 def upgrade() -> None:
-    # ── PostgreSQL ENUM types ──────────────────────────────────────────────
-    lead_status_enum = postgresql.ENUM(
-        'novo', 'em_atendimento', 'qualificado', 'agendado', 'proposta', 'fechado', 'perdido',
-        name='lead_status_enum',
-    )
-    lead_score_enum = postgresql.ENUM(
-        'quente', 'morno', 'frio',
-        name='lead_score_enum',
-    )
-    lead_origem_enum = postgresql.ENUM(
-        'whatsapp', 'app', 'web',
-        name='lead_origem_enum',
-    )
-    perfil_viagem_enum = postgresql.ENUM(
-        'casal', 'família', 'solo', 'grupo', 'amigos',
-        name='perfil_viagem_enum',
-    )
-    orcamento_perfil_enum = postgresql.ENUM(
-        'baixo', 'médio', 'alto', 'premium',
-        name='orcamento_perfil_enum',
-    )
-    tipo_mensagem_enum = postgresql.ENUM(
-        'texto', 'audio', 'imagem', 'documento',
-        name='tipo_mensagem_enum',
-    )
-    agendamento_status_enum = postgresql.ENUM(
-        'pendente', 'confirmado', 'realizado', 'cancelado',
-        name='agendamento_status_enum',
-    )
-    agendamento_tipo_enum = postgresql.ENUM(
-        'online', 'presencial',
-        name='agendamento_tipo_enum',
-    )
-    proposta_status_enum = postgresql.ENUM(
-        'rascunho', 'enviada', 'aprovada', 'recusada', 'em_revisao',
-        name='proposta_status_enum',
-    )
+    # ── users (must exist before leads/agendamentos/propostas FK) ─────────
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    if not inspector.has_table('users'):
+        op.create_table(
+            'users',
+            sa.Column('id', postgresql.UUID(as_uuid=True), primary_key=True),
+            sa.Column('email', sa.String(255), nullable=False, unique=True),
+            sa.Column('nome', sa.String(255), nullable=False),
+            sa.Column('hashed_password', sa.String(255), nullable=False),
+            sa.Column('perfil', sa.String(20), nullable=False, server_default='agencia'),
+            sa.Column('telefone', sa.String(20), nullable=True),
+            sa.Column('fcm_token', sa.String(500), nullable=True),
+            sa.Column('avatar_url', sa.String(500), nullable=True),
+            sa.Column('is_active', sa.Boolean, nullable=False, server_default='true'),
+            sa.Column('criado_em', sa.DateTime(timezone=True),
+                      server_default=sa.func.now(), nullable=False),
+        )
+        op.create_index('ix_users_email', 'users', ['email'], unique=True)
 
-    for enum in [
-        lead_status_enum, lead_score_enum, lead_origem_enum,
-        perfil_viagem_enum, orcamento_perfil_enum, tipo_mensagem_enum,
-        agendamento_status_enum, agendamento_tipo_enum, proposta_status_enum,
-    ]:
-        enum.create(op.get_bind(), checkfirst=True)
+    # ── PostgreSQL ENUM types (Definição e Criação Idempotente) ───────────
+    enums = [
+        ('lead_status_enum', ('novo', 'em_atendimento', 'qualificado', 'agendado', 'proposta', 'fechado', 'perdido')),
+        ('lead_score_enum', ('quente', 'morno', 'frio')),
+        ('lead_origem_enum', ('whatsapp', 'app', 'web')),
+        ('perfil_viagem_enum', ('casal', 'família', 'solo', 'grupo', 'amigos')),
+        ('orcamento_perfil_enum', ('baixo', 'médio', 'alto', 'premium')),
+        ('tipo_mensagem_enum', ('texto', 'audio', 'imagem', 'documento')),
+        ('agendamento_status_enum', ('pendente', 'confirmado', 'realizado', 'cancelado')),
+        ('agendamento_tipo_enum', ('online', 'presencial')),
+        ('proposta_status_enum', ('rascunho', 'enviada', 'aprovada', 'recusada', 'em_revisao')),
+    ]
+
+    # Criação via SQL Puro para garantir IF NOT EXISTS no Postgres
+    for name, labels in enums:
+        labels_str = ", ".join([f"'{l}'" for l in labels])
+        op.execute(f"DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = '{name}') THEN CREATE TYPE {name} AS ENUM ({labels_str}); END IF; END $$;")
+
+    # Objetos SQLAlchemy configurados com create_type=False
+    # Isso impede que o SQLAlchemy tente criar o tipo de novo ao criar as tabelas
+    lead_status_enum = postgresql.ENUM(name='lead_status_enum', create_type=False)
+    lead_score_enum = postgresql.ENUM(name='lead_score_enum', create_type=False)
+    lead_origem_enum = postgresql.ENUM(name='lead_origem_enum', create_type=False)
+    perfil_viagem_enum = postgresql.ENUM(name='perfil_viagem_enum', create_type=False)
+    orcamento_perfil_enum = postgresql.ENUM(name='orcamento_perfil_enum', create_type=False)
+    tipo_mensagem_enum = postgresql.ENUM(name='tipo_mensagem_enum', create_type=False)
+    agendamento_status_enum = postgresql.ENUM(name='agendamento_status_enum', create_type=False)
+    agendamento_tipo_enum = postgresql.ENUM(name='agendamento_tipo_enum', create_type=False)
+    proposta_status_enum = postgresql.ENUM(name='proposta_status_enum', create_type=False)
 
     # ── leads ──────────────────────────────────────────────────────────────
     op.create_table(
@@ -135,6 +140,9 @@ def upgrade() -> None:
         sa.Column('tipo_mensagem', tipo_mensagem_enum, nullable=False, server_default='texto'),
         sa.Column('timestamp', sa.DateTime(timezone=True),
                   server_default=sa.func.now(), nullable=False),
+        sa.Column('enviado_em', sa.DateTime(timezone=True), nullable=True),
+        sa.Column('status_envio', sa.String(10), nullable=True),
+        sa.Column('erro_envio', sa.Text, nullable=True),
     )
     op.create_index('ix_interacoes_lead_id', 'interacoes', ['lead_id'])
     op.create_index('ix_interacoes_lead_timestamp', 'interacoes', ['lead_id', 'timestamp'])

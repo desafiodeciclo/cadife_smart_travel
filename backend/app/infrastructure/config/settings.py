@@ -9,10 +9,11 @@ In production, secrets can be loaded from:
   - HashiCorp Vault (via `hvac`)
 by overriding `_load_external_secrets()`.
 """
+
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -31,23 +32,72 @@ class Settings(BaseSettings):
     )
 
     # ── Application Behaviour ─────────────────────────────────────────────
-    APP_ENV: Literal["development", "staging", "production"] = Field(
+    APP_ENV: Literal["development", "staging", "production", "test"] = Field(
         default="development",
         description="Current environment — controls secret loading strategy",
     )
     DEBUG: bool = Field(default=False)
 
     # ── WhatsApp Cloud API (spec.md §15) ──────────────────────────────────
-    WHATSAPP_TOKEN: str = Field(description="Meta WhatsApp access token")
-    PHONE_NUMBER_ID: str = Field(description="Meta registered phone number ID")
+    WHATSAPP_TOKEN: str = Field(default="", description="Meta WhatsApp access token")
+    PHONE_NUMBER_ID: str = Field(
+        default="", description="Meta registered phone number ID"
+    )
     VERIFY_TOKEN: str = Field(
         default="cadife_verify_token",
         description="Secret token for Meta webhook verification",
     )
+    META_APP_SECRET: str = Field(
+        default="", description="Meta App Secret for X-Hub-Signature-256 validation"
+    )
+    META_APP_ID: str = Field(
+        default="", description="Meta App ID — required for token exchange"
+    )
 
-    # ── OpenAI / LangChain (spec.md §15) ──────────────────────────────────
-    OPENAI_API_KEY: str = Field(description="OpenAI GPT API Key")
-    LANGCHAIN_API_KEY: str = Field(default="", description="LangSmith observability key (optional)")
+    # ── OpenRouter (chat LLM + embeddings) ───────────────────────────────
+    OPENROUTER_API_KEY: str = Field(
+        default="", description="OpenRouter API key para chat LLM e embeddings"
+    )
+    OPENROUTER_MODEL: str = Field(
+        default="google/gemini-2.0-flash-001",
+        description="Modelo OpenRouter para chat (texto)",
+    )
+    OPENROUTER_AUDIO_MODEL: str = Field(
+        default="google/gemini-2.0-flash-001",
+        description="Modelo OpenRouter para transcrição de áudio (via chat completions multimodal)",
+    )
+    OPENROUTER_VISION_MODEL: str = Field(
+        default="google/gemini-2.0-flash-001",
+        description="Modelo OpenRouter para análise de imagens/visão",
+    )
+    OPENROUTER_EMBEDDING_MODEL: str = Field(
+        default="google/gemini-embedding-2-preview",
+        description="Modelo OpenRouter para embeddings RAG",
+    )
+
+    # ── Google Gemini (mantido para compatibilidade — não mais necessário) ─
+    GEMINI_API_KEY: str = Field(
+        default="", description="Gemini API key (legado — substituído pelo OpenRouter)"
+    )
+    LANGCHAIN_API_KEY: str = Field(
+        default="", description="LangSmith observability key (optional)"
+    )
+
+    # ── Langfuse Observability ────────────────────────────────────────────
+    LANGFUSE_PUBLIC_KEY: str = Field(
+        default="", description="Langfuse public key for tracing"
+    )
+    LANGFUSE_SECRET_KEY: str = Field(
+        default="", description="Langfuse secret key for tracing"
+    )
+    LANGFUSE_HOST: str = Field(
+        default="https://cloud.langfuse.com",
+        description="Langfuse API host (self-hosted or cloud)",
+    )
+
+    SLACK_WEBHOOK_URL: str = Field(
+        default="", description="Slack webhook URL for critical alerts"
+    )
 
     # ── Database (spec.md §3.3 — PostgreSQL preferred) ────────────────────
     DATABASE_URL: str = Field(
@@ -72,6 +122,70 @@ class Settings(BaseSettings):
 
     # ── RAG / ChromaDB (spec.md §3.3) ─────────────────────────────────────
     CHROMA_PERSIST_DIR: str = Field(default="./chroma_db")
+    KNOWLEDGE_BASE_DIR: str = Field(default="./knowledge_base")
+    INGESTION_CACHE_PATH: str = Field(default="./chroma_db/ingestion_cache.json")
+
+    # ── CORS (spec.md §12.2) ──────────────────────────────────────────────
+    ALLOWED_ORIGINS: str = Field(
+        default="http://localhost:3000,http://localhost:8080",
+        description="Comma-separated list of allowed CORS origins",
+    )
+
+    # ── Rate Limiting (spec.md §12.3) ─────────────────────────────────────
+    REDIS_HOST: str = Field(default="localhost")
+    REDIS_PORT: int = Field(default=6379)
+    REDIS_PASSWORD: str = Field(default="")
+    REDIS_DB: int = Field(default=0)
+    REDIS_PREFIX: str = Field(
+        default="", description="Prefix for redis keys (e.g. STG_)"
+    )
+    REDIS_URL: str = Field(default="redis://localhost:6379/0")
+    RATE_LIMIT_WEBHOOK: str = Field(default="100/minute")
+    RATE_LIMIT_IA: str = Field(default="30/minute")
+    RATE_LIMIT_DEFAULT: str = Field(default="60/minute")
+
+    # ── PII Encryption at-rest (Fernet/AES-128) ───────────────────────────
+    ENCRYPTION_KEY: str = Field(default="", description="Fernet key for PII encryption")
+    HASH_KEY: str = Field(
+        default="", description="HMAC-SHA256 key for searchable phone hash"
+    )
+
+    # ── Notification Queue & DLQ ──────────────────────────────────────────
+    NOTIFICATION_MAX_RETRIES: int = Field(default=3, ge=0)
+    NOTIFICATION_RETRY_DELAY_SECONDS: int = Field(default=60, ge=1)
+    NOTIFICATION_DEBOUNCE_TTL_SECONDS: int = Field(default=60, ge=1)
+    NOTIFICATION_PROCESSING_TIMEOUT_SECONDS: int = Field(
+        default=120,
+        ge=1,
+        description="Timeout to recover jobs stuck in 'processing' after a worker crash (seconds)",
+    )
+
+    # ── Cache / Redis (spec.md §5.3) ──────────────────────────────────────
+    CACHE_TTL_SECONDS: int = Field(
+        default=300,
+        ge=1,
+        description="Default TTL for Redis-backed endpoint cache (seconds)",
+    )
+    CACHE_ENABLED: bool = Field(
+        default=True,
+        description="Global toggle for response caching via Redis",
+    )
+
+    # ── Business Rules (spec.md §8.4) ─────────────────────────────────────
+    LEAD_EXPIRATION_DAYS: int = Field(
+        default=30,
+        ge=1,
+        description="Days of inactivity before a lead is automatically transitioned to PERDIDO",
+    )
+    PROPOSTA_EXPIRATION_HOURS_DEFAULT: int = Field(
+        default=48,
+        ge=1,
+        description="Default SLA in hours before a proposal (enviada/em_revisao) is auto-expired",
+    )
+    PROPOSTA_EXPIRATION_WEBHOOK_URL: str = Field(
+        default="",
+        description="Optional HTTP endpoint to POST when proposals are auto-expired (CRM, Slack, etc.)",
+    )
 
     # ── Request Timeout (spec.md §12.3 — webhook must respond in < 5s) ────
     REQUEST_TIMEOUT_SECONDS: float = Field(
@@ -94,9 +208,19 @@ class Settings(BaseSettings):
         if app_env == "production" and v == "change-me-in-production":
             raise ValueError(
                 "JWT_SECRET_KEY must be set to a secure random value in production. "
-                "Generate one with: python -c \"import secrets; print(secrets.token_hex(32))\""
+                'Generate one with: python -c "import secrets; print(secrets.token_hex(32))"'
             )
         return v
+
+    @model_validator(mode="after")
+    def compute_redis_url(self) -> "Settings":
+        """Compute REDIS_URL if individual connection params are provided."""
+        if self.REDIS_PASSWORD or self.REDIS_HOST != "localhost":
+            pwd = f":{self.REDIS_PASSWORD}@" if self.REDIS_PASSWORD else ""
+            self.REDIS_URL = (
+                f"redis://{pwd}{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
+            )
+        return self
 
     @field_validator("DATABASE_URL")
     @classmethod

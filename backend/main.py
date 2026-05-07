@@ -3,126 +3,220 @@ Application Entry Point — Cadife Smart Travel API
 ==================================================
 FastAPI application factory following Clean Architecture.
 Registers middlewares, routers, and startup/shutdown lifecycle hooks.
-
-Spec references:
-  - §3.3  Stack: FastAPI + PostgreSQL + Firebase FCM
-  - §5    Endpoints: webhook, ia, leads, agenda, propostas, auth
-  - §12.2 Security: HTTPS, JWT, rate limiting (middleware hooks)
-  - §12.3 Reliability: structured logs, timeout middleware
 """
+
 from contextlib import asynccontextmanager
 
 import structlog
-from fastapi import FastAPI, Request
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+from fastapi.responses import JSONResponse
+from prometheus_fastapi_instrumentator import Instrumentator
 
-from app.core.config import get_settings
-from app.core.database import create_tables
-from app.infrastructure.security.rate_limiter import limiter
-from app.presentation.middlewares.audit_trail import AuditTrailMiddleware
-from app.presentation.middlewares.security_headers import SecurityHeadersMiddleware
-from app.infrastructure.adapters.firebase import init_firebase
+# Core / Infra
 from app.infrastructure.config.settings import get_settings
+from app.infrastructure.config.logging_config import configure_logging
 from app.infrastructure.persistence.database import create_tables
 
-# ── Presentation Layer Routers ────────────────────────────────────────────
+# Import all models to register them in SQLAlchemy metadata before create_tables
+import app.models  # noqa: F401
+from app.infrastructure.adapters.firebase import init_firebase
+from app.infrastructure.security.rate_limiter import limiter
+from app.services.ingestion_pipeline import get_ingestion_pipeline
+
+# Scheduled Jobs
+from app.jobs.lead_expiration_job import expire_stale_leads
+from app.services import health_service
+from app.jobs.proposta_expiration_job import expire_stale_propostas_job
+from app.jobs.notification_worker import NotificationWorker, WORKER_INTERVAL_SECONDS
+
+# Routers
 from app.routes import agenda, auth, ia, leads, propostas, webhook
 
-# ── Presentation Layer Middlewares ────────────────────────────────────────
+# Middlewares
 from app.presentation.middlewares.request_id import RequestIdMiddleware
 from app.presentation.middlewares.timeout import TimeoutMiddleware
+from app.presentation.middlewares.audit_trail import AuditTrailMiddleware
+from app.presentation.middlewares.security_headers import SecurityHeadersMiddleware
 
-logger = structlog.get_logger()
+# -------------------------------------------------------------------
+# Config
+# -------------------------------------------------------------------
+
 settings = get_settings()
+configure_logging()
+logger = structlog.get_logger()
 
+# Scheduler instance — configured at module level, started/stopped in lifespan
+_scheduler = AsyncIOScheduler(timezone="UTC")
+
+
+# -------------------------------------------------------------------
+# Lifespan
+# -------------------------------------------------------------------
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Application startup and shutdown hooks."""
     logger.info(
         "startup_begin",
         env=settings.APP_ENV,
         debug=settings.DEBUG,
     )
 
-    # CP1: Database tables (dev only — use Alembic in production)
-    await create_tables()
-    logger.info("database_tables_ready")
+    # Database
+    # await create_tables()
+    logger.info("database_ready")
 
-    # CP4: Firebase Admin SDK initialization
+    # Firebase
     init_firebase()
+    logger.info("firebase_ready")
 
-    logger.info("startup_complete", version=app.version)
+    # RAG Knowledge Base — incremental re-index on startup (skips unchanged files)
+    try:
+        pipeline = get_ingestion_pipeline()
+        indexing_result = await pipeline.ingest_all(force=False)
+        logger.info("rag_knowledge_base_indexed", **indexing_result)
+    except Exception as exc:
+        logger.warning("rag_indexing_failed_on_startup", error=str(exc))
+
+    # -------------------------------------------------------------------
+    # Scheduled Jobs Configuration
+    # -------------------------------------------------------------------
+    
+    # 1. Lead Expiration: Runs daily at 02:00 UTC
+    _scheduler.add_job(
+        expire_stale_leads,
+        trigger="cron",
+        hour=2,
+        minute=0,
+        id="lead_expiration",
+        replace_existing=True,
+    )
+
+    # 2. Proposta Expiration: Runs every 5 minutes (SLA window check)
+    _scheduler.add_job(
+        expire_stale_propostas_job,
+        trigger="interval",
+        minutes=5,
+        id="proposta_expiration",
+        replace_existing=True,
+    )
+
+    # 3. Notification Worker: Drains push queue every 15s
+    _notification_worker = NotificationWorker()
+    _scheduler.add_job(
+        _notification_worker.run,
+        trigger="interval",
+        seconds=WORKER_INTERVAL_SECONDS,
+        id="notification_worker",
+        replace_existing=True,
+    )
+
+    _scheduler.start()
+    logger.info(
+        "scheduler_started", 
+        jobs=["lead_expiration", "proposta_expiration", "notification_worker"]
+    )
+
+    logger.info("startup_complete", version="1.0.0")
+
     yield
+
+    _scheduler.shutdown(wait=False)
     logger.info("shutdown_complete")
 
 
-# ─────────────────────────────────────────────────────────────────────────
-# FastAPI Application Factory
-# ─────────────────────────────────────────────────────────────────────────
+# -------------------------------------------------------------------
+# FastAPI App
+# -------------------------------------------------------------------
+
 app = FastAPI(
     title="Cadife Smart Travel API",
-    description=(
-        "Backend inteligente de atendimento turístico via WhatsApp + App Flutter. "
-        "Spec: spec.md v1.0 | MVP 25 dias."
-    ),
+    description="Backend inteligente para turismo via WhatsApp + Flutter.",
     version="1.0.0",
     lifespan=lifespan,
     docs_url="/docs" if settings.APP_ENV != "production" else None,
     redoc_url="/redoc" if settings.APP_ENV != "production" else None,
 )
 
-# ── Rate Limiter ──────────────────────────────────────────────────────────────
-# Registra o limiter no estado da app e o handler para o erro 429
+# -------------------------------------------------------------------
+# Metrics
+# -------------------------------------------------------------------
+
+Instrumentator().instrument(app).expose(app)
+
+# -------------------------------------------------------------------
+# Rate Limiter
+# -------------------------------------------------------------------
+
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_exception_handler(
+    RateLimitExceeded,
+    _rate_limit_exceeded_handler,
+)
 
-# ── Middlewares (ordem importa: o último adicionado executa primeiro) ─────────
-# 1. CORS (mais externo — retorna antes de qualquer outro processamento)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # TODO: restringir em produção para domínios conhecidos
-# ── Middleware Registration (order matters — outermost executes first) ────
-# 1. RequestId must be first to assign ID before all other processing
-# 2. Timeout wraps inner handlers to enforce SLAs
-# 3. CORS handles preflight before any business logic
-
+# -------------------------------------------------------------------
+# Middlewares
+# -------------------------------------------------------------------
 app.add_middleware(RequestIdMiddleware)
 app.add_middleware(TimeoutMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # TODO: restrict to known origins in production
+    allow_origins=[o.strip() for o in settings.ALLOWED_ORIGINS.split(",") if o.strip()],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-# 2. Security Headers — injeta headers em toda resposta
 app.add_middleware(SecurityHeadersMiddleware)
-# 3. Audit Trail — loga request lifecycle em JSON estruturado
 app.add_middleware(AuditTrailMiddleware)
 
-# ── Router Registration (spec.md §5) ─────────────────────────────────────
-app.include_router(webhook.router)   # §5.1 — Webhook WhatsApp
-app.include_router(leads.router)     # §5.3 — Leads (CRM)
-app.include_router(ia.router)        # §5.2 — IA e Processamento
-app.include_router(agenda.router)    # §5.4 — Agenda e Agendamentos
-app.include_router(propostas.router) # §5.5 — Propostas
-app.include_router(auth.router)      # §5.6 — Autenticação e Usuários
+# -------------------------------------------------------------------
+# Routers
+# -------------------------------------------------------------------
+
+app.include_router(webhook.router)
+app.include_router(leads.router)
+app.include_router(ia.router)
+app.include_router(agenda.router)
+app.include_router(propostas.router)
+app.include_router(auth.router)
+
+# -------------------------------------------------------------------
+# Health Check (K8S Probes)
+# -------------------------------------------------------------------
+
+@app.get("/healthz", tags=["Health"])
+async def healthz():
+    """
+    K8S Liveness/Readiness Probe endpoint.
+    Checks connectivity with Database and Redis.
+    """
+    db_ok = await health_service.check_database()
+    redis_ok = await health_service.check_redis()
+
+    status = "ok" if db_ok and redis_ok else "error"
+    status_code = 200 if status == "ok" else 503
+
+    return JSONResponse(
+        status_code=status_code,
+        content={
+            "status": status,
+            "database": "connected" if db_ok else "disconnected",
+            "redis": "connected" if redis_ok else "disconnected",
+            "version": app.version,
+        }
+    )
 
 
-# ── Health Check ──────────────────────────────────────────────────────────
-@app.get("/health", tags=["Health"], summary="Service health check")
-async def health():
-    """
-    Returns service status.
-    Used by load balancers and Docker health checks.
-    """
+@app.get("/", tags=["Health"])
+async def root():
+    """Friendly root endpoint for verification."""
     return {
-        "status": "ok",
-        "service": "cadife-smart-travel",
-        "version": app.version,
-        "env": settings.APP_ENV,
+        "message": "Cadife Smart Travel API is running",
+        "status": "online",
+        "health_check": "/healthz",
+        "metrics": "/metrics"
     }

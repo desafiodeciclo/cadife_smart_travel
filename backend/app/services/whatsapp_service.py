@@ -9,13 +9,14 @@ Retry policy (exponential backoff):
   Max retries: 3  |  Base delay: 0.5 s  |  Max delay: 4 s
   Timeout per attempt: 3 s (spec requirement)
 """
+
 from __future__ import annotations
 
 import asyncio
 import hashlib
 import hmac
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Optional
 
 import httpx
@@ -26,7 +27,8 @@ from app.core.config import get_settings
 logger = structlog.get_logger()
 settings = get_settings()
 
-WHATSAPP_API_URL = "https://graph.facebook.com/v19.0"
+WHATSAPP_API_URL = "https://graph.facebook.com/v25.0"
+
 
 _TRANSIENT_STATUS_CODES = frozenset({429, 500, 502, 503, 504})
 _MAX_RETRIES = 3
@@ -36,6 +38,7 @@ _TIMEOUT_S = 3.0
 
 
 # ── Exceptions ────────────────────────────────────────────────────────────────
+
 
 class WhatsAppSendError(Exception):
     """Raised when the Meta API call fails after exhausting all retries."""
@@ -54,17 +57,20 @@ class WhatsAppSendError(Exception):
 
 # ── Result type ───────────────────────────────────────────────────────────────
 
+
 @dataclass
 class SendResult:
     """Outcome of a send_message call. Callers should persist this."""
+
     success: bool
-    wamid: Optional[str] = None       # WhatsApp message ID returned by Meta
-    error: Optional[str] = None       # human-readable failure reason
+    wamid: Optional[str] = None  # WhatsApp message ID returned by Meta
+    error: Optional[str] = None  # human-readable failure reason
     retries_used: int = 0
     latency_ms: int = 0
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 def _mask_phone(phone: str) -> str:
     """Mask last 4 digits for PII-safe logging (spec.md §5.1)."""
@@ -73,20 +79,22 @@ def _mask_phone(phone: str) -> str:
 
 # ── Public API ────────────────────────────────────────────────────────────────
 
+
 def verify_signature(body: bytes, signature_header: str) -> bool:
-    """Validate HMAC-SHA256 signature from Meta webhook (spec.md §12.1)."""
+    """Valida X-Hub-Signature-256 usando META_APP_SECRET conforme spec Meta."""
     if not signature_header.startswith("sha256="):
         return False
-    expected = hmac.new(
-        settings.WHATSAPP_TOKEN.encode(),
-        body,
-        hashlib.sha256,
-    ).hexdigest()
+    secret = settings.META_APP_SECRET.encode()
+    expected = hmac.new(secret, body, hashlib.sha256).hexdigest()
     return hmac.compare_digest(f"sha256={expected}", signature_header)
 
 
 def extract_message_from_payload(payload: dict[str, Any]) -> Optional[dict[str, Any]]:
-    """Extract the first message from a Meta webhook payload. Returns None if absent."""
+    """Extract the first message from a Meta webhook payload. Returns None if absent.
+
+    The returned dict always includes `media_id` (None for text messages) so
+    callers can dispatch on type without additional parsing.
+    """
     try:
         entry = payload["entry"][0]
         change = entry["changes"][0]
@@ -96,15 +104,82 @@ def extract_message_from_payload(payload: dict[str, Any]) -> Optional[dict[str, 
             return None
         msg = messages[0]
         contact = value.get("contacts", [{}])[0]
+        msg_type: str = msg.get("type", "text")
+
+        # Extract media ID from the type-specific sub-object (audio, image, etc.)
+        media_id: Optional[str] = None
+        media_data = msg.get(msg_type)
+        if isinstance(media_data, dict):
+            media_id = media_data.get("id")
+
         return {
             "phone": msg["from"],
             "message_id": msg["id"],
-            "type": msg.get("type", "text"),
+            "type": msg_type,
             "text": msg.get("text", {}).get("body"),
             "name": contact.get("profile", {}).get("name"),
+            "media_id": media_id,
         }
     except (KeyError, IndexError):
         return None
+
+
+async def download_media(media_id: str) -> Optional[bytes]:
+    """Download a media file from Meta's Media API by its ID.
+
+    Two-step process required by Meta:
+      1. GET /{media_id} → JSON with a short-lived `url`
+      2. GET {url} (with Auth header) → raw media bytes
+
+    Returns the raw bytes on success, or None on any failure so callers can
+    treat this as best-effort (the fallback reply is always sent regardless).
+    """
+    headers = {"Authorization": f"Bearer {settings.WHATSAPP_TOKEN}"}
+
+    async with httpx.AsyncClient(timeout=_TIMEOUT_S) as client:
+        # Step 1: resolve the temporary download URL
+        try:
+            meta_resp = await client.get(
+                f"{WHATSAPP_API_URL}/{media_id}", headers=headers
+            )
+        except httpx.RequestError as exc:
+            logger.warning("media_url_fetch_failed", media_id=media_id, error=str(exc))
+            return None
+
+        if meta_resp.status_code != 200:
+            logger.warning(
+                "media_url_non_200",
+                media_id=media_id,
+                status_code=meta_resp.status_code,
+            )
+            return None
+
+        download_url: Optional[str] = meta_resp.json().get("url")
+        if not download_url:
+            logger.warning("media_url_missing_in_response", media_id=media_id)
+            return None
+
+        # Step 2: download the raw media bytes
+        try:
+            media_resp = await client.get(download_url, headers=headers)
+        except httpx.RequestError as exc:
+            logger.warning("media_download_failed", media_id=media_id, error=str(exc))
+            return None
+
+        if media_resp.status_code != 200:
+            logger.warning(
+                "media_download_non_200",
+                media_id=media_id,
+                status_code=media_resp.status_code,
+            )
+            return None
+
+        logger.info(
+            "media_downloaded",
+            media_id=media_id,
+            bytes=len(media_resp.content),
+        )
+        return media_resp.content
 
 
 async def send_message(phone: str, text: str) -> SendResult:

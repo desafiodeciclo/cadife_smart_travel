@@ -5,16 +5,17 @@ Concrete implementation for appointment persistence.
 Enforces the unique-slot business rule at the repository layer
 (DB UNIQUE constraint is the safety net).
 """
+
 import uuid
 from datetime import date, time
 from typing import Optional
 
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.entities.enums import AgendamentoStatus, AgendamentoTipo
 from app.infrastructure.persistence.abstract_repository import AbstractRepository
-from app.infrastructure.persistence.models.agendamento_model import AgendamentoModel
+from app.models.agendamento import Agendamento as AgendamentoModel
 
 
 class AgendamentoRepository(AbstractRepository[AgendamentoModel]):

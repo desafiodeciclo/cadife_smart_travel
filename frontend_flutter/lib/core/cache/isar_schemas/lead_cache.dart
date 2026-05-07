@@ -2,16 +2,17 @@ import 'package:isar/isar.dart';
 
 part 'lead_cache.g.dart';
 
+@Name('le')
 @Collection()
 class LeadCache {
   LeadCache({
-    this.id,
     required this.serverId,
     required this.name,
     required this.phone,
     required this.status,
     required this.score,
     required this.completudePct,
+    this.id,
     this.email,
     this.destino,
     this.dataIda,
@@ -31,7 +32,7 @@ class LeadCache {
 
   Id? id;
 
-  @Index(unique: true)
+  @Index(name: 's2', unique: true)
   late String serverId;
 
   late String name;

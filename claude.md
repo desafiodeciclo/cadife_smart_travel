@@ -8,7 +8,7 @@ Plataforma de atendimento turístico inteligente para a **Cadife Tour**:
 
 - **WhatsApp Bot (AYA):** assistente de pré-atendimento via IA — coleta briefing estruturado e qualifica leads 24/7.
 - **Backend FastAPI:** orquestra webhook Meta, camada IA (LangChain+RAG), banco de dados, notificações FCM.
-- **App Flutter:** CRM da agência (dashboard, pipeline, agenda) + portal do cliente (status da viagem).
+- **App Flutter:** CRM da agência (dashboard, pipeline, agenda) + portal do cliente (status da viagem) — offline-first, biometria, GoRouter + Riverpod.
 
 **Restrição Crítica Inegociável:** A IA NUNCA gera preços, confirma disponibilidade de voos/hospedagem ou fecha vendas. O sistema é de pré-atendimento — o consultor humano sempre fecha o negócio.
 
@@ -19,17 +19,19 @@ Plataforma de atendimento turístico inteligente para a **Cadife Tour**:
 Execute nesta ordem antes de tocar qualquer código:
 
 1. Leia `.claude/steering/` — modularizado em:
-    - `product.md` (Visão e Identidade)
-    - `tech.md` (Stack e Padrões)
-    - `structure.md` (Topologia e Nomenclatura)
-    - `data_models.md` (Entidades e Schemas)
-    - `api_endpoints.md` (Contratos REST)
-    - `ai_agent.md` (IA/RAG Specs)
-    - `workflows_rules.md` (Fluxos e Regras)
-    - `agile_and_team.md` (Gestão e Equipe)
-4. Leia `.claude/rules/` — regras ativas por camada (backend, flutter, AI)
-5. Verifique `specs/active/` — há tasks em andamento? Retome-as do último step incompleto.
-6. Se `specs/active/` vazio, verifique `specs/pending/` — assuma a próxima task disponível.
+    - `01_overview_and_scope.md` (Visão, Escopo e Fases)
+    - `02_architecture.md` (Arquitetura e Clean Architecture)
+    - `03_data_modeling.md` (Entidades e Schemas)
+    - `04_api_endpoints.md` (Contratos REST)
+    - `05_ai_specification.md` (IA/RAG Specs — Gemini + LangChain)
+    - `06_flutter_requirements.md` (Requisitos Flutter — Riverpod + GoRouter + Offline-first)
+    - `07_business_rules_and_flow.md` (Fluxos e Regras de Negócio)
+    - `08_management_and_planning.md` (Gestão, Cronograma e Equipe)
+    - `09_non_functional_and_risks.md` (Requisitos Não Funcionais e Riscos)
+    - `10_glossary_and_stakeholders.md` (Glossário e Stakeholders)
+2. Leia `.claude/rules/` — regras ativas por camada (backend, flutter, AI)
+3. Verifique `specs/active/` — há tasks em andamento? Retome-as do último step incompleto.
+4. Se `specs/active/` vazio, verifique `specs/pending/` — assuma a próxima task disponível.
 
 ---
 
@@ -91,6 +93,9 @@ docs/ → specs/pending/ → specs/active/ → [código] → specs/done/
 - Cores e fontes **somente** via `AppColors` / `AppTheme` em `lib/core/theme/`
 - `GoRouter` para navegação declarativa com guards de auth no router, não nas telas
 - Feedback visual obrigatório para toda ação: loading, success e error states
+- **Offline-first:** cache local via Hive (preferências) + Isar (entidades); sincroniza ao reconectar
+- **Segurança:** certificate pinning obrigatório, `flutter_secure_storage` para JWT, biometria via `local_auth`
+- `get_it` como service locator para DI — não instanciar serviços diretamente em widgets
 
 ---
 
@@ -98,15 +103,16 @@ docs/ → specs/pending/ → specs/active/ → [código] → specs/done/
 
 | Necessidade | Arquivo |
 |---|---|
-| Regras de negócio completas (score, status, horários) | `.claude/steering/workflows_rules.md` |
-| Modelagem de dados completa (entidades, campos, tipos) | `.claude/steering/data_models.md` |
-| Contrato completo da API (endpoints + schemas JSON) | `.claude/steering/api_endpoints.md` |
-| Design da camada IA / RAG / prompts AYA | `.claude/steering/ai_agent.md` |
-| Gestão, Cronograma e Equipe | `.claude/steering/agile_and_team.md` |
+| Regras de negócio completas (score, status, horários) | `.claude/steering/07_business_rules_and_flow.md` |
+| Modelagem de dados completa (entidades, campos, tipos) | `.claude/steering/03_data_modeling.md` |
+| Contrato completo da API (endpoints + schemas JSON) | `.claude/steering/04_api_endpoints.md` |
+| Design da camada IA / RAG / prompts AYA (Gemini) | `.claude/steering/05_ai_specification.md` |
+| Gestão, Cronograma e Equipe | `.claude/steering/08_management_and_planning.md` |
+| Requisitos Flutter — offline-first, biometrics, state | `.claude/steering/06_flutter_requirements.md` |
 | Design das telas Flutter (fluxos, estados) | `docs/design/flutter_design.md` |
 | Decisões arquiteturais registradas | `docs/adr/` |
 | Bugs reportados com trace | `docs/bugs/` |
-| Visão executiva do produto (brief) | `.claude/steering/product.md` |
+| Visão executiva do produto (brief) | `.claude/steering/01_overview_and_scope.md` |
 
 ---
 

@@ -4,6 +4,7 @@ Firebase Adapter — Infrastructure/Adapters Layer
 Initializes Firebase Admin SDK for FCM push notifications.
 Implements spec.md §3.3 (FCM) and §8.1 (notification < 2s).
 """
+
 from pathlib import Path
 
 import structlog
@@ -25,6 +26,7 @@ def init_firebase() -> None:
         return
 
     from app.infrastructure.config.settings import get_settings
+
     settings = get_settings()
 
     credentials_path = Path(settings.FIREBASE_CREDENTIALS)

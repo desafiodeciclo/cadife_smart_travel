@@ -1,7 +1,8 @@
+import 'package:cadife_smart_travel/core/error/failures.dart';
 import 'package:cadife_smart_travel/core/network/network_info.dart';
 import 'package:cadife_smart_travel/core/offline/offline_manager.dart';
 import 'package:cadife_smart_travel/core/offline/offline_sync_queue.dart';
-import 'package:cadife_smart_travel/core/utils/result.dart';
+import 'package:fpdart/fpdart.dart';
 
 typedef OnlineFirstCallback<T> = Future<T> Function();
 
@@ -18,7 +19,7 @@ class OfflineFirst {
   final NetworkInfo _networkInfo;
   final OfflineSyncQueue _syncQueue;
 
-  Future<Result<T>> onlineFirst<T>({
+  Future<Either<Failure, T>> onlineFirst<T>({
     required String cacheKey,
     required OnlineFirstCallback<T> remoteCall,
     required T Function(dynamic cached) fromCache,
@@ -30,19 +31,19 @@ class OfflineFirst {
     if (isOnline) {
       try {
         final data = await remoteCall();
-        return Success(data);
-      } catch (e) {
+        return Right(data);
+      } on Exception catch (e) {
         if (returnExpiredOffline) {
           return _fromCacheOrFailure(cacheKey, fromCache);
         }
-        return Failure(e);
+        return Left(Failure.fromException(e));
       }
     }
 
     return _fromCacheOrFailure(cacheKey, fromCache);
   }
 
-  Future<Result<T>> cacheFirst<T>({
+  Future<Either<Failure, T>> cacheFirst<T>({
     required String cacheKey,
     required OnlineFirstCallback<T> remoteCall,
     required T Function(dynamic cached) fromCache,
@@ -54,8 +55,8 @@ class OfflineFirst {
     );
     if (cached != null) {
       try {
-        return Success(fromCache(cached));
-      } catch (_) {
+        return Right(fromCache(cached));
+      } on Object catch (_) {
         // Cache corrupted, try fresh
       }
     }
@@ -65,21 +66,21 @@ class OfflineFirst {
       final offlineData = _offlineManager.getFromCacheOffline(cacheKey);
       if (offlineData != null) {
         try {
-          return Success(fromCache(offlineData));
-        } catch (_) {}
+          return Right(fromCache(offlineData));
+        } on Object catch (_) {}
       }
-      return Failure(Exception('No cached data and device is offline'));
+      return const Left(CacheFailure('No cached data and device is offline'));
     }
 
     try {
       final data = await remoteCall();
-      return Success(data);
-    } catch (e) {
-      return Failure(e);
+      return Right(data);
+    } on Exception catch (e) {
+      return Left(Failure.fromException(e));
     }
   }
 
-  Future<Result<T>> writeThrough<T>({
+  Future<Either<Failure, T>> writeThrough<T>({
     required String cacheKey,
     required OnlineFirstCallback<T> remoteCall,
     required T Function(dynamic cached) fromCache,
@@ -92,9 +93,9 @@ class OfflineFirst {
     if (isOnline) {
       try {
         final data = await remoteCall();
-        return Success(data);
-      } catch (e) {
-        return Failure(e);
+        return Right(data);
+      } on Exception catch (e) {
+        return Left(Failure.fromException(e));
       }
     }
 
@@ -106,20 +107,20 @@ class OfflineFirst {
       );
     }
 
-    return Failure(Exception('Device offline — operation queued for sync'));
+    return const Left(NetworkFailure('Device offline — operation queued for sync'));
   }
 
-  Result<T> _fromCacheOrFailure<T>(
+  Either<Failure, T> _fromCacheOrFailure<T>(
     String cacheKey,
     T Function(dynamic) fromCache,
   ) {
     final cached = _offlineManager.getFromCacheOffline(cacheKey);
     if (cached != null) {
       try {
-        return Success(fromCache(cached));
-      } catch (_) {}
+        return Right(fromCache(cached));
+      } on Object catch (_) {}
     }
 
-    return Failure(Exception('No cached data available offline'));
+    return const Left(CacheFailure('No cached data available offline'));
   }
 }

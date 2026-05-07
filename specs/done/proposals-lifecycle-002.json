@@ -1,0 +1,35 @@
+{
+  "task_id": "PROP-002",
+  "name": "Lifecycle de Status e Integração com Lead",
+  "branch": "feat/proposals-api",
+  "status": "done",
+  "description": "Na criação de proposta, validar que o lead está em status QUALIFICADO ou AGENDADO. Na atualização para aprovada, propagar atualização automática do status do lead para FECHADO. Na atualização para recusada, manter lead em PROPOSTA para nova tentativa. Expor propostas no endpoint GET /leads/{id} via relação.",
+  "responsible": "Nikolas Tesch (Backend)",
+  "steps": [
+    {
+      "id": "step1",
+      "description": "Criar spec JSON e mover para specs/active/",
+      "status": "done"
+    },
+    {
+      "id": "step2",
+      "description": "Atualizar routes/propostas.py: validar lead.status ∈ {qualificado, agendado, proposta} no POST; propagar lead.status → fechado quando proposta → aprovada; manter lead em proposta quando recusada.",
+      "status": "done"
+    },
+    {
+      "id": "step3",
+      "description": "Atualizar models/lead.py: adicionar campo propostas em LeadResponse schema.",
+      "status": "done"
+    },
+    {
+      "id": "step4",
+      "description": "Escrever/atualizar testes para lifecycle de status e integração com lead.",
+      "status": "done"
+    },
+    {
+      "id": "step5",
+      "description": "Executar testes e garantir que todos passam.",
+      "status": "done"
+    }
+  ]
+}

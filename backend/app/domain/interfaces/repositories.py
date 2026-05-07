@@ -5,6 +5,7 @@ Abstract contracts that the Infrastructure layer must implement.
 The Application layer (Use Cases) depends only on these abstractions,
 never on concrete SQLAlchemy/DB implementations — enabling testability.
 """
+
 import uuid
 from abc import ABC, abstractmethod
 from datetime import date, time
@@ -25,50 +26,49 @@ class ILeadRepository(ABC):
     """Interface for Lead persistence operations."""
 
     @abstractmethod
-    async def get_by_phone(self, phone: str) -> Optional[object]:
-        ...
+    async def get_by_phone(self, phone: str) -> Optional[object]: ...
 
     @abstractmethod
-    async def get_by_id(self, lead_id: uuid.UUID) -> Optional[object]:
-        ...
+    async def get_by_id(self, lead_id: uuid.UUID) -> Optional[object]: ...
 
     @abstractmethod
-    async def create(self, telefone: str, nome: Optional[str] = None) -> object:
-        ...
+    async def create(self, telefone: str, nome: Optional[str] = None) -> object: ...
 
     @abstractmethod
-    async def update_status(self, lead_id: uuid.UUID, status: LeadStatus) -> object:
-        ...
+    async def update_status(self, lead_id: uuid.UUID, status: LeadStatus) -> object: ...
 
     @abstractmethod
-    async def update_score(self, lead_id: uuid.UUID, score: LeadScore) -> object:
-        ...
+    async def update_score(self, lead_id: uuid.UUID, score: LeadScore) -> object: ...
 
     @abstractmethod
     async def list_all(
         self,
-        status: Optional[str] = None,
-        score: Optional[str] = None,
-        search: Optional[str] = None,
+        status: Optional[LeadStatus] = None,
+        score: Optional[LeadScore] = None,
+        destino: Optional[str] = None,
+        data_inicio: Optional[date] = None,
+        data_fim: Optional[date] = None,
+        q: Optional[str] = None,
         page: int = 1,
         limit: int = 20,
-    ) -> tuple[list, int]:
-        ...
+        consultor_id: Optional[uuid.UUID] = None,
+    ) -> tuple[list, int]: ...
 
     @abstractmethod
-    async def soft_delete(self, lead_id: uuid.UUID) -> None:
-        ...
+    async def soft_delete(self, lead_id: uuid.UUID) -> None: ...
 
 
 class IBriefingRepository(ABC):
     """Interface for Briefing persistence operations."""
 
     @abstractmethod
-    async def get_by_lead(self, lead_id: uuid.UUID) -> Optional[object]:
-        ...
+    async def get_by_lead(self, lead_id: uuid.UUID) -> Optional[object]: ...
 
     @abstractmethod
-    async def upsert(self, lead_id: uuid.UUID, data: dict) -> object:
+    async def upsert(self, lead_id: uuid.UUID, data: dict) -> object: ...
+
+    @abstractmethod
+    async def update(self, lead_id: uuid.UUID, data: dict) -> object:
         ...
 
 
@@ -82,8 +82,7 @@ class IInteracaoRepository(ABC):
         mensagem_cliente: Optional[str] = None,
         mensagem_ia: Optional[str] = None,
         tipo_mensagem: TipoMensagem = TipoMensagem.texto,
-    ) -> object:
-        ...
+    ) -> object: ...
 
     @abstractmethod
     async def list_by_lead(
@@ -91,8 +90,7 @@ class IInteracaoRepository(ABC):
         lead_id: uuid.UUID,
         page: int = 1,
         limit: int = 50,
-    ) -> tuple[list, int]:
-        ...
+    ) -> tuple[list, int]: ...
 
 
 class IAgendamentoRepository(ABC):
@@ -106,28 +104,24 @@ class IAgendamentoRepository(ABC):
         hora: time,
         tipo: AgendamentoTipo = AgendamentoTipo.online,
         consultor_id: Optional[uuid.UUID] = None,
-    ) -> object:
-        ...
+    ) -> object: ...
 
     @abstractmethod
     async def update_status(
         self,
         agendamento_id: uuid.UUID,
         status: AgendamentoStatus,
-    ) -> object:
-        ...
+    ) -> object: ...
 
     @abstractmethod
-    async def list_by_lead(self, lead_id: uuid.UUID) -> list:
-        ...
+    async def list_by_lead(self, lead_id: uuid.UUID) -> list: ...
 
     @abstractmethod
     async def list_by_consultor(
         self,
         consultor_id: uuid.UUID,
         data: Optional[date] = None,
-    ) -> list:
-        ...
+    ) -> list: ...
 
 
 class IPropostaRepository(ABC):
@@ -140,8 +134,7 @@ class IPropostaRepository(ABC):
         descricao: str,
         valor_estimado: Optional[Decimal] = None,
         consultor_id: Optional[uuid.UUID] = None,
-    ) -> object:
-        ...
+    ) -> object: ...
 
     @abstractmethod
     async def update(
@@ -151,41 +144,37 @@ class IPropostaRepository(ABC):
         status: Optional[PropostaStatus] = None,
         descricao: Optional[str] = None,
         valor_estimado: Optional[Decimal] = None,
-    ) -> object:
-        ...
+    ) -> object: ...
 
     @abstractmethod
-    async def get_by_id(self, proposta_id: uuid.UUID) -> Optional[object]:
-        ...
+    async def get_by_id(self, proposta_id: uuid.UUID) -> Optional[object]: ...
 
     @abstractmethod
     async def list_by_lead(
         self,
         lead_id: uuid.UUID,
         status: Optional[PropostaStatus] = None,
-    ) -> list:
-        ...
+    ) -> list: ...
 
     @abstractmethod
     async def list_by_consultor(
         self,
         consultor_id: uuid.UUID,
         status: Optional[PropostaStatus] = None,
-    ) -> list:
-        ...
+    ) -> list: ...
 
 
 class INotificationService(ABC):
     """Interface for push notification delivery (FCM)."""
 
     @abstractmethod
-    async def notify_new_lead(self, fcm_token: str, lead_name: str, destino: Optional[str]) -> None:
-        ...
+    async def notify_new_lead(
+        self, fcm_token: str, lead_name: str, destino: Optional[str]
+    ) -> None: ...
 
 
 class IMessageGateway(ABC):
     """Interface for outbound messaging (WhatsApp)."""
 
     @abstractmethod
-    async def send(self, phone: str, message: str) -> None:
-        ...
+    async def send(self, phone: str, message: str) -> None: ...

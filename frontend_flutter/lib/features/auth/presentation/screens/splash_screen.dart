@@ -1,6 +1,6 @@
-import 'package:cadife_smart_travel/core/theme/app_colors.dart';
-import 'package:cadife_smart_travel/core/theme/app_text_styles.dart';
-import 'package:cadife_smart_travel/features/auth/providers/auth_provider.dart';
+import 'package:cadife_smart_travel/design_system/design_system.dart';
+import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:cadife_smart_travel/features/auth/presentation/screens/onboarding_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -23,15 +23,19 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   void initState() {
     super.initState();
     _controller = AnimationController(vsync: this);
-    // Dispara validação JWT em background — não bloqueia a animação
+    // Wait for authNotifierProvider.build() to complete (checks JWT on startup).
     WidgetsBinding.instance.addPostFrameCallback((_) => _startValidation());
   }
 
   Future<void> _startValidation() async {
-    await ref.read(authProvider.notifier).validateLocalToken();
+    try {
+      await ref.read(authNotifierProvider.future);
+    } on Object catch (_) {
+      // Auth check failed — treat as unauthenticated.
+    }
     if (mounted) {
       setState(() => _validationDone = true);
-      _tryNavigate();
+      await _tryNavigate();
     }
   }
 
@@ -49,12 +53,21 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     }
   }
 
-  void _tryNavigate() {
+  Future<void> _tryNavigate() async {
     if (!_animationDone || !_validationDone) return;
     if (!mounted) return;
 
-    // GoRouter redirect intercepta e envia para a rota correta conforme AuthState
-    context.go('/auth/login');
+    final authValue = ref.read(authNotifierProvider);
+    final isLoggedIn = authValue.valueOrNull != null;
+
+    if (!isLoggedIn) {
+      final seen = await hasSeenOnboarding();
+      if (!mounted) return;
+      context.go(seen ? '/auth/login' : '/onboarding');
+    } else {
+      // GoRouter redirect routes to the correct home based on role.
+      context.go('/auth/login');
+    }
   }
 
   @override
@@ -67,7 +80,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.cadife.background,
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,

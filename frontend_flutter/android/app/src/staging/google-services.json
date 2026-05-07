@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "260275090433",
+    "project_id": "cadife-smart-travel-staging",
+    "storage_bucket": "cadife-smart-travel-staging.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:260275090433:android:9baf2e65d15390ef3cfc00",
+        "android_client_info": {
+          "package_name": "com.cadife.cadife_smart_travel.stg"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDk850eqZIuPJYHFdg6Ylj2IwXjc2xITZE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

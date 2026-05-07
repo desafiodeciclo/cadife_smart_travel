@@ -4,6 +4,7 @@ PropostaRepository — Infrastructure/Persistence Layer
 Concrete implementation for proposal (Proposta) persistence.
 Supports lifecycle transitions and filtered queries by lead and status.
 """
+
 import uuid
 from decimal import Decimal
 from typing import Optional
@@ -13,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.entities.enums import PropostaStatus
 from app.infrastructure.persistence.abstract_repository import AbstractRepository
-from app.infrastructure.persistence.models.proposta_model import PropostaModel
+from app.models.proposta import Proposta as PropostaModel
 
 
 class PropostaRepository(AbstractRepository[PropostaModel]):
