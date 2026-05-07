@@ -216,8 +216,20 @@ void _registerSettingsModule() {
 }
 
 Future<void> initDependencies() async {
+  // 1. Essenciais e Síncronos (ou rápidos) primeiro
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    sl.registerSingleton<SharedPreferences>(prefs);
+    ConnectivityService.init();
+    debugPrint('Essential dependencies initialized (SharedPreferences, Connectivity)');
+  } catch (e) {
+    debugPrint('CRITICAL: Essential dependencies failed: $e');
+    // Se isso falhar, o app provavelmente não funcionará, mas tentamos continuar.
+  }
+
   final env = sl<AppConfig>().environment;
 
+  // 2. Firebase
   FirebaseOptions? options;
   if (env == AppEnvironment.staging) {
     options = StagingFirebaseOptions.currentPlatform;
@@ -225,39 +237,46 @@ Future<void> initDependencies() async {
     options = ProdFirebaseOptions.currentPlatform;
   }
 
-  // No Web, só inicializamos se tivermos options explícitas
-  if (!kIsWeb || options != null) {
+  bool firebaseInitialized = false;
+  if (options != null || !kIsWeb) {
     try {
       await Firebase.initializeApp(options: options);
-    } on Exception catch (e) {
-      debugPrint('Firebase initialization failed: $e');
+      firebaseInitialized = true;
+      debugPrint('Firebase initialized successfully');
+    } catch (e) {
+      debugPrint('Firebase initialization failed (graceful): $e');
     }
   }
 
-  await sl<OfflineManager>().initialize();
-  await sl<IsarCacheManager>().initialize();
-  await sl<OfflineSyncQueue>().initialize();
-
-  // Analytics e Notifications podem falhar no Web se não configurados
+  // 3. Cache e Offline (Isar, Hive)
   try {
-    await sl<AnalyticsService>().init();
-  } on Exception catch (e) {
-    debugPrint('Analytics initialization failed: $e');
+    await sl<OfflineManager>().initialize();
+    await sl<IsarCacheManager>().initialize();
+    await sl<OfflineSyncQueue>().initialize();
+    debugPrint('Offline and Cache dependencies initialized');
+  } catch (e) {
+    debugPrint('Offline/Cache initialization failed: $e');
   }
 
-  if (!kIsWeb) {
+  // 4. Analytics e Notifications (dependem do Firebase)
+  if (firebaseInitialized) {
     try {
-      await LocalNotificationManager.init();
-      await FCMManager.init();
-    } on Exception catch (e) {
-      debugPrint('Notification managers initialization failed: $e');
+      await sl<AnalyticsService>().init();
+    } catch (e) {
+      debugPrint('Analytics initialization failed: $e');
     }
-  }
-  
-  final prefs = await SharedPreferences.getInstance();
-  sl.registerSingleton<SharedPreferences>(prefs);
 
-  ConnectivityService.init();
+    if (!kIsWeb) {
+      try {
+        await LocalNotificationManager.init();
+        await FCMManager.init();
+      } catch (e) {
+        debugPrint('Notification managers initialization failed: $e');
+      }
+    }
+  } else {
+    debugPrint('Skipping Analytics and Notifications init because Firebase is not initialized');
+  }
 }
 
 Future<void> resetDependencies() async {
