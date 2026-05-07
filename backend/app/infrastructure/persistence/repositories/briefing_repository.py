@@ -14,8 +14,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.interfaces.repositories import IBriefingRepository
 from app.infrastructure.persistence.abstract_repository import AbstractRepository
-from app.infrastructure.persistence.models.briefing_model import (
-    BriefingModel,
+from app.models.briefing import (
+    Briefing as BriefingModel,
     calculate_completude,
 )
 

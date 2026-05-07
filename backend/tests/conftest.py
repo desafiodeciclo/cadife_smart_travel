@@ -56,17 +56,11 @@ import app.models.user  # noqa: F401
 import app.models.notification_queue  # noqa: F401
 import app.models.dead_letter_queue  # noqa: F401
 
-# Import SQLAlchemy persistence models so Base.metadata knows all tables
-import app.infrastructure.persistence.models.lead_model  # noqa: F401
-import app.infrastructure.persistence.models.briefing_model  # noqa: F401
-import app.infrastructure.persistence.models.interacao_model  # noqa: F401
-import app.infrastructure.persistence.models.agendamento_model  # noqa: F401
-import app.infrastructure.persistence.models.proposta_model  # noqa: F401
-import app.infrastructure.persistence.models.user_model  # noqa: F401
+
 
 # Now import the app and models AFTER setting env vars
-from main import app
-from app.infrastructure.persistence.database import Base
+from main import app as fastapi_app
+from app.infrastructure.persistence.database import Base, AsyncSessionLocal
 from app.core.dependencies import get_db
 from app.infrastructure.security.dependencies import get_current_user
 from app.infrastructure.security.jwt import create_access_token
@@ -140,15 +134,15 @@ def override_get_db(db_session: AsyncSession):
     async def _get_db():
         yield db_session
 
-    app.dependency_overrides[get_db] = _get_db
+    fastapi_app.dependency_overrides[get_db] = _get_db
     yield
-    app.dependency_overrides.pop(get_db, None)
+    fastapi_app.dependency_overrides.pop(get_db, None)
 
 
 @pytest.fixture()
 def override_get_current_user():
     """Override the `get_current_user` dependency with a mock user."""
-    from app.infrastructure.persistence.models.user_model import UserModel
+    from app.models.user import User as UserModel
 
     # Create a mock user object
     mock_user = UserModel(
@@ -165,16 +159,16 @@ def override_get_current_user():
     async def _get_current_user(*args, **kwargs):
         return mock_user
 
-    app.dependency_overrides[get_current_user] = _get_current_user
+    fastapi_app.dependency_overrides[get_current_user] = _get_current_user
     yield mock_user
-    app.dependency_overrides.pop(get_current_user, None)
+    fastapi_app.dependency_overrides.pop(get_current_user, None)
 
 
 # ── Test Client ─────────────────────────────────────────────────────────
 @pytest.fixture()
 def client(override_get_db, override_get_current_user) -> TestClient:
     """Return a TestClient configured with the test dependencies."""
-    return TestClient(app)
+    return TestClient(fastapi_app)
 
 
 @pytest.fixture()
@@ -182,7 +176,7 @@ async def async_client(
     override_get_db, override_get_current_user
 ) -> AsyncGenerator[AsyncClient, None]:
     """Return an AsyncClient for testing async endpoints."""
-    transport = ASGITransport(app=app)
+    transport = ASGITransport(app=fastapi_app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
 
@@ -217,3 +211,4 @@ def invalid_jwt_token() -> str:
     }
     # Use a different secret to simulate a bad signature
     return jwt.encode(payload, "wrong-secret-key", algorithm=settings.JWT_ALGORITHM)
+

@@ -5,7 +5,7 @@ Concrete implementation of ILeadRepository using SQLAlchemy async.
 The Application layer never imports this class directly — it receives
 the interface ILeadRepository via dependency injection.
 
-Data Mapper: ORM model (LeadModel) ↔ Domain-compatible dict/object.
+Data Mapper: ORM model (Lead) ↔ Domain-compatible dict/object.
 Since Lead domain entity is currently represented by the ORM model
 (transitional phase), _to_entity returns the model directly. When
 pure domain entities are introduced, only _to_entity needs updating.
@@ -22,7 +22,7 @@ from app.domain.entities.enums import LeadScore, LeadStatus
 from app.domain.interfaces.repositories import ILeadRepository
 from app.infrastructure.cache import invalidate_pattern
 from app.infrastructure.persistence.abstract_repository import AbstractRepository
-from app.infrastructure.persistence.models.lead_model import LeadModel
+from app.models.lead import Lead as LeadModel
 
 
 class LeadRepository(AbstractRepository[LeadModel], ILeadRepository):
@@ -111,7 +111,7 @@ class LeadRepository(AbstractRepository[LeadModel], ILeadRepository):
         
         if destino:
             # Join with briefing to filter by destination
-            from app.infrastructure.persistence.models.briefing_model import BriefingModel
+            from app.models.briefing import Briefing as BriefingModel
             stmt = stmt.join(LeadModel.briefing).where(BriefingModel.destino.ilike(f"%{destino}%"))
             
         if data_inicio:
