@@ -64,15 +64,77 @@ def select_model(msg_type: str) -> str:
     return settings.OPENROUTER_MODEL
 
 
-async def transcribe_audio(audio_bytes: bytes, mime_type: str) -> str:
-    """Transcribe audio bytes via Gemini multimodal on OpenRouter.
+async def _transcribe_audio_whisper(audio_bytes: bytes, mime_type: str) -> Optional[str]:
+    """
+    Tenta transcrição via endpoint /audio/transcriptions do OpenRouter (Whisper).
 
-    OpenRouter does not expose /audio/transcriptions — audio is sent as a
-    base64 inline_data block inside the chat completions API instead.
+    Usa openai/whisper-large-v3 enviando o arquivo como multipart/form-data,
+    igual à API da OpenAI. Retorna None se o endpoint não estiver disponível
+    para o provider configurado — o caller deve usar fallback multimodal.
+    """
+    normalized = mime_type.split(";")[0].strip().lower()
+    ext = _EXT_MAP.get(normalized, "ogg")
+
+    try:
+        auth_headers = {
+            "Authorization": f"Bearer {settings.OPENROUTER_API_KEY}",
+            **_OPENROUTER_HEADERS,
+        }
+
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.post(
+                f"{_OPENROUTER_BASE}/audio/transcriptions",
+                headers=auth_headers,
+                files={"file": (f"audio.{ext}", audio_bytes, normalized)},
+                data={"model": settings.OPENROUTER_WHISPER_MODEL},
+            )
+            response.raise_for_status()
+
+        text = response.json().get("text", "").strip()
+        logger.info(
+            "audio_transcribed_whisper",
+            model=settings.OPENROUTER_WHISPER_MODEL,
+            chars=len(text),
+        )
+        return text or None
+
+    except httpx.HTTPStatusError as exc:
+        logger.warning(
+            "whisper_transcript_error",
+            status=exc.response.status_code,
+            body=exc.response.text[:400],
+            model=settings.OPENROUTER_WHISPER_MODEL,
+            fallback_to="gemini_multimodal",
+        )
+        return None
+    except Exception as exc:
+        logger.warning(
+            "whisper_transcript_error",
+            error=str(exc),
+            error_type=type(exc).__name__,
+            model=settings.OPENROUTER_WHISPER_MODEL,
+            fallback_to="gemini_multimodal",
+        )
+        return None
+
+
+async def transcribe_audio(audio_bytes: bytes, mime_type: str) -> str:
+    """Transcreve áudio via OpenRouter.
+
+    Estratégia com fallback automático:
+      1. openai/whisper-large-v3 via /audio/transcriptions (mais preciso)
+      2. Gemini multimodal via /chat/completions (fallback universal)
 
     Raises:
-        httpx.HTTPStatusError: on API error.
+        httpx.HTTPStatusError: somente se o fallback multimodal também falhar.
     """
+    # Tentativa 1 — Whisper via /audio/transcriptions
+    whisper_result = await _transcribe_audio_whisper(audio_bytes, mime_type)
+    if whisper_result:
+        return whisper_result
+
+    # Tentativa 2 — Gemini multimodal via /chat/completions (lógica original)
+    logger.info("transcribe_audio_using_multimodal_fallback", mime_type=mime_type)
     normalized_mime = mime_type.split(";")[0].strip().lower()
     audio_b64 = base64.b64encode(audio_bytes).decode()
     audio_fmt = _EXT_MAP.get(normalized_mime, "ogg")
@@ -106,14 +168,33 @@ async def transcribe_audio(audio_bytes: bytes, mime_type: str) -> str:
         **_OPENROUTER_HEADERS,
     }
 
-    async with httpx.AsyncClient(timeout=60.0) as client:
-        response = await client.post(
-            f"{_OPENROUTER_BASE}/chat/completions",
-            json=payload,
-            headers=auth_headers,
+    try:
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.post(
+                f"{_OPENROUTER_BASE}/chat/completions",
+                json=payload,
+                headers=auth_headers,
+            )
+            response.raise_for_status()
+            data = response.json()
+            text: str = data["choices"][0]["message"]["content"] or ""
+    except httpx.HTTPStatusError as exc:
+        logger.error(
+            "audio_multimodal_fallback_error",
+            model=settings.OPENROUTER_AUDIO_MODEL,
+            status=exc.response.status_code,
+            body=exc.response.text[:400],
+            hint="input_audio format may not be supported by this model via OpenRouter",
         )
-        response.raise_for_status()
-        text: str = response.json()["choices"][0]["message"]["content"] or ""
+        raise
+    except (KeyError, IndexError) as exc:
+        logger.error(
+            "audio_multimodal_response_parse_error",
+            model=settings.OPENROUTER_AUDIO_MODEL,
+            error=str(exc),
+            hint="Unexpected response structure — model may have returned empty choices",
+        )
+        raise RuntimeError(f"Unexpected audio response structure: {exc}") from exc
 
     logger.info(
         "audio_transcribed",
@@ -190,17 +271,19 @@ async def route_media_message(
     Orchestrates: download → transcribe/analyze → return plain text.
     Returns None (caller should use graceful fallback) on any failure.
     """
-    from app.services.whatsapp_service import download_whatsapp_media
+    from app.services.whatsapp_service import download_media
 
     try:
-        media_bytes, detected_mime = await download_whatsapp_media(media_id)
-        effective_mime = mime_type or detected_mime
+        media_bytes = await download_media(media_id)
+        if not media_bytes:
+            logger.warning("media_download_empty", msg_type=msg_type, media_id=media_id)
+            return None
 
         if msg_type in _AUDIO_TYPES:
-            return await transcribe_audio(media_bytes, effective_mime)
+            return await transcribe_audio(media_bytes, mime_type)
 
         if msg_type in _VISION_TYPES:
-            return await analyze_image(media_bytes, effective_mime, caption)
+            return await analyze_image(media_bytes, mime_type, caption)
 
         logger.debug("media_type_not_routable", msg_type=msg_type)
         return None
