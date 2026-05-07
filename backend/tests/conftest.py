@@ -56,13 +56,7 @@ import app.models.user  # noqa: F401
 import app.models.notification_queue  # noqa: F401
 import app.models.dead_letter_queue  # noqa: F401
 
-# Import SQLAlchemy persistence models so Base.metadata knows all tables
-import app.infrastructure.persistence.models.lead_model  # noqa: F401
-import app.infrastructure.persistence.models.briefing_model  # noqa: F401
-import app.infrastructure.persistence.models.interacao_model  # noqa: F401
-import app.infrastructure.persistence.models.agendamento_model  # noqa: F401
-import app.infrastructure.persistence.models.proposta_model  # noqa: F401
-import app.infrastructure.persistence.models.user_model  # noqa: F401
+
 
 # Now import the app and models AFTER setting env vars
 from main import app as fastapi_app

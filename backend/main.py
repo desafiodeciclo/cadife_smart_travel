@@ -22,7 +22,7 @@ from app.infrastructure.config.logging_config import configure_logging
 from app.infrastructure.persistence.database import create_tables
 
 # Import all models to register them in SQLAlchemy metadata before create_tables
-import app.infrastructure.persistence.models  # noqa: F401
+import app.models  # noqa: F401
 from app.infrastructure.adapters.firebase import init_firebase
 from app.infrastructure.security.rate_limiter import limiter
 from app.services.ingestion_pipeline import get_ingestion_pipeline
