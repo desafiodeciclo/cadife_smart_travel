@@ -20,6 +20,11 @@ class DashboardScreen extends ConsumerWidget {
 
     return PageScaffold(
       showProfile: false,
+      appBar: const CadifeAppBar(
+        title: 'Dashboard',
+        showNotificationBell: false,
+        actions: [NotificationBell()],
+      ),
       body: StateContainer(
         state: statsAsync,
         onRetry: () => ref.read(dashboardStatsProvider.notifier).refresh(),
@@ -29,11 +34,6 @@ class DashboardScreen extends ConsumerWidget {
             child: CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
-                const CadifeAppBar(
-                  title: 'Dashboard',
-                  showNotificationBell: false,
-                  actions: [NotificationBell()],
-                ),
                 SliverToBoxAdapter(
                   child: NotificationCard(
                     leadName: 'Mariana S.',

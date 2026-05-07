@@ -238,20 +238,24 @@ Future<void> initDependencies() async {
   await sl<IsarCacheManager>().initialize();
   await sl<OfflineSyncQueue>().initialize();
 
-  // Analytics e Notifications podem falhar no Web se não configurados
-  try {
-    await sl<AnalyticsService>().init();
-  } on Exception catch (e) {
-    debugPrint('Analytics initialization failed: $e');
-  }
-
-  if (!kIsWeb) {
+  // Analytics e Notifications dependem do Firebase — só inicializar se disponível
+  if (Firebase.apps.isNotEmpty) {
     try {
-      await LocalNotificationManager.init();
-      await FCMManager.init();
+      await sl<AnalyticsService>().init();
     } on Exception catch (e) {
-      debugPrint('Notification managers initialization failed: $e');
+      debugPrint('Analytics initialization failed: $e');
     }
+
+    if (!kIsWeb) {
+      try {
+        await LocalNotificationManager.init();
+        await FCMManager.init();
+      } on Exception catch (e) {
+        debugPrint('Notification managers initialization failed: $e');
+      }
+    }
+  } else {
+    debugPrint('Firebase not available — skipping Analytics, FCM and Notifications.');
   }
   
   final prefs = await SharedPreferences.getInstance();

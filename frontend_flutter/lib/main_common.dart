@@ -9,6 +9,7 @@ import 'package:cadife_smart_travel/core/analytics/analytics_provider_observer.d
 import 'package:cadife_smart_travel/core/di/provider_overrides.dart';
 import 'package:cadife_smart_travel/core/di/service_locator.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -39,8 +40,8 @@ Future<void> initializeApp(AppConfig config, Widget rootWidget) async {
       // 3. Initialize async dependencies (Firebase, Isar, etc.)
       await initDependencies();
 
-      // 4. Crashlytics — not available on Web
-      if (!kIsWeb) {
+      // 4. Crashlytics — only when Firebase was actually initialized
+      if (!kIsWeb && Firebase.apps.isNotEmpty) {
         FlutterError.onError = (errorDetails) {
           FirebaseCrashlytics.instance.recordFlutterError(errorDetails);
         };
