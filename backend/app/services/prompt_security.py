@@ -275,10 +275,18 @@ def build_system_prompt(context: str = "") -> str:
     Returns:
         System prompt completo e parametrizado com defesas.
     """
+    # Escape { } in the RAG context so LangChain doesn't misparse them as
+    # template variables. The template uses {{PLACEHOLDER}} (double braces in a
+    # regular string, not an f-string), so we must search for the full
+    # {{PLACEHOLDER}} pattern — otherwise str.replace hits only the inner
+    # {PLACEHOLDER} and leaves orphan { } around the substituted value.
+    safe_context = (context or "Nenhum contexto adicional disponível.").replace(
+        "{", "{{"
+    ).replace("}", "}}")
     prompt = PARAMETRIZED_SYSTEM_PROMPT_TEMPLATE.replace(
-        "{CONTEXT_PLACEHOLDER}", context or "Nenhum contexto adicional disponível."
+        "{{CONTEXT_PLACEHOLDER}}", safe_context
     )
-    prompt = prompt.replace("{INPUT_PLACEHOLDER}", "{input}")
+    prompt = prompt.replace("{{INPUT_PLACEHOLDER}}", "{input}")
     return prompt
 
 
