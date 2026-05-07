@@ -102,8 +102,12 @@ def cached(ttl: int | None = None) -> Callable[[F], F]:
             return result
 
         # Expose cache helpers so callers can invalidate explicitly if needed
-        async_wrapper.cache_invalidate = lambda **kw: _invalidate(func.__qualname__, **kw)  # type: ignore[attr-defined]
-        async_wrapper.cache_key = lambda *a, **kw: _make_cache_key(func.__qualname__, a, kw)  # type: ignore[attr-defined]
+        async_wrapper.cache_invalidate = (  # type: ignore[attr-defined]
+            lambda **kw: _invalidate(func.__qualname__, **kw)
+        )
+        async_wrapper.cache_key = (  # type: ignore[attr-defined]
+            lambda *a, **kw: _make_cache_key(func.__qualname__, a, kw)
+        )
 
         return async_wrapper  # type: ignore[return-value]
 

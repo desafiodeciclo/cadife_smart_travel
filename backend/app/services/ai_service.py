@@ -467,28 +467,38 @@ async def extract_briefing(conversation: list[dict]) -> BriefingExtracted:
             [
                 (
                     "system",
-                    """Você é um extrator de dados JSON de alta precisão. Sua tarefa é transformar a conversa fornecida em um objeto JSON válido.
-
-REGRAS RÍGIDAS:
-1. JSON PURO: Retorne APENAS o JSON. Sem explicações, sem markdown, sem texto antes ou depois.
-2. ZERO INFERÊNCIA: Se a informação não estiver na conversa, use null.
-3. FORMATO DE DATA: Use estritamente YYYY-MM-DD para datas.
-4. PERFIL: Use apenas: casal, família, solo, grupo, amigos.
-5. ORÇAMENTO: Use apenas: baixo, médio, alto, premium.
-
-SCHEMA:
-{{
-  "destino": "string ou null",
-  "data_ida": "YYYY-MM-DD ou null",
-  "data_volta": "YYYY-MM-DD ou null",
-  "qtd_pessoas": "int ou null",
-  "perfil": "string ou null",
-  "tipo_viagem": ["string"],
-  "preferencias": ["string"],
-  "orcamento": "string ou null",
-  "tem_passaporte": "bool ou null",
-  "observacoes": "string ou null"
-}}""",
+                    (
+                        "Você é um extrator de dados JSON de alta "
+                        "precisão. Sua tarefa é transformar a conversa "
+                        "fornecida em um objeto JSON válido.\n"
+                        "\n"
+                        "REGRAS RÍGIDAS:\n"
+                        "1. JSON PURO: Retorne APENAS o JSON. Sem "
+                        "explicações, sem markdown, sem texto antes ou "
+                        "depois.\n"
+                        "2. ZERO INFERÊNCIA: Se a informação não estiver "
+                        "na conversa, use null.\n"
+                        "3. FORMATO DE DATA: Use estritamente YYYY-MM-DD "
+                        "para datas.\n"
+                        "4. PERFIL: Use apenas: casal, família, solo, "
+                        "grupo, amigos.\n"
+                        "5. ORÇAMENTO: Use apenas: baixo, médio, alto, "
+                        "premium.\n"
+                        "\n"
+                        "SCHEMA:\n"
+                        "{{\n"
+                        '  "destino": "string ou null",\n'
+                        '  "data_ida": "YYYY-MM-DD ou null",\n'
+                        '  "data_volta": "YYYY-MM-DD ou null",\n'
+                        '  "qtd_pessoas": "int ou null",\n'
+                        '  "perfil": "string ou null",\n'
+                        '  "tipo_viagem": ["string"],\n'
+                        '  "preferencias": ["string"],\n'
+                        '  "orcamento": "string ou null",\n'
+                        '  "tem_passaporte": "bool ou null",\n'
+                        '  "observacoes": "string ou null"\n'
+                        "}}"
+                    ),
                 ),
                 (
                     "human",

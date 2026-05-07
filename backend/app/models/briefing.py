@@ -109,7 +109,10 @@ class BriefingExtracted(BaseModel):
     )
     data_ida: Optional[date] = Field(
         None,
-        description="Data de início da viagem (YYYY-MM-DD). Extraia APENAS se houver uma data ou mês/ano claro. NÃO infira.",
+        description=(
+            "Data de início da viagem (YYYY-MM-DD). "
+            "Extraia APENAS se houver uma data ou mês/ano claro. NÃO infira."
+        ),
     )
     data_volta: Optional[date] = Field(
         None,
