@@ -10,6 +10,7 @@ Constraints:
   - duracao_dias: DB CHECK >= 1
   - PostgreSQL native ENUM for perfil and orcamento fields
 """
+
 import uuid
 from datetime import date
 from typing import TYPE_CHECKING, Optional
@@ -18,13 +19,15 @@ from sqlalchemy import (
     Boolean,
     CheckConstraint,
     Date,
+    Enum as SAEnum,
     ForeignKey,
     Integer,
     String,
     Text,
 )
-from sqlalchemy.dialects.postgresql import ARRAY, ENUM as SAEnum, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.infrastructure.persistence.types import GUID, StringArray
 
 from app.domain.entities.enums import OrcamentoPerfil, PerfilViagem
 from app.infrastructure.persistence.database import Base
@@ -45,8 +48,15 @@ orcamento_perfil_enum = SAEnum(
 )
 
 BRIEFING_REQUIRED_FIELDS = [
-    "destino", "data_ida", "data_volta", "qtd_pessoas", "perfil",
-    "tipo_viagem", "preferencias", "orcamento", "tem_passaporte",
+    "destino",
+    "data_ida",
+    "data_volta",
+    "qtd_pessoas",
+    "perfil",
+    "tipo_viagem",
+    "preferencias",
+    "orcamento",
+    "tem_passaporte",
 ]
 
 
@@ -63,15 +73,19 @@ class BriefingModel(Base):
             "completude_pct BETWEEN 0 AND 100",
             name="ck_briefings_completude_range",
         ),
-        CheckConstraint("qtd_pessoas IS NULL OR qtd_pessoas >= 1", name="ck_briefings_qtd_pessoas_min"),
-        CheckConstraint("duracao_dias IS NULL OR duracao_dias >= 1", name="ck_briefings_duracao_min"),
+        CheckConstraint(
+            "qtd_pessoas IS NULL OR qtd_pessoas >= 1",
+            name="ck_briefings_qtd_pessoas_min",
+        ),
+        CheckConstraint(
+            "duracao_dias IS NULL OR duracao_dias >= 1", name="ck_briefings_duracao_min"
+        ),
+        {"extend_existing": True},
     )
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(GUID(), primary_key=True, default=uuid.uuid4)
     lead_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        GUID(),
         ForeignKey("leads.id", ondelete="CASCADE"),
         unique=True,
         nullable=False,
@@ -84,8 +98,8 @@ class BriefingModel(Base):
     duracao_dias: Mapped[Optional[int]] = mapped_column(Integer)
     qtd_pessoas: Mapped[Optional[int]] = mapped_column(Integer)
     perfil: Mapped[Optional[str]] = mapped_column(perfil_viagem_enum)
-    tipo_viagem: Mapped[Optional[list[str]]] = mapped_column(ARRAY(String))
-    preferencias: Mapped[Optional[list[str]]] = mapped_column(ARRAY(String))
+    tipo_viagem: Mapped[Optional[list[str]]] = mapped_column(StringArray())
+    preferencias: Mapped[Optional[list[str]]] = mapped_column(StringArray())
     orcamento: Mapped[Optional[str]] = mapped_column(orcamento_perfil_enum)
     tem_passaporte: Mapped[Optional[bool]] = mapped_column(Boolean)
     observacoes: Mapped[Optional[str]] = mapped_column(Text)
@@ -97,7 +111,8 @@ class BriefingModel(Base):
 def calculate_completude(briefing_data: dict) -> int:
     """Calculate briefing completeness percentage (0–100)."""
     filled = sum(
-        1 for field in BRIEFING_REQUIRED_FIELDS
+        1
+        for field in BRIEFING_REQUIRED_FIELDS
         if briefing_data.get(field) not in (None, [], "", 0)
     )
     return round((filled / len(BRIEFING_REQUIRED_FIELDS)) * 100)

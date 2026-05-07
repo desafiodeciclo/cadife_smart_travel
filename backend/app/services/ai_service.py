@@ -38,6 +38,7 @@ Keep it concise.
 # (removed in langchain 1.x)
 # ---------------------------------------------------------------------------
 
+
 class SimpleWindowMemory:
     """Stores the last k message pairs per conversation key.
 
@@ -45,7 +46,12 @@ class SimpleWindowMemory:
     so that older context is compressed instead of being lost entirely.
     """
 
-    def __init__(self, k: int = 20, memory_key: str = "chat_history", return_messages: bool = True) -> None:
+    def __init__(
+        self,
+        k: int = 20,
+        memory_key: str = "chat_history",
+        return_messages: bool = True,
+    ) -> None:
         self.k = k
         self.memory_key = memory_key
         self.return_messages = return_messages
@@ -72,10 +78,12 @@ class SimpleWindowMemory:
         conversation_text = "\n".join(
             f"Cliente: {u}\nAYA: {a}" for u, a in self._pending_for_summary
         )
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", _SUMMARY_SYSTEM_PROMPT),
-            ("human", conversation_text),
-        ])
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", _SUMMARY_SYSTEM_PROMPT),
+                ("human", conversation_text),
+            ]
+        )
         chain = prompt | llm
         callbacks = get_callbacks_for_chain()
         config = {"callbacks": callbacks} if callbacks else {}
@@ -97,10 +105,12 @@ class SimpleWindowMemory:
     def load_memory_variables(self, _inputs: dict) -> dict:
         messages = []
         if self._summary:
-            messages.append({
-                "role": "system",
-                "content": f"Resumo da conversa anterior: {self._summary}",
-            })
+            messages.append(
+                {
+                    "role": "system",
+                    "content": f"Resumo da conversa anterior: {self._summary}",
+                }
+            )
         for user_msg, ai_msg in self._buffer:
             messages.append({"role": "user", "content": user_msg})
             messages.append({"role": "assistant", "content": ai_msg})
@@ -116,7 +126,9 @@ def get_llm() -> ChatOpenAI:
     global _llm
     if _llm is None:
         if not settings.OPENROUTER_API_KEY:
-            raise RuntimeError("Nenhuma OPENROUTER_API_KEY configurada. Defina OPENROUTER_API_KEY no .env")
+            raise RuntimeError(
+                "Nenhuma OPENROUTER_API_KEY configurada. Defina OPENROUTER_API_KEY no .env"
+            )
         _llm = ChatOpenAI(
             model=settings.OPENROUTER_MODEL,
             temperature=0.3,
@@ -129,7 +141,9 @@ def get_llm() -> ChatOpenAI:
                 "X-Title": "Cadife Smart Travel",
             },
         )
-        logger.info("llm_initialized", provider="openrouter", model=settings.OPENROUTER_MODEL)
+        logger.info(
+            "llm_initialized", provider="openrouter", model=settings.OPENROUTER_MODEL
+        )
     return _llm
 
 
@@ -159,7 +173,7 @@ def preload_memory_from_db(
     """
     memory = get_memory(phone)
     history = memory.load_memory_variables({})
-    
+
     # If the history already has messages, we don't need to preload
     if history.get("chat_history"):
         return
@@ -233,20 +247,22 @@ def _retrieve_context(
 
 def _fallback_reply(message: str) -> str:
     return (
-        f'Olá! Recebemos sua mensagem 😊\n\n'
+        f"Olá! Recebemos sua mensagem 😊\n\n"
         f'"{message}"\n\n'
-        f'Em breve um consultor da Cadife Tour irá te atender pessoalmente.'
+        f"Em breve um consultor da Cadife Tour irá te atender pessoalmente."
     )
+
 
 def detect_hallucinations(response: str) -> list[str]:
     """Detect common hallucination patterns in AI response."""
     hallucinations = []
     # Patterns from implementation plan
-    if re.search(r'(custa|preço|valor)\s*r\$\s*[\d.,]+', response, re.IGNORECASE):
+    if re.search(r"(custa|preço|valor)\s*r\$\s*[\d.,]+", response, re.IGNORECASE):
         hallucinations.append("price_generated")
-    if re.search(r'(disponível|reservo|confirmo sua vaga)', response, re.IGNORECASE):
+    if re.search(r"(disponível|reservo|confirmo sua vaga)", response, re.IGNORECASE):
         hallucinations.append("availability_confirmed")
     return hallucinations
+
 
 async def process_message(
     phone: str,
@@ -299,11 +315,13 @@ Você DEVE:
                 errors=validation_errors,
             )
 
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", system_prompt),
-            MessagesPlaceholder(variable_name="chat_history"),
-            ("human", wrap_user_content("{input}")),
-        ])
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", system_prompt),
+                MessagesPlaceholder(variable_name="chat_history"),
+                ("human", wrap_user_content("{input}")),
+            ]
+        )
 
         chain = prompt | llm
         history = memory.load_memory_variables({})
@@ -313,34 +331,37 @@ Você DEVE:
         config = {"callbacks": callbacks} if callbacks else {}
 
         start_time = time.time()
-        response = await chain.ainvoke({
-            "chat_history": history.get("chat_history", []),
-            "input": safe_message,
-        }, config=config)
+        response = await chain.ainvoke(
+            {
+                "chat_history": history.get("chat_history", []),
+                "input": safe_message,
+            },
+            config=config,
+        )
         latency_ms = int((time.time() - start_time) * 1000)
 
         response_content = str(response.content)
         hallucinations = detect_hallucinations(response_content)
-        
+
         if hallucinations:
             logger.warning(
                 "hallucination_detected",
                 phone=phone,
                 hallucinations=hallucinations,
-                response_snippet=response_content[:100]
+                response_snippet=response_content[:100],
             )
             await alert_service.AlertService.notify_hallucination(
                 phone, hallucinations, response_content[:100]
             )
 
         memory.save_context({"input": safe_message}, {"output": response_content})
-        
+
         logger.info(
             "ai_message_processed",
             phone=phone,
             latency_ms=latency_ms,
             response_length=len(response_content),
-            hallucination_count=len(hallucinations)
+            hallucination_count=len(hallucinations),
         )
 
         # Flush eventos Langfuse pendentes (não bloqueante)
@@ -393,10 +414,12 @@ async def extract_briefing(conversation: list[dict]) -> BriefingExtracted:
     try:
         structured_llm = llm.with_structured_output(BriefingExtracted)
 
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", EXTRACTION_SYSTEM_PROMPT_SECURE),
-            ("human", "Extraia o briefing da seguinte conversa:\n\n{conversation}"),
-        ])
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", EXTRACTION_SYSTEM_PROMPT_SECURE),
+                ("human", "Extraia o briefing da seguinte conversa:\n\n{conversation}"),
+            ]
+        )
 
         chain = prompt | structured_llm
         briefing = await chain.ainvoke(
@@ -409,7 +432,9 @@ async def extract_briefing(conversation: list[dict]) -> BriefingExtracted:
         logger.info(
             "briefing_extracted_structured",
             completude=completude,
-            fields_filled=[k for k, v in briefing_data.items() if v not in (None, [], "")],
+            fields_filled=[
+                k for k, v in briefing_data.items() if v not in (None, [], "")
+            ],
         )
         flush_langfuse()
         return briefing
@@ -438,31 +463,49 @@ async def extract_briefing(conversation: list[dict]) -> BriefingExtracted:
             },
         )
 
-        autocorrect_prompt = ChatPromptTemplate.from_messages([
-            ("system", """Você é um extrator de dados JSON de alta precisão. Sua tarefa é transformar a conversa fornecida em um objeto JSON válido.
-
-REGRAS RÍGIDAS:
-1. JSON PURO: Retorne APENAS o JSON. Sem explicações, sem markdown, sem texto antes ou depois.
-2. ZERO INFERÊNCIA: Se a informação não estiver na conversa, use null.
-3. FORMATO DE DATA: Use estritamente YYYY-MM-DD para datas.
-4. PERFIL: Use apenas: casal, família, solo, grupo, amigos.
-5. ORÇAMENTO: Use apenas: baixo, médio, alto, premium.
-
-SCHEMA:
-{{
-  "destino": "string ou null",
-  "data_ida": "YYYY-MM-DD ou null",
-  "data_volta": "YYYY-MM-DD ou null",
-  "qtd_pessoas": "int ou null",
-  "perfil": "string ou null",
-  "tipo_viagem": ["string"],
-  "preferencias": ["string"],
-  "orcamento": "string ou null",
-  "tem_passaporte": "bool ou null",
-  "observacoes": "string ou null"
-}}"""),
-            ("human", "Converta esta conversa em JSON seguindo as regras:\n{conversation}"),
-        ])
+        autocorrect_prompt = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    (
+                        "Você é um extrator de dados JSON de alta "
+                        "precisão. Sua tarefa é transformar a conversa "
+                        "fornecida em um objeto JSON válido.\n"
+                        "\n"
+                        "REGRAS RÍGIDAS:\n"
+                        "1. JSON PURO: Retorne APENAS o JSON. Sem "
+                        "explicações, sem markdown, sem texto antes ou "
+                        "depois.\n"
+                        "2. ZERO INFERÊNCIA: Se a informação não estiver "
+                        "na conversa, use null.\n"
+                        "3. FORMATO DE DATA: Use estritamente YYYY-MM-DD "
+                        "para datas.\n"
+                        "4. PERFIL: Use apenas: casal, família, solo, "
+                        "grupo, amigos.\n"
+                        "5. ORÇAMENTO: Use apenas: baixo, médio, alto, "
+                        "premium.\n"
+                        "\n"
+                        "SCHEMA:\n"
+                        "{{\n"
+                        '  "destino": "string ou null",\n'
+                        '  "data_ida": "YYYY-MM-DD ou null",\n'
+                        '  "data_volta": "YYYY-MM-DD ou null",\n'
+                        '  "qtd_pessoas": "int ou null",\n'
+                        '  "perfil": "string ou null",\n'
+                        '  "tipo_viagem": ["string"],\n'
+                        '  "preferencias": ["string"],\n'
+                        '  "orcamento": "string ou null",\n'
+                        '  "tem_passaporte": "bool ou null",\n'
+                        '  "observacoes": "string ou null"\n'
+                        "}}"
+                    ),
+                ),
+                (
+                    "human",
+                    "Converta esta conversa em JSON seguindo as regras:\n{conversation}",
+                ),
+            ]
+        )
 
         autocorrect_chain = autocorrect_prompt | fallback_llm
         response = await autocorrect_chain.ainvoke(
@@ -490,7 +533,9 @@ SCHEMA:
         logger.info(
             "briefing_extracted_fallback_autocorrect",
             completude=completude,
-            fields_filled=[k for k, v in briefing_data.items() if v not in (None, [], "")],
+            fields_filled=[
+                k for k, v in briefing_data.items() if v not in (None, [], "")
+            ],
         )
         flush_langfuse()
         return briefing

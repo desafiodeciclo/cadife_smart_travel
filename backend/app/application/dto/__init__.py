@@ -12,4 +12,3 @@ __all__ = [
     "map_leads_to_list_response",
     "map_counts_to_metrics",
 ]
-

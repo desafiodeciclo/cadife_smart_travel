@@ -9,6 +9,7 @@ Coverage targets:
   - touch creates a key with TTL 60s
   - clear removes the key
 """
+
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -66,9 +67,7 @@ async def test_clear_removes_key(fake_redis):
 
     await service.clear("lead-789")
 
-    fake_redis.delete.assert_awaited_once_with(
-        "cadife:notification:debounce:lead-789"
-    )
+    fake_redis.delete.assert_awaited_once_with("cadife:notification:debounce:lead-789")
 
 
 @pytest.mark.asyncio

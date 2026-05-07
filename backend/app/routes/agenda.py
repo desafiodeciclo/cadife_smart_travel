@@ -1,5 +1,5 @@
 import uuid
-from datetime import date, time, timedelta
+from datetime import date, time
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -127,7 +127,9 @@ async def get_disponibilidade(
     return DisponibilidadeResponse(slots=slots)
 
 
-@router.post("", response_model=AgendamentoResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "", response_model=AgendamentoResponse, status_code=status.HTTP_201_CREATED
+)
 async def create_agendamento(
     body: AgendamentoCreate,
     db: AsyncSession = Depends(get_db),

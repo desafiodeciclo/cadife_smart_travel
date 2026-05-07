@@ -31,7 +31,9 @@ def _clean_path(path: str) -> str:
     """Remove UUIDs e IDs numéricos do path para facilitar agrupamento em dashboards."""
     import re
 
-    path = re.sub(r"/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", "/{id}", path)
+    path = re.sub(
+        r"/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", "/{id}", path
+    )
     path = re.sub(r"/\d+", "/{id}", path)
     return path
 
@@ -75,7 +77,9 @@ class AuditTrailMiddleware(BaseHTTPMiddleware):
         duration_ms = round((time.perf_counter() - start_time) * 1000, 2)
         user_id = _extract_user_id(request)
 
-        log_fn = bound_logger.warning if response.status_code >= 400 else bound_logger.info
+        log_fn = (
+            bound_logger.warning if response.status_code >= 400 else bound_logger.info
+        )
 
         log_fn(
             "request_finished",

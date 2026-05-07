@@ -13,6 +13,7 @@ Changes from previous app/models/lead.py:
   - telefone/nome enlarged to String(512) for Fernet ciphertext (migration a1b2c3d4e5f6)
   - telefone_hash String(64) for deterministic HMAC-SHA256 lookups (migration b2c3d4e5f6a1)
 """
+
 import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
@@ -71,6 +72,7 @@ class LeadModel(Base):
         Index("ix_leads_consultor_status", "consultor_id", "status"),
         # Note: ck_leads_telefone_min_length was dropped in migration a1b2c3d4e5f6
         # (meaningless after Fernet encryption of telefone field)
+        {"extend_existing": True},
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -80,7 +82,9 @@ class LeadModel(Base):
     telefone: Mapped[str] = mapped_column(
         String(512), unique=True, nullable=False, index=True
     )
-    telefone_hash: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)
+    telefone_hash: Mapped[Optional[str]] = mapped_column(
+        String(64), nullable=True, index=True
+    )
     origem: Mapped[str] = mapped_column(
         lead_origem_enum, nullable=False, default=LeadOrigem.whatsapp.value
     )

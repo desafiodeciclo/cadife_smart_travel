@@ -14,6 +14,7 @@ Spec references:
   §3.3  Stack — multimodal pipeline
   §12.3 Reliability — media fallback tratado com mensagem amigável
 """
+
 from __future__ import annotations
 
 import base64

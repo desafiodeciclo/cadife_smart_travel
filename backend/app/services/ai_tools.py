@@ -20,6 +20,7 @@ Design notes:
     AsyncSession; pass None in tests or when DB is unavailable — they degrade
     gracefully.
 """
+
 from __future__ import annotations
 
 import json
@@ -116,10 +117,13 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
 
 # ── Tool Implementations ──────────────────────────────────────────────────────
 
+
 async def _query_project_scope(query: str) -> str:
     try:
         context = rag_service.retrieve_context(query, k=3)
-        return context if context else "Informação não encontrada na base de conhecimento."
+        return (
+            context if context else "Informação não encontrada na base de conhecimento."
+        )
     except Exception as exc:
         logger.error("tool_query_project_scope_failed", error=str(exc))
         return "Erro ao consultar a base de conhecimento."
@@ -129,17 +133,22 @@ async def _check_existing_lead(phone: str, db: Optional[AsyncSession]) -> str:
     if not db:
         return json.dumps({"exists": False, "reason": "db_unavailable"})
     try:
-        from app.infrastructure.persistence.repositories.lead_repository import LeadRepository
+        from app.infrastructure.persistence.repositories.lead_repository import (
+            LeadRepository,
+        )
+
         repo = LeadRepository(db)
         lead = await repo.get_by_phone(phone)
         if lead:
-            return json.dumps({
-                "exists": True,
-                "name": lead.nome,
-                "status": lead.status.value if lead.status else None,
-                "score": lead.score.value if lead.score else None,
-                "lead_id": str(lead.id),
-            })
+            return json.dumps(
+                {
+                    "exists": True,
+                    "name": lead.nome,
+                    "status": lead.status.value if lead.status else None,
+                    "score": lead.score.value if lead.score else None,
+                    "lead_id": str(lead.id),
+                }
+            )
         return json.dumps({"exists": False})
     except Exception as exc:
         logger.error("tool_check_existing_lead_failed", error=str(exc))
@@ -160,20 +169,24 @@ async def _persist_lead_data(
         lead = await upsert_lead_with_resilience(db, {"telefone": phone})
 
         from app.services.lead_service import update_briefing_from_extraction
+
         briefing_in = BriefingExtracted.model_validate(data)
         briefing = await update_briefing_from_extraction(db, lead, briefing_in)
 
-        return json.dumps({
-            "success": True,
-            "lead_id": str(lead.id),
-            "completude_pct": briefing.completude_pct,
-        })
+        return json.dumps(
+            {
+                "success": True,
+                "lead_id": str(lead.id),
+                "completude_pct": briefing.completude_pct,
+            }
+        )
     except Exception as exc:
         logger.error("tool_persist_lead_data_failed", error=str(exc))
         return json.dumps({"success": False, "error": "persist_failed"})
 
 
 # ── Dispatcher ────────────────────────────────────────────────────────────────
+
 
 async def execute_tool(
     tool_name: str,
