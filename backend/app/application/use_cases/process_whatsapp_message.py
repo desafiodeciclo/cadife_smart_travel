@@ -28,6 +28,7 @@ from app.services import (
     curadoria_service,
     lead_service,
     model_router,
+    multi_agent_orchestrator,
     whatsapp_service,
 )
 from app.services.notification_queue_service import NotificationQueueService
@@ -83,42 +84,78 @@ async def execute(payload: dict, db: AsyncSession) -> None:
             new_status=LeadStatus.em_atendimento,
         )
 
-    # ── Step 2.5: Ensure conversation memory is loaded (restart-resilient) ─
+    # ── Step 2.5: Carrega histórico do DB (restart-resilient) ────────────────
     interacoes_list = await lead_service.get_recent_interacoes(db, lead.id, limit=20)
     ai_service.preload_memory_from_db(phone, interacoes_list)
 
-    # ── Step 3: Generate AI reply — route by message type ─────────────────
+    # Formata histórico para o orquestrador (mais antigo primeiro)
+    conversation_history = [
+        {
+            "role": "user" if row.get("mensagem_cliente") else "assistant",
+            "content": row.get("mensagem_cliente") or row.get("mensagem_ia", ""),
+        }
+        for row in interacoes_list
+        if row.get("mensagem_cliente") or row.get("mensagem_ia")
+    ]
+
+    # ── Step 3: Resolução de mídia — transcreve áudio antes de processar ─────
+    # wa_id = phone (número WhatsApp sem '+') usado como chave de lookup CRM
+    _original_msg_type = msg_type
+    transcription_used = False
+
+    if msg_type in ("audio", "voice") and media_id:
+        mime_type = msg.get("mime_type", "audio/ogg")
+        transcribed = await model_router.route_media_message(
+            msg_type, media_id, mime_type
+        )
+        if transcribed:
+            text = transcribed
+            msg_type = "text"  # recast: trata áudio transcrito como mensagem de texto
+            transcription_used = True
+            logger.info(
+                "audio_transcribed_injected",
+                lead_id=str(lead.id),
+                chars=len(transcribed),
+            )
+
+    # ── Step 4: Geração da resposta via orquestrador multi-agente ─────────────
     reply: str
     tipo: TipoMensagem
 
-    if msg_type == "audio":
-        # Best-effort download from Meta's Media API (logged; reply always sent)
-        if media_id:
-            audio_bytes = await whatsapp_service.download_media(media_id)
-            logger.info(
-                "audio_received",
-                lead_id=str(lead.id),
-                media_id=media_id,
-                downloaded=audio_bytes is not None,
-                size_bytes=len(audio_bytes) if audio_bytes else 0,
-            )
-        reply = AUDIO_FALLBACK_REPLY
-        tipo = TipoMensagem.audio
-
-    elif msg_type != "text" or not text:
-        reply = MEDIA_FALLBACK_REPLY
+    if msg_type != "text" or not text:
+        # Mídia não suportada ou áudio sem transcrição
+        reply = (
+            AUDIO_FALLBACK_REPLY
+            if _original_msg_type in ("audio", "voice")
+            else MEDIA_FALLBACK_REPLY
+        )
         tipo = (
-            TipoMensagem(msg_type)
-            if msg_type in TipoMensagem.__members__
-            else TipoMensagem.texto
+            TipoMensagem.audio
+            if _original_msg_type in ("audio", "voice")
+            else (
+                TipoMensagem(_original_msg_type)
+                if _original_msg_type in TipoMensagem.__members__
+                else TipoMensagem.texto
+            )
         )
     else:
-        reply = await ai_service.process_message(phone, text)
-        tipo = TipoMensagem.texto
+        # Texto puro ou áudio transcrito → orquestrador multi-agente
+        tipo = TipoMensagem.audio if transcription_used else TipoMensagem.texto
+
+        reply = await multi_agent_orchestrator.orchestrate(
+            wa_id=phone,
+            message=text,
+            conversation_history=conversation_history,
+            db=db,
+        )
+
+        # Captura lead_id antes do bloco try — protege o log no except caso
+        # a sessão esteja em PendingRollback e o lazy-load de lead.id falhe.
+        lead_id_str = str(lead.id)
+        status_antes = lead.status
 
         try:
-            # ── Step 4: Extract briefing & update score ───────────────────
-            status_antes = lead.status
+            # ── Step 5: Extrai briefing & atualiza score ──────────────────
             extracted = await ai_service.extract_briefing(
                 [{"role": "user", "content": text}]
             )
@@ -126,11 +163,11 @@ async def execute(payload: dict, db: AsyncSession) -> None:
                 db, lead, extracted
             )
 
-            # ── Step 5: Enqueue FCM notification when lead qualifies ─────
+            # ── Step 6: Enfileira notificação FCM se lead qualificar ──────
             if briefing.completude_pct >= 60 and lead.status == LeadStatus.qualificado:
                 await _enqueue_qualified_notification(db, lead, briefing)
 
-            # ── Step 5b: Offer curation appointment when freshly qualified ─
+            # ── Step 6b: Oferta de curadoria quando recém-qualificado ─────
             if curadoria_service.deve_oferecer_curadoria(
                 status_antes, lead.status, briefing.completude_pct
             ):
@@ -143,16 +180,22 @@ async def execute(payload: dict, db: AsyncSession) -> None:
                     )
                     logger.info(
                         "curadoria_offered",
-                        lead_id=str(lead.id),
+                        lead_id=lead_id_str,
                         slots_count=len(slots),
                     )
                 else:
                     logger.info(
                         "curadoria_skipped_already_scheduled",
-                        lead_id=str(lead.id),
+                        lead_id=lead_id_str,
                     )
         except Exception as exc:
-            logger.error("briefing_update_error", lead_id=str(lead.id), error=str(exc))
+            # Rollback explícito para limpar qualquer transação pendente antes
+            # de continuar — evita PendingRollbackError nas etapas seguintes.
+            try:
+                await db.rollback()
+            except Exception:
+                pass
+            logger.error("briefing_update_error", lead_id=lead_id_str, error=str(exc))
 
     # ── Step 6: Persist interaction record (sempre executado) ─────────────
     # Save AYA's reply whenever there was processable text (original text or
