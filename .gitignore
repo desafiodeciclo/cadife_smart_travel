@@ -107,6 +107,7 @@ backend/**/settings_local.py
 **/android/app/release/
 **/android/sdk_snapshot/
 **/android/app/src/main/java/**/GeneratedPluginRegistrant.java
+**/app/.cxx/
 
 # iOS específico
 **/ios/Flutter/Generated.xcconfig
