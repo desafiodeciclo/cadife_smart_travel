@@ -33,6 +33,7 @@ import 'package:cadife_smart_travel/features/auth/data/datasources/auth_remote_m
 import 'package:cadife_smart_travel/features/auth/data/datasources/i_auth_datasource.dart';
 import 'package:cadife_smart_travel/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:cadife_smart_travel/features/auth/domain/repositories/i_auth_repository.dart';
+import 'package:cadife_smart_travel/features/client/itinerary/data/services/itinerary_service.dart';
 import 'package:cadife_smart_travel/features/client/notifications/data/repositories/notifications_repository_impl.dart';
 import 'package:cadife_smart_travel/features/client/notifications/domain/repositories/i_notifications_repository.dart';
 import 'package:cadife_smart_travel/features/client/profile/data/datasources/mock_profile_repository.dart';
@@ -143,6 +144,7 @@ Future<void> setupServiceLocator({
   _registerAuthModule();
   _registerLeadModule();
   _registerAgendaModule();
+  _registerItineraryModule();
   _registerProposalModule();
   _registerProfileModule();
   _registerNotificationsModule();
@@ -155,6 +157,15 @@ void _registerStatusModule() {
   sl.registerLazySingleton<IStatusDatasource>(StatusMockDatasource.new);
   sl.registerLazySingleton<IStatusRepository>(
     () => StatusRepositoryImpl(sl<IStatusDatasource>()),
+  );
+}
+
+void _registerItineraryModule() {
+  sl.registerLazySingleton<ItineraryService>(
+    () => ItineraryService(
+      dio: sl<Dio>(),
+      prefs: sl<SharedPreferences>(),
+    ),
   );
 }
 

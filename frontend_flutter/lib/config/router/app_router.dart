@@ -20,6 +20,7 @@ import 'package:cadife_smart_travel/features/client/documentos/presentation/page
 import 'package:cadife_smart_travel/features/client/documentos/presentation/pages/documentos_page.dart';
 import 'package:cadife_smart_travel/features/client/documentos/presentation/pages/trip_documents_page.dart';
 import 'package:cadife_smart_travel/features/client/historico/presentation/pages/historico_page.dart';
+import 'package:cadife_smart_travel/features/client/itinerary/presentation/pages/travel_calendar_page.dart';
 import 'package:cadife_smart_travel/features/client/offers/domain/entities/offer.dart';
 import 'package:cadife_smart_travel/features/client/offers/presentation/screens/offer_details_page.dart';
 import 'package:cadife_smart_travel/features/client/offers/presentation/screens/offers_list_page.dart';
@@ -279,6 +280,19 @@ final routerProvider = Provider<GoRouter>((ref) {
             ),
           ),
         ],
+      ),
+
+      // Travel Calendar — full-screen detail (no bottom nav)
+      GoRoute(
+        path: '/client/travel/:leadId/calendar',
+        name: 'client_travel_calendar',
+        pageBuilder: (context, state) {
+          final leadId = state.pathParameters['leadId']!;
+          return SlideTransitionPage(
+            name: state.name,
+            child: TravelCalendarPage(leadId: leadId),
+          );
+        },
       ),
 
       // DEV ROUTES (apenas em debug)

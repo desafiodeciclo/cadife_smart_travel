@@ -102,6 +102,7 @@ backend/**/settings_local.py
 # Android específico
 **/android/.gradle/
 **/android/local.properties
+**/android/app/.cxx/
 **/android/app/debug/
 **/android/app/profile/
 **/android/app/release/
