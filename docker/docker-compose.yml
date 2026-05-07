@@ -8,7 +8,6 @@ services:
     env_file:
       - ../backend/.env
     environment:
-      # Sobrescreve os hostnames do .env para resolução correta dentro da rede Docker
       DATABASE_URL: postgresql+asyncpg://cadife:cadife@db:5432/cadife_db
       REDIS_URL: redis://redis:6379/0
       CHROMA_HOST: chroma
@@ -19,7 +18,14 @@ services:
       redis:
         condition: service_healthy
     volumes:
-      - ../backend:/app
+      - cadife_knowledge_base:/app/knowledge_base
+    healthcheck:
+      # Como usamos Distroless (sem curl), usamos o próprio Python para o healthcheck
+      test: ["CMD", "/usr/bin/python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz').getcode()"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     restart: unless-stopped
 
   db:
@@ -31,7 +37,7 @@ services:
     ports:
       - "5433:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - cadife_postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U cadife -d cadife_db"]
       interval: 5s
@@ -44,7 +50,7 @@ services:
     ports:
       - "6379:6379"
     volumes:
-      - redis_data:/data
+      - cadife_redis_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -58,7 +64,7 @@ services:
     ports:
       - "6380:6379"
     volumes:
-      - redis_staging_data:/data
+      - cadife_redis_staging_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "-a", "staging_redis_pass_change_me", "ping"]
       interval: 5s
@@ -71,11 +77,29 @@ services:
     ports:
       - "8001:8000"
     volumes:
-      - chroma_data:/chroma/chroma
+      - cadife_chroma_data:/chroma/chroma
     restart: unless-stopped
 
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - cadife_prometheus_data:/prometheus
+    restart: unless-stopped
+
+# Centralização de Volumes Gerenciados pelo Docker
 volumes:
-  postgres_data:
-  redis_data:
-  redis_staging_data:
-  chroma_data:
+  cadife_postgres_data:
+    name: cadife_postgres_data
+  cadife_redis_data:
+    name: cadife_redis_data
+  cadife_redis_staging_data:
+    name: cadife_redis_staging_data
+  cadife_chroma_data:
+    name: cadife_chroma_data
+  cadife_knowledge_base:
+    name: cadife_knowledge_base
+  cadife_prometheus_data:
+    name: cadife_prometheus_data

@@ -20,7 +20,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from app.infrastructure.config.settings import get_settings
 
 # ── Import ALL ORM models so metadata is populated before autogenerate ─────
-import app.infrastructure.persistence.models  # noqa: F401 — side-effect import
+import app.models  # noqa: F401 — side-effect import
 
 from app.infrastructure.persistence.database import Base
 
