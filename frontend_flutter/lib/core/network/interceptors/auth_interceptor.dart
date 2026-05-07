@@ -104,7 +104,7 @@ class AuthInterceptor extends Interceptor {
       err.requestOptions.headers['Authorization'] = 'Bearer $newAccessToken';
       final retryResponse = await _refreshDio.fetch(err.requestOptions);
       handler.resolve(retryResponse);
-    } catch (e) {
+    } on Exception catch (e) {
       _refreshCompleter!.complete(false);
       await _secureConfig.clearTokens();
       _onTokenExpired();

@@ -48,7 +48,7 @@ class ScheduleAppointmentState extends Equatable {
 
 final scheduleAppointmentProvider = StateNotifierProvider.autoDispose<
     ScheduleAppointmentNotifier, ScheduleAppointmentState>((ref) {
-  final agendaRepository = ref.watch(iAgendaRepositoryProvider);
+  final agendaRepository = ref.watch(agendaRepositoryProvider);
   return ScheduleAppointmentNotifier(agendaRepository, ref);
 });
 
@@ -108,7 +108,7 @@ class ScheduleAppointmentNotifier
         try {
           final repo = _ref.read(notificationRepositoryProvider);
           repo.deleteNotificationsByLeadId(leadId);
-        } catch (e) {
+        } on Exception catch (_) {
           // Silencioso
         }
         

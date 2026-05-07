@@ -44,7 +44,7 @@ class AgendaRepositoryImpl implements IAgendaRepository {
             .toList());
       }
       return Left(_handleDioError(e));
-    } catch (e) {
+    } on Exception catch (e) {
       return Left(GenericFailure(e.toString()));
     }
   }
@@ -70,7 +70,7 @@ class AgendaRepositoryImpl implements IAgendaRepository {
         return Right(Agendamento.fromJson(cached as Map<String, dynamic>));
       }
       return Left(_handleDioError(e));
-    } catch (e) {
+    } on Exception catch (e) {
       return Left(GenericFailure(e.toString()));
     }
   }
@@ -88,7 +88,7 @@ class AgendaRepositoryImpl implements IAgendaRepository {
       return Right(agenda);
     } on DioException catch (e) {
       return Left(_handleDioError(e));
-    } catch (e) {
+    } on Exception catch (e) {
       return Left(GenericFailure(e.toString()));
     }
   }
@@ -113,7 +113,7 @@ class AgendaRepositoryImpl implements IAgendaRepository {
       return Right(agenda);
     } on DioException catch (e) {
       return Left(_handleDioError(e));
-    } catch (e) {
+    } on Exception catch (e) {
       return Left(GenericFailure(e.toString()));
     }
   }
@@ -127,7 +127,7 @@ class AgendaRepositoryImpl implements IAgendaRepository {
       return const Right(null);
     } on DioException catch (e) {
       return Left(_handleDioError(e));
-    } catch (e) {
+    } on Exception catch (e) {
       return Left(GenericFailure(e.toString()));
     }
   }
@@ -170,7 +170,7 @@ class AgendaRepositoryImpl implements IAgendaRepository {
             .toList());
       }
       return Left(_handleDioError(e));
-    } catch (e) {
+    } on Exception catch (e) {
       return Left(GenericFailure(e.toString()));
     }
   }

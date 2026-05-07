@@ -8,7 +8,7 @@ enum LeadStatusStep { novo, emAtendimento, qualificado, agendado, proposta, fech
 class LeadStatusStepper extends StatelessWidget {
   final LeadStatusStep currentStatus;
 
-  const LeadStatusStepper({super.key, required this.currentStatus});
+  const LeadStatusStepper({required this.currentStatus, super.key});
 
   static const _steps = [
     LeadStatusStep.novo,

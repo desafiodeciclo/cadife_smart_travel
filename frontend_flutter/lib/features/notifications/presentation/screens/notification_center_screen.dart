@@ -1,3 +1,4 @@
+import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/notifications/application/providers/notification_providers.dart';
 import 'package:cadife_smart_travel/features/notifications/presentation/widgets/notification_tile.dart';
 import 'package:flutter/material.dart';
@@ -32,31 +33,33 @@ class _NotificationCenterScreenState
     final notificationsAsync = ref.watch(notificationsStreamProvider);
     final unreadCountAsync = ref.watch(unreadCountStreamProvider);
     
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Notificações'),
+    return PageScaffold(
+      appBar: CadifeAppBar(
+        title: 'Notificações',
+        showProfile: false,
+        showNotificationBell: false,
         actions: [
           // Botão "Marcar tudo como lido" (aparece apenas se há não lidas)
           unreadCountAsync.when(
             data: (count) {
               if (count > 0) {
-                return TextButton.icon(
+                return CadifeButton(
+                  text: 'Marcar tudo',
+                  variant: ButtonVariant.ghost,
+                  icon: Icons.done_all,
+                  analyticsLabel: 'notifications_mark_all_read',
                   onPressed: () async {
                     await ref
-                      .read(notificationNotifierProvider.notifier)
-                      .markAllAsRead();
-                    
+                        .read(notificationNotifierProvider.notifier)
+                        .markAllAsRead();
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Todas as notificações marcadas como lidas'),
-                          duration: Duration(seconds: 2),
+                      ShadToaster.of(context).show(
+                        const ShadToast(
+                          description: Text('Todas as notificações marcadas como lidas'),
                         ),
                       );
                     }
                   },
-                  icon: const Icon(Icons.done_all),
-                  label: const Text('Marcar tudo'),
                 );
               }
               return const SizedBox.shrink();
@@ -64,37 +67,19 @@ class _NotificationCenterScreenState
             loading: () => const SizedBox.shrink(),
             error: (_, _) => const SizedBox.shrink(),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 8),
         ],
       ),
       body: notificationsAsync.when(
         data: (notifications) {
           if (notifications.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.notifications_none,
-                    size: 64,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Nenhuma notificação',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Notificações de leads qualificados aparecerão aqui',
-                    style: Theme.of(context).textTheme.bodySmall,
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
+            return const AppEmptyStateWidget(
+              icon: Icons.notifications_none,
+              title: 'Nenhuma notificação',
+              subtitle: 'Notificações de leads qualificados aparecerão aqui',
             );
           }
-          
+
           return RefreshIndicator(
             onRefresh: () async {
               ref.invalidate(notificationsStreamProvider);
@@ -109,22 +94,10 @@ class _NotificationCenterScreenState
             ),
           );
         },
-        loading: () => const Center(
-          child: CircularProgressIndicator(),
-        ),
-        error: (error, stack) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.error_outline,
-                size: 64,
-                color: Theme.of(context).colorScheme.error,
-              ),
-              const SizedBox(height: 16),
-              const Text('Erro ao carregar notificações'),
-            ],
-          ),
+        loading: () => const AppLoadingWidget(),
+        error: (error, stack) => AppErrorWidget(
+          message: 'Erro ao carregar notificações',
+          onRetry: () => ref.invalidate(notificationsStreamProvider),
         ),
       ),
     );

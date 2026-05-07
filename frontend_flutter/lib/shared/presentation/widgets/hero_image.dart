@@ -11,10 +11,10 @@ class HeroImage extends StatelessWidget {
   final BorderRadius? borderRadius;
   
   const HeroImage({
-    super.key,
     required this.heroTag,
     required this.imageUrl,
     required this.height,
+    super.key,
     this.width,
     this.fit = BoxFit.cover,
     this.onTap,

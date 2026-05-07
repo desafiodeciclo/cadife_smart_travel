@@ -35,7 +35,7 @@ def hmac_hash(value: str) -> str:
     if not key:
         raise RuntimeError(
             "HASH_KEY não configurada. "
-            "Gere com: python -c \"import secrets; print(secrets.token_hex(32))\""
+            'Gere com: python -c "import secrets; print(secrets.token_hex(32))"'
         )
     return hmac.new(key.encode(), value.encode(), hashlib.sha256).hexdigest()
 
@@ -52,7 +52,7 @@ def _get_fernet():
     if not key:
         raise RuntimeError(
             "ENCRYPTION_KEY não configurada. "
-            "Gere com: python -c \"from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())\""
+            'Gere com: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"'
         )
     return Fernet(key.encode() if isinstance(key, str) else key)
 

@@ -30,8 +30,7 @@ class AgendaScreen extends ConsumerWidget {
     final viewMode = ref.watch(agendaViewModeProvider);
     final allAsync = ref.watch(agendaProvider);
 
-    return Scaffold(
-      backgroundColor: context.cadife.background,
+    return PageScaffold(
       appBar: CadifeAppBar(
         title: 'Agenda',
         actions: [
@@ -41,6 +40,16 @@ class AgendaScreen extends ConsumerWidget {
           ),
         ],
       ),
+      floatingActionButton: viewMode == 1
+          ? CadifeButton(
+              text: 'Novo agendamento',
+              icon: Icons.add,
+              analyticsLabel: 'agenda_new_appointment',
+              onPressed: () => ShadToaster.of(context).show(
+                const ShadToast(description: Text('Selecione um slot vazio na timeline para agendar.')),
+              ),
+            )
+          : null,
       body: Column(
         children: [
           _ViewToggleBar(viewMode: viewMode),
@@ -60,16 +69,6 @@ class AgendaScreen extends ConsumerWidget {
           ),
         ],
       ),
-
-      floatingActionButton: viewMode == 1
-          ? ShadButton(
-              onPressed: () => ShadToaster.of(context).show(
-                const ShadToast(description: Text('Selecione um slot vazio na timeline para agendar.')),
-              ),
-              leading: const Icon(Icons.add, size: 20),
-              child: const Text('Novo agendamento'),
-            )
-          : null,
     );
   }
 }

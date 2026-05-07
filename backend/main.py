@@ -3,12 +3,6 @@ Application Entry Point — Cadife Smart Travel API
 ==================================================
 FastAPI application factory following Clean Architecture.
 Registers middlewares, routers, and startup/shutdown lifecycle hooks.
-
-Spec references:
-  - §3.3  Stack: FastAPI + PostgreSQL + Firebase FCM
-  - §5    Endpoints: webhook, ia, leads, agenda, propostas, auth
-  - §12.2 Security: HTTPS, JWT, rate limiting (middleware hooks)
-  - §12.3 Reliability: structured logs, timeout middleware
 """
 
 from contextlib import asynccontextmanager
@@ -24,6 +18,9 @@ from slowapi.errors import RateLimitExceeded
 from app.infrastructure.config.settings import get_settings
 from app.infrastructure.config.logging_config import configure_logging
 from app.infrastructure.persistence.database import create_tables
+
+# Import all models to register them in SQLAlchemy metadata before create_tables
+import app.infrastructure.persistence.models  # noqa: F401
 from app.infrastructure.adapters.firebase import init_firebase
 from app.infrastructure.security.rate_limiter import limiter
 from app.services.ingestion_pipeline import get_ingestion_pipeline
@@ -31,6 +28,7 @@ from app.services.ingestion_pipeline import get_ingestion_pipeline
 # Scheduled Jobs
 from app.jobs.lead_expiration_job import expire_stale_leads
 from app.jobs.proposta_expiration_job import expire_stale_propostas_job
+from app.jobs.notification_worker import NotificationWorker, WORKER_INTERVAL_SECONDS
 
 # Routers
 from app.routes import agenda, auth, ia, leads, propostas, webhook
@@ -81,8 +79,11 @@ async def lifespan(app: FastAPI):
     except Exception as exc:
         logger.warning("rag_indexing_failed_on_startup", error=str(exc))
 
-    # Scheduled Jobs
-    # Runs daily at 02:00 UTC — low-traffic window, safe for DB batch writes
+    # -------------------------------------------------------------------
+    # Scheduled Jobs Configuration
+    # -------------------------------------------------------------------
+    
+    # 1. Lead Expiration: Runs daily at 02:00 UTC
     _scheduler.add_job(
         expire_stale_leads,
         trigger="cron",
@@ -91,7 +92,8 @@ async def lifespan(app: FastAPI):
         id="lead_expiration",
         replace_existing=True,
     )
-    # Runs every 5 minutes — catches proposals whose SLA window just closed
+
+    # 2. Proposta Expiration: Runs every 5 minutes (SLA window check)
     _scheduler.add_job(
         expire_stale_propostas_job,
         trigger="interval",
@@ -99,8 +101,22 @@ async def lifespan(app: FastAPI):
         id="proposta_expiration",
         replace_existing=True,
     )
+
+    # 3. Notification Worker: Drains push queue every 15s
+    _notification_worker = NotificationWorker()
+    _scheduler.add_job(
+        _notification_worker.run,
+        trigger="interval",
+        seconds=WORKER_INTERVAL_SECONDS,
+        id="notification_worker",
+        replace_existing=True,
+    )
+
     _scheduler.start()
-    logger.info("scheduler_started", jobs=["lead_expiration", "proposta_expiration"])
+    logger.info(
+        "scheduler_started", 
+        jobs=["lead_expiration", "proposta_expiration", "notification_worker"]
+    )
 
     logger.info("startup_complete", version="1.0.0")
 
@@ -134,20 +150,10 @@ app.add_exception_handler(
 )
 
 # -------------------------------------------------------------------
-# Middlewares (order matters)
+# Middlewares
 # -------------------------------------------------------------------
-# ── Middleware Registration (order matters — outermost executes first) ────
-# 1. RequestId must be first to assign ID before all other processing
-# 2. Timeout wraps inner handlers to enforce SLAs
-# 3. CORS handles preflight before any business logic
-
-# 1. Request ID
 app.add_middleware(RequestIdMiddleware)
-
-# 2. Timeout
 app.add_middleware(TimeoutMiddleware)
-
-# 3. CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[o.strip() for o in settings.ALLOWED_ORIGINS.split(",") if o.strip()],
@@ -155,11 +161,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# 4. Security Headers
 app.add_middleware(SecurityHeadersMiddleware)
-
-# 5. Audit Logs
 app.add_middleware(AuditTrailMiddleware)
 
 # -------------------------------------------------------------------

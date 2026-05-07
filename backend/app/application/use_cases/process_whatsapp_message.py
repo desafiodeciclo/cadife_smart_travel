@@ -14,6 +14,7 @@ Orchestrates the full message-processing flow defined in spec.md §9.1:
   10. Reply via WhatsApp
   11. Update interaction with send outcome
 """
+
 from __future__ import annotations
 
 import structlog
@@ -22,15 +23,27 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.domain.entities.enums import LeadStatus, TipoMensagem
 from app.models.lead import Lead
 from app.models.user import User
-from app.services import ai_service, curadoria_service, fcm_service, lead_service, whatsapp_service
+from app.services import (
+    ai_service,
+    curadoria_service,
+    lead_service,
+    model_router,
+    whatsapp_service,
+)
+from app.services.notification_queue_service import NotificationQueueService
 from app.services.domain_validator import BriefingValidator
 
 logger = structlog.get_logger()
 
-# Message for unsupported media types (spec.md §12.3)
+# Message for audio messages specifically (task requirement)
+AUDIO_FALLBACK_REPLY = (
+    "Áudio não suportado nestes momentos, prefira o meio texto."
+)
+
+# Message for other unsupported media types (spec.md §12.3)
 MEDIA_FALLBACK_REPLY = (
-    "Recebi sua mensagem! No momento aceito apenas textos. "
-    "Um consultor irá te atender em breve. 😊"
+    "Recebi sua mensagem! Tive um problema ao processar esse arquivo. "
+    "Pode me enviar o conteúdo em texto? Um consultor também pode te ajudar em breve. 😊"
 )
 
 _validator = BriefingValidator()
@@ -49,6 +62,7 @@ async def execute(payload: dict, db: AsyncSession) -> None:
     phone: str = msg["phone"]
     text: str | None = msg.get("text")
     msg_type: str = msg.get("type", "text")
+    media_id: str | None = msg.get("media_id")
 
     logger.info("processing_whatsapp_message", phone=phone, msg_type=msg_type)
 
@@ -63,17 +77,35 @@ async def execute(payload: dict, db: AsyncSession) -> None:
     # ── Step 2: Advance status NOVO → EM_ATENDIMENTO ─────────────────────
     if lead.status == LeadStatus.novo:
         await lead_service.update_lead_status(db, lead, LeadStatus.em_atendimento)
-        logger.info("lead_status_updated", lead_id=str(lead.id), new_status=LeadStatus.em_atendimento)
+        logger.info(
+            "lead_status_updated",
+            lead_id=str(lead.id),
+            new_status=LeadStatus.em_atendimento,
+        )
 
     # ── Step 2.5: Ensure conversation memory is loaded (restart-resilient) ─
     interacoes_list = await lead_service.get_recent_interacoes(db, lead.id, limit=20)
     ai_service.preload_memory_from_db(phone, interacoes_list)
 
-    # ── Step 3: Generate AI reply or media fallback ────────────────────────
+    # ── Step 3: Generate AI reply — route by message type ─────────────────
     reply: str
     tipo: TipoMensagem
 
-    if msg_type != "text" or not text:
+    if msg_type == "audio":
+        # Best-effort download from Meta's Media API (logged; reply always sent)
+        if media_id:
+            audio_bytes = await whatsapp_service.download_media(media_id)
+            logger.info(
+                "audio_received",
+                lead_id=str(lead.id),
+                media_id=media_id,
+                downloaded=audio_bytes is not None,
+                size_bytes=len(audio_bytes) if audio_bytes else 0,
+            )
+        reply = AUDIO_FALLBACK_REPLY
+        tipo = TipoMensagem.audio
+
+    elif msg_type != "text" or not text:
         reply = MEDIA_FALLBACK_REPLY
         tipo = (
             TipoMensagem(msg_type)
@@ -81,25 +113,31 @@ async def execute(payload: dict, db: AsyncSession) -> None:
             else TipoMensagem.texto
         )
     else:
-        reply = await ai_service.process_message(phone, text)
+        reply = await ai_service.process_message(phone, effective_text)
         tipo = TipoMensagem.texto
 
         try:
             # ── Step 4: Extract briefing & update score ───────────────────
             status_antes = lead.status
-            extracted = await ai_service.extract_briefing([{"role": "user", "content": text}])
-            briefing = await lead_service.update_briefing_from_extraction(db, lead, extracted)
+            extracted = await ai_service.extract_briefing(
+                [{"role": "user", "content": effective_text}]
+            )
+            briefing = await lead_service.update_briefing_from_extraction(
+                db, lead, extracted
+            )
 
-            # ── Step 5: FCM notification when lead qualifies ──────────────
+            # ── Step 5: Enqueue FCM notification when lead qualifies ─────
             if briefing.completude_pct >= 60 and lead.status == LeadStatus.qualificado:
-                await _notify_consultants(db, lead, briefing)
+                await _enqueue_qualified_notification(db, lead, briefing)
 
             # ── Step 5b: Offer curation appointment when freshly qualified ─
             if curadoria_service.deve_oferecer_curadoria(
                 status_antes, lead.status, briefing.completude_pct
             ):
                 if not await curadoria_service.lead_tem_agendamento_ativo(db, lead.id):
-                    slots = await curadoria_service.get_proximos_slots_disponiveis(db, quantidade=3)
+                    slots = await curadoria_service.get_proximos_slots_disponiveis(
+                        db, quantidade=3
+                    )
                     reply = curadoria_service.gerar_mensagem_oferta_curadoria(
                         slots, nome_cliente=lead.nome
                     )
@@ -117,10 +155,13 @@ async def execute(payload: dict, db: AsyncSession) -> None:
             logger.error("briefing_update_error", lead_id=str(lead.id), error=str(exc))
 
     # ── Step 6: Persist interaction record (sempre executado) ─────────────
+    # Save AYA's reply whenever there was processable text (original text or
+    # transcribed/described media). For unprocessable media, reply is fallback.
     interacao = await lead_service.save_interacao(
-        db, lead.id,
+        db,
+        lead.id,
         msg_cliente=text,
-        msg_ia=reply if msg_type == "text" else None,
+        msg_ia=reply if effective_text else None,
         tipo=tipo,
     )
 
@@ -137,22 +178,27 @@ async def execute(payload: dict, db: AsyncSession) -> None:
     )
 
 
-async def _notify_consultants(db: AsyncSession, lead: Lead, briefing) -> None:
-    """Send FCM push to all agency consultants with an active device token."""
+async def _enqueue_qualified_notification(
+    db: AsyncSession, lead: Lead, briefing
+) -> None:
+    """Enqueue FCM push notification for all agency consultants via background queue."""
     from sqlalchemy import select
 
     result = await db.execute(
         select(User).where(User.perfil == "agencia", User.fcm_token.isnot(None))
     )
     consultores = result.scalars().all()
+    tokens = [c.fcm_token for c in consultores if c.fcm_token]
 
-    for consultor in consultores:
-        try:
-            if consultor.fcm_token:
-                await fcm_service.notify_new_lead(
-                    consultor.fcm_token,
-                    lead.nome or lead.telefone,
-                    briefing.destino,
-                )
-        except Exception as exc:
-            logger.error("fcm_notification_failed", consultor_id=str(consultor.id), error=str(exc))
+    if not tokens:
+        logger.warning("no_consultant_tokens_for_notification", lead_id=str(lead.id))
+        return
+
+    queue_service = NotificationQueueService()
+    await queue_service.enqueue_qualified_lead_notification(
+        db=db,
+        lead_id=lead.id,
+        lead_nome=lead.nome,
+        destino=briefing.destino,
+        fcm_tokens=tokens,
+    )

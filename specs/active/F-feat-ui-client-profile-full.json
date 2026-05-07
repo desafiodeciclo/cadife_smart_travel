@@ -1,0 +1,50 @@
+{
+  "id": "F-feat-ui-client-profile-full",
+  "title": "(F) feat/ui-client-profile-full",
+  "priority": "high",
+  "assignee": "Frontend",
+  "sprint": 6,
+  "status": "in-progress",
+  "steps": [
+    {
+      "id": "1.1",
+      "name": "DiaryEntry and SuitcaseItem entities",
+      "status": "done"
+    },
+    {
+      "id": "1.2",
+      "name": "ClientProfileMocks",
+      "status": "done"
+    },
+    {
+      "id": "1.3",
+      "name": "ClientProfileScreen with TabBar (Perfil, Diários, Minha Mala)",
+      "status": "done"
+    },
+    {
+      "id": "1.4",
+      "name": "ProfileStatsHeader with greeting, avatar, stats, country flags",
+      "status": "done"
+    },
+    {
+      "id": "2.1",
+      "name": "DiariesTab with TravelJournalCard per trip",
+      "status": "done"
+    },
+    {
+      "id": "2.2",
+      "name": "TravelJournalDetailScreen with PageView, AddMemorySheet, EditMemorySheet",
+      "status": "done"
+    },
+    {
+      "id": "3.1",
+      "name": "SuitcaseTab with grouped checklist and suggestions",
+      "status": "done"
+    },
+    {
+      "id": "4.1",
+      "name": "Router: add /client/profile/diary/:tripId route",
+      "status": "done"
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer' as developer;
 
 import 'package:cadife_smart_travel/core/di/service_locator.dart';
@@ -50,18 +51,18 @@ class FCMManager {
 
         await repo.saveNotification(notification);
         developer.log('Notificação persistida no Isar.', name: 'FCMManager');
-      } catch (e) {
+      } on Exception catch (e) {
         developer.log('Erro ao persistir notificação: $e', name: 'FCMManager');
       }
 
       if (message.notification != null) {
         // Usa messageId (quando disponível) para evitar colisões de hashCode.
         final id = message.messageId?.hashCode ?? message.hashCode;
-        LocalNotificationManager.showNotification(
+        unawaited(LocalNotificationManager.showNotification(
           id: id,
           title: message.notification!.title ?? 'Notificação',
           body: message.notification!.body ?? '',
-        );
+        ));
       }
     });
 
@@ -90,7 +91,7 @@ class FCMManager {
       if (token != null) {
         await _sendTokenIfAuthenticated(token);
       }
-    } catch (e, stackTrace) {
+    } on Exception catch (e, stackTrace) {
       developer.log(
         'Erro ao recuperar FCM token',
         error: e,
@@ -114,7 +115,7 @@ class FCMManager {
       }
       await authRepository.saveFcmToken(token);
       developer.log('FCM Token registrado no backend.', name: 'FCMManager');
-    } catch (e, stackTrace) {
+    } on Exception catch (e, stackTrace) {
       developer.log(
         'Erro ao registrar FCM token',
         error: e,

@@ -4,12 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Observa o lifecycle do app e exibe [AppLockScreen] quando o tempo em
-/// background ultrapassa [AppConstants.appLockTimeout].
+/// background ultrapassa AppConstants.appLockTimeout.
 ///
-/// Deve ser usado como `builder` de [MaterialApp.router] para ficar acima
-/// da navegação e herdar [Theme] / [MediaQuery].
+/// Deve ser usado como builder de MaterialApp.router para ficar acima
+/// da navegação e herdar Theme / MediaQuery.
 class AppLockWrapper extends ConsumerStatefulWidget {
-  const AppLockWrapper({super.key, required this.child});
+  const AppLockWrapper({required this.child, super.key});
 
   final Widget child;
 

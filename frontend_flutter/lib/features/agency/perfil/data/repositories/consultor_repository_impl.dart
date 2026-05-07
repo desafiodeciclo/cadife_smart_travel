@@ -16,7 +16,7 @@ class ConsultorRepositoryImpl implements IConsultorRepository {
       return Right(ConsultorProfile.fromJson(response.data as Map<String, dynamic>));
     } on DioException catch (e) {
       return Left(_handleDioError(e));
-    } catch (e) {
+    } on Exception catch (e) {
       return Left(GenericFailure(e.toString()));
     }
   }
@@ -28,7 +28,7 @@ class ConsultorRepositoryImpl implements IConsultorRepository {
       return Right(ConsultorProfile.fromJson(response.data as Map<String, dynamic>));
     } on DioException catch (e) {
       return Left(_handleDioError(e));
-    } catch (e) {
+    } on Exception catch (e) {
       return Left(GenericFailure(e.toString()));
     }
   }
@@ -43,7 +43,7 @@ class ConsultorRepositoryImpl implements IConsultorRepository {
       return Right(list);
     } on DioException catch (e) {
       return Left(_handleDioError(e));
-    } catch (e) {
+    } on Exception catch (e) {
       return Left(GenericFailure(e.toString()));
     }
   }

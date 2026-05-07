@@ -17,10 +17,14 @@ if TYPE_CHECKING:
 
 class Proposta(Base):
     __tablename__ = "propostas"
-    __table_args__ = {'extend_existing': True}
+    __table_args__ = {"extend_existing": True}
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    lead_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("leads.id"), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    lead_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("leads.id"), nullable=False, index=True
+    )
     descricao: Mapped[str] = mapped_column(Text, nullable=False)
     valor_estimado: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2))
     status: Mapped[PropostaStatus] = mapped_column(PgEnum(PropostaStatus, name="proposta_status_enum", create_type=False), nullable=False, default=PropostaStatus.rascunho)

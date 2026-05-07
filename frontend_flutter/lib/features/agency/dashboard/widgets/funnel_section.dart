@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 
 class FunnelSection extends StatelessWidget {
   const FunnelSection({
-    super.key,
     required this.stats,
+    super.key,
   });
 
   final DashboardStats stats;

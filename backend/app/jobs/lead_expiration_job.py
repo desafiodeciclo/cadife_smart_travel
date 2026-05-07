@@ -32,7 +32,9 @@ async def expire_stale_leads() -> None:
 
     try:
         async with AsyncSessionLocal() as db:
-            count = await mark_stale_leads_as_perdido(db, inactivity_days=expiration_days)
+            count = await mark_stale_leads_as_perdido(
+                db, inactivity_days=expiration_days
+            )
 
         logger.info(
             "lead_expiration_job_completed",

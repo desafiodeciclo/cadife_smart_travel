@@ -11,6 +11,7 @@ Coverage targets:
   - AgendamentoRepository: create, update_status, list_by_lead
   - PropostaRepository: create, update, list_by_lead
 """
+
 import uuid
 from datetime import date, time
 from decimal import Decimal
@@ -32,13 +33,21 @@ from app.infrastructure.persistence.models.interacao_model import InteracaoModel
 from app.infrastructure.persistence.models.agendamento_model import AgendamentoModel
 from app.infrastructure.persistence.models.proposta_model import PropostaModel
 from app.infrastructure.persistence.repositories.lead_repository import LeadRepository
-from app.infrastructure.persistence.repositories.briefing_repository import BriefingRepository
-from app.infrastructure.persistence.repositories.interacao_repository import InteracaoRepository
-from app.infrastructure.persistence.repositories.agendamento_repository import AgendamentoRepository
-from app.infrastructure.persistence.repositories.proposta_repository import PropostaRepository
-
+from app.infrastructure.persistence.repositories.briefing_repository import (
+    BriefingRepository,
+)
+from app.infrastructure.persistence.repositories.interacao_repository import (
+    InteracaoRepository,
+)
+from app.infrastructure.persistence.repositories.agendamento_repository import (
+    AgendamentoRepository,
+)
+from app.infrastructure.persistence.repositories.proposta_repository import (
+    PropostaRepository,
+)
 
 # ── Helpers ─────────────────────────────────────────────────────────────────
+
 
 def make_session() -> AsyncMock:
     """Return a mock AsyncSession with commonly needed methods."""
@@ -66,6 +75,7 @@ def fake_lead(phone: str = "5584999990001") -> LeadModel:
 # LeadRepository
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestLeadRepository:
 
     @pytest.mark.asyncio
@@ -79,7 +89,7 @@ class TestLeadRepository:
         session.refresh = AsyncMock(side_effect=lambda obj: None)
         session.add = MagicMock()
 
-        with patch.object(repo, 'add', AsyncMock(return_value=lead)):
+        with patch.object(repo, "add", AsyncMock(return_value=lead)):
             result = await repo.create(telefone="5584999990001", nome="Teste")
 
         assert result is lead
@@ -175,6 +185,7 @@ class TestLeadRepository:
 # BriefingRepository
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestBriefingRepository:
 
     @pytest.mark.asyncio
@@ -191,7 +202,7 @@ class TestBriefingRepository:
         created_briefing.id = uuid.uuid4()
         created_briefing.lead_id = lead_id
 
-        with patch.object(repo, 'add', AsyncMock(return_value=created_briefing)):
+        with patch.object(repo, "add", AsyncMock(return_value=created_briefing)):
             result = await repo.upsert(lead_id, {"destino": "Paris"})
 
         assert result is created_briefing
@@ -220,6 +231,7 @@ class TestBriefingRepository:
 # InteracaoRepository
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestInteracaoRepository:
 
     @pytest.mark.asyncio
@@ -233,7 +245,7 @@ class TestInteracaoRepository:
         interacao.id = uuid.uuid4()
         interacao.lead_id = lead_id
 
-        with patch.object(repo, 'add', AsyncMock(return_value=interacao)):
+        with patch.object(repo, "add", AsyncMock(return_value=interacao)):
             result = await repo.create(
                 lead_id=lead_id,
                 mensagem_cliente="Quero ir para Paris",
@@ -246,6 +258,7 @@ class TestInteracaoRepository:
 # ══════════════════════════════════════════════════════════════════════════════
 # AgendamentoRepository
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 class TestAgendamentoRepository:
 
@@ -261,7 +274,7 @@ class TestAgendamentoRepository:
         ag.lead_id = lead_id
         ag.status = AgendamentoStatus.pendente.value
 
-        with patch.object(repo, 'add', AsyncMock(return_value=ag)):
+        with patch.object(repo, "add", AsyncMock(return_value=ag)):
             result = await repo.create(
                 lead_id=lead_id,
                 data=date(2026, 6, 15),
@@ -290,6 +303,7 @@ class TestAgendamentoRepository:
 # PropostaRepository
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestPropostaRepository:
 
     @pytest.mark.asyncio
@@ -304,7 +318,7 @@ class TestPropostaRepository:
         proposta.lead_id = lead_id
         proposta.status = PropostaStatus.rascunho.value
 
-        with patch.object(repo, 'add', AsyncMock(return_value=proposta)):
+        with patch.object(repo, "add", AsyncMock(return_value=proposta)):
             result = await repo.create(
                 lead_id=lead_id,
                 descricao="Pacote Portugal 10 dias",

@@ -29,7 +29,7 @@ class MockAgendaRepository implements IAgendaRepository {
         (a) => a.id == id,
       );
       return Right(agenda);
-    } catch (_) {
+    } on Exception catch (_) {
       return Left(ServerFailure('Agenda não encontrada: $id'));
     }
   }

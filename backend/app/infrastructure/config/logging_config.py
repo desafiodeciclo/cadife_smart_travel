@@ -3,6 +3,7 @@ import sys
 import structlog
 from app.infrastructure.config.settings import get_settings
 
+
 def mask_pii(logger, method_name, event_dict):
     """Mask common PII fields in the event dictionary."""
     pii_fields = ["email", "phone", "telefone", "password", "senha", "cpf", "rg"]
@@ -11,9 +12,10 @@ def mask_pii(logger, method_name, event_dict):
             event_dict[field] = "[REDACTED]"
     return event_dict
 
+
 def configure_logging():
     settings = get_settings()
-    
+
     # Processadores compartilhados para structlog e logging padrão
     shared_processors = [
         structlog.contextvars.merge_contextvars,

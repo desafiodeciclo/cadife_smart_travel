@@ -18,9 +18,9 @@ class ProposalCreateScreen extends ConsumerStatefulWidget {
   final String consultorId;
 
   const ProposalCreateScreen({
-    super.key,
     required this.leadId,
     required this.consultorId,
+    super.key,
   });
 
   @override
@@ -94,7 +94,7 @@ class _ProposalCreateScreenState extends ConsumerState<ProposalCreateScreen>
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    HapticFeedback.lightImpact();
+    await HapticFeedback.lightImpact();
     setState(() => _saving = true);
 
     final valorText = _valorController.text
@@ -127,7 +127,7 @@ class _ProposalCreateScreenState extends ConsumerState<ProposalCreateScreen>
         );
         context.pop();
       }
-    } catch (e) {
+    } on Exception catch (e) {
       if (mounted) {
         ShadToaster.of(context).show(
           ShadToast.destructive(
@@ -144,7 +144,10 @@ class _ProposalCreateScreenState extends ConsumerState<ProposalCreateScreen>
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    return Scaffold(
+    return PageScaffold(
+      showBackgroundEffects: false,
+      extendBodyBehindAppBar: false,
+      useSafeArea: false,
       body: CustomScrollView(
         slivers: [
           // Ã¢â€â‚¬Ã¢â€â‚¬ Gradient app bar Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
@@ -290,20 +293,13 @@ class _ProposalCreateScreenState extends ConsumerState<ProposalCreateScreen>
                       const SizedBox(height: 32),
 
                       // Ã¢â€â‚¬Ã¢â€â‚¬ Submit Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
-                      ShadButton(
+                      // ── Submit
+                      CadifeButton(
+                        text: _saving ? 'Salvando...' : 'Criar Proposta',
+                        isLoading: _saving,
+                        icon: Icons.send_rounded,
+                        analyticsLabel: 'proposal_create_submit',
                         onPressed: _saving ? null : _submit,
-                        size: ShadButtonSize.lg,
-                        leading: _saving 
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Icon(Icons.send_rounded, size: 20),
-                        child: Text(_saving ? 'Salvando...' : 'Criar Proposta'),
                       ),
                     ],
                   ),

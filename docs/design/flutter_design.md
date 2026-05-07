@@ -36,24 +36,33 @@ sequenceDiagram
 
 ## 2. Estrutura de Navegação (GoRouter)
 
+> **⚠️ Nota (v1.1 Audit):** As rotas abaixo refletem o **estado alvo** (todas em inglês). O código atual em `app_router.dart` ainda usa algumas rotas em português — ver `refactor/rename-pt-to-en`.
+
 ```
 /                         → redirect para /auth/login ou /agency/dashboard
+/splash                   → SplashScreen (verifica sessão)
 /auth/
   /login                  → LoginScreen
+  /register               → RegisterScreen
+  /forgot-password        → ForgotPasswordScreen
 /agency/
   /dashboard              → AgencyDashboardScreen
   /leads                  → LeadsListScreen
-  /leads/:id              → LeadDetailScreen
+  /leads/:id              → LeadDetailScreen  (⚠️ código usa extra em vez de :id)
   /agenda                 → AgendaScreen
-  /proposals/:leadId      → ProposalCreateScreen
+  /proposals/:leadId      → ProposalCreateScreen  (⚠️ rota ausente no código atual)
+  /profile                → ConsultorProfileScreen  (⚠️ código usa /agency/perfil)
 /client/
   /status                 → TripStatusScreen
-  /interactions           → InteractionsScreen
-  /documents              → DocumentsScreen
-  /profile                → ProfileScreen
+  /history                → HistoricoPage  (⚠️ código usa /client/historico)
+  /documents              → DocumentosPage  (⚠️ código usa /client/documentos)
+  /documents/:tripId      → TripDocumentsPage
+  /documents/viewer       → DocumentViewerPage  (⚠️ usa extra em vez de :id)
+  /profile                → ProfileScreen  (⚠️ código usa /client/perfil)
+/notifications            → NotificationCenterScreen  (⚠️ dentro do shell de agência)
 ```
 
-**Guards:** rota `/agency/*` exige `perfil == "agencia"`. Rota `/client/*` exige `perfil == "cliente"`. Redirecionamento automático para `/auth/login` se não autenticado.
+**Guards:** rota `/agency/*` exige `perfil == "consultor"`. Rota `/client/*` exige `perfil == "cliente"`. Redirecionamento automático para `/auth/login` se não autenticado.
 
 ---
 
