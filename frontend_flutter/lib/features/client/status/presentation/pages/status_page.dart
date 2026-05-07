@@ -1,15 +1,23 @@
 import 'package:cadife_smart_travel/design_system/design_system.dart';
+import 'package:cadife_smart_travel/features/client/status/presentation/providers/status_providers.dart';
 import 'package:cadife_smart_travel/features/client/status/presentation/widgets/ongoing_trip_card.dart';
 import 'package:cadife_smart_travel/features/client/status/presentation/widgets/status_stepper_widget.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+
+
 
 class StatusPage extends ConsumerWidget {
   const StatusPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final activeTripAsync = ref.watch(activeLeadProvider);
     final cadife = context.cadife;
+    final theme = Theme.of(context);
 
     return PageScaffold(
       title: 'MINHA VIAGEM',
@@ -20,12 +28,21 @@ class StatusPage extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const OngoingTripCard(),
+              activeTripAsync.when(
+                data: (trip) => OngoingTripCard(
+                  destination: trip?.destino ?? 'Paris, França',
+                  onTap: trip == null
+                      ? null
+                      : () => context.push('/client/travel/${trip.id}'),
+                ),
+                loading: () => const OngoingTripCard(),
+                error: (_, _) => const OngoingTripCard(),
+
+              ),
               const SizedBox(height: 32),
               Text(
                 'Sua Jornada',
-                style: TextStyle(
-                  fontSize: 20,
+                style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: cadife.textPrimary,
                 ),
@@ -37,5 +54,6 @@ class StatusPage extends ConsumerWidget {
         ),
       ),
     );
+
   }
 }

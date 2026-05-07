@@ -10,12 +10,13 @@ allprojects {
     }
 }
 
-val newBuildDir: Directory = rootProject.layout.buildDirectory.dir("../../build").get()
-rootProject.layout.buildDirectory.value(newBuildDir)
+// Reverted to default build directory to avoid "tool couldn't find .apk" error
+// val newBuildDir: Directory = rootProject.layout.buildDirectory.dir("../../build").get()
+// rootProject.layout.buildDirectory.value(newBuildDir)
 
 subprojects {
-    val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
-    project.layout.buildDirectory.value(newSubprojectBuildDir)
+    // val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
+    // project.layout.buildDirectory.value(newSubprojectBuildDir)
     
     project.afterEvaluate {
         if (project.plugins.hasPlugin("com.android.application") || 

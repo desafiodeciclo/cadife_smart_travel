@@ -24,12 +24,16 @@ import 'package:cadife_smart_travel/features/client/historico/presentation/pages
 import 'package:cadife_smart_travel/features/client/profile/presentation/pages/profile_page.dart' as client_profile;
 import 'package:cadife_smart_travel/features/client/profile/presentation/pages/travel_journal_detail_screen.dart';
 import 'package:cadife_smart_travel/features/client/status/presentation/pages/status_page.dart';
+import 'package:cadife_smart_travel/features/client/travel/presentation/pages/travel_briefing_screen.dart';
 import 'package:cadife_smart_travel/features/notifications/presentation/screens/notification_center_screen.dart';
 import 'package:cadife_smart_travel/features/settings/presentation/screens/settings_page.dart';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+
 
 final routerProvider = Provider<GoRouter>((ref) {
   final notifier = _RouterNotifier(ref);
@@ -259,6 +263,18 @@ final routerProvider = Provider<GoRouter>((ref) {
               child: const SettingsPage(),
             ),
           ),
+          GoRoute(
+            path: '/client/travel/:leadId',
+            name: 'client_travel_briefing',
+            pageBuilder: (context, state) {
+              final leadId = state.pathParameters['leadId']!;
+              return SlideTransitionPage(
+                name: state.name,
+                child: TravelBriefingScreen(leadId: leadId),
+              );
+            },
+          ),
+
         ],
       ),
 

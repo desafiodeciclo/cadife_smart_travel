@@ -238,7 +238,19 @@ Future<void> initDependencies() async {
   }
 
   bool firebaseInitialized = false;
-  if (options != null || !kIsWeb) {
+  
+  // Condição de Inicialização:
+  // - No Web: PRECISA de options explícitas.
+  // - No Mobile: Tentamos se tivermos options OU se NÃO for ambiente DEV.
+  //   Em DEV sem options, pulamos para evitar o crash nativo "Failed to load FirebaseOptions".
+  bool shouldTryFirebase = false;
+  if (kIsWeb) {
+    shouldTryFirebase = options != null;
+  } else {
+    shouldTryFirebase = options != null || env != AppEnvironment.dev;
+  }
+
+  if (shouldTryFirebase) {
     try {
       await Firebase.initializeApp(options: options);
       firebaseInitialized = true;
@@ -246,6 +258,8 @@ Future<void> initDependencies() async {
     } catch (e) {
       debugPrint('Firebase initialization failed (graceful): $e');
     }
+  } else {
+    debugPrint('Firebase initialization skipped (DEV mode without explicit options)');
   }
 
   // 3. Cache e Offline (Isar, Hive)
