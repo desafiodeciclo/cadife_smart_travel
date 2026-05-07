@@ -4,7 +4,7 @@ class ClientHomeMocks {
   ClientHomeMocks._();
 
   static ClientHomeData homeData() => ClientHomeData(
-        tripId: 'trip-001',
+        tripId: 'trip-1',
         destination: 'Paris',
         destinationCountry: 'França',
         destinationFlag: '🇫🇷',
