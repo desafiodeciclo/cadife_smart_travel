@@ -61,11 +61,17 @@ async def execute(payload: dict, db: AsyncSession) -> None:
         return
 
     phone: str = msg["phone"]
+    message_id: str | None = msg.get("message_id")
     text: str | None = msg.get("text")
     msg_type: str = msg.get("type", "text")
     media_id: str | None = msg.get("media_id")
 
     logger.info("processing_whatsapp_message", phone=phone, msg_type=msg_type)
+
+    # Mark message as read early — shows blue ticks before we even generate a reply,
+    # signalling to the client that AYA received the message.
+    if message_id:
+        await whatsapp_service.mark_as_read(phone, message_id)
 
     # ── Step 1: Get or create lead (Upsert) ───────────────────────────────
     lead_data = {
@@ -92,15 +98,17 @@ async def execute(payload: dict, db: AsyncSession) -> None:
     interacoes_list = await lead_service.get_recent_interacoes(db, lead_id, limit=20)
     ai_service.preload_memory_from_db(phone, interacoes_list)
 
-    # Formata histórico para o orquestrador (mais antigo primeiro)
-    conversation_history = [
-        {
-            "role": "user" if row.get("mensagem_cliente") else "assistant",
-            "content": row.get("mensagem_cliente") or row.get("mensagem_ia", ""),
-        }
-        for row in interacoes_list
-        if row.get("mensagem_cliente") or row.get("mensagem_ia")
-    ]
+    # Formata histórico para o orquestrador — interleave correto user + assistant.
+    # Cada row de interacao contém AMBAS as mensagens (cliente e IA), então cada
+    # row gera até dois turnos no histórico, preservando a alternância real.
+    conversation_history: list[dict[str, str]] = []
+    for row in interacoes_list:
+        cliente_msg = row.get("mensagem_cliente")
+        ia_msg = row.get("mensagem_ia")
+        if cliente_msg:
+            conversation_history.append({"role": "user", "content": cliente_msg})
+        if ia_msg:
+            conversation_history.append({"role": "assistant", "content": ia_msg})
 
     # ── Step 3: Resolução de mídia — transcreve áudio antes de processar ─────
     # wa_id = phone (número WhatsApp sem '+') usado como chave de lookup CRM
@@ -158,9 +166,12 @@ async def execute(payload: dict, db: AsyncSession) -> None:
 
         try:
             # ── Step 5: Extrai briefing & atualiza score ──────────────────
-            extracted = await ai_service.extract_briefing(
-                [{"role": "user", "content": text}]
-            )
+            # Passa o histórico COMPLETO (não só a mensagem atual) para que o
+            # extrator acumule dados de turnos anteriores corretamente.
+            full_conv_for_briefing = conversation_history + [
+                {"role": "user", "content": text}
+            ]
+            extracted = await ai_service.extract_briefing(full_conv_for_briefing)
             briefing = await lead_service.update_briefing_from_extraction(
                 db, lead, extracted
             )

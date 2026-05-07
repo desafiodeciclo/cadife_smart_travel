@@ -185,6 +185,39 @@ async def download_media(media_id: str) -> Optional[bytes]:
         return media_resp.content
 
 
+async def mark_as_read(phone: str, message_id: str) -> None:
+    """Mark an incoming WhatsApp message as read (shows blue double-ticks).
+
+    Best-effort: failures are logged but never raised, so they never block
+    the main processing pipeline.
+    """
+    url = f"{WHATSAPP_API_URL}/{settings.PHONE_NUMBER_ID}/messages"
+    headers = {
+        "Authorization": f"Bearer {settings.WHATSAPP_TOKEN}",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "messaging_product": "whatsapp",
+        "status": "read",
+        "message_id": message_id,
+    }
+    masked = _mask_phone(phone)
+    try:
+        async with httpx.AsyncClient(timeout=_TIMEOUT_S) as client:
+            response = await client.post(url, json=payload, headers=headers)
+            if response.status_code == 200:
+                logger.debug("whatsapp_message_marked_read", phone=masked, message_id=message_id)
+            else:
+                logger.warning(
+                    "whatsapp_mark_read_failed",
+                    phone=masked,
+                    message_id=message_id,
+                    status_code=response.status_code,
+                )
+    except Exception as exc:
+        logger.warning("whatsapp_mark_read_error", phone=masked, error=str(exc))
+
+
 async def send_message(phone: str, text: str) -> SendResult:
     """
     Send a plain-text message to a WhatsApp number via Meta Cloud API.
