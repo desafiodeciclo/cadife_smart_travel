@@ -23,7 +23,6 @@ from main import app
 from app.infrastructure.config.settings import get_settings
 from app.infrastructure.security.jwt import (
     create_access_token,
-    create_refresh_token,
     hash_password,
 )
 from app.models.user import User, UserPerfil

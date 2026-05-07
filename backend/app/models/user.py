@@ -5,7 +5,7 @@ from typing import Optional
 
 from sqlalchemy import Boolean, DateTime, String, func
 from sqlalchemy.orm import Mapped, mapped_column
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from app.core.database import Base
 from app.infrastructure.persistence.types import GUID, StringArray

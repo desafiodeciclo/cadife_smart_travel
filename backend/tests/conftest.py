@@ -66,7 +66,7 @@ import app.infrastructure.persistence.models.user_model  # noqa: F401
 
 # Now import the app and models AFTER setting env vars
 from main import app
-from app.infrastructure.persistence.database import Base, AsyncSessionLocal
+from app.infrastructure.persistence.database import Base
 from app.core.dependencies import get_db
 from app.infrastructure.security.dependencies import get_current_user
 from app.infrastructure.security.jwt import create_access_token

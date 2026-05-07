@@ -7,7 +7,7 @@ Responsabilidades:
   - Gerar mensagem da AYA oferecendo horários de forma natural
 """
 
-from datetime import date, datetime, time, timedelta
+from datetime import date, timedelta
 from typing import Optional
 
 import structlog

@@ -14,7 +14,6 @@ from datetime import date, datetime, time
 from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import (
-    CheckConstraint,
     Date,
     DateTime,
     ForeignKey,

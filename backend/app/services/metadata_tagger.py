@@ -5,7 +5,7 @@ Assigns semantic metadata tags to document chunks for ChromaDB hard-constraint
 filtering. Tags narrow bot queries to topically relevant content only.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 # ---------------------------------------------------------------------------
 # Topic taxonomy — Cadife Tour knowledge domain

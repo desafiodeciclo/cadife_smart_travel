@@ -6,7 +6,7 @@ messaging, and qualification gate.
 """
 
 from datetime import date, time
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -114,7 +114,6 @@ async def test_get_proximos_slots_retorna_disponiveis():
 @pytest.mark.asyncio
 async def test_get_proximos_slots_respeita_max_por_dia():
     db = AsyncMock()
-    from app.models.agendamento import Agendamento
 
     # Full day of bookings only for the first queried date
     agendamentos_full = [

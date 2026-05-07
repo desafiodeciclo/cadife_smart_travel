@@ -14,7 +14,6 @@ Gatilho:
 from __future__ import annotations
 
 import datetime as dt
-from typing import Optional
 
 import structlog
 from sqlalchemy import select

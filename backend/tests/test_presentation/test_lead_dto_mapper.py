@@ -22,7 +22,7 @@ from app.application.dto.lead_mapper import (
     map_lead_to_list_item,
     map_leads_to_list_response,
 )
-from app.domain.entities.enums import LeadOrigem, LeadScore, LeadStatus, PropostaStatus
+from app.domain.entities.enums import LeadOrigem, LeadStatus, PropostaStatus
 from app.presentation.schemas.leads import (
     LeadDetailDTO,
     LeadListItemDTO,

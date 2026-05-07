@@ -14,13 +14,12 @@ Coverage targets:
 """
 
 import uuid
-from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 from app.application.use_cases import process_whatsapp_message
-from app.domain.entities.enums import LeadStatus, TipoMensagem
+from app.domain.entities.enums import LeadStatus
 from app.services.whatsapp_service import SendResult
 
 # ── Helpers ──────────────────────────────────────────────────────────────────

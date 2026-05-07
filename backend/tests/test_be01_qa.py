@@ -8,11 +8,6 @@ from app.models.briefing import calculate_completude
 from app.domain.entities.enums import PerfilViagem, OrcamentoPerfil
 from app.services import lead_service
 from app.models.lead import Lead
-from app.models.briefing import Briefing
-from app.models.interacao import Interacao
-from app.models.agendamento import Agendamento
-from app.models.proposta import Proposta
-from app.models.user import User
 from sqlalchemy.ext.asyncio import AsyncSession
 from unittest.mock import MagicMock, AsyncMock
 

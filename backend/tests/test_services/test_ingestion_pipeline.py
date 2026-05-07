@@ -4,10 +4,8 @@ Unit tests for ingestion_pipeline.py.
 All external I/O (ChromaDB, OpenAI embeddings) is mocked.
 """
 
-import json
-import tempfile
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 

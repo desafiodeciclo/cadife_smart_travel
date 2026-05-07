@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional
 from pydantic import BaseModel, Field
 import uuid
 from app.domain.entities.enums import LeadOrigem, LeadStatus, LeadScore

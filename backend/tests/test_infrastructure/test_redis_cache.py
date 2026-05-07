@@ -8,8 +8,7 @@ Redis itself is mocked so the suite runs without a live Redis server.
 from __future__ import annotations
 
 import json
-from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from pydantic import BaseModel

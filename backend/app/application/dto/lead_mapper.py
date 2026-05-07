@@ -11,12 +11,10 @@ preventing accidental exposure when the ORM model changes.
 
 from __future__ import annotations
 
-import uuid
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from app.models.lead import Lead
-    from app.models.briefing import Briefing
 
 from app.presentation.schemas.leads import (
     LeadDetailDTO,

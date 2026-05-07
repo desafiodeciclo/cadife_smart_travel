@@ -7,8 +7,6 @@ Cobre:
   - Audit Trail: middleware loga campos obrigatórios em JSON
 """
 
-import json
-import logging
 from unittest.mock import patch
 
 import pytest

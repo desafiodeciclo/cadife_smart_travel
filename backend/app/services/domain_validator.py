@@ -9,7 +9,7 @@ do chat, instruindo a LLM a dialogar com o cliente.
 """
 
 from dataclasses import dataclass, field
-from datetime import date, timedelta
+from datetime import date
 from typing import Optional
 
 import structlog

@@ -20,7 +20,6 @@ from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
 from app.domain.entities.enums import LeadScore, LeadStatus
-from app.models.briefing import Briefing
 from app.routes import leads as leads_router
 
 # ── Test App with Dependency Overrides ─────────────────────────────────────

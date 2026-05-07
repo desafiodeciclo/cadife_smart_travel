@@ -11,11 +11,9 @@ Coverage targets:
 """
 
 import uuid
-from datetime import datetime, timezone
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from sqlalchemy import select
 
 from app.services.notification_queue_service import NotificationQueueService
 
