@@ -1,13 +1,10 @@
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
-import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:cadife_smart_travel/features/client/profile/data/mocks/client_profile_mocks.dart';
 import 'package:cadife_smart_travel/features/client/profile/presentation/providers/profile_provider.dart';
 import 'package:cadife_smart_travel/features/client/profile/presentation/widgets/diary_widgets.dart';
 import 'package:cadife_smart_travel/features/client/profile/presentation/widgets/profile_widgets.dart';
 import 'package:cadife_smart_travel/features/client/profile/presentation/widgets/suitcase_widgets.dart';
-import 'package:cadife_smart_travel/features/settings/application/theme_notifier.dart';
-import 'package:cadife_smart_travel/features/settings/domain/entities/user_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -129,7 +126,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
 
   Widget _buildTabLayout(BuildContext context, AuthUser? user) {
     final cadife = context.cadife;
-    final themePref = ref.watch(themeNotifierProvider);
     final isSaving = ref.watch(profileSaveStateProvider).isLoading;
 
     return SafeArea(
@@ -183,10 +179,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                   tipoViagemOptions: _tipoViagemOptions,
                   preferenciasOptions: _preferenciasOptions,
                   temPassaporte: _temPassaporte,
-                  themePreference: themePref.maybeWhen(
-                    data: (p) => p,
-                    orElse: () => ThemePreference.system,
-                  ),
                   onToggleTipoViagem: (val) => setState(() {
                     if (_tipoViagemSelected.contains(val)) {
                       _tipoViagemSelected.remove(val);
@@ -209,10 +201,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                     _hasSynced = false;
                     _syncFromUser(user);
                   }),
-                  onLogout: () => _confirmLogout(context, ref),
-                  onDeleteAccount: () => _confirmDeleteAccount(context, ref),
-                  onThemeChanged: (pref) =>
-                      ref.read(themeNotifierProvider.notifier).setTheme(pref),
                 ),
                 const DiariesTab(),
                 const SuitcaseTab(),
@@ -467,15 +455,11 @@ class _ProfileInfoTab extends StatelessWidget {
     required this.tipoViagemOptions,
     required this.preferenciasOptions,
     required this.temPassaporte,
-    required this.themePreference,
     required this.onToggleTipoViagem,
     required this.onTogglePreferencia,
     required this.onTogglePassaporte,
     required this.onSave,
     required this.onCancel,
-    required this.onLogout,
-    required this.onDeleteAccount,
-    required this.onThemeChanged,
   });
 
   final AuthUser? user;
@@ -487,15 +471,11 @@ class _ProfileInfoTab extends StatelessWidget {
   final List<String> tipoViagemOptions;
   final List<String> preferenciasOptions;
   final bool? temPassaporte;
-  final ThemePreference themePreference;
   final ValueChanged<String> onToggleTipoViagem;
   final ValueChanged<String> onTogglePreferencia;
   final VoidCallback onTogglePassaporte;
   final VoidCallback onSave;
   final VoidCallback onCancel;
-  final VoidCallback onLogout;
-  final VoidCallback onDeleteAccount;
-  final ValueChanged<ThemePreference> onThemeChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -555,14 +535,28 @@ class _ProfileInfoTab extends StatelessWidget {
           ),
         ),
         SliverToBoxAdapter(
-          child: ProfileSectionCard(
-            title: 'Aparência',
-            children: [
-              ProfileThemeSelector(
-                themePreference: themePreference,
-                onChanged: onThemeChanged,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            child: Center(
+              child: Column(
+                children: [
+                  Text(
+                    'Cadife Smart Travel',
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: context.cadife.textSecondary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Versão 1.0.0 (build 42)',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: context.cadife.textSecondary.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
         SliverToBoxAdapter(
@@ -571,8 +565,6 @@ class _ProfileInfoTab extends StatelessWidget {
             isSaving: isSaving,
             onSave: onSave,
             onCancel: onCancel,
-            onLogout: onLogout,
-            onDeleteAccount: onDeleteAccount,
           ),
         ),
         const SliverToBoxAdapter(child: SizedBox(height: 32)),
@@ -581,76 +573,3 @@ class _ProfileInfoTab extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Dialogs (module-level, unchanged from original)
-// ---------------------------------------------------------------------------
-
-Future<void> _confirmLogout(BuildContext context, WidgetRef ref) async {
-  final confirmed = await showShadDialog<bool>(
-    context: context,
-    builder: (ctx) => ShadDialog(
-      title: const Text('Sair da conta'),
-      description: const Text('Tem certeza que deseja sair?'),
-      actions: [
-        ShadButton.outline(
-          onPressed: () => Navigator.of(ctx).pop(false),
-          child: const Text('Cancelar'),
-        ),
-        ShadButton.destructive(
-          onPressed: () => Navigator.of(ctx).pop(true),
-          child: const Text('Sair'),
-        ),
-      ],
-    ),
-  );
-
-  if (confirmed == true && context.mounted) {
-    await ref.read(authNotifierProvider.notifier).logout();
-  }
-}
-
-Future<void> _confirmDeleteAccount(BuildContext context, WidgetRef ref) async {
-  final confirmed = await showShadDialog<bool>(
-    context: context,
-    builder: (ctx) => ShadDialog(
-      title: const Row(
-        children: [
-          Icon(Icons.warning_amber_rounded, color: AppColors.error, size: 24),
-          SizedBox(width: 8),
-          Text('Apagar conta'),
-        ],
-      ),
-      description: const Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Você está prestes a apagar permanentemente sua conta e todos os dados associados.',
-          ),
-          SizedBox(height: 12),
-          Text(
-            'Esta ação não pode ser desfeita.',
-            style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.error),
-          ),
-        ],
-      ),
-      actions: [
-        ShadButton.outline(
-          onPressed: () => Navigator.of(ctx).pop(false),
-          child: const Text('Cancelar'),
-        ),
-        ShadButton.destructive(
-          onPressed: () => Navigator.of(ctx).pop(true),
-          child: const Text('Apagar minha conta'),
-        ),
-      ],
-    ),
-  );
-
-  // Backend integration pending: integrar com DELETE /users/me quando o endpoint existir.
-  if (confirmed == true && context.mounted) {
-    ShadToaster.of(context).show(
-      const ShadToast(description: Text('Funcionalidade em breve')),
-    );
-  }
-}

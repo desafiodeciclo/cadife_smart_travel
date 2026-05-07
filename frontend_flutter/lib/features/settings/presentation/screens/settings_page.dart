@@ -124,6 +124,18 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             icon: LucideIcons.settings,
             child: _AccountSection(ref: ref),
           ),
+          const SizedBox(height: 20),
+          _SettingsSection(
+            title: 'Idioma',
+            icon: LucideIcons.languages,
+            child: _LanguageSection(),
+          ),
+          const SizedBox(height: 20),
+          _SettingsSection(
+            title: 'Suporte e Legal',
+            icon: LucideIcons.lifeBuoy,
+            child: const _SupportSection(),
+          ),
           const SizedBox(height: 28),
           SizedBox(
             width: double.infinity,
@@ -283,6 +295,13 @@ class _PersonalDataSectionState extends State<_PersonalDataSection> {
     return DateTime(year, month, day);
   }
 
+  String _initials(String name) {
+    final parts = name.trim().split(' ').where((s) => s.isNotEmpty).toList();
+    if (parts.isEmpty) return '?';
+    if (parts.length == 1) return parts.first[0].toUpperCase();
+    return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
+  }
+
   String? _validateName(String v) {
     if (v.trim().isEmpty) return 'Nome é obrigatório';
     if (v.trim().length < 2) return 'Mínimo de 2 caracteres';
@@ -334,8 +353,76 @@ class _PersonalDataSectionState extends State<_PersonalDataSection> {
 
   @override
   Widget build(BuildContext context) {
+    final cadife = context.cadife;
+
     return Column(
       children: [
+        const SizedBox(height: 8),
+        Center(
+          child: Stack(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppColors.primary.withValues(alpha: 0.15),
+                    width: 2,
+                  ),
+                ),
+                child: ShadAvatar(
+                  widget.settings.avatarUrl ?? '',
+                  size: const Size.square(110),
+                  placeholder: Text(
+                    _initials(widget.settings.name),
+                    style: GoogleFonts.inter(
+                      fontSize: 34,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: 4,
+                right: 4,
+                child: GestureDetector(
+                  onTap: () {
+                    ShadToaster.of(context).show(
+                      const ShadToast(
+                        description: Text('Funcionalidade de upload em breve'),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.primary,
+                      border: Border.all(
+                        color: cadife.cardBackground,
+                        width: 3,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      LucideIcons.camera,
+                      size: 20,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 28),
         CadifeInput(
           label: 'Nome Completo',
           controller: _nameCtrl,
@@ -1005,6 +1092,27 @@ class _SecuritySection extends StatelessWidget {
         Divider(color: cadife.divider, height: 1),
         ListTile(
           contentPadding: EdgeInsets.zero,
+          leading: Icon(LucideIcons.shieldCheck, color: cadife.textSecondary, size: 20),
+          title: Text(
+            'Segurança',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: cadife.textPrimary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          subtitle: Text(
+            'Autenticação e privacidade',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: cadife.textSecondary,
+            ),
+          ),
+          trailing: Icon(LucideIcons.chevronRight,
+              size: 16, color: cadife.textSecondary),
+          onTap: () {},
+        ),
+        Divider(color: cadife.divider, height: 1),
+        ListTile(
+          contentPadding: EdgeInsets.zero,
           leading: Icon(LucideIcons.logOut, color: cadife.textSecondary, size: 20),
           title: Text(
             'Sair desta Conta',
@@ -1238,3 +1346,85 @@ Future<void> _executeDeleteAccount(BuildContext context, WidgetRef ref) async {
     }
   }
 }
+
+// ---------------------------------------------------------------------------
+// 6 — Language
+// ---------------------------------------------------------------------------
+
+class _LanguageSection extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final cadife = context.cadife;
+    final theme = Theme.of(context);
+
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(LucideIcons.languages, color: cadife.textSecondary, size: 20),
+      title: Text(
+        'Idioma',
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: cadife.textPrimary,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      subtitle: Text(
+        'Português (Brasil)',
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: cadife.textSecondary,
+        ),
+      ),
+      trailing: Icon(LucideIcons.chevronRight,
+          size: 16, color: cadife.textSecondary),
+      onTap: () {},
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 7 — Support
+// ---------------------------------------------------------------------------
+
+class _SupportSection extends StatelessWidget {
+  const _SupportSection();
+
+  @override
+  Widget build(BuildContext context) {
+    final cadife = context.cadife;
+    final theme = Theme.of(context);
+
+    return Column(
+      children: [
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: Icon(LucideIcons.lifeBuoy, color: cadife.textSecondary, size: 20),
+          title: Text(
+            'Central de Ajuda',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: cadife.textPrimary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          trailing: Icon(LucideIcons.chevronRight,
+              size: 16, color: cadife.textSecondary),
+          onTap: () {},
+        ),
+        Divider(color: cadife.divider, height: 1),
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: Icon(LucideIcons.fileText, color: cadife.textSecondary, size: 20),
+          title: Text(
+            'Termos e Privacidade',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: cadife.textPrimary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          trailing: Icon(LucideIcons.chevronRight,
+              size: 16, color: cadife.textSecondary),
+          onTap: () {},
+        ),
+      ],
+    );
+  }
+}
+

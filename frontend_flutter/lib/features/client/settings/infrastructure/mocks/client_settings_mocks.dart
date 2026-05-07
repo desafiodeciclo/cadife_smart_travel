@@ -8,6 +8,7 @@ class ClientSettingsMocks {
         email: 'ana.silva@example.com',
         phone: '11999887766',
         dateOfBirth: DateTime(1990, 5, 15),
+        avatarUrl: 'https://i.pravatar.cc/150?u=ana.silva',
         notificationsPushOffers: true,
         notificationsPushTripsUpdates: true,
         notificationsPushAya: true,

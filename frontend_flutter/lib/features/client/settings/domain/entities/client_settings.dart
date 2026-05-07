@@ -6,6 +6,7 @@ class ClientSettings extends Equatable {
     required this.email,
     required this.phone,
     this.dateOfBirth,
+    this.avatarUrl,
     this.notificationsPushOffers = true,
     this.notificationsPushTripsUpdates = true,
     this.notificationsPushAya = true,
@@ -19,6 +20,7 @@ class ClientSettings extends Equatable {
 
   final String name;
   final String email;
+  final String? avatarUrl;
 
   // Raw digits: "11999887766"
   final String phone;
@@ -44,6 +46,7 @@ class ClientSettings extends Equatable {
     String? email,
     String? phone,
     DateTime? dateOfBirth,
+    String? avatarUrl,
     bool clearDateOfBirth = false,
     bool? notificationsPushOffers,
     bool? notificationsPushTripsUpdates,
@@ -58,6 +61,7 @@ class ClientSettings extends Equatable {
       ClientSettings(
         name: name ?? this.name,
         email: email ?? this.email,
+        avatarUrl: avatarUrl ?? this.avatarUrl,
         phone: phone ?? this.phone,
         dateOfBirth:
             clearDateOfBirth ? null : (dateOfBirth ?? this.dateOfBirth),
@@ -81,6 +85,7 @@ class ClientSettings extends Equatable {
   List<Object?> get props => [
         name,
         email,
+        avatarUrl,
         phone,
         dateOfBirth,
         notificationsPushOffers,
