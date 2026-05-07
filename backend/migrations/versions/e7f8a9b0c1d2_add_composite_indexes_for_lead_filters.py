@@ -18,7 +18,7 @@ All indexes are CONCURRENTLY-safe (added via CREATE INDEX IF NOT EXISTS).
 from alembic import op
 
 revision = 'e7f8a9b0c1d2'
-down_revision = 'e8f9a0b1c2d3'
+down_revision = 'f7a8b9c0d1e2'
 branch_labels = None
 depends_on = None
 

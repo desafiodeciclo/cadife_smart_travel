@@ -43,8 +43,8 @@ class ILeadRepository(ABC):
     @abstractmethod
     async def list_all(
         self,
-        status: Optional[str] = None,
-        score: Optional[str] = None,
+        status: Optional[LeadStatus] = None,
+        score: Optional[LeadScore] = None,
         destino: Optional[str] = None,
         data_inicio: Optional[date] = None,
         data_fim: Optional[date] = None,

@@ -15,7 +15,7 @@ from app.application.services.lead_state_machine import (
     InvalidStateTransitionError,
     LeadStateMachine,
 )
-from app.domain.entities.enums import LeadStatus
+from app.domain.entities.enums import LeadScore, LeadStatus
 from app.infrastructure.cache.decorator import cached
 from app.infrastructure.security.dependencies import (
     RequiresRole,
@@ -68,10 +68,14 @@ async def list_leads(
     if current_user.perfil == "consultor":
         consultor_id = current_user.id
 
+    # Convert string query params to native enums for PostgreSQL enum columns
+    status_enum = LeadStatus(status) if status else None
+    score_enum = LeadScore(score) if score else None
+
     leads, total = await lead_service.list_leads(
         db,
-        status=status,
-        score=score,
+        status=status_enum,
+        score=score_enum,
         destino=destino,
         data_inicio=data_inicio,
         data_fim=data_fim,

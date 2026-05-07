@@ -15,7 +15,7 @@ import uuid
 from datetime import date
 from typing import Optional
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -87,8 +87,8 @@ class LeadRepository(AbstractRepository[LeadModel], ILeadRepository):
 
     async def list_all(
         self,
-        status: Optional[str] = None,
-        score: Optional[str] = None,
+        status: Optional[LeadStatus] = None,
+        score: Optional[LeadScore] = None,
         destino: Optional[str] = None,
         data_inicio: Optional[date] = None,
         data_fim: Optional[date] = None,
@@ -112,9 +112,13 @@ class LeadRepository(AbstractRepository[LeadModel], ILeadRepository):
         )
 
         if status:
-            stmt = stmt.where(LeadModel.status == status)
+            stmt = stmt.where(
+                text(f"leads.status = '{status.value}'")
+            )
         if score:
-            stmt = stmt.where(LeadModel.score == score)
+            stmt = stmt.where(
+                text(f"leads.score = '{score.value}'")
+            )
         if consultor_id:
             stmt = stmt.where(LeadModel.consultor_id == consultor_id)
 

@@ -172,8 +172,8 @@ async def get_lead_metrics(db: AsyncSession) -> dict[str, int]:
 
 async def list_leads(
     db: AsyncSession,
-    status: Optional[str] = None,
-    score: Optional[str] = None,
+    status: Optional[LeadStatus] = None,
+    score: Optional[LeadScore] = None,
     destino: Optional[str] = None,
     data_inicio: Optional[datetime] = None,
     data_fim: Optional[datetime] = None,
