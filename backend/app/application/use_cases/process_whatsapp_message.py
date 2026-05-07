@@ -84,8 +84,12 @@ async def execute(payload: dict, db: AsyncSession) -> None:
             new_status=LeadStatus.em_atendimento,
         )
 
+    # Cache lead_id antes de qualquer branch — após rollback o SQLAlchemy expira
+    # todos os atributos do lead (inclusive id), causando MissingGreenlet se acessado.
+    lead_id = lead.id
+
     # ── Step 2.5: Carrega histórico do DB (restart-resilient) ────────────────
-    interacoes_list = await lead_service.get_recent_interacoes(db, lead.id, limit=20)
+    interacoes_list = await lead_service.get_recent_interacoes(db, lead_id, limit=20)
     ai_service.preload_memory_from_db(phone, interacoes_list)
 
     # Formata histórico para o orquestrador (mais antigo primeiro)
@@ -149,9 +153,7 @@ async def execute(payload: dict, db: AsyncSession) -> None:
             db=db,
         )
 
-        # Captura lead_id antes do bloco try — protege o log no except caso
-        # a sessão esteja em PendingRollback e o lazy-load de lead.id falhe.
-        lead_id_str = str(lead.id)
+        lead_id_str = str(lead_id)
         status_antes = lead.status
 
         try:
@@ -202,7 +204,7 @@ async def execute(payload: dict, db: AsyncSession) -> None:
     # transcribed/described media). For unprocessable media, reply is fallback.
     interacao = await lead_service.save_interacao(
         db,
-        lead.id,
+        lead_id,
         msg_cliente=text,
         msg_ia=reply,
         tipo=tipo,
@@ -213,7 +215,7 @@ async def execute(payload: dict, db: AsyncSession) -> None:
     await lead_service.update_interacao_send_result(db, interacao, send_result)
     logger.info(
         "whatsapp_reply_dispatched",
-        lead_id=str(lead.id),
+        lead_id=str(lead_id),
         success=send_result.success,
         wamid=send_result.wamid,
         latency_ms=send_result.latency_ms,

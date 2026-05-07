@@ -61,13 +61,23 @@ class Briefing(Base):
     duracao_dias: Mapped[Optional[int]] = mapped_column(Integer)
     qtd_pessoas: Mapped[Optional[int]] = mapped_column(Integer)
     perfil: Mapped[Optional[PerfilViagem]] = mapped_column(
-        SAEnum(PerfilViagem, name="perfil_viagem_enum", create_type=False),
+        SAEnum(
+            PerfilViagem,
+            name="perfil_viagem_enum",
+            create_type=False,
+            values_callable=lambda obj: [e.value for e in obj],
+        ),
         nullable=True,
     )
     tipo_viagem: Mapped[Optional[list[str]]] = mapped_column(StringArray())
     preferencias: Mapped[Optional[list[str]]] = mapped_column(StringArray())
     orcamento: Mapped[Optional[OrcamentoNivel]] = mapped_column(
-        SAEnum(OrcamentoNivel, name="orcamento_perfil_enum", create_type=False),
+        SAEnum(
+            OrcamentoNivel,
+            name="orcamento_perfil_enum",
+            create_type=False,
+            values_callable=lambda obj: [e.value for e in obj],
+        ),
         nullable=True,
     )
     tem_passaporte: Mapped[Optional[bool]] = mapped_column(Boolean)

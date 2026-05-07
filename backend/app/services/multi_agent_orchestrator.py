@@ -10,7 +10,7 @@ sem overhead do LangChain) para máximo controle e observabilidade.
     · Determina qual campo do briefing coletar a seguir (Destino→Datas→Pessoas→Perfil…)
     · Retorna JSON estruturado para o Orquestrador
 
-  Tier 2 — OrquestradorAgent  (OPENROUTER_CONVERSION_MODEL, padrão: claude-3.5-sonnet)
+  Tier 2 — OrquestradorAgent  (OPENROUTER_CONVERSION_MODEL, padrão: gemini-2.0-flash)
     · Usa RAG (knowledge_base) + contexto CRM do Tier 1
     · System prompt stage-aware: se 'destino' já está no banco, NUNCA re-pergunta
     · Ferramentas: query_project_scope, persist_lead_data, check_availability
