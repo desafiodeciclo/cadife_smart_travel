@@ -51,6 +51,7 @@ class ILeadRepository(ABC):
         q: Optional[str] = None,
         page: int = 1,
         limit: int = 20,
+        consultor_id: Optional[uuid.UUID] = None,
     ) -> tuple[list, int]: ...
 
     @abstractmethod

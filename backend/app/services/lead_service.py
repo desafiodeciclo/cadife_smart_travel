@@ -4,7 +4,6 @@ from typing import Optional
 
 import structlog
 from sqlalchemy import func, select
-from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from sqlalchemy.exc import IntegrityError, ProgrammingError
@@ -183,47 +182,24 @@ async def list_leads(
     limit: int = 20,
     consultor_id: Optional[uuid.UUID] = None,
 ) -> tuple[list[Lead], int]:
-    # Filtro base: não deletados e não arquivados
-    query = (
-        select(Lead)
-        .options(selectinload(Lead.briefing))
-        .where(Lead.deleted_at.is_(None), Lead.is_archived.is_(False))
-    )
-    
-    if status:
-        query = query.where(Lead.status == status)
-    if score:
-        query = query.where(Lead.score == score)
-    if consultor_id:
-        query = query.where(Lead.consultor_id == consultor_id)
-    
-    # Filtro parcial por destino (via Briefing)
-    if destino:
-        query = query.join(Lead.briefing).where(Briefing.destino.ilike(f"%{destino}%"))
-    
-    # Filtro por período
-    if data_inicio:
-        query = query.where(Lead.criado_em >= data_inicio)
-    if data_fim:
-        query = query.where(Lead.criado_em <= data_fim)
-        
-    # Busca full-text simplificada (q)
-    if q:
-        search_pattern = f"%{q}%"
-        query = query.where(
-            (Lead.nome.ilike(search_pattern)) | 
-            (Lead.telefone.ilike(search_pattern))
-        )
+    """
+    Delega a query de filtragem/paginação ao LeadRepository.
+    O Service layer nunca constrói SQL diretamente.
+    """
+    from app.infrastructure.persistence.repositories.lead_repository import LeadRepository
 
-    count_query = select(func.count()).select_from(query.subquery())
-    total_result = await db.execute(count_query)
-    total = total_result.scalar_one()
-
-    query = (
-        query.order_by(Lead.criado_em.desc()).offset((page - 1) * limit).limit(limit)
+    repo = LeadRepository(db)
+    return await repo.list_all(
+        status=status,
+        score=score,
+        destino=destino,
+        data_inicio=data_inicio,
+        data_fim=data_fim,
+        q=q,
+        page=page,
+        limit=limit,
+        consultor_id=consultor_id,
     )
-    result = await db.execute(query)
-    return list(result.scalars().all()), total
 
 
 async def update_lead_status(

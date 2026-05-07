@@ -145,12 +145,3 @@ class LeadListResponse(BaseModel):
     page: int
     limit: int
     pages: int
-
-
-class LeadFilterParams(BaseModel):
-    status: Optional[LeadStatus] = None
-    score: Optional[LeadScore] = None
-    destino: Optional[str] = None
-    data_inicio: Optional[datetime] = None
-    data_fim: Optional[datetime] = None
-    q: Optional[str] = None # Busca full-text por nome ou telefone

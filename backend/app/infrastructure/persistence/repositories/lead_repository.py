@@ -17,6 +17,7 @@ from typing import Optional
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.domain.entities.enums import LeadScore, LeadStatus
 from app.domain.interfaces.repositories import ILeadRepository
@@ -94,26 +95,36 @@ class LeadRepository(AbstractRepository[LeadModel], ILeadRepository):
         q: Optional[str] = None,
         page: int = 1,
         limit: int = 20,
+        consultor_id: Optional[uuid.UUID] = None,
     ) -> tuple[list[LeadModel], int]:
         """
         Paginated lead list with advanced filters.
+        Keeps all SQLAlchemy query logic in the Repository layer.
         """
         # Filter base: not archived and not logically deleted
-        stmt = select(LeadModel).where(
-            LeadModel.deleted_at.is_(None), 
-            LeadModel.is_archived.is_(False)
+        stmt = (
+            select(LeadModel)
+            .options(selectinload(LeadModel.briefing))
+            .where(
+                LeadModel.deleted_at.is_(None),
+                LeadModel.is_archived.is_(False),
+            )
         )
 
         if status:
             stmt = stmt.where(LeadModel.status == status)
         if score:
             stmt = stmt.where(LeadModel.score == score)
-        
+        if consultor_id:
+            stmt = stmt.where(LeadModel.consultor_id == consultor_id)
+
         if destino:
             # Join with briefing to filter by destination
             from app.models.briefing import Briefing as BriefingModel
-            stmt = stmt.join(LeadModel.briefing).where(BriefingModel.destino.ilike(f"%{destino}%"))
-            
+            stmt = stmt.join(LeadModel.briefing).where(
+                BriefingModel.destino.ilike(f"%{destino}%")
+            )
+
         if data_inicio:
             stmt = stmt.where(LeadModel.criado_em >= data_inicio)
         if data_fim:
