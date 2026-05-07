@@ -28,11 +28,10 @@ class StatusPage extends ConsumerWidget {
           tooltip: 'Notificações',
         ),
       ],
-      floatingActionButton: _AyaFab(),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         child: Padding(
-          padding: const EdgeInsets.only(top: 72, bottom: 120),
+          padding: const EdgeInsets.only(top: 72, bottom: 40),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -49,6 +48,11 @@ class StatusPage extends ConsumerWidget {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: ConsultantContactCard(consultant: data.consultant),
+              ),
+              const SizedBox(height: 12),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20),
+                child: _AyaChatField(),
               ),
               const SizedBox(height: 28),
               Padding(
@@ -73,7 +77,9 @@ class StatusPage extends ConsumerWidget {
   }
 }
 
-class _AyaFab extends StatelessWidget {
+class _AyaChatField extends StatelessWidget {
+  const _AyaChatField();
+
   Future<void> _launch() async {
     final uri = Uri.parse(
       'https://wa.me/$_kAyaWhatsApp'
@@ -86,15 +92,60 @@ class _AyaFab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FloatingActionButton.extended(
-      onPressed: _launch,
-      backgroundColor: const Color(0xFF25D366),
-      foregroundColor: Colors.white,
-      elevation: 4,
-      icon: const Icon(Icons.chat_bubble_outline_rounded),
-      label: const Text(
-        'Chat AYA',
-        style: TextStyle(fontWeight: FontWeight.w700),
+    final cadife = context.cadife;
+
+    return GestureDetector(
+      onTap: _launch,
+      child: CadifeGlassCard(
+        padding: const EdgeInsets.all(14),
+        borderRadius: BorderRadius.circular(18),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF25D366).withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.chat_bubble_outline_rounded,
+                size: 20,
+                color: Color(0xFF25D366),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Chat AYA',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: cadife.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Dúvidas? Fale com nossa assistente virtual',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: cadife.textSecondary,
+                      letterSpacing: -0.1,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              size: 18,
+              color: cadife.textSecondary.withValues(alpha: 0.4),
+            ),
+          ],
+        ),
       ),
     );
   }
