@@ -13,28 +13,16 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settingsAsync = ref.watch(agencySettingsProvider);
 
-    return Scaffold(
-      backgroundColor: context.cadife.background,
+    return PageScaffold(
       appBar: const CadifeAppBar(
         title: 'Configurações',
         showProfile: false,
       ),
       body: settingsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.error_outline, size: 48, color: AppColors.error),
-              const SizedBox(height: 12),
-              const Text('Erro ao carregar configurações'),
-              const SizedBox(height: 8),
-              ShadButton.outline(
-                onPressed: () => ref.invalidate(agencySettingsProvider),
-                child: const Text('Tentar novamente'),
-              ),
-            ],
-          ),
+        loading: () => const AppLoadingWidget(),
+        error: (e, _) => AppErrorWidget(
+          message: 'Erro ao carregar configurações',
+          onRetry: () => ref.invalidate(agencySettingsProvider),
         ),
         data: (settings) => ListView(
           padding: const EdgeInsets.symmetric(vertical: 8),

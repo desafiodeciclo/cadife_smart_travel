@@ -83,9 +83,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget build(BuildContext context) {
     final isLast = _currentPage == _slides.length - 1;
 
+    // NOTE: exceção ao DS — tela de onboarding sem AppBar por design intencional.
+    // O PageScaffold não é usado aqui pois a experiência é full-bleed sem barra de navegação.
     return Scaffold(
-      backgroundColor: Theme.of(context).brightness == Brightness.dark 
-          ? AppColors.darkSurface 
+      backgroundColor: Theme.of(context).brightness == Brightness.dark
+          ? AppColors.darkSurface
           : context.cadife.background,
       body: SafeArea(
         child: Column(
@@ -95,13 +97,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               alignment: Alignment.centerRight,
               child: Padding(
                 padding: const EdgeInsets.only(top: 8, right: 16),
-                child: TextButton(
+                child: CadifeButton(
+                  text: 'Pular',
+                  variant: ButtonVariant.ghost,
+                  analyticsLabel: 'onboarding_skip',
                   onPressed: _finish,
-                  child: Text(
-                    'Pular',
-                    style: AppTextStyles.bodyMedium
-                        .copyWith(color: context.cadife.textSecondary),
-                  ),
                 ),
               ),
             ),

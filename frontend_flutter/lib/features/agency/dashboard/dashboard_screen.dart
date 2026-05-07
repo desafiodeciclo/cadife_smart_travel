@@ -18,7 +18,8 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final statsAsync = ref.watch(dashboardStatsProvider);
 
-    return Scaffold(
+    return PageScaffold(
+      showProfile: false,
       body: StateContainer(
         state: statsAsync,
         onRetry: () => ref.read(dashboardStatsProvider.notifier).refresh(),
