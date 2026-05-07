@@ -618,9 +618,9 @@ class _BriefingShimmer extends StatelessWidget {
           // Section skeletons
           ...List.generate(
             4,
-            (_) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: const Skeleton(height: 72, borderRadius: 16),
+            (_) => const Padding(
+              padding: EdgeInsets.only(bottom: 8),
+              child: Skeleton(height: 72, borderRadius: 16),
             ),
           ),
         ],
