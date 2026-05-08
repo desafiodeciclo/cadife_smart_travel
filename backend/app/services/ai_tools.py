@@ -24,8 +24,11 @@ Design notes:
 from __future__ import annotations
 
 import json
+import re
+from datetime import datetime
 from typing import Any, Optional
 
+import httpx
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -34,6 +37,33 @@ from app.services import rag_service
 logger = structlog.get_logger()
 
 from app.models.briefing import _PERFIL_ALIASES, _ORCAMENTO_ALIASES
+
+# Corrige DD/MMYYYY → DD/MM/YYYY (ex: "17/092027" → "17/09/2027")
+_DATE_MISSING_SLASH_RE = re.compile(r'^(\d{1,2})/(\d{2})(\d{4})$')
+
+
+def _normalize_date_str(value: Any) -> Any:
+    """Tenta reparar strings de data malformadas antes da validação Pydantic."""
+    if not isinstance(value, str):
+        return value
+    v = value.strip().replace(" ", "")
+    # Corrige barra ausente entre mês e ano: 17/092027 → 17/09/2027
+    v = _DATE_MISSING_SLASH_RE.sub(r'\1/\2/\3', v)
+    for fmt in ("%d/%m/%Y", "%Y-%m-%d", "%d-%m-%Y"):
+        try:
+            return datetime.strptime(v, fmt).strftime("%Y-%m-%d")
+        except ValueError:
+            pass
+    return value  # retorna original; Pydantic vai rejeitar e logar o erro
+
+
+def _normalize_date_fields(data: dict[str, Any]) -> dict[str, Any]:
+    """Normaliza data_ida e data_volta antes da validação do BriefingExtracted."""
+    result = dict(data)
+    for field in ("data_ida", "data_volta"):
+        if field in result:
+            result[field] = _normalize_date_str(result[field])
+    return result
 
 
 def _normalize_briefing_enums(data: dict[str, Any]) -> dict[str, Any]:
@@ -47,6 +77,12 @@ def _normalize_briefing_enums(data: dict[str, Any]) -> dict[str, Any]:
         )
     return result
 
+
+_OPENROUTER_BASE = "https://openrouter.ai/api/v1"
+_OPENROUTER_HEADERS = {
+    "HTTP-Referer": "https://cadifetour.com",
+    "X-Title": "Cadife Smart Travel",
+}
 
 # ── Tool Schemas (OpenAI function-calling format) ────────────────────────────
 
@@ -188,6 +224,36 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
                     },
                 },
                 "required": ["phone", "data"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "generate_travel_image",
+            "description": (
+                "Gera uma imagem inspiracional do destino de viagem usando IA (recraft-v4). "
+                "Use ao final do briefing para encantar o cliente com uma prévia visual da experiência. "
+                "Retorna URL da imagem gerada para compartilhar no WhatsApp."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "destino": {
+                        "type": "string",
+                        "description": "Destino da viagem (ex: Lisboa, Portugal; Cancún, México).",
+                    },
+                    "perfil": {
+                        "type": "string",
+                        "description": "Perfil do viajante: casal, família, solo, grupo, amigos.",
+                    },
+                    "estilo": {
+                        "type": "string",
+                        "description": "Estilo da imagem: luxo, aventura, romântico, família, cultural.",
+                        "default": "luxo",
+                    },
+                },
+                "required": ["destino"],
             },
         },
     },
@@ -398,15 +464,22 @@ async def _persist_lead_data(
 
         from app.services.lead_service import update_briefing_from_extraction
 
-        normalized = _normalize_briefing_enums(sanitized)
+        normalized = _normalize_briefing_enums(_normalize_date_fields(sanitized))
         briefing_in = BriefingExtracted.model_validate(normalized)
         briefing = await update_briefing_from_extraction(db, lead, briefing_in)
 
+        scheduling_required = briefing.completude_pct >= 60
         return json.dumps(
             {
                 "success": True,
                 "lead_id": str(lead.id),
                 "completude_pct": briefing.completude_pct,
+                "next_step": "offer_scheduling" if scheduling_required else "continue_briefing",
+                "instruction": (
+                    "Briefing completo. Chame check_availability AGORA e convide o cliente para agendar a curadoria."
+                    if scheduling_required
+                    else None
+                ),
             }
         )
     except Exception as exc:
@@ -418,6 +491,102 @@ async def _persist_lead_data(
             pass
         logger.error("tool_persist_lead_data_failed", error=str(exc))
         return json.dumps({"success": False, "error": "persist_failed"})
+
+
+_TRAVEL_IMAGE_STYLE_PROMPTS: dict[str, str] = {
+    "luxo": "luxury travel photography, 5-star resort, golden hour lighting, cinematic",
+    "aventura": "adventure travel photography, dramatic landscapes, natural light, epic",
+    "romântico": "romantic couple travel, sunset, dreamy atmosphere, soft lighting",
+    "família": "happy family vacation, bright colors, joyful, sunny day",
+    "cultural": "cultural heritage travel, architectural beauty, warm tones, artistic",
+}
+
+
+async def _generate_travel_image(
+    destino: str,
+    perfil: Optional[str] = None,
+    estilo: str = "luxo",
+) -> str:
+    """
+    Gera imagem inspiracional do destino via recraft-v4 no OpenRouter.
+
+    Usa /images/generations (compatível com OpenAI DALL-E API).
+    Fallback gracioso se o modelo não estiver disponível no OpenRouter.
+    """
+    from app.infrastructure.config.settings import get_settings
+    settings = get_settings()
+
+    if not settings.OPENROUTER_API_KEY:
+        return json.dumps({"success": False, "reason": "api_key_not_configured"})
+
+    style_suffix = _TRAVEL_IMAGE_STYLE_PROMPTS.get(estilo, _TRAVEL_IMAGE_STYLE_PROMPTS["luxo"])
+    perfil_hint = f", {perfil} travel" if perfil and perfil not in ("solo",) else ""
+    prompt = (
+        f"Beautiful travel destination {destino}{perfil_hint}, "
+        f"{style_suffix}, travel agency promotional image, high quality"
+    )
+
+    payload = {
+        "model": settings.OPENROUTER_IMAGE_GEN_MODEL,
+        "prompt": prompt,
+        "n": 1,
+        "size": "1024x1024",
+    }
+    auth_headers = {
+        "Authorization": f"Bearer {settings.OPENROUTER_API_KEY}",
+        "Content-Type": "application/json",
+        **_OPENROUTER_HEADERS,
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=45.0) as client:
+            resp = await client.post(
+                f"{_OPENROUTER_BASE}/images/generations",
+                json=payload,
+                headers=auth_headers,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            image_url = data["data"][0].get("url", "")
+
+        logger.info(
+            "travel_image_generated",
+            destino=destino,
+            estilo=estilo,
+            model=settings.OPENROUTER_IMAGE_GEN_MODEL,
+        )
+        return json.dumps(
+            {
+                "success": True,
+                "url": image_url,
+                "destino": destino,
+                "message": (
+                    f"Imagem inspiracional de {destino} gerada com sucesso! "
+                    "Compartilhe este link com o cliente para despertar o interesse."
+                ),
+            }
+        )
+    except httpx.HTTPStatusError as exc:
+        logger.warning(
+            "travel_image_generation_failed",
+            destino=destino,
+            model=settings.OPENROUTER_IMAGE_GEN_MODEL,
+            status=exc.response.status_code,
+            body=exc.response.text[:200],
+        )
+        return json.dumps(
+            {
+                "success": False,
+                "reason": "image_generation_unavailable",
+                "instruction": (
+                    "Modelo de imagem indisponível. Continue o atendimento normalmente "
+                    "e ofereça o agendamento da curadoria."
+                ),
+            }
+        )
+    except Exception as exc:
+        logger.error("travel_image_unexpected_error", destino=destino, error=str(exc))
+        return json.dumps({"success": False, "reason": "unexpected_error"})
 
 
 # ── Dispatcher ────────────────────────────────────────────────────────────────
@@ -449,6 +618,13 @@ async def execute_tool(
 
     if tool_name == "persist_lead_data":
         return await _persist_lead_data(tool_args["phone"], tool_args["data"], db)
+
+    if tool_name == "generate_travel_image":
+        return await _generate_travel_image(
+            destino=tool_args["destino"],
+            perfil=tool_args.get("perfil"),
+            estilo=tool_args.get("estilo", "luxo"),
+        )
 
     logger.warning("tool_unknown", tool=tool_name)
     return json.dumps({"error": f"Tool '{tool_name}' not implemented."})
