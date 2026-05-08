@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cadife-backend-config
+  labels:
+    app: cadife-backend
+data:
+  APP_ENV: "production"
+  DEBUG: "false"
+  LOG_LEVEL: "info"
+  # Domínios permitidos (CORS) - Atualizar com os domínios reais de produção
+  ALLOWED_ORIGINS: "https://cadife.com.br,https://app.cadife.com.br"
+  REDIS_PREFIX: "CACHE"

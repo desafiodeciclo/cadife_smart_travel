@@ -51,50 +51,35 @@ def upgrade() -> None:
         )
         op.create_index('ix_users_email', 'users', ['email'], unique=True)
 
-    # ── PostgreSQL ENUM types ──────────────────────────────────────────────
-    lead_status_enum = postgresql.ENUM(
-        'novo', 'em_atendimento', 'qualificado', 'agendado', 'proposta', 'fechado', 'perdido',
-        name='lead_status_enum',
-    )
-    lead_score_enum = postgresql.ENUM(
-        'quente', 'morno', 'frio',
-        name='lead_score_enum',
-    )
-    lead_origem_enum = postgresql.ENUM(
-        'whatsapp', 'app', 'web',
-        name='lead_origem_enum',
-    )
-    perfil_viagem_enum = postgresql.ENUM(
-        'casal', 'família', 'solo', 'grupo', 'amigos',
-        name='perfil_viagem_enum',
-    )
-    orcamento_perfil_enum = postgresql.ENUM(
-        'baixo', 'médio', 'alto', 'premium',
-        name='orcamento_perfil_enum',
-    )
-    tipo_mensagem_enum = postgresql.ENUM(
-        'texto', 'audio', 'imagem', 'documento',
-        name='tipo_mensagem_enum',
-    )
-    agendamento_status_enum = postgresql.ENUM(
-        'pendente', 'confirmado', 'realizado', 'cancelado',
-        name='agendamento_status_enum',
-    )
-    agendamento_tipo_enum = postgresql.ENUM(
-        'online', 'presencial',
-        name='agendamento_tipo_enum',
-    )
-    proposta_status_enum = postgresql.ENUM(
-        'rascunho', 'enviada', 'aprovada', 'recusada', 'em_revisao',
-        name='proposta_status_enum',
-    )
+    # ── PostgreSQL ENUM types (Definição e Criação Idempotente) ───────────
+    enums = [
+        ('lead_status_enum', ('novo', 'em_atendimento', 'qualificado', 'agendado', 'proposta', 'fechado', 'perdido')),
+        ('lead_score_enum', ('quente', 'morno', 'frio')),
+        ('lead_origem_enum', ('whatsapp', 'app', 'web')),
+        ('perfil_viagem_enum', ('casal', 'família', 'solo', 'grupo', 'amigos')),
+        ('orcamento_perfil_enum', ('baixo', 'médio', 'alto', 'premium')),
+        ('tipo_mensagem_enum', ('texto', 'audio', 'imagem', 'documento')),
+        ('agendamento_status_enum', ('pendente', 'confirmado', 'realizado', 'cancelado')),
+        ('agendamento_tipo_enum', ('online', 'presencial')),
+        ('proposta_status_enum', ('rascunho', 'enviada', 'aprovada', 'recusada', 'em_revisao')),
+    ]
 
-    for enum in [
-        lead_status_enum, lead_score_enum, lead_origem_enum,
-        perfil_viagem_enum, orcamento_perfil_enum, tipo_mensagem_enum,
-        agendamento_status_enum, agendamento_tipo_enum, proposta_status_enum,
-    ]:
-        enum.create(op.get_bind(), checkfirst=True)
+    # Criação via SQL Puro para garantir IF NOT EXISTS no Postgres
+    for name, labels in enums:
+        labels_str = ", ".join([f"'{l}'" for l in labels])
+        op.execute(f"DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = '{name}') THEN CREATE TYPE {name} AS ENUM ({labels_str}); END IF; END $$;")
+
+    # Objetos SQLAlchemy configurados com create_type=False
+    # Isso impede que o SQLAlchemy tente criar o tipo de novo ao criar as tabelas
+    lead_status_enum = postgresql.ENUM(name='lead_status_enum', create_type=False)
+    lead_score_enum = postgresql.ENUM(name='lead_score_enum', create_type=False)
+    lead_origem_enum = postgresql.ENUM(name='lead_origem_enum', create_type=False)
+    perfil_viagem_enum = postgresql.ENUM(name='perfil_viagem_enum', create_type=False)
+    orcamento_perfil_enum = postgresql.ENUM(name='orcamento_perfil_enum', create_type=False)
+    tipo_mensagem_enum = postgresql.ENUM(name='tipo_mensagem_enum', create_type=False)
+    agendamento_status_enum = postgresql.ENUM(name='agendamento_status_enum', create_type=False)
+    agendamento_tipo_enum = postgresql.ENUM(name='agendamento_tipo_enum', create_type=False)
+    proposta_status_enum = postgresql.ENUM(name='proposta_status_enum', create_type=False)
 
     # ── leads ──────────────────────────────────────────────────────────────
     op.create_table(
@@ -220,4 +205,3 @@ def downgrade() -> None:
         'lead_origem_enum', 'lead_score_enum', 'lead_status_enum',
     ]:
         op.execute(f"DROP TYPE IF EXISTS {enum_name}")
-        

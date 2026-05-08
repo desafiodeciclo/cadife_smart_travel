@@ -3,9 +3,10 @@ Database Module — Infrastructure/Persistence Layer
 ===================================================
 Async SQLAlchemy engine and session factory for PostgreSQL (spec.md §3.3).
 """
-
+from typing import Any
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import NullPool
 from sqlalchemy.orm import DeclarativeBase
 
 from app.infrastructure.config.settings import get_settings
@@ -13,7 +14,7 @@ from app.infrastructure.config.settings import get_settings
 settings = get_settings()
 
 engine_url = make_url(settings.DATABASE_URL)
-engine_kwargs = {
+engine_kwargs: dict[str, Any] = {
     "echo": settings.DEBUG,
     "pool_pre_ping": True,
 }

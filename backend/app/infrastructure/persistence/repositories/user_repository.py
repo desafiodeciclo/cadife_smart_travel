@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import structlog
 
 from app.infrastructure.persistence.abstract_repository import AbstractRepository
-from app.infrastructure.persistence.models.user_model import UserModel
+from app.models.user import User as UserModel
 
 logger = structlog.get_logger()
 
