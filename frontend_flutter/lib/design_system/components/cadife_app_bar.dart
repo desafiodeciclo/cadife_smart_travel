@@ -50,7 +50,7 @@ class CadifeAppBar extends ConsumerWidget implements PreferredSizeWidget {
               ? Padding(
                   padding: const EdgeInsets.all(8),
                   child: GestureDetector(
-                    onTap: () => context.go('/client/perfil'),
+                    onTap: () => context.go('/client/profile'),
                     child: CircleAvatar(
                       backgroundColor: theme.textPrimary.withValues(alpha: 0.1),
                       child: Icon(

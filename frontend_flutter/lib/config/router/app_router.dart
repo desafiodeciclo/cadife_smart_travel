@@ -9,6 +9,7 @@ import 'package:cadife_smart_travel/features/agency/leads/presentation/pages/lea
 import 'package:cadife_smart_travel/features/agency/leads/presentation/pages/leads_page.dart';
 import 'package:cadife_smart_travel/features/agency/perfil/presentation/pages/profile_page.dart';
 import 'package:cadife_smart_travel/features/agency/propostas/presentation/pages/proposal_create_page.dart';
+import 'package:cadife_smart_travel/features/agency/settings/presentation/pages/settings_page.dart';
 import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/screens/forgot_password_screen.dart';
@@ -163,6 +164,14 @@ final routerProvider = Provider<GoRouter>((ref) {
             pageBuilder: (context, state) => SlideTransitionPage(
               name: state.name,
               child: const ConsultorProfileScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/agency/settings',
+            name: 'agency_settings',
+            pageBuilder: (context, state) => SlideTransitionPage(
+              name: state.name,
+              child: const SettingsScreen(),
             ),
           ),
         ],

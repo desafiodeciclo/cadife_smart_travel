@@ -13,6 +13,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+from fastapi.responses import JSONResponse
+from prometheus_fastapi_instrumentator import Instrumentator
 
 # Core / Infra
 from app.infrastructure.config.settings import get_settings
@@ -20,13 +22,14 @@ from app.infrastructure.config.logging_config import configure_logging
 from app.infrastructure.persistence.database import create_tables
 
 # Import all models to register them in SQLAlchemy metadata before create_tables
-import app.infrastructure.persistence.models  # noqa: F401
+import app.models  # noqa: F401
 from app.infrastructure.adapters.firebase import init_firebase
 from app.infrastructure.security.rate_limiter import limiter
 from app.services.ingestion_pipeline import get_ingestion_pipeline
 
 # Scheduled Jobs
 from app.jobs.lead_expiration_job import expire_stale_leads
+from app.services import health_service
 from app.jobs.proposta_expiration_job import expire_stale_propostas_job
 from app.jobs.notification_worker import NotificationWorker, WORKER_INTERVAL_SECONDS
 
@@ -64,7 +67,7 @@ async def lifespan(app: FastAPI):
     )
 
     # Database
-    await create_tables()
+    # await create_tables()
     logger.info("database_ready")
 
     # Firebase
@@ -140,6 +143,12 @@ app = FastAPI(
 )
 
 # -------------------------------------------------------------------
+# Metrics
+# -------------------------------------------------------------------
+
+Instrumentator().instrument(app).expose(app)
+
+# -------------------------------------------------------------------
 # Rate Limiter
 # -------------------------------------------------------------------
 
@@ -176,14 +185,38 @@ app.include_router(propostas.router)
 app.include_router(auth.router)
 
 # -------------------------------------------------------------------
-# Health Check
+# Health Check (K8S Probes)
 # -------------------------------------------------------------------
 
-@app.get("/health", tags=["Health"])
-async def health():
+@app.get("/healthz", tags=["Health"])
+async def healthz():
+    """
+    K8S Liveness/Readiness Probe endpoint.
+    Checks connectivity with Database and Redis.
+    """
+    db_ok = await health_service.check_database()
+    redis_ok = await health_service.check_redis()
+
+    status = "ok" if db_ok and redis_ok else "error"
+    status_code = 200 if status == "ok" else 503
+
+    return JSONResponse(
+        status_code=status_code,
+        content={
+            "status": status,
+            "database": "connected" if db_ok else "disconnected",
+            "redis": "connected" if redis_ok else "disconnected",
+            "version": app.version,
+        }
+    )
+
+
+@app.get("/", tags=["Health"])
+async def root():
+    """Friendly root endpoint for verification."""
     return {
-        "status": "ok",
-        "service": "cadife-smart-travel",
-        "version": app.version,
-        "env": settings.APP_ENV,
+        "message": "Cadife Smart Travel API is running",
+        "status": "online",
+        "health_check": "/healthz",
+        "metrics": "/metrics"
     }
