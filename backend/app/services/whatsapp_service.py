@@ -34,7 +34,8 @@ _TRANSIENT_STATUS_CODES = frozenset({429, 500, 502, 503, 504})
 _MAX_RETRIES = 3
 _BASE_DELAY_S = 0.5
 _MAX_DELAY_S = 4.0
-_TIMEOUT_S = 3.0
+_TIMEOUT_S = 3.0          # send_message / mark_as_read (Meta SLA ≤ 5s)
+_MEDIA_TIMEOUT_S = 20.0   # download_media — áudio WhatsApp pode ter vários MB
 
 
 # ── Exceptions ────────────────────────────────────────────────────────────────
@@ -139,7 +140,7 @@ async def download_media(media_id: str) -> Optional[bytes]:
     """
     headers = {"Authorization": f"Bearer {settings.WHATSAPP_TOKEN}"}
 
-    async with httpx.AsyncClient(timeout=_TIMEOUT_S) as client:
+    async with httpx.AsyncClient(timeout=_MEDIA_TIMEOUT_S) as client:
         # Step 1: resolve the temporary download URL
         try:
             meta_resp = await client.get(
