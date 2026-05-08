@@ -116,7 +116,7 @@ async def dispatch_expiration_webhook(
 
     payload = {
         "event": "propostas.expiradas",
-        "timestamp": datetime.now(UTC).isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "count": len(expired),
         "propostas": expired,
     }
