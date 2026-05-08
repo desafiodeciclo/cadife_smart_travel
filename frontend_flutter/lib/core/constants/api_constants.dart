@@ -32,6 +32,8 @@ class ApiConstants {
   // ── Propostas ──────────────────────────────────────────
   static const String proposals = '/propostas';
   static String proposalById(String id) => '/propostas/$id';
+  static String proposalSend(String id) => '/propostas/$id/enviar';
+  static String proposalVersions(String id) => '/propostas/$id/versoes';
 
   // ── Itinerário ─────────────────────────────────────────
   static String leadItinerary(String id) => '/leads/$id/itinerary';
