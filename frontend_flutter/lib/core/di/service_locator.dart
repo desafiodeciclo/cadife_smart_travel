@@ -236,10 +236,21 @@ Future<void> initDependencies() async {
     options = ProdFirebaseOptions.currentPlatform;
   }
 
-  // No Web, só inicializamos se tivermos options explícitas
+  // No Web, só inicializamos se tivermos options explícitas.
+  // No Mobile, tentamos inicializar (seja com options ou com o arquivo de config padrão).
   if (!kIsWeb || options != null) {
     try {
-      await Firebase.initializeApp(options: options);
+      if (Firebase.apps.isEmpty) {
+        await Firebase.initializeApp(options: options);
+      } else {
+        debugPrint('Firebase: Already initialized');
+      }
+    } on FirebaseException catch (e) {
+      if (e.code == 'duplicate-app') {
+        debugPrint('Firebase: Duplicate app detected, skipping init');
+      } else {
+        debugPrint('Firebase initialization failed: $e');
+      }
     } on Exception catch (e) {
       debugPrint('Firebase initialization failed: $e');
     }
@@ -258,8 +269,13 @@ Future<void> initDependencies() async {
 
   if (!kIsWeb) {
     try {
-      await LocalNotificationManager.init();
-      await FCMManager.init();
+      // Só inicializamos se o Firebase estiver disponível
+      if (Firebase.apps.isNotEmpty) {
+        await LocalNotificationManager.init();
+        await FCMManager.init();
+      } else {
+        debugPrint('Notification managers skipped: Firebase not initialized');
+      }
     } on Exception catch (e) {
       debugPrint('Notification managers initialization failed: $e');
     }
