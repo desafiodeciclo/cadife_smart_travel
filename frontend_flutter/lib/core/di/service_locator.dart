@@ -230,7 +230,7 @@ Future<void> initDependencies() async {
   final env = sl<AppConfig>().environment;
 
   FirebaseOptions? options;
-  if (env == AppEnvironment.staging) {
+  if (env == AppEnvironment.staging || env == AppEnvironment.dev) {
     options = StagingFirebaseOptions.currentPlatform;
   } else if (env == AppEnvironment.prod) {
     options = ProdFirebaseOptions.currentPlatform;

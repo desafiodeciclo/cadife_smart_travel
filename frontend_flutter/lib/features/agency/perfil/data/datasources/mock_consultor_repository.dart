@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:cadife_smart_travel/core/error/failures.dart';
 import 'package:cadife_smart_travel/features/agency/perfil/domain/entities/consultor_profile_models.dart';
 import 'package:cadife_smart_travel/features/agency/perfil/domain/repositories/i_consultor_repository.dart';
@@ -15,6 +17,8 @@ class MockConsultorRepository implements IConsultorRepository {
     totalSales: 142,
     conversionRate: 0.68,
     activeMonths: 38,
+    cargo: 'Consultora de Viagens',
+    agencia: 'Cadife Tour — São Paulo',
   );
 
   @override
@@ -31,26 +35,67 @@ class MockConsultorRepository implements IConsultorRepository {
   }
 
   @override
+  Future<Either<Failure, ConsultantMetrics>> getMetrics() async {
+    await Future.delayed(const Duration(milliseconds: 400));
+    return Right(ConsultantMetrics(
+      totalLeadsAtendidos: 45,
+      taxaConversao: 24.5,
+      receitaGerada: 125000.0,
+      leadsAtivosAgora: 8,
+      ultimaAtualizacao: DateTime.now(),
+    ));
+  }
+
+  @override
   Future<Either<Failure, List<SaleGoal>>> getGoals() async {
     await Future.delayed(const Duration(milliseconds: 400));
     final now = DateTime.now();
+
+    int prevMonth(int offset) {
+      final m = now.month - offset;
+      return m <= 0 ? m + 12 : m;
+    }
+
+    int prevYear(int offset) {
+      final m = now.month - offset;
+      return m <= 0 ? now.year - 1 : now.year;
+    }
+
     return Right([
-      SaleGoal(month: now.month, year: now.year, target: 12, achieved: 8),
       SaleGoal(
-          month: now.month - 1 <= 0 ? 12 : now.month - 1,
-          year: now.month - 1 <= 0 ? now.year - 1 : now.year,
-          target: 10,
-          achieved: 10),
+        month: now.month,
+        year: now.year,
+        target: 12,
+        achieved: 8,
+        receita: 42000,
+      ),
       SaleGoal(
-          month: now.month - 2 <= 0 ? 12 + (now.month - 2) : now.month - 2,
-          year: now.month - 2 <= 0 ? now.year - 1 : now.year,
-          target: 10,
-          achieved: 7),
+        month: prevMonth(1),
+        year: prevYear(1),
+        target: 10,
+        achieved: 10,
+        receita: 58000,
+      ),
       SaleGoal(
-          month: now.month - 3 <= 0 ? 12 + (now.month - 3) : now.month - 3,
-          year: now.month - 3 <= 0 ? now.year - 1 : now.year,
-          target: 8,
-          achieved: 9),
+        month: prevMonth(2),
+        year: prevYear(2),
+        target: 10,
+        achieved: 7,
+        receita: 31500,
+      ),
     ]);
+  }
+
+  @override
+  Future<Either<Failure, ConsultorProfile>> uploadPhoto(
+    Uint8List bytes,
+    String fileName,
+  ) async {
+    await Future.delayed(const Duration(seconds: 1));
+    // Mock: return with a placeholder remote URL
+    _profile = _profile.copyWith(
+      avatarUrl: 'https://i.pravatar.cc/512?u=${_profile.id}',
+    );
+    return Right(_profile);
   }
 }
