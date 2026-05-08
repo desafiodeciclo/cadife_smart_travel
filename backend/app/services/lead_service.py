@@ -1,6 +1,9 @@
 import uuid
 from datetime import datetime, timedelta, timezone
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
+
+if TYPE_CHECKING:
+    from app.presentation.schemas.leads import ManualLeadCreate
 
 import structlog
 from sqlalchemy import func, select, text
@@ -139,10 +142,72 @@ async def get_or_create_by_phone(
         await db.refresh(lead)
         logger.info("lead_created", lead_id=str(lead.id), phone=phone)
         return lead
+async def create_manual_lead(db: AsyncSession, data: "ManualLeadCreate") -> Lead:
+    """
+    Cria um lead manualmente via app da agência.
+    Valida duplicidade, gera hashes de PII e calcula o score inicial.
+    """
+    from app.infrastructure.persistence.repositories.lead_repository import LeadRepository
+    from app.domain.entities.enums import OrcamentoPerfil
+
+    repo = LeadRepository(db)
+    phone_hash = hmac_hash(data.telefone)
+
+    # 1. Validação de Duplicidade (se force_create for False)
+    if not data.force_create:
+        existing = await repo.find_active_by_phone(phone_hash)
+        if existing:
+            # Levantamos um erro que será capturado pelo Router para retornar 409 Conflict
+            logger.warning("manual_lead_duplicate_attempt", phone=data.telefone, lead_id=str(existing.id))
+            raise ValueError(f"DUPLICATE_LEAD:{existing.id}")
+
+    # 2. Instanciar o Lead
+    lead = Lead(
+        id=uuid.uuid4(),
+        nome=data.nome,
+        telefone=data.telefone,
+        telefone_hash=phone_hash,
+        origem=data.origem,
+        status=LeadStatus.novo,
+        consultor_id=data.consultor_id,
+        criado_em=datetime.now(timezone.utc)
+    )
+    db.add(lead)
+    await db.flush() # Para garantir que temos o ID do lead para o briefing
+
+    # 3. Criar o Briefing associado com os dados do formulário
+    # Tentamos converter o orçamento string para o Enum, se falhar fica nulo
+    orcamento_enum = None
+    if data.orcamento_estimado:
+        try:
+            orcamento_enum = OrcamentoPerfil(data.orcamento_estimado.lower())
+        except ValueError:
+            logger.debug("invalid_budget_string_mapping", value=data.orcamento_estimado)
+
+    briefing = Briefing(
+        lead_id=lead.id,
+        destino=data.destino_interesse,
+        orcamento=orcamento_enum,
+        qtd_pessoas=data.numero_passageiros,
+        observacoes=f"Data aproximada: {data.datas_aproximadas}" if data.datas_aproximadas else None
+    )
+
+    # 4. Calcular Score e Completude iniciais
+    lead.score = calculate_score_from_briefing(briefing)
+    briefing.completude_pct = calculate_completude(briefing.__dict__)
+
+    db.add(briefing)
+    
+    try:
+        await db.commit()
+        await db.refresh(lead)
+        logger.info("manual_lead_created", lead_id=str(lead.id), phone=data.telefone, score=lead.score)
+        return lead
     except Exception as e:
         await db.rollback()
-        logger.error("error_get_or_create_lead", phone=phone, error=str(e))
+        logger.error("error_creating_manual_lead", error=str(e))
         raise e
+
 
 
 async def get_lead_by_id(db: AsyncSession, lead_id: uuid.UUID) -> Optional[Lead]:
