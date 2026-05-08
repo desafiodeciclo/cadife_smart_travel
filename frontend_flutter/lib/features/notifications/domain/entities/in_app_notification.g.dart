@@ -15,7 +15,7 @@ extension GetInAppNotificationCollection on Isar {
 
 const InAppNotificationSchema = CollectionSchema(
   name: r'InAppNotification',
-  id: -1342329743109158126,
+  id: -1342329743109158144,
   properties: {
     r'actionUrl': PropertySchema(
       id: 0,
@@ -96,7 +96,7 @@ const InAppNotificationSchema = CollectionSchema(
   idName: r'id',
   indexes: {
     r'receivedAtIndex': IndexSchema(
-      id: -3656606300830312615,
+      id: -3656606300830312448,
       name: r'receivedAtIndex',
       unique: false,
       replace: false,
@@ -109,7 +109,7 @@ const InAppNotificationSchema = CollectionSchema(
       ],
     ),
     r'readIndex': IndexSchema(
-      id: -2554399177779050649,
+      id: -2554399177779050496,
       name: r'readIndex',
       unique: false,
       replace: false,
@@ -122,7 +122,7 @@ const InAppNotificationSchema = CollectionSchema(
       ],
     ),
     r'leadIdIndex': IndexSchema(
-      id: 2538614441176257841,
+      id: 2538614441176258048,
       name: r'leadIdIndex',
       unique: false,
       replace: false,
@@ -135,7 +135,7 @@ const InAppNotificationSchema = CollectionSchema(
       ],
     ),
     r'uuidIndex': IndexSchema(
-      id: -7968580825086528144,
+      id: -7968580825086528512,
       name: r'uuidIndex',
       unique: true,
       replace: false,

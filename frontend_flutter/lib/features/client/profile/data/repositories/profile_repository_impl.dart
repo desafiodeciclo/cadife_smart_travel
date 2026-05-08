@@ -38,9 +38,6 @@ class ProfileRepositoryImpl implements IProfileRepository {
   @override
   Future<Either<Failure, AuthUser>> updateProfile({
     String? name,
-    String? email,
-    String? phone,
-    String? avatarUrl,
     List<String>? tipoViagem,
     List<String>? preferencias,
     bool? temPassaporte,
@@ -50,9 +47,6 @@ class ProfileRepositoryImpl implements IProfileRepository {
         ApiConstants.me,
         data: {
           'nome': name,
-          'email': email,
-          'telefone': phone,
-          'avatar_url': avatarUrl,
           'tipo_viagem': tipoViagem,
           'preferencias': preferencias,
           'tem_passaporte': temPassaporte,

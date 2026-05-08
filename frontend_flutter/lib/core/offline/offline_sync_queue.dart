@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:cadife_smart_travel/core/error/failures.dart';
@@ -57,6 +58,7 @@ class OfflineSyncQueue {
   late Box<dynamic> _syncBox;
   bool _isInitialized = false;
   bool _isSyncing = false;
+  StreamSubscription<bool>? _connectivitySubscription;
 
   static const _maxRetries = 3;
 
@@ -65,7 +67,7 @@ class OfflineSyncQueue {
     _syncBox = await _hive.openBox<dynamic>('sync_queue');
     _isInitialized = true;
 
-    _networkInfo.onConnectivityChanged.listen((isOnline) {
+    _connectivitySubscription = _networkInfo.onConnectivityChanged.listen((isOnline) {
       if (isOnline) flush();
     });
   }
@@ -143,6 +145,7 @@ class OfflineSyncQueue {
   }
 
   Future<void> dispose() async {
+    await _connectivitySubscription?.cancel();
     if (_isInitialized) {
       await _syncBox.close();
     }

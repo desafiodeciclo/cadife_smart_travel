@@ -509,6 +509,8 @@ class ProfileActionsSection extends StatelessWidget {
     required this.isSaving,
     required this.onSave,
     required this.onCancel,
+    required this.onLogout,
+    required this.onDeleteAccount,
     super.key,
   });
 
@@ -516,6 +518,8 @@ class ProfileActionsSection extends StatelessWidget {
   final bool isSaving;
   final VoidCallback onSave;
   final VoidCallback onCancel;
+  final VoidCallback onLogout;
+  final VoidCallback onDeleteAccount;
 
   @override
   Widget build(BuildContext context) {
@@ -537,79 +541,20 @@ class ProfileActionsSection extends StatelessWidget {
             ),
             const SizedBox(height: 12),
           ],
+          CadifeButton(
+            onPressed: onLogout,
+            text: 'Sair da conta',
+            icon: Icons.logout,
+            isOutline: true,
+          ),
+          const SizedBox(height: 12),
+          CadifeButton(
+            onPressed: onDeleteAccount,
+            text: 'Apagar conta',
+            icon: Icons.delete_outline,
+            isOutline: true,
+          ),
         ],
-      ),
-    );
-  }
-}
-
-class ProfileMenuTile extends StatelessWidget {
-  const ProfileMenuTile({
-    required this.icon,
-    required this.title,
-    this.subtitle,
-    this.onTap,
-    this.trailing,
-    super.key,
-  });
-
-  final IconData icon;
-  final String title;
-  final String? subtitle;
-  final VoidCallback? onTap;
-  final Widget? trailing;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cadife = context.cadife;
-
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(icon, size: 20, color: AppColors.primary),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: cadife.textPrimary,
-                    ),
-                  ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle!,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: cadife.textSecondary,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            trailing ??
-                Icon(
-                  LucideIcons.chevronRight,
-                  size: 18,
-                  color: cadife.textSecondary,
-                ),
-          ],
-        ),
       ),
     );
   }

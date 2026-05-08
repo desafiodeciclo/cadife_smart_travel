@@ -98,17 +98,16 @@ backend/**/settings_local.py
 .pub/
 **/build/
 **/doc/api/
-**/app/.cxx/
 
 # Android específico
 **/android/.gradle/
 **/android/local.properties
+**/android/app/.cxx/
 **/android/app/debug/
 **/android/app/profile/
 **/android/app/release/
 **/android/sdk_snapshot/
 **/android/app/src/main/java/**/GeneratedPluginRegistrant.java
-**/app/.cxx/
 
 # iOS específico
 **/ios/Flutter/Generated.xcconfig

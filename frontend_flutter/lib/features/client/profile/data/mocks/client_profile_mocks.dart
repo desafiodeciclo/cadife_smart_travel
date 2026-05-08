@@ -167,37 +167,6 @@ abstract class ClientProfileMocks {
         ),
       ];
     }
-    if (tripId == 'essentials') {
-      return [
-        SuitcaseItem(
-          id: 'ess-001',
-          tripId: tripId,
-          category: 'Documentos',
-          name: 'RG / CNH',
-          packed: true,
-          isSuggestion: false,
-          createdAt: DateTime.now(),
-        ),
-        SuitcaseItem(
-          id: 'ess-002',
-          tripId: tripId,
-          category: 'Higiene',
-          name: 'Escova de dentes',
-          packed: false,
-          isSuggestion: false,
-          createdAt: DateTime.now(),
-        ),
-        SuitcaseItem(
-          id: 'ess-003',
-          tripId: tripId,
-          category: 'Eletrônicos',
-          name: 'Carregador de celular',
-          packed: true,
-          isSuggestion: false,
-          createdAt: DateTime.now(),
-        ),
-      ];
-    }
     return [];
   }
 }

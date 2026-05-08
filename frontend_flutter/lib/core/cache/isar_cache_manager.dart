@@ -27,13 +27,14 @@ class IsarCacheManager {
 
   /// Inicializa o Isar com as coleções do app.
   Future<void> initialize() async {
-    if (_initialized) return;
+    if (_initialized && _isar != null && _isar!.isOpen) return;
 
     // Proteção: Verifica se já existe uma instância aberta com este nome
     final existing = Isar.getInstance('cadife_cache_v3');
     if (existing != null) {
       _isar = existing;
       _initialized = true;
+      debugPrint('Isar: Using existing instance (v3)');
       return;
     }
 
@@ -60,14 +61,14 @@ class IsarCacheManager {
         directory: path,
         name: 'cadife_cache_v3',
       );
+      _initialized = true;
       debugPrint('Isar initialized successfully (v3)');
-    } on Exception catch (e, stack) {
+    } on Object catch (e, stack) {
+      _initialized = false;
+      _isar = null;
       debugPrint('CRITICAL: Isar failed to open: $e');
       debugPrint(stack.toString());
-      // On failure, we don't set _isar, but we mark as initialized
-      // so the app can at least start (without local cache).
-    } finally {
-      _initialized = true;
+      // On failure, we don't set _isar, and we allow future retries
     }
   }
 

@@ -70,7 +70,7 @@ async def test_auth_login_missing_password_returns_422(async_client_no_auth):
         "/auth/login", json={"email": "test@cadife.com"}
     )
 
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
     assert response.json()["detail"]
 
 
@@ -166,7 +166,7 @@ async def test_register_fcm_token_missing_payload_returns_422(
         json={},
     )
 
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
     assert response.json()["detail"]
 
 

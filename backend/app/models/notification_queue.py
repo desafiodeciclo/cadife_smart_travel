@@ -2,7 +2,6 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-import sqlalchemy as sa
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy import JSON
 from sqlalchemy.dialects.postgresql import UUID

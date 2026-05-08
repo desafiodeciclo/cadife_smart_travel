@@ -31,9 +31,6 @@ class MockProfileRepository implements IProfileRepository {
   @override
   Future<Either<Failure, AuthUser>> updateProfile({
     String? name,
-    String? email,
-    String? phone,
-    String? avatarUrl,
     List<String>? tipoViagem,
     List<String>? preferencias,
     bool? temPassaporte,
@@ -44,8 +41,6 @@ class MockProfileRepository implements IProfileRepository {
     }
     _user = _user!.copyWith(
       name: name,
-      phone: phone,
-      avatarUrl: avatarUrl,
       tipoViagem: tipoViagem,
       preferencias: preferencias,
       temPassaporte: temPassaporte,
