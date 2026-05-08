@@ -27,7 +27,6 @@ import 'package:cadife_smart_travel/features/client/offers/presentation/screens/
 import 'package:cadife_smart_travel/features/client/profile/presentation/pages/profile_page.dart' as client_profile;
 import 'package:cadife_smart_travel/features/client/profile/presentation/pages/travel_journal_detail_screen.dart';
 import 'package:cadife_smart_travel/features/client/status/presentation/pages/status_page.dart';
-import 'package:cadife_smart_travel/features/notifications/presentation/screens/notification_center_screen.dart';
 import 'package:cadife_smart_travel/features/settings/presentation/screens/settings_page.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -95,12 +94,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const ForgotPasswordScreen(),
       ),
 
-      // Notifications — accessible to both roles
-      GoRoute(
-        path: '/notifications',
-        name: 'notifications',
-        builder: (context, state) => const NotificationCenterScreen(),
-      ),
+
 
       // Agency flow (Consultor)
       ShellRoute(
@@ -282,7 +276,18 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
 
-      // Travel Calendar — full-screen detail (no bottom nav)
+      // Travel Details & Calendar — full-screen detail (no bottom nav)
+      GoRoute(
+        path: '/client/travel/:tripId',
+        name: 'client_trip_details',
+        pageBuilder: (context, state) {
+          final tripId = state.pathParameters['tripId']!;
+          return SlideTransitionPage(
+            name: state.name,
+            child: StatusPage(tripId: tripId),
+          );
+        },
+      ),
       GoRoute(
         path: '/client/travel/:leadId/calendar',
         name: 'client_travel_calendar',

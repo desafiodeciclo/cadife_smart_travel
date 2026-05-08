@@ -1,3 +1,4 @@
+import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -85,7 +86,7 @@ enum ItineraryItemType {
   }
 }
 
-class ItineraryItem {
+class ItineraryItem extends Equatable {
   const ItineraryItem({
     required this.id,
     required this.leadId,
@@ -156,9 +157,16 @@ class ItineraryItem {
   }
 
   @override
-  bool operator ==(Object other) =>
-      other is ItineraryItem && other.id == id && other.leadId == leadId;
-
-  @override
-  int get hashCode => Object.hash(id, leadId);
+  List<Object?> get props => [
+        id,
+        leadId,
+        tipo,
+        titulo,
+        descricao,
+        local,
+        endereco,
+        dataHora,
+        dataHoraFim,
+        notas,
+      ];
 }

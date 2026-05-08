@@ -4,11 +4,12 @@ import 'package:cadife_smart_travel/core/di/service_locator.dart';
 import 'package:cadife_smart_travel/core/network/network_info.dart';
 import 'package:cadife_smart_travel/features/client/itinerary/data/services/itinerary_service.dart';
 import 'package:cadife_smart_travel/features/client/itinerary/domain/entities/itinerary_item.dart';
+import 'package:equatable/equatable.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 enum CalendarViewMode { mensal, diaria }
 
-class ItineraryState {
+class ItineraryState extends Equatable {
   const ItineraryState({
     this.items = const [],
     this.selectedDate,
@@ -51,6 +52,18 @@ class ItineraryState {
       lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
     );
   }
+ 
+  @override
+  List<Object?> get props => [
+        items,
+        selectedDate,
+        viewMode,
+        isLoading,
+        isSyncing,
+        isOffline,
+        error,
+        lastSyncedAt,
+      ];
 
   List<ItineraryItem> itemsForDay(DateTime day) {
     return items

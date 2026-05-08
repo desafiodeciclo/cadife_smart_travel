@@ -22,6 +22,12 @@ class ItineraryService {
   static String _pendingKey(String leadId) => 'day_note_${leadId}_pending';
 
   Future<List<ItineraryItem>> fetchItinerary(String leadId) async {
+    // Para fins de demonstração/mock, se o ID começar com 'trip-h' ou for o mock padrão, retornamos dados mockados
+    if (leadId.startsWith('trip-h') || leadId == 'mock-lead-123') {
+      await Future.delayed(const Duration(milliseconds: 800));
+      return _getMockItinerary(leadId);
+    }
+
     try {
       final response = await _dio.get(ApiConstants.leadItinerary(leadId));
       final data = response.data as Map<String, dynamic>;
@@ -36,6 +42,48 @@ class ItineraryService {
       debugPrint('ItineraryService.fetchItinerary error: $e');
       return _loadFromCache(leadId);
     }
+  }
+
+  List<ItineraryItem> _getMockItinerary(String leadId) {
+    final now = DateTime.now();
+    return [
+      ItineraryItem(
+        id: 'mock-itin-1',
+        leadId: leadId,
+        tipo: ItineraryItemType.voo,
+        titulo: 'Voo para o Destino',
+        descricao: 'Voo operado pela LATAM. Terminal 3.',
+        local: 'Aeroporto Internacional',
+        dataHora: DateTime(now.year, now.month, now.day, 10, 30),
+      ),
+      ItineraryItem(
+        id: 'mock-itin-2',
+        leadId: leadId,
+        tipo: ItineraryItemType.hotelCheckin,
+        titulo: 'Check-in no Hotel',
+        descricao: 'Reserva confirmada. Apresentar voucher.',
+        local: 'Hotel Grand Hyatt',
+        dataHora: DateTime(now.year, now.month, now.day, 15, 00),
+      ),
+      ItineraryItem(
+        id: 'mock-itin-3',
+        leadId: leadId,
+        tipo: ItineraryItemType.refeicao,
+        titulo: 'Jantar de Boas-vindas',
+        descricao: 'Reserva em nome de Cadife.',
+        local: 'Restaurante Le Gourmet',
+        dataHora: DateTime(now.year, now.month, now.day, 20, 00),
+      ),
+      ItineraryItem(
+        id: 'mock-itin-4',
+        leadId: leadId,
+        tipo: ItineraryItemType.passeio,
+        titulo: 'Tour pela Cidade',
+        descricao: 'Guia privativo em português.',
+        local: 'Ponto de encontro no Lobby',
+        dataHora: DateTime(now.year, now.month, now.day + 1, 09, 00),
+      ),
+    ];
   }
 
   List<ItineraryItem> _loadFromCache(String leadId) {

@@ -1,3 +1,4 @@
+import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/notifications/application/providers/notification_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,9 +10,7 @@ class NotificationBell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final unreadCountAsync = ref.watch(unreadCountStreamProvider);
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final textTheme = theme.textTheme;
+    final theme = context.cadife;
     
     return unreadCountAsync.when(
       data: (count) {
@@ -20,30 +19,34 @@ class NotificationBell extends ConsumerWidget {
           children: [
             IconButton(
               onPressed: () => context.push('/notifications'),
-              icon: const Icon(Icons.notifications_none),
+              icon: Icon(
+                LucideIcons.bell,
+                color: theme.textPrimary,
+              ),
               tooltip: 'Notificações',
             ),
             if (count > 0)
               Positioned(
-                right: 4,
-                top: 4,
+                right: 8,
+                top: 8,
                 child: Container(
                   padding: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
-                    color: colorScheme.error,
+                    color: theme.primary,
                     shape: BoxShape.circle,
+                    border: Border.all(color: theme.background, width: 2),
                   ),
                   constraints: const BoxConstraints(
-                    minWidth: 18,
-                    minHeight: 18,
+                    minWidth: 16,
+                    minHeight: 16,
                   ),
                   child: Center(
                     child: Text(
                       count > 99 ? '99+' : count.toString(),
-                      style: textTheme.labelSmall?.copyWith(
-                        color: colorScheme.onError,
+                      style: const TextStyle(
+                        color: Colors.white,
                         fontWeight: FontWeight.bold,
-                        fontSize: 10,
+                        fontSize: 8,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -55,12 +58,12 @@ class NotificationBell extends ConsumerWidget {
       },
       loading: () => IconButton(
         onPressed: () => context.push('/notifications'),
-        icon: const Icon(Icons.notifications_none),
+        icon: Icon(LucideIcons.bell, color: theme.textPrimary),
         tooltip: 'Notificações',
       ),
       error: (_, _) => IconButton(
         onPressed: () => context.push('/notifications'),
-        icon: const Icon(Icons.notifications_none),
+        icon: Icon(LucideIcons.bell, color: theme.textPrimary),
         tooltip: 'Notificações',
       ),
     );
