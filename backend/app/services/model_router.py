@@ -2,13 +2,15 @@
 Model Router — Services Layer
 ==============================
 Routes WhatsApp messages to the appropriate OpenRouter model based on type:
-  text  → OPENROUTER_MODEL         (chat / conversation)
-  audio → OPENROUTER_AUDIO_MODEL   (Whisper — transcription)
-  image → OPENROUTER_VISION_MODEL  (vision — image description / OCR)
+  text  → OPENROUTER_MODEL              (chat / conversation)
+  audio → OPENROUTER_AUDIO_MODEL        (gpt-4o-audio-preview — input_audio via /chat/completions)
+  image → OPENROUTER_VISION_MODEL       (vision — image description / OCR)
 
-Handles media download, preprocessing, and returns plain text to the AI layer
-so the rest of the pipeline (briefing extraction, RAG, AYA response) stays
-model-agnostic.
+Audio pipeline:
+  1. Converte OGG/Opus (formato WhatsApp) → WAV usando pydub + ffmpeg
+  2. Envia ao gpt-4o-audio-preview via input_audio no /chat/completions
+  Motivo: o endpoint /audio/transcriptions do OpenRouter tem bug de parsing (400 JSON)
+  e Gemini não processa audio_url via OpenRouter.
 
 Spec references:
   §3.3  Stack — multimodal pipeline
@@ -18,6 +20,7 @@ Spec references:
 from __future__ import annotations
 
 import base64
+import subprocess
 from typing import Optional
 
 import httpx
@@ -48,6 +51,9 @@ _EXT_MAP: dict[str, str] = {
     "audio/amr": "amr",
 }
 
+# GPT-4o-audio-preview aceita somente estes formatos em input_audio
+_GPT4O_NATIVE_FORMATS = frozenset({"wav", "mp3"})
+
 _OPENROUTER_BASE = "https://openrouter.ai/api/v1"
 _OPENROUTER_HEADERS = {
     "HTTP-Referer": "https://cadifetour.com",
@@ -64,80 +70,79 @@ def select_model(msg_type: str) -> str:
     return settings.OPENROUTER_MODEL
 
 
-async def _transcribe_audio_whisper(audio_bytes: bytes, mime_type: str) -> Optional[str]:
-    """
-    Tenta transcrição via endpoint /audio/transcriptions do OpenRouter (Whisper).
+def _convert_to_wav(audio_bytes: bytes, src_format: str) -> bytes:
+    """Converte áudio para WAV via ffmpeg (pipe stdin→stdout, sem arquivo em disco).
 
-    Usa openai/whisper-large-v3 enviando o arquivo como multipart/form-data,
-    igual à API da OpenAI. Retorna None se o endpoint não estiver disponível
-    para o provider configurado — o caller deve usar fallback multimodal.
+    WhatsApp envia audio/ogg;codecs=opus. GPT-4o-audio-preview aceita apenas
+    WAV e MP3. ffmpeg é instalado via apt-get no Dockerfile e via brew no macOS.
     """
-    normalized = mime_type.split(";")[0].strip().lower()
-    ext = _EXT_MAP.get(normalized, "ogg")
-
+    cmd = [
+        "ffmpeg",
+        "-f", src_format,   # formato de entrada explícito (ogg, aac, amr…)
+        "-i", "pipe:0",     # lê do stdin
+        "-ar", "16000",     # 16 kHz — adequado para fala, menor payload
+        "-ac", "1",         # mono
+        "-f", "wav",
+        "pipe:1",           # escreve no stdout
+        "-loglevel", "error",
+    ]
     try:
-        auth_headers = {
-            "Authorization": f"Bearer {settings.OPENROUTER_API_KEY}",
-            **_OPENROUTER_HEADERS,
-        }
-
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            response = await client.post(
-                f"{_OPENROUTER_BASE}/audio/transcriptions",
-                headers=auth_headers,
-                files={"file": (f"audio.{ext}", audio_bytes, normalized)},
-                data={"model": settings.OPENROUTER_WHISPER_MODEL},
-            )
-            response.raise_for_status()
-
-        text = response.json().get("text", "").strip()
-        logger.info(
-            "audio_transcribed_whisper",
-            model=settings.OPENROUTER_WHISPER_MODEL,
-            chars=len(text),
+        result = subprocess.run(
+            cmd,
+            input=audio_bytes,
+            capture_output=True,
+            timeout=30,
         )
-        return text or None
+    except FileNotFoundError as exc:
+        raise RuntimeError(
+            "ffmpeg não encontrado. Instale com: brew install ffmpeg  (macOS) "
+            "ou verifique o Dockerfile (apt-get install ffmpeg)."
+        ) from exc
 
-    except httpx.HTTPStatusError as exc:
-        logger.warning(
-            "whisper_transcript_error",
-            status=exc.response.status_code,
-            body=exc.response.text[:400],
-            model=settings.OPENROUTER_WHISPER_MODEL,
-            fallback_to="gemini_multimodal",
+    if result.returncode != 0 or not result.stdout:
+        raise RuntimeError(
+            f"ffmpeg falhou ao converter {src_format}→wav: "
+            f"{result.stderr.decode(errors='replace')[:300]}"
         )
-        return None
-    except Exception as exc:
-        logger.warning(
-            "whisper_transcript_error",
-            error=str(exc),
-            error_type=type(exc).__name__,
-            model=settings.OPENROUTER_WHISPER_MODEL,
-            fallback_to="gemini_multimodal",
-        )
-        return None
+
+    logger.info(
+        "audio_converted_to_wav",
+        src_format=src_format,
+        src_bytes=len(audio_bytes),
+        wav_bytes=len(result.stdout),
+    )
+    return result.stdout
 
 
 async def transcribe_audio(audio_bytes: bytes, mime_type: str) -> str:
-    """Transcreve áudio via OpenRouter.
+    """Transcreve áudio via openai/gpt-4o-audio-preview no OpenRouter.
 
-    Estratégia com fallback automático:
-      1. openai/whisper-large-v3 via /audio/transcriptions (mais preciso)
-      2. Gemini multimodal via /chat/completions (fallback universal)
+    Fluxo:
+      1. Se o formato já é WAV ou MP3, usa direto.
+      2. Caso contrário (OGG/Opus do WhatsApp, AAC, etc.) converte para WAV via pydub.
+      3. Envia ao gpt-4o-audio-preview via input_audio no /chat/completions.
 
     Raises:
-        httpx.HTTPStatusError: somente se o fallback multimodal também falhar.
+        RuntimeError: se a conversão de formato falhar.
+        httpx.HTTPStatusError: se a API retornar erro HTTP.
     """
-    # Tentativa 1 — Whisper via /audio/transcriptions
-    whisper_result = await _transcribe_audio_whisper(audio_bytes, mime_type)
-    if whisper_result:
-        return whisper_result
-
-    # Tentativa 2 — Gemini multimodal via /chat/completions (lógica original)
-    logger.info("transcribe_audio_using_multimodal_fallback", mime_type=mime_type)
     normalized_mime = mime_type.split(";")[0].strip().lower()
-    audio_b64 = base64.b64encode(audio_bytes).decode()
-    audio_fmt = _EXT_MAP.get(normalized_mime, "ogg")
+    src_fmt = _EXT_MAP.get(normalized_mime, "ogg")
+
+    # Converte para WAV se o formato não for nativo do gpt-4o
+    if src_fmt in _GPT4O_NATIVE_FORMATS:
+        audio_wav = audio_bytes
+        audio_fmt = src_fmt
+    else:
+        logger.info(
+            "audio_format_conversion_needed",
+            src_format=src_fmt,
+            mime_type=normalized_mime,
+        )
+        audio_wav = _convert_to_wav(audio_bytes, src_fmt)
+        audio_fmt = "wav"
+
+    audio_b64 = base64.b64encode(audio_wav).decode()
 
     payload = {
         "model": settings.OPENROUTER_AUDIO_MODEL,
@@ -153,7 +158,7 @@ async def transcribe_audio(audio_bytes: bytes, mime_type: str) -> str:
                         "type": "text",
                         "text": (
                             "Transcreva exatamente o que foi dito neste áudio em português. "
-                            "Responda APENAS com a transcrição literal, sem comentários."
+                            "Responda APENAS com a transcrição literal, sem comentários adicionais."
                         ),
                     },
                 ],
@@ -180,25 +185,24 @@ async def transcribe_audio(audio_bytes: bytes, mime_type: str) -> str:
             text: str = data["choices"][0]["message"]["content"] or ""
     except httpx.HTTPStatusError as exc:
         logger.error(
-            "audio_multimodal_fallback_error",
+            "audio_transcription_api_error",
             model=settings.OPENROUTER_AUDIO_MODEL,
             status=exc.response.status_code,
             body=exc.response.text[:400],
-            hint="input_audio format may not be supported by this model via OpenRouter",
         )
         raise
     except (KeyError, IndexError) as exc:
         logger.error(
-            "audio_multimodal_response_parse_error",
+            "audio_transcription_parse_error",
             model=settings.OPENROUTER_AUDIO_MODEL,
             error=str(exc),
-            hint="Unexpected response structure — model may have returned empty choices",
         )
         raise RuntimeError(f"Unexpected audio response structure: {exc}") from exc
 
     logger.info(
         "audio_transcribed",
         model=settings.OPENROUTER_AUDIO_MODEL,
+        src_format=src_fmt,
         chars=len(text),
     )
     return text
