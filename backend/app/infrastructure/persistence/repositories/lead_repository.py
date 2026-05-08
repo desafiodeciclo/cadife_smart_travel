@@ -48,6 +48,16 @@ class LeadRepository(AbstractRepository[LeadModel], ILeadRepository):
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
 
+    async def find_active_by_phone(self, telefone_hash: str) -> Optional[LeadModel]:
+        """Busca um lead ativo (não deletado/arquivado) usando o hash HMAC do telefone."""
+        stmt = select(LeadModel).where(
+            LeadModel.telefone_hash == telefone_hash,
+            LeadModel.deleted_at.is_(None),
+            LeadModel.is_archived.is_(False)
+        )
+        result = await self._session.execute(stmt)
+        return result.scalar_one_or_none()
+
     async def create(
         self,
         telefone: str,
