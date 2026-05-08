@@ -142,6 +142,12 @@ async def get_or_create_by_phone(
         await db.refresh(lead)
         logger.info("lead_created", lead_id=str(lead.id), phone=phone)
         return lead
+    except Exception as e:
+        await db.rollback()
+        logger.error("error_get_or_create_lead", phone=phone, error=str(e))
+        raise e
+
+
 async def create_manual_lead(db: AsyncSession, data: "ManualLeadCreate") -> Lead:
     """
     Cria um lead manualmente via app da agência.
@@ -196,6 +202,8 @@ async def create_manual_lead(db: AsyncSession, data: "ManualLeadCreate") -> Lead
     lead.score = calculate_score_from_briefing(briefing)
     briefing.completude_pct = calculate_completude(briefing.__dict__)
 
+    # Associamos explicitamente para garantir que a relação seja carregada
+    lead.briefing = briefing
     db.add(briefing)
     
     try:
