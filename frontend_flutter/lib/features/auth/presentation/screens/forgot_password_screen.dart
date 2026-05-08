@@ -57,7 +57,6 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         title: 'Recuperar senha',
         showProfile: false,
         showBackButton: true,
-        showNotificationBell: false,
         actions: [],
       ),
       body: AnimatedSwitcher(

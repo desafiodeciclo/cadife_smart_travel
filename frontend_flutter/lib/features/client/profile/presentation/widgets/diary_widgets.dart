@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/client/profile/data/mocks/client_profile_mocks.dart';
 import 'package:cadife_smart_travel/features/client/profile/domain/entities/diary_entry.dart';
@@ -83,22 +84,20 @@ class TravelJournalCard extends StatelessWidget {
               // Cover image
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  cover.photoUrl,
+                child: CachedNetworkImage(
+                  imageUrl: cover.photoUrl,
                   width: 90,
                   height: 90,
                   fit: BoxFit.cover,
-                  loadingBuilder: (_, child, progress) {
-                    if (progress == null) return child;
-                    return Container(
-                      width: 90,
-                      height: 90,
-                      color: cadife.muted,
-                      child: const Center(
-                          child: CircularProgressIndicator()),
-                    );
-                  },
-                  errorBuilder: (_, _, _) => Container(
+                  memCacheWidth: 400,
+                  placeholder: (_, _) => Container(
+                    width: 90,
+                    height: 90,
+                    color: cadife.muted,
+                    child: const Center(
+                        child: CircularProgressIndicator()),
+                  ),
+                  errorWidget: (_, _, _) => Container(
                     width: 90,
                     height: 90,
                     color: cadife.muted,
