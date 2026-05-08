@@ -98,6 +98,7 @@ backend/**/settings_local.py
 .pub/
 **/build/
 **/doc/api/
+**/app/.cxx/
 
 # Android específico
 **/android/.gradle/
