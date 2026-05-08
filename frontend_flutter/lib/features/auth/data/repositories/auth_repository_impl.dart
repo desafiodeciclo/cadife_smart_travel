@@ -136,4 +136,15 @@ class AuthRepositoryImpl implements IAuthRepository {
       return Left(Failure.fromException(e));
     }
   }
+
+  @override
+  Future<Either<Failure, void>> changePassword(
+      String currentPassword, String newPassword) async {
+    try {
+      await _remoteDatasource.changePassword(currentPassword, newPassword);
+      return const Right(null);
+    } on Exception catch (e) {
+      return Left(Failure.fromException(e));
+    }
+  }
 }

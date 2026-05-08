@@ -62,9 +62,26 @@ class AgendaScreen extends ConsumerWidget {
                 isLoading: true,
                 child: AppSkeletons.listPage(),
               ),
-              dataBuilder: (items) => viewMode == 0
-                  ? _MonthView(items: items)
-                  : _DailyView(items: items),
+              dataBuilder: (items) => AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                switchInCurve: Curves.easeOut,
+                switchOutCurve: Curves.easeIn,
+                transitionBuilder: (child, animation) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(0.02, 0),
+                        end: Offset.zero,
+                      ).animate(animation),
+                      child: child,
+                    ),
+                  );
+                },
+                child: viewMode == 0
+                    ? _MonthView(key: const ValueKey('month_view'), items: items)
+                    : _DailyView(key: const ValueKey('day_view'), items: items),
+              ),
             ),
           ),
         ],
