@@ -44,9 +44,6 @@ class UserProfileNotifier extends AsyncNotifier<AuthUser?> {
   /// Updates [profileSaveStateProvider] instead of blanking [userProfileProvider].
   Future<bool> updateProfile({
     String? name,
-    String? email,
-    String? phone,
-    String? avatarUrl,
     List<String>? tipoViagem,
     List<String>? preferencias,
     bool? temPassaporte,
@@ -56,9 +53,6 @@ class UserProfileNotifier extends AsyncNotifier<AuthUser?> {
     final repo = ref.read(iProfileRepositoryProvider);
     final result = await repo.updateProfile(
       name: name,
-      email: email,
-      phone: phone,
-      avatarUrl: avatarUrl,
       tipoViagem: tipoViagem,
       preferencias: preferencias,
       temPassaporte: temPassaporte,

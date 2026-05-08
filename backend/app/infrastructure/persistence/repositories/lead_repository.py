@@ -5,25 +5,23 @@ Concrete implementation of ILeadRepository using SQLAlchemy async.
 The Application layer never imports this class directly — it receives
 the interface ILeadRepository via dependency injection.
 
-Data Mapper: ORM model (Lead) ↔ Domain-compatible dict/object.
+Data Mapper: ORM model (LeadModel) ↔ Domain-compatible dict/object.
 Since Lead domain entity is currently represented by the ORM model
 (transitional phase), _to_entity returns the model directly. When
 pure domain entities are introduced, only _to_entity needs updating.
 """
 
 import uuid
-from datetime import date
 from typing import Optional
 
-from sqlalchemy import func, or_, select, text
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from app.domain.entities.enums import LeadScore, LeadStatus
 from app.domain.interfaces.repositories import ILeadRepository
 from app.infrastructure.cache import invalidate_pattern
 from app.infrastructure.persistence.abstract_repository import AbstractRepository
-from app.models.lead import Lead as LeadModel
+from app.infrastructure.persistence.models.lead_model import LeadModel
 
 
 class LeadRepository(AbstractRepository[LeadModel], ILeadRepository):
@@ -87,59 +85,30 @@ class LeadRepository(AbstractRepository[LeadModel], ILeadRepository):
 
     async def list_all(
         self,
-        status: Optional[LeadStatus] = None,
-        score: Optional[LeadScore] = None,
-        destino: Optional[str] = None,
-        data_inicio: Optional[date] = None,
-        data_fim: Optional[date] = None,
-        q: Optional[str] = None,
+        status: Optional[str] = None,
+        score: Optional[str] = None,
+        search: Optional[str] = None,
         page: int = 1,
         limit: int = 20,
-        consultor_id: Optional[uuid.UUID] = None,
     ) -> tuple[list[LeadModel], int]:
         """
-        Paginated lead list with advanced filters.
-        Keeps all SQLAlchemy query logic in the Repository layer.
+        Paginated lead list with optional filters.
+        Returns (items, total_count).
         """
-        # Filter base: not archived and not logically deleted
-        stmt = (
-            select(LeadModel)
-            .options(selectinload(LeadModel.briefing))
-            .where(
-                LeadModel.deleted_at.is_(None),
-                LeadModel.is_archived.is_(False),
-            )
-        )
+        stmt = select(LeadModel).where(LeadModel.is_archived.is_(False))
 
         if status:
-            stmt = stmt.where(
-                text(f"leads.status = '{status.value}'")
-            )
+            stmt = stmt.where(LeadModel.status == status)
         if score:
+            stmt = stmt.where(LeadModel.score == score)
+        if search:
+            pattern = f"%{search}%"
             stmt = stmt.where(
-                text(f"leads.score = '{score.value}'")
+                or_(
+                    LeadModel.nome.ilike(pattern),
+                    LeadModel.telefone.ilike(pattern),
+                )
             )
-        if consultor_id:
-            stmt = stmt.where(LeadModel.consultor_id == consultor_id)
-
-        if destino:
-            # Join with briefing to filter by destination
-            from app.models.briefing import Briefing as BriefingModel
-            stmt = stmt.join(LeadModel.briefing).where(
-                BriefingModel.destino.ilike(f"%{destino}%")
-            )
-
-        if data_inicio:
-            stmt = stmt.where(LeadModel.criado_em >= data_inicio)
-        if data_fim:
-            stmt = stmt.where(LeadModel.criado_em <= data_fim)
-
-        if q:
-            # PII fields (nome, telefone) are encrypted at-rest via EncryptedString.
-            # ilike on ciphertext is not supported by PostgreSQL.
-            # We search telefone_hash by HMAC exact match (telefone_hash is not encrypted).
-            from app.infrastructure.security.pii_encryption import hmac_hash
-            stmt = stmt.where(LeadModel.telefone_hash == hmac_hash(q))
 
         # Count query
         count_stmt = select(func.count()).select_from(stmt.subquery())
@@ -155,12 +124,10 @@ class LeadRepository(AbstractRepository[LeadModel], ILeadRepository):
         return items, total
 
     async def soft_delete(self, lead_id: uuid.UUID) -> None:
-        from datetime import datetime, timezone
         lead = await self.get_by_id(lead_id)
         if lead is None:
             raise ValueError(f"Lead {lead_id} não encontrado")
         lead.is_archived = True
-        lead.deleted_at = datetime.now(timezone.utc)
         await self._session.flush()
         await invalidate_pattern(f"cached:*{lead_id}*")
         await invalidate_pattern("cached:*list*")

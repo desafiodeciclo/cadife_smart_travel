@@ -11,11 +11,12 @@ class SuitcaseTab extends StatefulWidget {
 }
 
 class _SuitcaseTabState extends State<SuitcaseTab> {
-  String _selectedTripId = 'essentials';
+  String _selectedTripId = 'trip-paris';
   late List<SuitcaseItem> _items;
 
-  final Map<String, String> _trips = {
-    'essentials': '✨ Essenciais',
+  static const _trips = {
+    'trip-paris': '🇫🇷 Paris, França',
+    'trip-tokyo': '🇯🇵 Tóquio, Japão',
   };
 
   @override
@@ -25,53 +26,10 @@ class _SuitcaseTabState extends State<SuitcaseTab> {
   }
 
   void _selectTrip(String tripId) {
-    if (tripId == 'new-suitcase') {
-      _showCreateSuitcaseDialog();
-      return;
-    }
     setState(() {
       _selectedTripId = tripId;
       _items = ClientProfileMocks.suitcaseItems(tripId);
     });
-  }
-
-  Future<void> _showCreateSuitcaseDialog() async {
-    final controller = TextEditingController();
-    final name = await showShadDialog<String>(
-      context: context,
-      builder: (ctx) => ShadDialog(
-        title: const Text('Nova Mala'),
-        description: const Text('Dê um nome para sua nova mala de viagem.'),
-        actions: [
-          ShadButton.outline(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
-          ),
-          ShadButton(
-            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
-            child: const Text('Criar'),
-          ),
-        ],
-        child: Container(
-          width: 300,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          child: ShadInput(
-            controller: controller,
-            placeholder: const Text('Ex: Férias na Bahia'),
-            autofocus: true,
-          ),
-        ),
-      ),
-    );
-
-    if (name != null && name.isNotEmpty) {
-      final id = 'trip-${DateTime.now().millisecondsSinceEpoch}';
-      setState(() {
-        _trips[id] = '🧳 $name';
-        _selectedTripId = id;
-        _items = []; // New suitcase starts empty
-      });
-    }
   }
 
   void _togglePacked(int index) {
@@ -154,27 +112,14 @@ class _SuitcaseTabState extends State<SuitcaseTab> {
                       color: cadife.textPrimary,
                       fontWeight: FontWeight.w600,
                     ),
-                    items: [
-                      ..._trips.entries.map(
-                        (e) => DropdownMenuItem(
-                          value: e.key,
-                          child: Text(e.value),
-                        ),
-                      ),
-                      const DropdownMenuItem(
-                        value: 'new-suitcase',
-                        child: Row(
-                          children: [
-                            Icon(Icons.add, size: 16, color: AppColors.primary),
-                            SizedBox(width: 8),
-                            Text(
-                              'Criar nova mala...',
-                              style: TextStyle(color: AppColors.primary),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                    items: _trips.entries
+                        .map(
+                          (e) => DropdownMenuItem(
+                            value: e.key,
+                            child: Text(e.value),
+                          ),
+                        )
+                        .toList(),
                     onChanged: (v) {
                       if (v != null) _selectTrip(v);
                     },
@@ -343,7 +288,7 @@ class SuitcaseItemTile extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: ShadCard(
-        padding: const EdgeInsets.fromLTRB(8, 12, 12, 12),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
         backgroundColor: isDark ? cadife.cardBackground : Colors.white,
         radius: BorderRadius.circular(12),
         border: ShadBorder.all(
@@ -361,7 +306,6 @@ class SuitcaseItemTile extends StatelessWidget {
               value: item.packed,
               onChanged: (_) => onToggle(),
             ),
-            const SizedBox(width: 8),
 
             // Info
             Expanded(
@@ -380,7 +324,7 @@ class SuitcaseItemTile extends StatelessWidget {
                       decorationColor: cadife.textSecondary,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Row(
                     children: [
                       if (item.isSuggestion) ...[
