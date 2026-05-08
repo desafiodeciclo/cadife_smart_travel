@@ -99,3 +99,24 @@ class OrcamentoPerfil(str, Enum):
     medio = "médio"
     alto = "alto"
     premium = "premium"
+
+
+class SuitcaseCategory(str, Enum):
+    """Categories for suitcase items (feat/client-suitcase-backend)."""
+
+    documentos = "documentos"
+    roupas = "roupas"
+    higiene = "higiene"
+    eletronicos = "eletrônicos"
+    saude = "saúde"
+    acessorios = "acessórios"
+    outros = "outros"
+
+
+class DestinationType(str, Enum):
+    """Deterministic destination categories for suggestions."""
+
+    praia = "praia"
+    frio = "frio"
+    urbano = "urbano"
+    aventura = "aventura"

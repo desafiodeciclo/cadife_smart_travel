@@ -170,3 +170,40 @@ class IMessageGateway(ABC):
 
     @abstractmethod
     async def send(self, phone: str, message: str) -> None: ...
+
+
+class ISuitcaseRepository(ABC):
+    """Interface for Suitcase (checklist) persistence operations."""
+
+    @abstractmethod
+    async def get_items_by_lead(self, lead_id: uuid.UUID) -> list: ...
+
+    @abstractmethod
+    async def get_item_by_id(self, item_id: uuid.UUID) -> Optional[object]: ...
+
+    @abstractmethod
+    async def create_item(
+        self,
+        lead_id: uuid.UUID,
+        user_id: uuid.UUID,
+        nome: str,
+        categoria: str,
+        quantidade: int = 1,
+    ) -> object: ...
+
+    @abstractmethod
+    async def update_item(
+        self,
+        item_id: uuid.UUID,
+        *,
+        nome: Optional[str] = None,
+        empacotado: Optional[bool] = None,
+        quantidade: Optional[int] = None,
+        categoria: Optional[str] = None,
+    ) -> object: ...
+
+    @abstractmethod
+    async def delete_item(self, item_id: uuid.UUID) -> None: ...
+
+    @abstractmethod
+    async def get_suggestions_by_destination(self, destination_type: str) -> list: ...
