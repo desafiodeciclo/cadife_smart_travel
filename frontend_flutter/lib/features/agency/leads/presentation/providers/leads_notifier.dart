@@ -59,6 +59,22 @@ class LeadsNotifier extends AsyncNotifier<List<Lead>> {
       },
     );
   }
+
+  Lead? findByPhone(String phone) {
+    final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
+    if (cleanPhone.isEmpty) return null;
+    
+    try {
+      return state.valueOrNull?.firstWhere(
+        (l) {
+          final lPhone = l.phone.replaceAll(RegExp(r'\D'), '');
+          return lPhone == cleanPhone;
+        },
+      );
+    } catch (_) {
+      return null;
+    }
+  }
 }
 
 final leadsNotifierProvider = AsyncNotifierProvider<LeadsNotifier, List<Lead>>(

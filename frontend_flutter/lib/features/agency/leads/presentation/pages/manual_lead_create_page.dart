@@ -40,14 +40,43 @@ class _ManualLeadCreatePageState extends ConsumerState<ManualLeadCreatePage> {
     super.dispose();
   }
 
-  Future<void> _submit() async {
+  Future<void> _submit({bool ignoreDuplicity = false}) async {
     if (!_formKey.currentState!.validate()) return;
+
+    final phone = _phoneController.text.trim();
+    if (!ignoreDuplicity) {
+      final existingLead = ref.read(leadsNotifierProvider.notifier).findByPhone(phone);
+      if (existingLead != null) {
+        final shouldProceed = await showDialog<bool>(
+          context: context,
+          builder: (context) => ShadDialog(
+            title: const Text('Lead já existente'),
+            description: Text('O WhatsApp $phone já está cadastrado para ${existingLead.name}.'),
+            actions: [
+              ShadButton.outline(
+                child: const Text('Ver Lead'),
+                onPressed: () {
+                  context.pop(false);
+                  context.push('/agency/leads/${existingLead.id}');
+                },
+              ),
+              ShadButton(
+                child: const Text('Criar mesmo assim'),
+                onPressed: () => context.pop(true),
+              ),
+            ],
+          ),
+        );
+
+        if (shouldProceed != true) return;
+      }
+    }
 
     setState(() => _isSubmitting = true);
 
     final request = ManualLeadCreate(
       name: _nameController.text.trim(),
-      phone: _phoneController.text.trim(),
+      phone: phone,
       email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
       origem: _origem,
       destino: _destinoController.text.trim().isEmpty ? null : _destinoController.text.trim(),
