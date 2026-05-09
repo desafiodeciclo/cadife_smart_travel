@@ -64,9 +64,6 @@ def fake_lead(lead_id=None, consultor_id=None, status=LeadStatus.qualificado.val
     lead.consultor = None
     lead.consultor_nome = None
     lead.consultor_avatar = None
-    lead.deleted_at = None
-    lead.criado_em = __import__("datetime").datetime.now(__import__("datetime").timezone.utc)
-    lead.atualizado_em = __import__("datetime").datetime.now(__import__("datetime").timezone.utc)
     return lead
 
 

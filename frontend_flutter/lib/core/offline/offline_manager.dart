@@ -18,6 +18,7 @@ class OfflineManager {
   final NetworkInfo _networkInfo;
   final HiveInterface _hive;
   final _connectivityController = StreamController<bool>.broadcast();
+  StreamSubscription<bool>? _connectivitySubscription;
 
   late Box<dynamic> _configBox;
   late Box<dynamic> _cacheBox;
@@ -50,7 +51,7 @@ class OfflineManager {
 
       _lastOnlineStatus = await _networkInfo.isConnected;
 
-      _networkInfo.onConnectivityChanged.listen((isConnected) {
+      _connectivitySubscription = _networkInfo.onConnectivityChanged.listen((isConnected) {
         _lastOnlineStatus = isConnected;
         _connectivityController.add(isConnected);
       });
@@ -170,6 +171,7 @@ class OfflineManager {
 
   /// Fecha todas as boxes.
   Future<void> dispose() async {
+    await _connectivitySubscription?.cancel();
     await _connectivityController.close();
     await _configBox.close();
     await _cacheBox.close();

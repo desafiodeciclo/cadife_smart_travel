@@ -1,11 +1,11 @@
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/client/historico/presentation/providers/historico_notifier.dart';
 import 'package:cadife_smart_travel/features/client/historico/presentation/widgets/trip_history_card.dart';
-import 'package:cadife_smart_travel/features/client/historico/presentation/widgets/whatsapp_fab.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/empty_state/empty_type.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/state_container.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 class HistoricoPage extends ConsumerStatefulWidget {
   const HistoricoPage({super.key});
@@ -21,7 +21,6 @@ class _HistoricoPageState extends ConsumerState<HistoricoPage> {
 
     return PageScaffold(
       title: 'Histórico',
-      floatingActionButton: const WhatsAppFab(),
       body: StateListView(
         state: tripsAsync,
         onRetry: () => ref.read(historicoProvider.notifier).refresh(),
@@ -31,7 +30,7 @@ class _HistoricoPageState extends ConsumerState<HistoricoPage> {
           return TripHistoryCard(
             trip: trip,
             onTap: () {
-              // Futura ação ao clicar na viagem
+              context.push('/client/travel/${trip.id}/calendar');
             },
           );
         },
