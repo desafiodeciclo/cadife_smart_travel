@@ -72,9 +72,6 @@ class Lead(Base):
     propostas: Mapped[list["Proposta"]] = relationship(
         "Proposta", back_populates="lead"
     )
-    documentos: Mapped[list["Documento"]] = relationship(
-        "Documento", back_populates="lead"
-    )
     consultor: Mapped[Optional["User"]] = relationship(
         "User",
         primaryjoin="foreign(Lead.consultor_id) == User.id",
