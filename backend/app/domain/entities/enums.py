@@ -14,6 +14,12 @@ class LeadOrigem(str, Enum):
     whatsapp = "whatsapp"
     app = "app"
     web = "web"
+    indicacao = "indicação"
+    telefone = "telefone"
+    presencial = "presencial"
+    rede_social = "rede social"
+    outro = "outro"
+    manual = "manual"
 
 
 class LeadStatus(str, Enum):

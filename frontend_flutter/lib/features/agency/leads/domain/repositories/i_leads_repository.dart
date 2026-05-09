@@ -12,4 +12,5 @@ abstract class ILeadsRepository {
   Future<Either<Failure, Briefing>> getBriefing(String leadId);
   Future<Either<Failure, List<Interacao>>> getInteractions(String leadId);
   Future<Either<Failure, Lead>> createLead(CreateLeadRequest request);
+  Future<Either<Failure, Lead>> createManualLead(ManualLeadCreate request);
 }

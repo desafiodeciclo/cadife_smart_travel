@@ -46,6 +46,22 @@ class LeadCreateRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+class ManualLeadCreate(BaseModel):
+    """Schema for manual lead creation via agency app."""
+    nome: str
+    telefone: str = Field(..., min_length=8, max_length=32)
+    email: Optional[str] = None
+    destino_interesse: Optional[str] = None
+    datas_aproximadas: Optional[str] = None
+    orcamento_estimado: Optional[str] = None
+    numero_passageiros: Optional[int] = None
+    origem: LeadOrigem = Field(..., description="Must be one of the manual origins")
+    consultor_id: Optional[uuid.UUID] = None
+    force_create: bool = Field(default=False, description="If True, bypasses phone duplication check")
+
+    model_config = ConfigDict(extra="forbid")
+
+
 class LeadUpdateRequest(BaseModel):
     nome: Optional[str] = None
     status: Optional[LeadStatus] = None

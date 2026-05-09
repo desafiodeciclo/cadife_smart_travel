@@ -30,6 +30,7 @@ from app.presentation.schemas.leads import (
     LeadListResponseDTO,
     LeadMetricsDTO,
     LeadUpdateRequest,
+    ManualLeadCreate,
 )
 from app.services import lead_service
 
@@ -148,6 +149,41 @@ async def create_lead(
 
     lead = await lead_service.get_or_create_by_phone(db, lead_in.telefone, lead_in.nome)
     return map_lead_to_detail(lead)
+
+
+@router.post(
+    "/manual",
+    response_model=LeadDetailDTO,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))],
+)
+async def create_manual_lead(
+    lead_in: ManualLeadCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """
+    Criação manual de lead via App Agência.
+    Permite preenchimento de briefing inicial e atribuição de consultor.
+    """
+    try:
+        # Se for um consultor criando, já atribuímos ele como responsável automaticamente
+        if current_user.perfil == "consultor" and not lead_in.consultor_id:
+            lead_in.consultor_id = current_user.id
+
+        lead = await lead_service.create_manual_lead(db, lead_in)
+        return map_lead_to_detail(lead)
+    except ValueError as e:
+        if "DUPLICATE_LEAD" in str(e):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Este telefone já possui um lead ativo no sistema.",
+            )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
 
 
 @router.get(

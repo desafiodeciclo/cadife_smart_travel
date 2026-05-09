@@ -32,6 +32,9 @@ class ILeadRepository(ABC):
     async def get_by_phone(self, phone: str) -> Optional[object]: ...
 
     @abstractmethod
+    async def find_active_by_phone(self, telefone_hash: str) -> Optional[object]: ...
+
+    @abstractmethod
     async def get_by_id(self, lead_id: uuid.UUID) -> Optional[object]: ...
 
     @abstractmethod

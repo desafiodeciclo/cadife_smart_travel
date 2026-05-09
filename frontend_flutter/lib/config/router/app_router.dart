@@ -7,6 +7,7 @@ import 'package:cadife_smart_travel/features/agency/agenda/presentation/pages/ag
 import 'package:cadife_smart_travel/features/agency/dashboard/dashboard_screen.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/pages/lead_detail_page.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/pages/leads_page.dart';
+import 'package:cadife_smart_travel/features/agency/leads/presentation/pages/manual_lead_create_page.dart';
 import 'package:cadife_smart_travel/features/agency/perfil/presentation/pages/profile_page.dart';
 import 'package:cadife_smart_travel/features/agency/propostas/presentation/pages/proposal_create_page.dart';
 import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
@@ -118,6 +119,14 @@ final routerProvider = Provider<GoRouter>((ref) {
               child: const LeadsPage(),
             ),
             routes: [
+              GoRoute(
+                path: 'new',
+                name: 'agency_lead_new',
+                pageBuilder: (context, state) => SlideTransitionPage(
+                  name: state.name,
+                  child: const ManualLeadCreatePage(),
+                ),
+              ),
               // Path-param route for deep linking via FCM
               GoRoute(
                 path: ':leadId',

@@ -606,6 +606,9 @@ Future<void> _confirmLogout(BuildContext context, WidgetRef ref) async {
 
   if (confirmed == true && context.mounted) {
     await ref.read(authNotifierProvider.notifier).logout();
+    if (context.mounted) {
+      context.go('/auth/login');
+    }
   }
 }
 

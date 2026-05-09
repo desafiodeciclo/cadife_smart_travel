@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_notifier.dart';
 
 class ConsultorProfileScreen extends ConsumerStatefulWidget {
   const ConsultorProfileScreen({super.key});
@@ -1097,7 +1098,10 @@ class _ActionsSection extends ConsumerWidget {
       ),
     );
     if (confirmed == true && context.mounted) {
-      context.go('/auth/login');
+      await ref.read(authNotifierProvider.notifier).logout();
+      if (context.mounted) {
+        context.go('/auth/login');
+      }
     }
   }
 }
