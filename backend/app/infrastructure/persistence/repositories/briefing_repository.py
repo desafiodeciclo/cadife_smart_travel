@@ -14,8 +14,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.interfaces.repositories import IBriefingRepository
 from app.infrastructure.persistence.abstract_repository import AbstractRepository
-from app.models.briefing import (
-    Briefing as BriefingModel,
+from app.infrastructure.persistence.models.briefing_model import (
+    BriefingModel,
     calculate_completude,
 )
 
@@ -73,10 +73,3 @@ class BriefingRepository(AbstractRepository[BriefingModel], IBriefingRepository)
             **{k: v for k, v in data.items() if hasattr(BriefingModel, k)},
         )
         return await self.add(briefing)
-
-    async def update(self, lead_id: uuid.UUID, data: dict) -> BriefingModel:
-        """
-        Update an existing briefing. Delegates to upsert which handles
-        both create and update cases transparently.
-        """
-        return await self.upsert(lead_id, data)

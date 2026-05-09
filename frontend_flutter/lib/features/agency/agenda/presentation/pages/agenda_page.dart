@@ -1,14 +1,24 @@
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/domain/entities/agendamento.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/presentation/providers/agenda_provider.dart';
+import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
+import 'package:cadife_smart_travel/features/agency/leads/presentation/providers/leads_notifier.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/state_container.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-
 part 'agenda_month_view.dart';
 part 'agenda_daily_view.dart';
+part 'agenda_lead_summary.dart';
+
+// ─── Connectivity provider ────────────────────────────────────────────────────
+
+final _connectivityProvider =
+    StreamProvider<List<ConnectivityResult>>((ref) {
+  return Connectivity().onConnectivityChanged;
+});
 
 // ─── Localisation helpers ─────────────────────────────────────────────────────
 
@@ -29,11 +39,44 @@ class AgendaScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final viewMode = ref.watch(agendaViewModeProvider);
     final allAsync = ref.watch(agendaProvider);
+    final connectivity = ref.watch(_connectivityProvider);
+
+    final isOffline = connectivity.whenOrNull(
+          data: (results) =>
+              !results.contains(ConnectivityResult.mobile) &&
+              !results.contains(ConnectivityResult.wifi) &&
+              !results.contains(ConnectivityResult.ethernet),
+        ) ??
+        false;
 
     return PageScaffold(
       appBar: CadifeAppBar(
         title: 'Agenda',
         actions: [
+          if (isOffline)
+            Container(
+              margin: const EdgeInsets.only(right: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: AppColors.warning.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.wifi_off, size: 12, color: AppColors.warning),
+                  SizedBox(width: 4),
+                  Text(
+                    'Offline',
+                    style: TextStyle(
+                      color: AppColors.warning,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: () => ref.read(agendaProvider.notifier).refresh(),
@@ -41,13 +84,31 @@ class AgendaScreen extends ConsumerWidget {
         ],
       ),
       floatingActionButton: viewMode == 1
-          ? CadifeButton(
-              text: 'Novo agendamento',
-              icon: Icons.add,
-              analyticsLabel: 'agenda_new_appointment',
-              onPressed: () => ShadToaster.of(context).show(
-                const ShadToast(description: Text('Selecione um slot vazio na timeline para agendar.')),
+          ? FloatingActionButton.extended(
+              backgroundColor: AppColors.primary,
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: const Text(
+                'Nova reunião',
+                style: TextStyle(color: Colors.white),
               ),
+              onPressed: () {
+                final selectedDate = ref.read(selectedAgendaDateProvider);
+                final now = DateTime.now();
+                final defaultHour =
+                    selectedDate.day == now.day ? now.hour.clamp(9, 15) : 9;
+                final slotStart = DateTime(
+                  selectedDate.year,
+                  selectedDate.month,
+                  selectedDate.day,
+                  defaultHour,
+                );
+                showModalBottomSheet<void>(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (_) => _LeadSelectSheet(slotStart: slotStart),
+                );
+              },
             )
           : null,
       body: Column(

@@ -1,5 +1,4 @@
 import uuid
-from datetime import datetime
 from typing import Optional
 
 import structlog
@@ -15,7 +14,7 @@ from app.application.services.lead_state_machine import (
     InvalidStateTransitionError,
     LeadStateMachine,
 )
-from app.domain.entities.enums import LeadScore, LeadStatus
+from app.domain.entities.enums import LeadStatus
 from app.infrastructure.cache.decorator import cached
 from app.infrastructure.security.dependencies import (
     RequiresRole,
@@ -55,31 +54,22 @@ router = APIRouter(
 async def list_leads(
     status: Optional[str] = Query(None),
     score: Optional[str] = Query(None),
-    destino: Optional[str] = Query(None),
-    data_inicio: Optional[datetime] = Query(None),
-    data_fim: Optional[datetime] = Query(None),
-    q: Optional[str] = Query(None),
+    search: Optional[str] = Query(None),
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
+    # RBAC: consultor sees only own leads; admin/agencia sees all.
     consultor_id = None
     if current_user.perfil == "consultor":
         consultor_id = current_user.id
 
-    # Convert string query params to native enums for PostgreSQL enum columns
-    status_enum = LeadStatus(status) if status else None
-    score_enum = LeadScore(score) if score else None
-
     leads, total = await lead_service.list_leads(
         db,
-        status=status_enum,
-        score=score_enum,
-        destino=destino,
-        data_inicio=data_inicio,
-        data_fim=data_fim,
-        q=q,
+        status=status,
+        score=score,
+        search=search,
         page=page,
         limit=limit,
         consultor_id=consultor_id,
@@ -215,7 +205,7 @@ async def update_lead(
             )
         except InvalidStateTransitionError as exc:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail=str(exc),
             ) from exc
 
@@ -267,8 +257,6 @@ async def archive_lead(
 )
 async def get_interacoes(
     lead_id: uuid.UUID,
-    page: int = Query(1, ge=1),
-    limit: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
@@ -277,12 +265,10 @@ async def get_interacoes(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Lead não encontrado"
         )
-    
-    interacoes, total = await lead_service.get_lead_interacoes(db, lead_id, page=page, limit=limit)
-    
     from app.models.interacao import InteracaoResponse
-    items = [InteracaoResponse.model_validate(i) for i in interacoes]
-    return InteracaoListResponse(items=items, total=total)
+
+    items = [InteracaoResponse.model_validate(i) for i in lead.interacoes]
+    return InteracaoListResponse(items=items, total=len(items))
 
 
 @router.get(
@@ -315,18 +301,15 @@ async def update_briefing(
     current_user=Depends(get_current_user),
 ):
     lead = await lead_service.get_lead_by_id(db, lead_id)
-    if not lead:
+    if not lead or not lead.briefing:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Lead não encontrado"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Briefing não encontrado"
         )
 
-    # Scope Check
-    if current_user.perfil == "consultor" and lead.consultor_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado ao briefing deste lead")
-
-    briefing = await lead_service.update_lead_briefing(
-        db, 
-        lead_id, 
-        briefing_in.model_dump(exclude_none=True)
-    )
+    briefing = lead.briefing
+    for field, value in briefing_in.model_dump(exclude_none=True).items():
+        setattr(briefing, field, value)
+    briefing.completude_pct = calculate_completude(briefing.__dict__)
+    await db.commit()
+    await db.refresh(briefing)
     return BriefingResponse.model_validate(briefing)

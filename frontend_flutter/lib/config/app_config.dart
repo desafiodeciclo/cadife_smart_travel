@@ -20,7 +20,7 @@ class AppConfig {
   // Pré-configurados
   static const AppConfig dev = AppConfig(
     environment: AppEnvironment.dev,
-    apiBaseUrl: 'http://localhost:4000', // ou ngrok URL via env var
+    apiBaseUrl: 'http://10.0.2.2:4000', // ou ngrok URL via env var
     firebaseProjectId: 'cadife-dev-123',
     enableDebugLogs: true,
     appName: 'Cadife Dev',

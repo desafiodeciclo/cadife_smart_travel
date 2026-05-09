@@ -37,7 +37,6 @@ class _NotificationCenterScreenState
       appBar: CadifeAppBar(
         title: 'Notificações',
         showProfile: false,
-        showNotificationBell: false,
         actions: [
           // Botão "Marcar tudo como lido" (aparece apenas se há não lidas)
           unreadCountAsync.when(

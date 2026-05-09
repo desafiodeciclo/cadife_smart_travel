@@ -56,3 +56,7 @@ class ValidationFailure extends Failure {
 class GenericFailure extends Failure {
   const GenericFailure([super.message = 'Ocorreu um erro inesperado.']);
 }
+
+class ConflictFailure extends Failure {
+  const ConflictFailure([super.message = 'Conflito: recurso já existe ou está em uso.']);
+}

@@ -40,16 +40,7 @@ class SettingsPage extends StatelessWidget {
               );
             },
           ),
-          ListTile(
-            leading: Icon(LucideIcons.bell, color: cadife.textPrimary),
-            title: Text('Notificações', style: TextStyle(color: cadife.textPrimary)),
-            trailing: Icon(LucideIcons.chevronRight, color: cadife.textSecondary),
-            onTap: () {
-              ShadToaster.of(context).show(
-                const ShadToast(description: Text('Configurações de notificações em breve')),
-              );
-            },
-          ),
+
           ListTile(
             leading: Icon(LucideIcons.shield, color: cadife.textPrimary),
             title: Text('Privacidade e Segurança', style: TextStyle(color: cadife.textPrimary)),
