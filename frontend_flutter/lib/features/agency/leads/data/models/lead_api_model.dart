@@ -9,6 +9,7 @@ class LeadApiModel extends Lead {
     required super.score,
     required super.completudePct,
     super.email,
+    super.origem,
     super.destino,
     super.dataIda,
     super.dataVolta,
@@ -42,6 +43,12 @@ class LeadApiModel extends Lead {
         orElse: () => LeadScore.frio,
       ),
       completudePct: json['completude_pct'] as int? ?? 0,
+      origem: json['origem'] != null
+          ? LeadOrigem.values.firstWhere(
+              (e) => e.name == json['origem'],
+              orElse: () => LeadOrigem.manual,
+            )
+          : null,
       destino: json['destino'] as String?,
       dataIda: json['data_ida'] != null
           ? DateTime.parse(json['data_ida'] as String)
@@ -78,6 +85,7 @@ class LeadApiModel extends Lead {
         'status': status.name,
         'score': score.name,
         'completude_pct': completudePct,
+        'origem': origem?.name,
         'destino': destino,
         'data_ida': dataIda?.toIso8601String(),
         'data_volta': dataVolta?.toIso8601String(),

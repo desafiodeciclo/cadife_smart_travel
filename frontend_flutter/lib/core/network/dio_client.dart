@@ -60,7 +60,10 @@ class DioClientFactory {
     if (kDebugMode) {
       dio.interceptors.add(
         LogInterceptor(
+          request: true,
+          requestHeader: true,
           requestBody: true,
+          responseHeader: true,
           responseBody: true,
           logPrint: (o) => debugPrint(o.toString()),
         ),
@@ -99,7 +102,10 @@ class DioClientFactory {
     if (kDebugMode) {
       dio.interceptors.add(
         LogInterceptor(
+          request: true,
+          requestHeader: true,
           requestBody: true,
+          responseHeader: true,
           responseBody: true,
           logPrint: (o) => debugPrint(o.toString()),
         ),

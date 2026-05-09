@@ -24,27 +24,44 @@ class _DailyView extends ConsumerWidget {
         _DayNavBar(selectedDate: selectedDate),
         const Divider(height: 1),
         Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
-            itemCount: 7, // slots 09:00 → 15:00
-            itemBuilder: (context, index) {
-              final hour = 9 + index;
-              final slotStart = DateTime(
-                selectedDate.year,
-                selectedDate.month,
-                selectedDate.day,
-                hour,
-              );
-
-              final matching = dayItems.where((a) => a.dateTime.hour == hour);
-              final meeting = matching.isEmpty ? null : matching.first;
-
-              return _TimeSlotRow(
-                hour: hour,
-                slotStart: slotStart,
-                meeting: meeting,
-              );
+          child: GestureDetector(
+            onHorizontalDragEnd: (details) {
+              final velocity = details.primaryVelocity ?? 0;
+              if (velocity < -300) {
+                // swipe left → próximo dia
+                final d = ref.read(selectedAgendaDateProvider);
+                ref.read(selectedAgendaDateProvider.notifier).state =
+                    d.add(const Duration(days: 1));
+              } else if (velocity > 300) {
+                // swipe right → dia anterior
+                final d = ref.read(selectedAgendaDateProvider);
+                ref.read(selectedAgendaDateProvider.notifier).state =
+                    d.subtract(const Duration(days: 1));
+              }
             },
+            child: ListView.builder(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
+              // slots 09:00 → 16:00 (8 slots)
+              itemCount: 8,
+              itemBuilder: (context, index) {
+                final hour = 9 + index;
+                final slotStart = DateTime(
+                  selectedDate.year,
+                  selectedDate.month,
+                  selectedDate.day,
+                  hour,
+                );
+
+                final matching = dayItems.where((a) => a.dateTime.hour == hour);
+                final meeting = matching.isEmpty ? null : matching.first;
+
+                return _TimeSlotRow(
+                  hour: hour,
+                  slotStart: slotStart,
+                  meeting: meeting,
+                );
+              },
+            ),
           ),
         ),
       ],
@@ -158,8 +175,11 @@ class _TimeSlotRow extends StatelessWidget {
     if (meeting == null) {
       return _EmptySlotCard(slotStart: slotStart);
     }
-    if (meeting!.status == 'bloqueado') {
+    if (meeting!.isBloqueado) {
       return _BlockedSlotCard(meeting: meeting!);
+    }
+    if (meeting!.isCancelado) {
+      return _CancelledSlotCard(meeting: meeting!);
     }
     return _MeetingCard(meeting: meeting!);
   }
@@ -167,34 +187,44 @@ class _TimeSlotRow extends StatelessWidget {
 
 // ─── Meeting card ─────────────────────────────────────────────────────────────
 
-class _MeetingCard extends StatelessWidget {
+class _MeetingCard extends ConsumerWidget {
   const _MeetingCard({required this.meeting});
   final Agendamento meeting;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final endTime =
         meeting.dateTime.add(Duration(minutes: meeting.durationMinutes));
     final timeRange =
         '${DateFormat('HH:mm').format(meeting.dateTime)} – ${DateFormat('HH:mm').format(endTime)}';
-    final displayName = meeting.notes?.isNotEmpty == true
-        ? meeting.notes!
-        : 'Reunião de Curadoria';
+    final displayName =
+        meeting.nomeCliente?.isNotEmpty == true
+            ? meeting.nomeCliente!
+            : (meeting.notes?.isNotEmpty == true
+                ? meeting.notes!
+                : 'Reunião de Curadoria');
+
+    final statusColor = switch (meeting.statusEnum) {
+      StatusAgendamento.agendado => Colors.blue,
+      StatusAgendamento.pendente => AppColors.warning,
+      StatusAgendamento.realizado => AppColors.success,
+      StatusAgendamento.cancelado => context.cadife.textSecondary,
+      StatusAgendamento.bloqueado => context.cadife.textSecondary,
+    };
 
     return Material(
-      color: context.cadife.primary.withValues(alpha: 0.1),
-      borderRadius: BorderRadius.circular(10),
+      color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(10),
-        onTap: meeting.leadId.isNotEmpty
-            ? () => context.push('/agency/leads/${meeting.leadId}')
-            : null,
+        onTap: () => _openLeadSummary(context, ref),
+        onLongPress: () => _showLongPressMenu(context, ref),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
+            color: statusColor.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(10),
             border: Border(
-              left: BorderSide(color: context.cadife.primary, width: 3),
+              left: BorderSide(color: statusColor, width: 3),
             ),
           ),
           child: Row(
@@ -213,7 +243,30 @@ class _MeetingCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 3),
+                    const SizedBox(height: 2),
+                    if (meeting.destinoViagem?.isNotEmpty == true)
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.location_on_outlined,
+                            size: 12,
+                            color: context.cadife.textSecondary,
+                          ),
+                          const SizedBox(width: 2),
+                          Expanded(
+                            child: Text(
+                              meeting.destinoViagem!,
+                              style: TextStyle(
+                                color: context.cadife.textSecondary,
+                                fontSize: 12,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    const SizedBox(height: 2),
                     Text(
                       timeRange,
                       style: TextStyle(
@@ -225,49 +278,473 @@ class _MeetingCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              _StatusChip(status: meeting.status),
-              if (meeting.leadId.isNotEmpty) ...[
-                const SizedBox(width: 4),
-                Icon(
-                  Icons.chevron_right,
-                  size: 16,
-                  color: context.cadife.textSecondary,
-                ),
-              ],
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  _StatusChip(status: meeting.status, color: statusColor),
+                  const SizedBox(height: 4),
+                  Icon(
+                    Icons.chevron_right,
+                    size: 16,
+                    color: context.cadife.textSecondary,
+                  ),
+                ],
+              ),
             ],
           ),
         ),
       ),
     );
   }
+
+  void _openLeadSummary(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _LeadSummarySheet(meeting: meeting),
+    );
+  }
+
+  void _showLongPressMenu(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: false,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (sheetCtx) => _MeetingActionsSheet(
+        meeting: meeting,
+        onEdit: () {
+          Navigator.of(sheetCtx).pop();
+          _openEditModal(context, ref);
+        },
+        onCancel: () async {
+          Navigator.of(sheetCtx).pop();
+          final confirmed = await _confirmCancel(context);
+          if (confirmed == true && context.mounted) {
+            final ok = await ref.read(agendaProvider.notifier).cancelSlot(meeting.id);
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(ok ? 'Reunião cancelada' : 'Erro ao cancelar'),
+                  backgroundColor: ok ? AppColors.success : AppColors.error,
+                ),
+              );
+            }
+          }
+        },
+        onViewLead: () {
+          Navigator.of(sheetCtx).pop();
+          context.push('/agency/leads/${meeting.leadId}');
+        },
+      ),
+    );
+  }
+
+  void _openEditModal(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _EditSlotSheet(meeting: meeting),
+    );
+  }
+
+  Future<bool?> _confirmCancel(BuildContext context) {
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Cancelar reunião?'),
+        content: const Text('Esta ação não pode ser desfeita.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Voltar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Cancelar reunião'),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _StatusChip extends StatelessWidget {
-  const _StatusChip({required this.status});
+  const _StatusChip({required this.status, this.color});
   final String status;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
-    final (label, color) = switch (status.toLowerCase()) {
-      'agendado' => ('Agendado', Colors.blue),
-      'realizado' => ('Realizado', context.cadife.success),
-      'cancelado' => ('Cancelado', context.cadife.textSecondary),
-      _ => (status, context.cadife.textSecondary),
-    };
+    final resolvedColor = color ??
+        switch (status.toLowerCase()) {
+          'agendado' => Colors.blue,
+          'realizado' => AppColors.success,
+          'pendente' => AppColors.warning,
+          _ => context.cadife.textSecondary,
+        };
+
+    final label = StatusAgendamento.values
+        .firstWhere(
+          (e) => e.name == status,
+          orElse: () => StatusAgendamento.agendado,
+        )
+        .label;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
+        color: resolvedColor.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Text(
         label,
         style: TextStyle(
-          color: color,
-          fontSize: 11,
+          color: resolvedColor,
+          fontSize: 10,
           fontWeight: FontWeight.w600,
         ),
+      ),
+    );
+  }
+}
+
+// ─── Meeting actions bottom sheet (long-press) ────────────────────────────────
+
+class _MeetingActionsSheet extends StatelessWidget {
+  const _MeetingActionsSheet({
+    required this.meeting,
+    required this.onEdit,
+    required this.onCancel,
+    required this.onViewLead,
+  });
+
+  final Agendamento meeting;
+  final VoidCallback onEdit;
+  final VoidCallback onCancel;
+  final VoidCallback onViewLead;
+
+  @override
+  Widget build(BuildContext context) {
+    final name = meeting.nomeCliente ?? 'Reunião de Curadoria';
+    final time = DateFormat('HH:mm').format(meeting.dateTime);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Center(
+            child: Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: context.cadife.cardBorder,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            '$name · $time',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: context.cadife.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 16),
+          _ActionTile(
+            icon: Icons.edit_outlined,
+            label: 'Editar agendamento',
+            onTap: onEdit,
+          ),
+          _ActionTile(
+            icon: Icons.person_outline,
+            label: 'Ver perfil do lead',
+            onTap: onViewLead,
+          ),
+          _ActionTile(
+            icon: Icons.cancel_outlined,
+            label: 'Cancelar reunião',
+            color: AppColors.error,
+            onTap: onCancel,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ActionTile extends StatelessWidget {
+  const _ActionTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final tileColor = color ?? context.cadife.textPrimary;
+    return ListTile(
+      leading: Icon(icon, color: tileColor, size: 22),
+      title: Text(
+        label,
+        style: TextStyle(color: tileColor, fontWeight: FontWeight.w500),
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      onTap: onTap,
+    );
+  }
+}
+
+// ─── Edit slot bottom sheet ───────────────────────────────────────────────────
+
+class _EditSlotSheet extends ConsumerStatefulWidget {
+  const _EditSlotSheet({required this.meeting});
+  final Agendamento meeting;
+
+  @override
+  ConsumerState<_EditSlotSheet> createState() => _EditSlotSheetState();
+}
+
+class _EditSlotSheetState extends ConsumerState<_EditSlotSheet> {
+  late final TextEditingController _notesCtrl;
+  late String _selectedStatus;
+  late int _selectedDuration;
+  bool _isSaving = false;
+
+  static const _durations = [30, 60, 90, 120];
+
+  @override
+  void initState() {
+    super.initState();
+    _notesCtrl = TextEditingController(text: widget.meeting.notes ?? '');
+    _selectedStatus = widget.meeting.status;
+    _selectedDuration = widget.meeting.durationMinutes;
+  }
+
+  @override
+  void dispose() {
+    _notesCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(top: 80),
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          20,
+          16,
+          20,
+          MediaQuery.of(context).viewInsets.bottom + 24,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: context.cadife.cardBorder,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Editar Agendamento',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: context.cadife.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${_diasSemana[(widget.meeting.dateTime.weekday - 1) % 7]}, '
+                  '${widget.meeting.dateTime.day.toString().padLeft(2, '0')} de '
+                  '${_meses[widget.meeting.dateTime.month - 1]} · '
+                  '${DateFormat('HH:mm').format(widget.meeting.dateTime)}',
+                style: TextStyle(
+                  color: context.cadife.textSecondary,
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Status',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: context.cadife.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                children: [
+                  StatusAgendamento.agendado,
+                  StatusAgendamento.pendente,
+                  StatusAgendamento.realizado,
+                ].map((s) {
+                  final selected = _selectedStatus == s.name;
+                  return ChoiceChip(
+                    label: Text(s.label),
+                    selected: selected,
+                    onSelected: (_) =>
+                        setState(() => _selectedStatus = s.name),
+                    selectedColor: AppColors.primary.withValues(alpha: 0.15),
+                    labelStyle: TextStyle(
+                      color: selected
+                          ? AppColors.primary
+                          : context.cadife.textSecondary,
+                      fontWeight: selected
+                          ? FontWeight.w600
+                          : FontWeight.normal,
+                    ),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Duração',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: context.cadife.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                children: _durations.map((d) {
+                  final selected = _selectedDuration == d;
+                  final label = d < 60
+                      ? '$d min'
+                      : d == 60
+                          ? '1h'
+                          : '${d ~/ 60}h${d % 60 > 0 ? '${d % 60}min' : ''}';
+                  return ChoiceChip(
+                    label: Text(label),
+                    selected: selected,
+                    onSelected: (_) =>
+                        setState(() => _selectedDuration = d),
+                    selectedColor: AppColors.primary.withValues(alpha: 0.15),
+                    labelStyle: TextStyle(
+                      color: selected
+                          ? AppColors.primary
+                          : context.cadife.textSecondary,
+                      fontWeight: selected
+                          ? FontWeight.w600
+                          : FontWeight.normal,
+                    ),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 20),
+              CadifeInput(
+                controller: _notesCtrl,
+                label: 'Anotações (máx. 200 caracteres)',
+                hintText: 'Observações sobre a reunião...',
+                maxLines: 3,
+              ),
+              const SizedBox(height: 24),
+              CadifeButton(
+                text: 'Salvar alterações',
+                isLoading: _isSaving,
+                onPressed: _isSaving ? null : _save,
+              ),
+              const SizedBox(height: 8),
+              CadifeButton(
+                text: 'Cancelar',
+                isOutline: true,
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _save() async {
+    setState(() => _isSaving = true);
+    final ok = await ref.read(agendaProvider.notifier).editSlot(
+          widget.meeting.id,
+          UpdateAgendaRequest(
+            status: _selectedStatus,
+            durationMinutes: _selectedDuration,
+            notes: _notesCtrl.text.trim().isEmpty
+                ? null
+                : _notesCtrl.text.trim(),
+          ),
+        );
+    if (mounted) {
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(ok ? 'Reunião atualizada' : 'Erro ao salvar'),
+          backgroundColor: ok ? AppColors.success : AppColors.error,
+        ),
+      );
+    }
+  }
+}
+
+// ─── Cancelled slot card ──────────────────────────────────────────────────────
+
+class _CancelledSlotCard extends StatelessWidget {
+  const _CancelledSlotCard({required this.meeting});
+  final Agendamento meeting;
+
+  @override
+  Widget build(BuildContext context) {
+    final name = meeting.nomeCliente ?? 'Reunião cancelada';
+    final time = DateFormat('HH:mm').format(meeting.dateTime);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: context.cadife.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: context.cadife.cardBorder),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.event_busy,
+              size: 16, color: context.cadife.textSecondary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '$name · $time',
+              style: TextStyle(
+                color: context.cadife.textSecondary,
+                fontSize: 13,
+                decoration: TextDecoration.lineThrough,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -281,8 +758,10 @@ class _BlockedSlotCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final label =
-        meeting.notes?.isNotEmpty == true ? meeting.notes! : 'Horário Bloqueado';
+    final label = meeting.motivoBloqueio?.label ??
+        (meeting.notes?.isNotEmpty == true
+            ? meeting.notes!
+            : 'Horário Bloqueado');
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -293,8 +772,7 @@ class _BlockedSlotCard extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.lock_outline,
-              size: 16, color: Colors.grey),
+          const Icon(Icons.lock_outline, size: 16, color: Colors.grey),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -332,15 +810,13 @@ class _BlockedSlotCard extends ConsumerWidget {
           'Deseja liberar ${DateFormat('HH:mm').format(m.dateTime)} para agendamentos?',
         ),
         actions: [
-          CadifeButton(
+          TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            text: 'Cancelar',
-            isOutline: true,
+            child: const Text('Cancelar'),
           ),
-          const SizedBox(height: 8),
-          CadifeButton(
+          TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            text: 'Desbloquear',
+            child: const Text('Desbloquear'),
           ),
         ],
       ),
@@ -383,8 +859,6 @@ class _EmptySlotCard extends ConsumerWidget {
   }
 
   void _showSlotOptions(BuildContext context, WidgetRef ref, DateTime slot) {
-    final notifier = ref.read(agendaProvider.notifier);
-
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -395,17 +869,20 @@ class _EmptySlotCard extends ConsumerWidget {
         slotStart: slot,
         onSchedule: () {
           Navigator.of(sheetContext).pop();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Selecione um lead e agende para ${DateFormat('HH:mm').format(slot)}.',
-              ),
-            ),
+          showModalBottomSheet<void>(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (_) => _LeadSelectSheet(slotStart: slot),
           );
         },
-        onBlock: (notes) async {
+        onBlock: (motivo, notes) async {
           Navigator.of(sheetContext).pop();
-          await notifier.blockSlot(slot, notes: notes);
+          await ref.read(agendaProvider.notifier).blockSlot(
+                slot,
+                motivoBloqueio: motivo,
+                notes: notes,
+              );
         },
       ),
     );
@@ -423,7 +900,7 @@ class _SlotOptionsSheet extends StatefulWidget {
 
   final DateTime slotStart;
   final VoidCallback onSchedule;
-  final Future<void> Function(String? notes) onBlock;
+  final Future<void> Function(MotivoBloqueio? motivo, String? notes) onBlock;
 
   @override
   State<_SlotOptionsSheet> createState() => _SlotOptionsSheetState();
@@ -431,7 +908,8 @@ class _SlotOptionsSheet extends StatefulWidget {
 
 class _SlotOptionsSheetState extends State<_SlotOptionsSheet> {
   final _notesController = TextEditingController();
-  bool _showNotesField = false;
+  bool _showBlockForm = false;
+  MotivoBloqueio? _selectedMotivo;
   bool _isBlocking = false;
 
   @override
@@ -477,15 +955,15 @@ class _SlotOptionsSheetState extends State<_SlotOptionsSheet> {
           const SizedBox(height: 4),
           Text(
             'O que deseja fazer com este horário?',
-            style: TextStyle(fontSize: 13, color: context.cadife.textSecondary),
+            style:
+                TextStyle(fontSize: 13, color: context.cadife.textSecondary),
           ),
           const SizedBox(height: 16),
           ListTile(
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            tileColor: context.cadife.primary.withValues(alpha: 0.1),
-            leading:
-                const Icon(Icons.event_available, color: Colors.blue),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10)),
+            tileColor: AppColors.primary.withValues(alpha: 0.1),
+            leading: const Icon(Icons.event_available, color: Colors.blue),
             title: const Text(
               'Agendar Reunião',
               style: TextStyle(fontWeight: FontWeight.w600),
@@ -495,36 +973,66 @@ class _SlotOptionsSheetState extends State<_SlotOptionsSheet> {
           ),
           const SizedBox(height: 8),
           ListTile(
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10)),
             tileColor: context.cadife.surface,
-            leading: const Icon(Icons.do_not_disturb_on,
-                color: Colors.orange),
+            leading:
+                const Icon(Icons.do_not_disturb_on, color: Colors.orange),
             title: const Text(
               'Bloquear Horário',
               style: TextStyle(fontWeight: FontWeight.w600),
             ),
             subtitle: const Text('Pausa ou reunião interna'),
-            trailing: _showNotesField
+            trailing: _showBlockForm
                 ? null
                 : Icon(Icons.expand_more,
                     color: context.cadife.textSecondary),
-            onTap: () => setState(() => _showNotesField = true),
+            onTap: () => setState(() => _showBlockForm = true),
           ),
-          if (_showNotesField) ...[
-            const SizedBox(height: 8),
-            CadifeInput(
-              controller: _notesController,
-              label: 'Motivo do bloqueio',
-              hintText: 'Motivo (opcional)',
+          if (_showBlockForm) ...[
+            const SizedBox(height: 12),
+            Text(
+              'Motivo',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: context.cadife.textPrimary,
+              ),
             ),
             const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              children: MotivoBloqueio.values.map((m) {
+                final selected = _selectedMotivo == m;
+                return ChoiceChip(
+                  label: Text(m.label),
+                  selected: selected,
+                  onSelected: (_) =>
+                      setState(() => _selectedMotivo = m),
+                  selectedColor: AppColors.primary.withValues(alpha: 0.15),
+                  labelStyle: TextStyle(
+                    color: selected
+                        ? AppColors.primary
+                        : context.cadife.textSecondary,
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 8),
+            if (_selectedMotivo == MotivoBloqueio.outro)
+              CadifeInput(
+                controller: _notesController,
+                label: 'Descrição',
+                hintText: 'Descreva o motivo...',
+              ),
+            const SizedBox(height: 8),
             CadifeButton(
-              onPressed: _isBlocking
+              onPressed: _isBlocking || _selectedMotivo == null
                   ? null
                   : () async {
                       setState(() => _isBlocking = true);
                       await widget.onBlock(
+                        _selectedMotivo,
                         _notesController.text.trim().isEmpty
                             ? null
                             : _notesController.text.trim(),

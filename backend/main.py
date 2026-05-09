@@ -31,7 +31,7 @@ from app.jobs.proposta_expiration_job import expire_stale_propostas_job
 from app.jobs.notification_worker import NotificationWorker, WORKER_INTERVAL_SECONDS
 
 # Routers
-from app.routes import agenda, auth, ia, leads, propostas, webhook
+from app.routes import agenda, auth, documents, ia, leads, propostas, webhook, suitcase
 
 # Middlewares
 from app.presentation.middlewares.request_id import RequestIdMiddleware
@@ -192,7 +192,9 @@ app.include_router(leads.router)
 app.include_router(ia.router)
 app.include_router(agenda.router)
 app.include_router(propostas.router)
+app.include_router(documents.router)
 app.include_router(auth.router)
+app.include_router(suitcase.router)
 
 # -------------------------------------------------------------------
 # Health Check

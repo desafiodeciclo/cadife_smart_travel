@@ -11,7 +11,7 @@ by overriding `_load_external_secrets()`.
 """
 
 from functools import lru_cache
-from typing import Literal
+from typing import Literal, Optional
 
 from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -124,6 +124,17 @@ class Settings(BaseSettings):
     CHROMA_PERSIST_DIR: str = Field(default="./chroma_db")
     KNOWLEDGE_BASE_DIR: str = Field(default="./knowledge_base")
     INGESTION_CACHE_PATH: str = Field(default="./chroma_db/ingestion_cache.json")
+
+    # ── Object Storage (S3/MinIO) ──────────────────────────────────────────
+    S3_ENDPOINT_URL: Optional[str] = Field(
+        default=None,
+        description="MinIO endpoint (ex: http://localhost:9000) - None para AWS S3 real",
+    )
+    S3_ACCESS_KEY: str = Field(default="", description="S3 Access Key")
+    S3_SECRET_KEY: str = Field(default="", description="S3 Secret Key")
+    S3_BUCKET_NAME: str = Field(default="cadife-documents", description="S3 Bucket Name")
+    S3_REGION: str = Field(default="us-east-1", description="S3 Region")
+    DOCUMENTS_MAX_SIZE_MB: int = Field(default=10, ge=1)
 
     # ── CORS (spec.md §12.2) ──────────────────────────────────────────────
     ALLOWED_ORIGINS: str = Field(

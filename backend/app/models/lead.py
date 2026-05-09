@@ -8,6 +8,7 @@ if TYPE_CHECKING:
     from app.models.agendamento import Agendamento
     from app.models.proposta import Proposta
     from app.models.user import User
+    from app.models.documento import Documento
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, String, func
 from sqlalchemy.dialects.postgresql import ENUM as PgEnum, UUID

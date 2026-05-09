@@ -24,6 +24,7 @@ class ApiConstants {
   static const String leads = '/leads';
   static String leadById(String id) => '/leads/$id';
   static String leadBriefing(String id) => '/leads/$id/briefing';
+  static const String leadsManual = '/leads/manual';
 
   // ── Agenda ─────────────────────────────────────────────
   static const String agenda = '/agenda';

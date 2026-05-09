@@ -123,6 +123,15 @@ class _CadifeInputState extends State<CadifeInput> {
                 keyboardType: widget.keyboardType,
                 maxLines: isEffectiveObscure ? 1 : widget.maxLines,
                 onTapOutside: (_) => FocusScope.of(context).unfocus(),
+                validator: (value) {
+                  final error = widget.validator?.call(value);
+                  if (error != _internalErrorText) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted) setState(() => _internalErrorText = error);
+                    });
+                  }
+                  return error;
+                },
                 style: GoogleFonts.inter(
                   color: theme.textPrimary,
                   fontSize: 15,
@@ -151,6 +160,7 @@ class _CadifeInputState extends State<CadifeInput> {
                   focusedBorder: InputBorder.none,
                   errorBorder: InputBorder.none,
                   disabledBorder: InputBorder.none,
+                  errorStyle: const TextStyle(height: 0, fontSize: 0), // Hide default error
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 ),
                 onChanged: (value) {

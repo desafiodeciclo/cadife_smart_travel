@@ -37,6 +37,7 @@ if TYPE_CHECKING:
     from app.infrastructure.persistence.models.interacao_model import InteracaoModel
     from app.infrastructure.persistence.models.agendamento_model import AgendamentoModel
     from app.infrastructure.persistence.models.proposta_model import PropostaModel
+    from app.infrastructure.persistence.models.suitcase_model import SuitcaseItemModel
 
 
 # PostgreSQL native ENUM types — enforced at DB level, not just application level
@@ -118,4 +119,7 @@ class LeadModel(Base):
     )
     propostas: Mapped[list["PropostaModel"]] = relationship(
         "PropostaModel", back_populates="lead", lazy="select"
+    )
+    suitcase_items: Mapped[list["SuitcaseItemModel"]] = relationship(
+        "SuitcaseItemModel", back_populates="lead", lazy="select"
     )
