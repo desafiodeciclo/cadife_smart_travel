@@ -53,6 +53,7 @@ import app.models.interacao  # noqa: F401
 import app.models.agendamento  # noqa: F401
 import app.models.proposta  # noqa: F401
 import app.models.user  # noqa: F401
+import app.models.offer  # noqa: F401
 import app.models.notification_queue  # noqa: F401
 import app.models.dead_letter_queue  # noqa: F401
 
@@ -65,6 +66,7 @@ import app.infrastructure.persistence.models.proposta_model  # noqa: F401
 import app.infrastructure.persistence.models.user_model  # noqa: F401
 import app.infrastructure.persistence.models.documento_model  # noqa: F401
 import app.infrastructure.persistence.models.suitcase_model  # noqa: F401
+import app.infrastructure.persistence.models.offer_model  # noqa: F401
 
 # Now import the app and models AFTER setting env vars
 from main import app

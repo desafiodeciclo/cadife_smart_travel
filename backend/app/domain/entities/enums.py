@@ -137,3 +137,24 @@ class DocumentoCategoria(str, Enum):
     seguro = "seguro"
     itinerario = "itinerario"
     outros = "outros"
+
+
+class OfferStatus(str, Enum):
+    """Offer lifecycle states."""
+
+    rascunho = "rascunho"
+    publicada = "publicada"
+    encerrada = "encerrada"
+
+
+class OfferCategoria(str, Enum):
+    """Travel offer categories."""
+
+    internacional = "internacional"
+    nacional = "nacional"
+    lua_de_mel = "lua_de_mel"
+    familia = "família"
+    aventura = "aventura"
+    cruzeiro = "cruzeiro"
+    executivo = "executivo"
+    outros = "outros"
