@@ -123,6 +123,7 @@ backend/**/settings_local.py
 **/.symlinks/
 userdata
 xcuserdata
+**/android/app/.cxx/
 
 # Web/Desktop
 **/linux/flutter/ephemeral/

@@ -120,3 +120,14 @@ class DestinationType(str, Enum):
     frio = "frio"
     urbano = "urbano"
     aventura = "aventura"
+
+
+class DocumentoCategoria(str, Enum):
+    """Document categories for travel management (spec.md §7.2)."""
+
+    passagem = "passagem"
+    voucher = "voucher"
+    transfer = "transfer"
+    seguro = "seguro"
+    itinerario = "itinerario"
+    outros = "outros"

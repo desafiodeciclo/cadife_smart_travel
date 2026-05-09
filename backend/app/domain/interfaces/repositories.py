@@ -19,6 +19,9 @@ from app.domain.entities.enums import (
     LeadStatus,
     PropostaStatus,
     TipoMensagem,
+    DocumentoCategoria,
+    SuitcaseCategory,
+    DestinationType,
 )
 
 
@@ -207,3 +210,30 @@ class ISuitcaseRepository(ABC):
 
     @abstractmethod
     async def get_suggestions_by_destination(self, destination_type: str) -> list: ...
+
+
+class IDocumentoRepository(ABC):
+    """Interface for Documento (travel documents) persistence."""
+
+    @abstractmethod
+    async def create(
+        self,
+        lead_id: uuid.UUID,
+        nome: str,
+        s3_key: str,
+        categoria: str,
+        tamanho_bytes: int,
+        mimetype: str,
+        enviado_por: Optional[uuid.UUID] = None,
+    ) -> object: ...
+
+    @abstractmethod
+    async def get_by_id(self, documento_id: uuid.UUID) -> Optional[object]: ...
+
+    @abstractmethod
+    async def list_by_lead(
+        self, lead_id: uuid.UUID, include_deleted: bool = False
+    ) -> list: ...
+
+    @abstractmethod
+    async def soft_delete(self, documento_id: uuid.UUID) -> None: ...
