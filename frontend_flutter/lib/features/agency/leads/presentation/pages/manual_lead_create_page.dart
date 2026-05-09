@@ -5,7 +5,6 @@ import 'package:cadife_smart_travel/features/agency/leads/presentation/providers
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 class ManualLeadCreatePage extends ConsumerStatefulWidget {
   const ManualLeadCreatePage({super.key});
@@ -91,7 +90,7 @@ class _ManualLeadCreatePageState extends ConsumerState<ManualLeadCreatePage> {
 
     if (!mounted) return;
 
-    result.fold(
+    await result.fold(
       (failure) async {
         setState(() => _isSubmitting = false);
         
@@ -116,7 +115,7 @@ class _ManualLeadCreatePageState extends ConsumerState<ManualLeadCreatePage> {
           );
 
           if (shouldProceed == true) {
-            _submit(ignoreDuplicity: true);
+            await _submit(ignoreDuplicity: true);
           }
           return;
         }
@@ -128,7 +127,7 @@ class _ManualLeadCreatePageState extends ConsumerState<ManualLeadCreatePage> {
           ),
         );
       },
-      (lead) {
+      (lead) async {
         ShadToaster.of(context).show(
           const ShadToast(
             title: Text('Sucesso!'),

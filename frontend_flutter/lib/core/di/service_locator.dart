@@ -20,19 +20,16 @@ import 'package:cadife_smart_travel/core/offline/process_offline_queue_usecase.d
 import 'package:cadife_smart_travel/core/security/secure_config.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/data/datasources/mock_agenda_repository.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/domain/repositories/i_agenda_repository.dart';
-import 'package:cadife_smart_travel/features/agency/leads/data/datasources/leads_remote_mock_datasource.dart';
-import 'package:cadife_smart_travel/features/agency/leads/data/repositories/leads_repository_impl.dart';
-import 'package:cadife_smart_travel/features/agency/leads/data/datasources/leads_remote_api_datasource.dart';
-import 'package:cadife_smart_travel/features/agency/leads/domain/repositories/i_leads_repository.dart';
 import 'package:cadife_smart_travel/features/agency/leads/data/datasources/i_leads_datasource.dart';
+import 'package:cadife_smart_travel/features/agency/leads/data/datasources/leads_remote_api_datasource.dart';
+import 'package:cadife_smart_travel/features/agency/leads/data/repositories/leads_repository_impl.dart';
+import 'package:cadife_smart_travel/features/agency/leads/domain/repositories/i_leads_repository.dart';
 import 'package:cadife_smart_travel/features/agency/perfil/data/datasources/mock_consultor_repository.dart';
 import 'package:cadife_smart_travel/features/agency/perfil/domain/repositories/i_consultor_repository.dart';
 import 'package:cadife_smart_travel/features/agency/propostas/data/repositories/mock_proposals_repository.dart';
-import 'package:cadife_smart_travel/features/agency/propostas/data/repositories/proposal_repository_impl.dart';
 import 'package:cadife_smart_travel/features/agency/propostas/domain/repositories/i_proposals_repository.dart';
 import 'package:cadife_smart_travel/features/agency/settings/data/datasources/mock_agency_settings_repository.dart';
 import 'package:cadife_smart_travel/features/agency/settings/domain/repositories/i_agency_settings_repository.dart';
-import 'package:cadife_smart_travel/features/auth/data/datasources/auth_remote_api_datasource.dart';
 import 'package:cadife_smart_travel/features/auth/data/datasources/auth_remote_mock_datasource.dart';
 import 'package:cadife_smart_travel/features/auth/data/datasources/i_auth_datasource.dart';
 import 'package:cadife_smart_travel/features/auth/data/repositories/auth_repository_impl.dart';
@@ -210,7 +207,7 @@ void _registerAgendaModule() {
 
 void _registerProposalModule() {
   // Criando um Mock temporário para destravar a UI
-  sl.registerLazySingleton<IProposalsRepository>(() => MockProposalsRepository());
+  sl.registerLazySingleton<IProposalsRepository>(MockProposalsRepository.new);
 }
 
 void _registerProfileModule() {
