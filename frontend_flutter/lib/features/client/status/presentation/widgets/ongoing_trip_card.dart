@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:flutter/material.dart';
 
@@ -21,8 +22,9 @@ class OngoingTripCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: GestureDetector(
+      child: InkWell(
         onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(20),
           child: SizedBox(
@@ -121,10 +123,12 @@ class _TripBackground extends StatelessWidget {
     if (imageUrl != null && imageUrl!.isNotEmpty) {
       return Hero(
         tag: 'ongoing_trip_image',
-        child: Image.network(
-          imageUrl!,
+        child: CachedNetworkImage(
+          imageUrl: imageUrl!,
           fit: BoxFit.cover,
-          errorBuilder: (_, _, _) => const _FallbackGradient(),
+          memCacheWidth: 800,
+          placeholder: (_, _) => const _FallbackGradient(),
+          errorWidget: (_, _, _) => const _FallbackGradient(),
         ),
       );
     }

@@ -25,17 +25,12 @@ class _FakeProfileRepository implements IProfileRepository {
   @override
   Future<Either<Failure, AuthUser>> updateProfile({
     String? name,
-    String? email,
-    String? phone,
-    String? avatarUrl,
     List<String>? tipoViagem,
     List<String>? preferencias,
     bool? temPassaporte,
   }) async {
     return Right(_user!.copyWith(
       name: name,
-      phone: phone,
-      avatarUrl: avatarUrl,
       tipoViagem: tipoViagem,
       preferencias: preferencias,
       temPassaporte: temPassaporte,

@@ -133,16 +133,3 @@ class LeadMetricsDTO(BaseModel):
     total_perdidos: int
 
     model_config = ConfigDict(extra="forbid")
-
-
-class LeadFilterParams(BaseModel):
-    """Query parameters for advanced lead filtering (GET /leads)."""
-
-    status: Optional[LeadStatus] = None
-    score: Optional[LeadScore] = None
-    destino: Optional[str] = None
-    data_inicio: Optional[datetime] = None
-    data_fim: Optional[datetime] = None
-    q: Optional[str] = None  # Busca full-text por nome ou telefone
-
-    model_config = ConfigDict(extra="forbid")

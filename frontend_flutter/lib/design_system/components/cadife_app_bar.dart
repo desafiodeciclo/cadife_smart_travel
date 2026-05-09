@@ -1,6 +1,5 @@
 import 'dart:ui';
 import 'package:cadife_smart_travel/design_system/design_system.dart';
-import 'package:cadife_smart_travel/features/client/status/presentation/providers/notification_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -14,7 +13,6 @@ class CadifeAppBar extends ConsumerWidget implements PreferredSizeWidget {
     this.actions,
     this.centerTitle = true,
     this.transparent = true,
-    this.showNotificationBell = true,
     this.showBackButton = false,
   });
 
@@ -23,12 +21,10 @@ class CadifeAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final List<Widget>? actions;
   final bool centerTitle;
   final bool transparent;
-  final bool showNotificationBell;
   final bool showBackButton;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final notifications = ref.watch(notificationProvider);
     final theme = context.cadife;
 
     return AppBar(
@@ -54,7 +50,7 @@ class CadifeAppBar extends ConsumerWidget implements PreferredSizeWidget {
               ? Padding(
                   padding: const EdgeInsets.all(8),
                   child: GestureDetector(
-                    onTap: () => context.go('/client/profile'),
+                    onTap: () => context.go('/client/perfil'),
                     child: CircleAvatar(
                       backgroundColor: theme.textPrimary.withValues(alpha: 0.1),
                       child: Icon(
@@ -77,57 +73,6 @@ class CadifeAppBar extends ConsumerWidget implements PreferredSizeWidget {
       ),
       actions: [
         if (actions != null) ...actions!,
-        if (showNotificationBell)
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: Badge(
-              isLabelVisible: notifications.isNotEmpty,
-              backgroundColor: theme.primary,
-              label: Text(
-                '${notifications.length}',
-                style: const TextStyle(color: Colors.white, fontSize: 10),
-              ),
-              child: PopupMenuButton<String>(
-                tooltip: '',
-                icon: Icon(
-                  LucideIcons.bell, 
-                  color: theme.textPrimary
-                ),
-                offset: const Offset(0, 45),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(color: theme.cardBorder),
-                ),
-                color: theme.cardBackground,
-                itemBuilder: (context) {
-                  if (notifications.isEmpty) {
-                    return [
-                      PopupMenuItem<String>(
-                        enabled: false,
-                        child: Text(
-                          'Sem notificações',
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: theme.textSecondary,
-                          ),
-                        ),
-                      ),
-                    ];
-                  }
-                  return notifications.map((n) {
-                    return PopupMenuItem<String>(
-                      value: n.id,
-                      child: Text(
-                        n.title,
-                        style: GoogleFonts.inter(color: theme.textPrimary),
-                      ),
-                    );
-                  }).toList();
-                },
-              ),
-            ),
-          ),
       ],
     );
   }

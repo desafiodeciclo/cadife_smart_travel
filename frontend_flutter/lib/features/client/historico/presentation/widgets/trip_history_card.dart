@@ -28,18 +28,18 @@ class TripHistoryCard extends StatelessWidget {
     
     return Padding(
       padding: const EdgeInsets.only(bottom: 24),
-      child: ShadCard(
-        padding: EdgeInsets.zero,
-        radius: BorderRadius.circular(24),
-        backgroundColor: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.black.withValues(alpha: 0.03),
-        border: ShadBorder.all(
-          color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.08),
-          width: 1,
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: InkWell(
-            onTap: onTap,
+      child: GestureDetector(
+        onTap: onTap,
+        child: ShadCard(
+          padding: EdgeInsets.zero,
+          radius: BorderRadius.circular(24),
+          backgroundColor: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.black.withValues(alpha: 0.03),
+          border: ShadBorder.all(
+            color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.08),
+            width: 1,
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [

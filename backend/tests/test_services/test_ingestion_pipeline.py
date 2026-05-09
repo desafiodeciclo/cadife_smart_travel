@@ -147,18 +147,15 @@ class TestIngestionPipeline:
         mock_vs.add_documents.return_value = ["id1"]
         mock_collection = MagicMock()
         mock_vs._collection = mock_collection
+        pipeline._vectorstore = mock_vs
 
-        # Patch _get_vectorstore so the same mock_vs survives _invalidate_vectorstore()
-        # which sets self._vectorstore = None between the two ingest_all() calls.
-        with patch.object(pipeline, "_get_vectorstore", return_value=mock_vs):
-            await pipeline.ingest_all()
+        await pipeline.ingest_all()
 
-            # Modify document
-            doc.write_text("Conteúdo atualizado com novas informações.", encoding="utf-8")
-            mock_vs.add_documents.reset_mock()
+        # Modify document
+        doc.write_text("Conteúdo atualizado com novas informações.", encoding="utf-8")
+        mock_vs.add_documents.reset_mock()
 
-            result = await pipeline.ingest_all()
-
+        result = await pipeline.ingest_all()
         assert result["processed"] == 1
         mock_collection.delete.assert_called_once()
 
@@ -213,25 +210,19 @@ class TestIngestionPipeline:
     # ------------------------------------------------------------------
 
     def test_splitter_chunk_size_is_500(self):
-        """Verifica spec: chunk_size=500 documentado em _SPLITTER_VERSION."""
-        from app.services.ingestion_pipeline import _SPLITTER_VERSION
-        assert "500" in _SPLITTER_VERSION, (
-            f"chunk_size=500 não encontrado em _SPLITTER_VERSION: {_SPLITTER_VERSION}"
-        )
+        from app.services.ingestion_pipeline import _splitter
+
+        assert _splitter._chunk_size == 500
 
     def test_splitter_overlap_is_50(self):
-        """Verifica spec: overlap=50 documentado em _SPLITTER_VERSION."""
-        from app.services.ingestion_pipeline import _SPLITTER_VERSION
-        assert "50" in _SPLITTER_VERSION, (
-            f"overlap=50 não encontrado em _SPLITTER_VERSION: {_SPLITTER_VERSION}"
-        )
+        from app.services.ingestion_pipeline import _splitter
+
+        assert _splitter._chunk_overlap == 50
 
     def test_splitter_uses_token_length_function(self):
-        """Verifica spec: tiktoken como length_function documentado em _SPLITTER_VERSION."""
-        from app.services.ingestion_pipeline import _SPLITTER_VERSION
-        assert "tiktoken" in _SPLITTER_VERSION, (
-            f"tiktoken não encontrado em _SPLITTER_VERSION: {_SPLITTER_VERSION}"
-        )
+        from app.services.ingestion_pipeline import _token_length, _splitter
+
+        assert _splitter._length_function is _token_length
 
     def test_token_length_counts_tokens_not_chars(self):
         from app.services.ingestion_pipeline import _token_length

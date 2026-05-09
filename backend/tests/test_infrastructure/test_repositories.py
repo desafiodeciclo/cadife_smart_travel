@@ -27,11 +27,11 @@ from app.domain.entities.enums import (
     PropostaStatus,
     TipoMensagem,
 )
-from app.models.lead import Lead as LeadModel
-from app.models.briefing import Briefing as BriefingModel
-from app.models.interacao import Interacao as InteracaoModel
-from app.models.agendamento import Agendamento as AgendamentoModel
-from app.models.proposta import Proposta as PropostaModel
+from app.infrastructure.persistence.models.lead_model import LeadModel
+from app.infrastructure.persistence.models.briefing_model import BriefingModel
+from app.infrastructure.persistence.models.interacao_model import InteracaoModel
+from app.infrastructure.persistence.models.agendamento_model import AgendamentoModel
+from app.infrastructure.persistence.models.proposta_model import PropostaModel
 from app.infrastructure.persistence.repositories.lead_repository import LeadRepository
 from app.infrastructure.persistence.repositories.briefing_repository import (
     BriefingRepository,

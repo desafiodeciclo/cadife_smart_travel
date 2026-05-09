@@ -5,6 +5,7 @@ import 'package:cadife_smart_travel/shared/presentation/widgets/empty_state/empt
 import 'package:cadife_smart_travel/shared/presentation/widgets/state_container.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 class HistoricoPage extends ConsumerStatefulWidget {
   const HistoricoPage({super.key});
@@ -29,7 +30,7 @@ class _HistoricoPageState extends ConsumerState<HistoricoPage> {
           return TripHistoryCard(
             trip: trip,
             onTap: () {
-              // Futura ação ao clicar na viagem
+              context.push('/client/travel/${trip.id}/calendar');
             },
           );
         },
