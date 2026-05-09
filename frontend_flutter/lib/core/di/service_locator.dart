@@ -189,9 +189,16 @@ void _registerAuthModule() {
 }
 
 void _registerLeadModule() {
+  sl.registerLazySingleton<ILeadsDatasource>(
+    () => LeadsRemoteApiDatasource(
+      dio: sl<Dio>(),
+      offlineManager: sl<OfflineManager>(),
+    ),
+  );
+
   sl.registerLazySingleton<ILeadsRepository>(
     () => LeadsRepositoryImpl(
-      remoteDatasource: LeadsRemoteMockDatasource(),
+      remoteDatasource: sl<ILeadsDatasource>(),
     ),
   );
 }
