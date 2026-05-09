@@ -31,4 +31,14 @@ class AppValidators {
     }
     return 'Documento deve ter 11 (CPF) ou 14 (CNPJ) dígitos';
   }
+
+  static String? minLength(String? value, int min) {
+    if (value == null || value.trim().isEmpty) return 'Campo obrigatório';
+    if (value.trim().length < min) return 'Mínimo de $min caracteres';
+    return null;
+  }
+
+  static String? cpf(String? value) {
+    return validateDocument(value);
+  }
 }

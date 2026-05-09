@@ -116,36 +116,3 @@ class _AppTextFieldState extends State<AppTextField> {
   }
 }
 
-class AppValidators {
-  static String? email(String? value) {
-    if (value == null || value.trim().isEmpty) return 'Informe o e-mail';
-    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-    if (!emailRegex.hasMatch(value.trim())) return 'E-mail inválido';
-    return null;
-  }
-
-  static String? required(String? value) {
-    if (value == null || value.trim().isEmpty) return 'Campo obrigatório';
-    return null;
-  }
-
-  static String? minLength(String? value, int min) {
-    if (value == null || value.trim().isEmpty) return 'Campo obrigatório';
-    if (value.trim().length < min) return 'Mínimo de $min caracteres';
-    return null;
-  }
-
-  static String? phone(String? value) {
-    if (value == null || value.trim().isEmpty) return 'Informe o telefone';
-    final digits = value.replaceAll(RegExp(r'\D'), '');
-    if (digits.length < 10) return 'Telefone incompleto';
-    return null;
-  }
-
-  static String? cpf(String? value) {
-    if (value == null || value.trim().isEmpty) return 'Informe o CPF';
-    final digits = value.replaceAll(RegExp(r'\D'), '');
-    if (digits.length != 11) return 'CPF inválido';
-    return null;
-  }
-}

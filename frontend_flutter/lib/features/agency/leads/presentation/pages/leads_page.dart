@@ -8,6 +8,8 @@ import 'package:cadife_smart_travel/shared/presentation/widgets/state_container.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
+import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_notifier.dart';
 
 // ─── File-private providers para estado de filtro local da tela ─────────────────────────────
 
@@ -77,23 +79,29 @@ class _LeadsPageState extends ConsumerState<LeadsPage> {
         activeScore != null ||
         ref.watch(_searchQueryProvider).isNotEmpty;
 
+    final authAsync = ref.watch(authNotifierProvider);
+    final user = authAsync.valueOrNull;
+    final canCreateManual = user?.role == UserRole.admin || user?.role == UserRole.consultor;
+
     return PageScaffold(
       appBar: const CadifeAppBar(
         title: 'Leads',
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/agency/leads/new'),
-        backgroundColor: AppColors.primary,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text(
-          'NOVO LEAD',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.5,
-          ),
-        ),
-      ),
+      floatingActionButton: canCreateManual 
+        ? FloatingActionButton.extended(
+            onPressed: () => context.push('/agency/leads/new'),
+            backgroundColor: AppColors.primary,
+            icon: const Icon(Icons.add, color: Colors.white),
+            label: const Text(
+              'NOVO LEAD',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.5,
+              ),
+            ),
+          )
+        : null,
       body: Column(
         children: [
           _SearchBar(

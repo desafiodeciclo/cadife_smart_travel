@@ -19,19 +19,6 @@ class DashboardScreen extends ConsumerWidget {
 
     return PageScaffold(
       showProfile: false,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/agency/leads/new'),
-        backgroundColor: AppColors.primary,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text(
-          'NOVO LEAD',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.5,
-          ),
-        ),
-      ),
       body: StateContainer(
         state: statsAsync,
         onRetry: () => ref.read(dashboardStatsProvider.notifier).refresh(),

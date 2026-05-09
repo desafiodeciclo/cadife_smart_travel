@@ -24,6 +24,7 @@ import 'package:cadife_smart_travel/features/agency/leads/data/datasources/leads
 import 'package:cadife_smart_travel/features/agency/leads/data/repositories/leads_repository_impl.dart';
 import 'package:cadife_smart_travel/features/agency/leads/data/datasources/leads_remote_api_datasource.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/repositories/i_leads_repository.dart';
+import 'package:cadife_smart_travel/features/agency/leads/data/datasources/i_leads_datasource.dart';
 import 'package:cadife_smart_travel/features/agency/perfil/data/datasources/mock_consultor_repository.dart';
 import 'package:cadife_smart_travel/features/agency/perfil/domain/repositories/i_consultor_repository.dart';
 import 'package:cadife_smart_travel/features/agency/propostas/data/repositories/mock_proposals_repository.dart';
