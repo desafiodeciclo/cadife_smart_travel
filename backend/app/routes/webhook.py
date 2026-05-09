@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import Settings, get_settings
 from app.application.use_cases import process_whatsapp_message
 from app.core.dependencies import get_db
+from app.presentation.schemas.common_errors import HTTPErrorResponse
 from app.services import whatsapp_service
 
 logger = structlog.get_logger()
@@ -34,7 +35,17 @@ async def require_meta_signature(
 # ── GET: verificação do Challenge Token (Meta App Dashboard) ─────────────────
 
 
-@router.get("/whatsapp")
+@router.get(
+    "/whatsapp",
+    summary="Verificação do webhook WhatsApp (Meta Challenge)",
+    description=(
+        "Endpoint utilizado pelo painel da Meta App para verificar a URL do webhook. "
+        "Deve retornar o valor do parâmetro `hub.challenge` quando o token de verificação coincidir."
+    ),
+    responses={
+        403: {"description": "Token de verificação inválido", "model": HTTPErrorResponse},
+    },
+)
 async def verify_webhook(
     request: Request,
     settings: Settings = Depends(get_settings),
@@ -55,7 +66,19 @@ async def verify_webhook(
 # ── POST: recebe mensagens — 200 garantido, validação HMAC via Depends ────────
 
 
-@router.post("/whatsapp")
+@router.post(
+    "/whatsapp",
+    summary="Recebimento de mensagens do WhatsApp",
+    description=(
+        "Recebe payloads de eventos de mensagens da Meta WhatsApp Cloud API. "
+        "A assinatura HMAC (X-Hub-Signature-256) é validada antes do processamento. "
+        "O processamento da IA ocorre de forma assíncrona via BackgroundTasks para garantir "
+        "resposta HTTP 200 em ≤ 5 segundos, conforme exigência da Meta."
+    ),
+    responses={
+        403: {"description": "Assinatura HMAC inválida", "model": HTTPErrorResponse},
+    },
+)
 async def receive_whatsapp(
     request: Request,
     background_tasks: BackgroundTasks,

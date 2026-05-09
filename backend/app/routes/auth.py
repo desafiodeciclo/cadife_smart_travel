@@ -16,6 +16,7 @@ from app.models.user import (
     UserProfileUpdate,
     UserResponse,
 )
+from app.presentation.schemas.common_errors import HTTPErrorResponse
 from app.services.user_service import (
     get_user_by_email,
     get_user_by_id,
@@ -26,7 +27,16 @@ from app.services.user_service import (
 router = APIRouter(tags=["Auth"])
 
 
-@router.post("/auth/login", response_model=TokenResponse)
+@router.post(
+    "/auth/login",
+    response_model=TokenResponse,
+    summary="Autenticação de usuário",
+    description="Autentica um usuário com e-mail e senha, retornando um par de tokens JWT (access + refresh).",
+    responses={
+        401: {"description": "Credenciais inválidas ou usuário inativo", "model": HTTPErrorResponse},
+        422: {"description": "Erro de validação no body", "model": HTTPErrorResponse},
+    },
+)
 async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
     user = await get_user_by_email(db, body.email)
     if not user or not verify_password(body.password, user.hashed_password):
@@ -44,7 +54,16 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
     )
 
 
-@router.post("/auth/refresh", response_model=TokenResponse)
+@router.post(
+    "/auth/refresh",
+    response_model=TokenResponse,
+    summary="Renovação de token JWT",
+    description="Recebe um refresh token válido e retorna um novo par de tokens JWT.",
+    responses={
+        401: {"description": "Refresh token inválido, expirado ou tipo incorreto", "model": HTTPErrorResponse},
+        422: {"description": "Erro de validação no body", "model": HTTPErrorResponse},
+    },
+)
 async def refresh_token(body: RefreshRequest, db: AsyncSession = Depends(get_db)):
     try:
         payload = decode_token(body.refresh_token)
@@ -71,12 +90,28 @@ async def refresh_token(body: RefreshRequest, db: AsyncSession = Depends(get_db)
     )
 
 
-@router.get("/users/me", response_model=UserResponse)
+@router.get(
+    "/users/me",
+    response_model=UserResponse,
+    summary="Perfil do usuário autenticado",
+    description="Retorna os dados do usuário logado com base no JWT enviado no header Authorization.",
+    responses={
+        401: {"description": "Token ausente, inválido ou expirado", "model": HTTPErrorResponse},
+    },
+)
 async def get_me(current_user=Depends(get_current_user)):
     return UserResponse.model_validate(current_user)
 
 
-@router.patch("/users/me", response_model=UserResponse)
+@router.patch(
+    "/users/me",
+    response_model=UserResponse,
+    summary="Atualização de perfil",
+    description="Atualiza campos editáveis do perfil do usuário autenticado.",
+    responses={
+        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
+    },
+)
 async def update_me(
     body: UserProfileUpdate,
     db: AsyncSession = Depends(get_db),
@@ -86,7 +121,15 @@ async def update_me(
     return UserResponse.model_validate(updated)
 
 
-@router.post("/users/fcm-token")
+@router.post(
+    "/users/fcm-token",
+    summary="Registro de token FCM",
+    description="Registra ou atualiza o token Firebase Cloud Messaging do dispositivo para notificações push.",
+    responses={
+        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
+        422: {"description": "Erro de validação no body", "model": HTTPErrorResponse},
+    },
+)
 async def register_fcm_token(
     body: FcmTokenRequest,
     db: AsyncSession = Depends(get_db),

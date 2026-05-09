@@ -38,6 +38,7 @@ from app.presentation.middlewares.request_id import RequestIdMiddleware
 from app.presentation.middlewares.timeout import TimeoutMiddleware
 from app.presentation.middlewares.audit_trail import AuditTrailMiddleware
 from app.presentation.middlewares.security_headers import SecurityHeadersMiddleware
+from app.presentation.schemas.common_errors import HTTPErrorResponse, HTTPValidationErrorResponse
 
 # -------------------------------------------------------------------
 # Config
@@ -132,11 +133,29 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Cadife Smart Travel API",
-    description="Backend inteligente para turismo via WhatsApp + Flutter.",
+    description=(
+        "Backend inteligente para turismo via WhatsApp + Flutter. "
+        "Orquestra webhooks da Meta, processamento de IA (RAG + LangChain), "
+        "gestão de leads, propostas e agendamentos. "
+        "Documentação completa disponível em /docs (Swagger UI) e /redoc (ReDoc)."
+    ),
     version="1.0.0",
+    contact={
+        "name": "Cadife Tour - Time de Desenvolvimento",
+        "url": "https://cadifetour.com.br",
+        "email": "dev@cadifetour.com.br",
+    },
+    license_info={
+        "name": "Confidencial — Uso Interno do Time de Desenvolvimento",
+    },
     lifespan=lifespan,
-    docs_url="/docs" if settings.APP_ENV != "production" else None,
-    redoc_url="/redoc" if settings.APP_ENV != "production" else None,
+    docs_url="/docs",
+    redoc_url="/redoc",
+    responses={
+        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
+        403: {"description": "Sem permissão", "model": HTTPErrorResponse},
+        422: {"description": "Erro de validação", "model": HTTPValidationErrorResponse},
+    },
 )
 
 # -------------------------------------------------------------------
@@ -181,7 +200,12 @@ app.include_router(suitcase.router)
 # Health Check
 # -------------------------------------------------------------------
 
-@app.get("/health", tags=["Health"])
+@app.get(
+    "/health",
+    tags=["Health"],
+    summary="Health Check",
+    description="Endpoint de verificação de saúde da aplicação. Retorna status, versão e ambiente.",
+)
 async def health():
     return {
         "status": "ok",
