@@ -1,6 +1,8 @@
+import 'package:cadife_smart_travel/core/error/failures.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/providers/leads_usecases_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fpdart/fpdart.dart';
 
 class LeadsNotifier extends AsyncNotifier<List<Lead>> {
   @override
@@ -44,6 +46,17 @@ class LeadsNotifier extends AsyncNotifier<List<Lead>> {
     result.fold(
       (failure) => state = AsyncError(failure, StackTrace.current),
       (_) => refresh(),
+    );
+  }
+
+  Future<Either<Failure, Lead>> createManualLead(ManualLeadCreate request) async {
+    final result = await ref.read(createManualLeadUseCaseProvider).call(request);
+    return result.fold(
+      (failure) => Left(failure),
+      (lead) {
+        refresh();
+        return Right(lead);
+      },
     );
   }
 }

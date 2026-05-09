@@ -19,6 +19,11 @@ class DashboardScreen extends ConsumerWidget {
 
     return PageScaffold(
       showProfile: false,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.push('/agency/leads/new'),
+        icon: const Icon(Icons.person_add_rounded),
+        label: const Text('Novo Lead'),
+      ),
       body: StateContainer(
         state: statsAsync,
         onRetry: () => ref.read(dashboardStatsProvider.notifier).refresh(),
@@ -28,8 +33,10 @@ class DashboardScreen extends ConsumerWidget {
             child: CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
-                const CadifeAppBar(
-                  title: 'Dashboard',
+                const SliverToBoxAdapter(
+                  child: CadifeAppBar(
+                    title: 'Dashboard',
+                  ),
                 ),
                 SliverToBoxAdapter(
                   child: NotificationCard(

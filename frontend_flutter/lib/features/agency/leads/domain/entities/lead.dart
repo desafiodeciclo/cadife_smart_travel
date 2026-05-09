@@ -1,4 +1,4 @@
-﻿import 'package:equatable/equatable.dart';
+import 'package:equatable/equatable.dart';
 
 class Lead extends Equatable {
   const Lead({
@@ -9,6 +9,7 @@ class Lead extends Equatable {
     required this.score,
     required this.completudePct,
     this.email,
+    this.origem,
     this.destino,
     this.dataIda,
     this.dataVolta,
@@ -31,6 +32,7 @@ class Lead extends Equatable {
   final String name;
   final String phone;
   final String? email;
+  final LeadOrigem? origem;
   final LeadStatus status;
   final LeadScore score;
   final int completudePct;
@@ -144,6 +146,18 @@ enum LeadStatus {
 
 enum LeadScore { quente, morno, frio }
 
+enum LeadOrigem {
+  indicacao('Indicação'),
+  telefone('Telefone'),
+  presencial('Presencial'),
+  redeSocial('Rede Social'),
+  outro('Outro'),
+  manual('Manual');
+
+  final String label;
+  const LeadOrigem(this.label);
+}
+
 class CreateLeadRequest extends Equatable {
   const CreateLeadRequest({
     required this.name,
@@ -166,5 +180,64 @@ class CreateLeadRequest extends Equatable {
 
   @override
   List<Object?> get props => [name, phone, email, destino];
+}
+
+class ManualLeadCreate extends Equatable {
+  const ManualLeadCreate({
+    required this.name,
+    required this.phone,
+    this.email,
+    this.origem = LeadOrigem.manual,
+    this.consultorId,
+    this.forceCreate = false,
+    this.destino,
+    this.dataIda,
+    this.numPessoas,
+    this.orcamentoFaixa,
+    this.preferencias,
+  });
+
+  final String name;
+  final String phone;
+  final String? email;
+  final LeadOrigem origem;
+  final String? consultorId;
+  final bool forceCreate;
+  
+  // Briefing inicial (opcional na criação manual)
+  final String? destino;
+  final DateTime? dataIda;
+  final int? numPessoas;
+  final String? orcamentoFaixa;
+  final String? preferencias;
+
+  Map<String, dynamic> toJson() => {
+    'name': name,
+    'phone': phone,
+    'email': email,
+    'origem': origem.name,
+    'consultor_id': consultorId,
+    'force_create': forceCreate,
+    'destino': destino,
+    'data_ida': dataIda?.toIso8601String(),
+    'num_pessoas': numPessoas,
+    'orcamento_faixa': orcamentoFaixa,
+    'preferencias': preferencias,
+  };
+
+  @override
+  List<Object?> get props => [
+    name, 
+    phone, 
+    email, 
+    origem, 
+    consultorId, 
+    forceCreate,
+    destino,
+    dataIda,
+    numPessoas,
+    orcamentoFaixa,
+    preferencias,
+  ];
 }
 

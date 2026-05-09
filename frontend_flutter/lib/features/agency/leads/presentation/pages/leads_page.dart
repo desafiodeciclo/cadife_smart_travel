@@ -78,15 +78,21 @@ class _LeadsPageState extends ConsumerState<LeadsPage> {
         ref.watch(_searchQueryProvider).isNotEmpty;
 
     return PageScaffold(
-      appBar: CadifeAppBar(
+      appBar: const CadifeAppBar(
         title: 'Leads',
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add, color: Colors.white),
-            tooltip: 'Novo lead',
-            onPressed: () => context.push('/agency/leads/new'),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.push('/agency/leads/new'),
+        backgroundColor: AppColors.primary,
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text(
+          'NOVO LEAD',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.5,
           ),
-        ],
+        ),
       ),
       body: Column(
         children: [
@@ -109,7 +115,7 @@ class _LeadsPageState extends ConsumerState<LeadsPage> {
               itemBuilder: (lead, _) => _LeadCard(lead: lead),
               onRetry: () => ref.read(leadsNotifierProvider.notifier).refresh(),
               emptyType: isFiltered ? EmptyType.emptySearch : EmptyType.noLeads,
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 100), // More padding at bottom for FAB
             ),
           ),
         ],

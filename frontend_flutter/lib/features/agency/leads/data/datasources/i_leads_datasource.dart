@@ -11,4 +11,5 @@ abstract class ILeadsDatasource {
   Future<Briefing> getBriefing(String leadId);
   Future<List<Interacao>> getInteractions(String leadId);
   Future<LeadApiModel> createLead(CreateLeadRequest request);
+  Future<LeadApiModel> createManualLead(ManualLeadCreate request);
 }

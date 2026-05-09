@@ -1,4 +1,5 @@
 import uuid
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
@@ -63,6 +64,25 @@ async def create_proposta(
     await db.commit()
     await db.refresh(proposta)
     return PropostaResponse.model_validate(proposta)
+
+
+@router.get("", response_model=list[PropostaResponse])
+async def list_propostas(
+    lead_id: Optional[uuid.UUID] = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    query = select(Proposta)
+    if lead_id:
+        query = query.where(Proposta.lead_id == lead_id)
+    
+    # Adicionando filtro por consultor para segurança (RBAC)
+    if current_user.perfil == "consultor":
+        query = query.where(Proposta.consultor_id == current_user.id)
+        
+    result = await db.execute(query)
+    propostas = result.scalars().all()
+    return [PropostaResponse.model_validate(p) for p in propostas]
 
 
 @router.get("/{proposta_id}", response_model=PropostaResponse)
