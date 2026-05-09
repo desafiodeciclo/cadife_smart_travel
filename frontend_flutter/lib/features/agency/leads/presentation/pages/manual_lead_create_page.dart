@@ -84,6 +84,7 @@ class _ManualLeadCreatePageState extends ConsumerState<ManualLeadCreatePage> {
       numPessoas: int.tryParse(_pessoasController.text),
       orcamentoFaixa: _orcamentoFaixa,
       preferencias: _preferenciasController.text.trim().isEmpty ? null : _preferenciasController.text.trim(),
+      forceCreate: ignoreDuplicity,
     );
 
     final result = await ref.read(leadsNotifierProvider.notifier).createManualLead(request);
@@ -91,8 +92,35 @@ class _ManualLeadCreatePageState extends ConsumerState<ManualLeadCreatePage> {
     if (!mounted) return;
 
     result.fold(
-      (failure) {
+      (failure) async {
         setState(() => _isSubmitting = false);
+        
+        // Se o erro for de conflito (duplicidade), mostra o diálogo
+        if (failure.message.contains('409') || failure.message.contains('DUPLICATE_LEAD')) {
+          final shouldProceed = await showDialog<bool>(
+            context: context,
+            builder: (context) => ShadDialog(
+              title: const Text('Lead já existente'),
+              description: const Text('Este número de WhatsApp já possui um lead ativo no sistema.'),
+              actions: [
+                ShadButton.outline(
+                  child: const Text('Cancelar'),
+                  onPressed: () => context.pop(false),
+                ),
+                ShadButton(
+                  child: const Text('Criar mesmo assim'),
+                  onPressed: () => context.pop(true),
+                ),
+              ],
+            ),
+          );
+
+          if (shouldProceed == true) {
+            _submit(ignoreDuplicity: true);
+          }
+          return;
+        }
+
         ShadToaster.of(context).show(
           ShadToast.destructive(
             title: const Text('Erro ao criar lead'),
@@ -107,7 +135,6 @@ class _ManualLeadCreatePageState extends ConsumerState<ManualLeadCreatePage> {
             description: Text('Lead criado com sucesso.'),
           ),
         );
-        // Navega para a tela de detalhes do lead recém-criado
         context.pushReplacement('/agency/leads/${lead.id}');
       },
     );
