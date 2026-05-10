@@ -31,7 +31,7 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
             const SizedBox(height: 72),
             // Principais Documentos Section
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -39,10 +39,11 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Principais Documentos',
+                        'PRINCIPAIS DOCUMENTOS',
                         style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.2,
                           color: Theme.of(context).textTheme.titleLarge?.color,
                         ),
                       ),
@@ -124,22 +125,28 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
 
                       return Column(
                         children: filteredDocs
+                            .asMap()
+                            .entries
                             .map(
-                              (doc) => CadifeDocumentCard(
-                                document: doc,
-                                onView: () {
-                                  context.push(
-                                    '/client/documents/viewer',
-                                    extra: doc,
-                                  );
-                                },
-                                onDownload: () {
-                                  // Navigating to viewer also allows download
-                                  context.push(
-                                    '/client/documents/viewer',
-                                    extra: doc,
-                                  );
-                                },
+                              (entry) => Padding(
+                                padding: EdgeInsets.only(
+                                  bottom: entry.key < filteredDocs.length - 1 ? 12 : 0,
+                                ),
+                                child: CadifeDocumentCard(
+                                  document: entry.value,
+                                  onView: () {
+                                    context.push(
+                                      '/client/documents/viewer',
+                                      extra: entry.value,
+                                    );
+                                  },
+                                  onDownload: () {
+                                    context.push(
+                                      '/client/documents/viewer',
+                                      extra: entry.value,
+                                    );
+                                  },
+                                ),
                               ),
                             )
                             .toList(),
@@ -152,15 +159,16 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
             const SizedBox(height: 24),
             // Documentos por Viagem Section
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Documentos por Viagem',
+                    'DOCUMENTOS POR VIAGEM',
                     style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.2,
                       color: Theme.of(context).textTheme.titleLarge?.color,
                     ),
                   ),

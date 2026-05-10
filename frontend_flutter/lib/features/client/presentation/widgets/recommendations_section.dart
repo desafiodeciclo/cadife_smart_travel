@@ -23,11 +23,12 @@ class RecommendationsSection extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Baseado no seu Perfil',
+              'BASEADO NO SEU PERFIL',
               style: TextStyle(
                 color: cadife.textPrimary,
-                fontSize: 17,
-                fontWeight: FontWeight.w600,
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.2,
               ),
             ),
             GestureDetector(

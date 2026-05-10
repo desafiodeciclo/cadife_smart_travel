@@ -2,8 +2,8 @@ import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:flutter/material.dart';
 
 /// Scaffold padrão do Cadife com suporte a AppBar configurável,
-/// body com padding consistente e efeitos de fundo modernos.
-class PageScaffold extends StatelessWidget {
+/// body com padding consistente e gradiente animado de fundo.
+class PageScaffold extends StatefulWidget {
   final String? title;
   final Widget body;
   final List<Widget>? actions;
@@ -15,7 +15,6 @@ class PageScaffold extends StatelessWidget {
   final PreferredSizeWidget? appBar;
   final bool showBackgroundEffects;
   final bool extendBodyBehindAppBar;
-
   final bool showProfile;
 
   const PageScaffold({
@@ -35,65 +34,160 @@ class PageScaffold extends StatelessWidget {
   });
 
   @override
+  State<PageScaffold> createState() => _PageScaffoldState();
+}
+
+class _PageScaffoldState extends State<PageScaffold>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _gradientController;
+  late final Animation<Alignment> _beginAlignment;
+  late final Animation<Alignment> _endAlignment;
+
+  @override
+  void initState() {
+    super.initState();
+    _gradientController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 5),
+    )..repeat(reverse: true);
+
+    _beginAlignment = TweenSequence<Alignment>([
+      TweenSequenceItem(
+        tween: AlignmentTween(
+          begin: const Alignment(-1.0, -1.0),
+          end: const Alignment(0.5, -0.8),
+        ),
+        weight: 1,
+      ),
+      TweenSequenceItem(
+        tween: AlignmentTween(
+          begin: const Alignment(0.5, -0.8),
+          end: const Alignment(-1.0, -1.0),
+        ),
+        weight: 1,
+      ),
+    ]).animate(CurvedAnimation(
+      parent: _gradientController,
+      curve: Curves.easeInOut,
+    ));
+
+    _endAlignment = TweenSequence<Alignment>([
+      TweenSequenceItem(
+        tween: AlignmentTween(
+          begin: const Alignment(1.0, 1.0),
+          end: const Alignment(0.2, 1.0),
+        ),
+        weight: 1,
+      ),
+      TweenSequenceItem(
+        tween: AlignmentTween(
+          begin: const Alignment(0.2, 1.0),
+          end: const Alignment(1.0, 1.0),
+        ),
+        weight: 1,
+      ),
+    ]).animate(CurvedAnimation(
+      parent: _gradientController,
+      curve: Curves.easeInOut,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _gradientController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cadife = context.cadife;
 
-    final effectiveAppBar = appBar ??
-        (title != null
+    final effectiveAppBar = widget.appBar ??
+        (widget.title != null
             ? CadifeAppBar(
-                title: title!,
-                actions: actions,
-                showProfile: showProfile,
+                title: widget.title!,
+                actions: widget.actions,
+                showProfile: widget.showProfile,
               )
             : null);
 
     Widget content = Padding(
-      padding: padding ?? EdgeInsets.zero,
-      child: body,
+      padding: widget.padding ?? EdgeInsets.zero,
+      child: widget.body,
     );
 
-    if (useSafeArea) {
+    if (widget.useSafeArea) {
       content = SafeArea(child: content);
     }
 
     return Scaffold(
-      backgroundColor: backgroundColor ?? context.cadife.background,
+      backgroundColor: widget.backgroundColor ?? cadife.background,
       extendBody: true,
-      extendBodyBehindAppBar: extendBodyBehindAppBar,
+      extendBodyBehindAppBar: widget.extendBodyBehindAppBar,
       appBar: effectiveAppBar,
       body: Stack(
         children: [
-          if (showBackgroundEffects && isDark) ...[
+          // Animated gradient background
+          if (widget.showBackgroundEffects)
+            Positioned.fill(
+              child: AnimatedBuilder(
+                animation: _gradientController,
+                builder: (context, _) {
+                  return Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: _beginAlignment.value,
+                        end: _endAlignment.value,
+                        colors: isDark
+                            ? [
+                                const Color(0xFFDD0B0E).withValues(alpha: 0.18),
+                                const Color(0xFF393532).withValues(alpha: 0.85),
+                                const Color(0xFF1A1A2E).withValues(alpha: 0.6),
+                              ]
+                            : [
+                                const Color(0xFFDD0B0E).withValues(alpha: 0.06),
+                                cadife.background,
+                                const Color(0xFF393532).withValues(alpha: 0.04),
+                              ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          // Subtle glow orbs (dark mode only)
+          if (widget.showBackgroundEffects && isDark) ...[
             Positioned(
-              top: -100,
-              right: -50,
+              top: -80,
+              right: -60,
               child: Container(
-                width: 300,
-                height: 300,
+                width: 280,
+                height: 280,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.primary.withValues(alpha: 0.15),
+                  color: AppColors.primary.withValues(alpha: 0.12),
                 ),
-              ).animate().fadeIn(duration: 800.ms).scale(begin: const Offset(0.8, 0.8)),
+              ).animate().fadeIn(duration: 800.ms),
             ),
             Positioned(
-              bottom: 100,
-              left: -100,
+              bottom: 120,
+              left: -80,
               child: Container(
-                width: 400,
-                height: 400,
+                width: 350,
+                height: 350,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.blue.withValues(alpha: 0.05),
+                  color: Colors.blue.withValues(alpha: 0.04),
                 ),
-              ).animate().fadeIn(duration: 1200.ms).scale(begin: const Offset(0.5, 0.5)),
+              ).animate().fadeIn(duration: 1200.ms),
             ),
           ],
           content,
         ],
       ),
-      floatingActionButton: floatingActionButton,
-      bottomNavigationBar: bottomNavigationBar,
+      floatingActionButton: widget.floatingActionButton,
+      bottomNavigationBar: widget.bottomNavigationBar,
     );
   }
 }

@@ -37,11 +37,12 @@ class TripStatusSection extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Status da Viagem',
+              'STATUS DA VIAGEM',
               style: TextStyle(
                 color: cadife.textPrimary,
-                fontSize: 17,
-                fontWeight: FontWeight.w600,
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.2,
               ),
             ),
             Container(

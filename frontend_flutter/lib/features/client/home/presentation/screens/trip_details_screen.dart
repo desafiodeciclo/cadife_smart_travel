@@ -209,11 +209,12 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Itinerário',
+                          'ITINERÁRIO',
                           style: TextStyle(
                             color: cadife.textPrimary,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.2,
                           ),
                         ),
                         TextButton(
@@ -253,11 +254,12 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
                     
                     // Outras informações ou ações
                     Text(
-                      'Próximos Passos',
+                      'PRÓXIMOS PASSOS',
                       style: TextStyle(
                         color: cadife.textPrimary,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.2,
                       ),
                     ),
                     const SizedBox(height: 16),

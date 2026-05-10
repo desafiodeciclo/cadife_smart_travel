@@ -75,7 +75,11 @@ class _MonthlyCalendarViewState extends State<MonthlyCalendarView> {
             headerPadding: EdgeInsets.symmetric(vertical: 8),
           ),
           calendarStyle: CalendarStyle(
-            outsideDaysVisible: false,
+            outsideDaysVisible: true,
+            outsideTextStyle: const TextStyle(
+              color: Color(0xFFBDBDBD),
+              fontSize: 13,
+            ),
             selectedDecoration: const BoxDecoration(
               color: Color(0xFFDD0B0E),
               shape: BoxShape.circle,

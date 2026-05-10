@@ -83,7 +83,7 @@ class _TripDocumentsPageState extends ConsumerState<TripDocumentsPage> {
               ),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -153,15 +153,22 @@ class _TripDocumentsPageState extends ConsumerState<TripDocumentsPage> {
 
                           return Column(
                             children: docs
+                                .asMap()
+                                .entries
                                 .map(
-                                  (doc) => CadifeDocumentCard(
-                                    document: doc,
-                                    onView: () {
-                                      context.push('/client/documents/viewer', extra: doc);
-                                    },
-                                    onDownload: () {
-                                      context.push('/client/documents/viewer', extra: doc);
-                                    },
+                                  (entry) => Padding(
+                                    padding: EdgeInsets.only(
+                                      bottom: entry.key < docs.length - 1 ? 12 : 0,
+                                    ),
+                                    child: CadifeDocumentCard(
+                                      document: entry.value,
+                                      onView: () {
+                                        context.push('/client/documents/viewer', extra: entry.value);
+                                      },
+                                      onDownload: () {
+                                        context.push('/client/documents/viewer', extra: entry.value);
+                                      },
+                                    ),
                                   ),
                                 )
                                 .toList(),

@@ -27,11 +27,12 @@ class _DocumentsSectionState extends State<DocumentsSection> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Documentos',
+              'DOCUMENTOS',
               style: TextStyle(
                 color: theme.textTheme.titleLarge?.color,
-                fontSize: 17,
-                fontWeight: FontWeight.w600,
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.2,
               ),
             ),
             GestureDetector(

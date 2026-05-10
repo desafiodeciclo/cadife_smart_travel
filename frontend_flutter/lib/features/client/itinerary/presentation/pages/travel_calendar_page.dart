@@ -33,11 +33,12 @@ class _TravelCalendarPageState extends ConsumerState<TravelCalendarPage> {
         backgroundColor: const Color(0xFF393532),
         foregroundColor: Colors.white,
         title: const Text(
-          'Meu Itinerário',
+          'MEU ITINERÁRIO',
           style: TextStyle(
             color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.2,
           ),
         ),
         centerTitle: true,

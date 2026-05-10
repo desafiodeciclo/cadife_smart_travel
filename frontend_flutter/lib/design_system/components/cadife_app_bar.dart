@@ -54,7 +54,7 @@ class CadifeAppBar extends ConsumerWidget implements PreferredSizeWidget {
               ? Padding(
                   padding: const EdgeInsets.all(8),
                   child: GestureDetector(
-                    onTap: () => context.go('/client/perfil'),
+                    onTap: () => context.go('/client/profile'),
                     child: CircleAvatar(
                       backgroundColor: theme.textPrimary.withValues(alpha: 0.1),
                       child: Icon(
@@ -67,12 +67,12 @@ class CadifeAppBar extends ConsumerWidget implements PreferredSizeWidget {
                 )
               : null),
       title: Text(
-        title,
+        title.toUpperCase(),
         style: GoogleFonts.inter(
           color: theme.textPrimary,
           fontWeight: FontWeight.w900,
-          fontSize: 18,
-          letterSpacing: -0.5,
+          fontSize: 16,
+          letterSpacing: 1.2,
         ),
       ),
       actions: [
