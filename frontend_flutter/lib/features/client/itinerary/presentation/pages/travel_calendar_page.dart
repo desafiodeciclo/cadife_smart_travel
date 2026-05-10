@@ -7,9 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class TravelCalendarPage extends ConsumerStatefulWidget {
-  const TravelCalendarPage({required this.leadId, super.key});
+  const TravelCalendarPage({required this.tripId, super.key});
 
-  final String leadId;
+  final String tripId;
 
   @override
   ConsumerState<TravelCalendarPage> createState() =>
@@ -19,8 +19,8 @@ class TravelCalendarPage extends ConsumerStatefulWidget {
 class _TravelCalendarPageState extends ConsumerState<TravelCalendarPage> {
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(itineraryProvider(widget.leadId));
-    final notifier = ref.read(itineraryProvider(widget.leadId).notifier);
+    final state = ref.watch(itineraryProvider(widget.tripId));
+    final notifier = ref.read(itineraryProvider(widget.tripId).notifier);
     final cadife = context.cadife;
 
     final selectedDate = state.selectedDate ?? DateTime.now();
@@ -60,7 +60,7 @@ class _TravelCalendarPageState extends ConsumerState<TravelCalendarPage> {
             IconButton(
               icon: const Icon(LucideIcons.refreshCw, size: 18),
               tooltip: 'Sincronizar',
-              onPressed: () => notifier.syncItinerary(widget.leadId),
+              onPressed: () => notifier.syncItinerary(widget.tripId),
             ),
         ],
         bottom: PreferredSize(
@@ -82,7 +82,7 @@ class _TravelCalendarPageState extends ConsumerState<TravelCalendarPage> {
           ),
           if (state.error != null && state.items.isEmpty)
             _ErrorBanner(
-              onRetry: () => notifier.loadItinerary(widget.leadId),
+              onRetry: () => notifier.loadItinerary(widget.tripId),
             ),
           Expanded(
             child: AnimatedSwitcher(
@@ -96,10 +96,10 @@ class _TravelCalendarPageState extends ConsumerState<TravelCalendarPage> {
                           itemsForDay: state.itemsForDay(selectedDate),
                           isLoading: state.isLoading,
                           initialNote:
-                              notifier.getNote(widget.leadId, dateKey),
+                              notifier.getNote(widget.tripId, dateKey),
                           onDateChanged: notifier.selectDate,
                           onSaveNote: (nota) =>
-                              notifier.saveNote(widget.leadId, dateKey, nota),
+                              notifier.saveNote(widget.tripId, dateKey, nota),
                         )
                       : _MonthlyWrapper(
                           key: const ValueKey('monthly'),

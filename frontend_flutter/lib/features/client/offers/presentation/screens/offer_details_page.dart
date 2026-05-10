@@ -6,6 +6,7 @@ import 'package:cadife_smart_travel/features/client/offers/domain/entities/offer
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
 // ── Internal mock data structures ────────────────────────
@@ -713,7 +714,7 @@ class _OfferDetailsPageState extends ConsumerState<OfferDetailsPage> {
           child: IconButton(
             icon: const Icon(LucideIcons.arrowLeft,
                 color: Colors.white, size: 20),
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(context).maybePop(),
           ),
         ),
       ),
@@ -1011,7 +1012,7 @@ class _OfferDetailsPageState extends ConsumerState<OfferDetailsPage> {
                   child: Image.network(
                     allPhotos[i],
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, _) => Container(
+                    errorBuilder: (_, _, _) => Container(
                       color: AppColors.zinc700,
                       child: const Icon(LucideIcons.imageOff,
                           color: AppColors.zinc500),
@@ -1549,7 +1550,7 @@ class _OfferDetailsPageState extends ConsumerState<OfferDetailsPage> {
     return Scaffold(
       appBar: AppBar(
         leading: BackButton(
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => context.pop(),
         ),
         title: const Text('Detalhes da Oferta'),
       ),

@@ -42,7 +42,7 @@ class TripDocumentsPage extends ConsumerWidget {
                   ),
                   background: trip.imageUrl != null
                       ? Hero(
-                          tag: 'trip_image_${trip.id}',
+                          tag: 'trip_banner_${trip.id}',
                           child: Image.network(
                             trip.imageUrl!,
                             fit: BoxFit.cover,
@@ -52,7 +52,7 @@ class TripDocumentsPage extends ConsumerWidget {
                 ),
                 leading: IconButton(
                   icon: const Icon(Icons.arrow_back, color: Colors.white),
-                  onPressed: () => context.pop(),
+                  onPressed: () => Navigator.of(context).maybePop(),
                 ),
               ),
               SliverToBoxAdapter(
@@ -131,10 +131,10 @@ class TripDocumentsPage extends ConsumerWidget {
                                   (doc) => CadifeDocumentCard(
                                     document: doc,
                                     onView: () {
-                                      context.push('/client/documentos/viewer', extra: doc);
+                                      context.push('/client/documents/viewer', extra: doc);
                                     },
                                     onDownload: () {
-                                      context.push('/client/documentos/viewer', extra: doc);
+                                      context.push('/client/documents/viewer', extra: doc);
                                     },
                                   ),
                                 )

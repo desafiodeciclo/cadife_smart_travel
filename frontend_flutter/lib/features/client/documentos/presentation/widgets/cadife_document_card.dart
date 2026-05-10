@@ -9,11 +9,15 @@ class CadifeDocumentCard extends StatelessWidget {
     super.key,
     this.onView,
     this.onDownload,
+    this.padding,
+    this.isCompact = false,
   });
 
   final Documento document;
   final VoidCallback? onView;
   final VoidCallback? onDownload;
+  final EdgeInsetsGeometry? padding;
+  final bool isCompact;
 
   @override
   Widget build(BuildContext context) {
@@ -23,32 +27,35 @@ class CadifeDocumentCard extends StatelessWidget {
     final secondaryColor = isDark ? Colors.white.withValues(alpha: 0.7) : Colors.black.withValues(alpha: 0.6);
     final surfaceColor = isDark ? context.cadife.cardBackground : Colors.white;
 
+    final cardPadding = isCompact ? const EdgeInsets.all(12) : const EdgeInsets.all(16);
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: padding ?? EdgeInsets.only(bottom: isCompact ? 0 : 16),
       child: ShadCard(
-        padding: const EdgeInsets.all(16),
+        padding: cardPadding,
         backgroundColor: surfaceColor,
-        radius: BorderRadius.circular(16),
+        radius: BorderRadius.circular(isCompact ? 12 : 16),
         border: ShadBorder.all(
           color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
           width: 1,
         ),
         child: InkWell(
           onTap: onView,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(isCompact ? 12 : 16),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // Document Icon Componentized
-              DocumentIcon(type: document.type, size: 22),
-              const SizedBox(width: 16),
+              DocumentIcon(type: document.type, size: isCompact ? 20 : 22),
+              SizedBox(width: isCompact ? 12 : 16),
               
               // Document Info
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (document.category != null) ...[
+                    if (document.category != null && !isCompact) ...[
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
@@ -70,19 +77,19 @@ class CadifeDocumentCard extends StatelessWidget {
                     Text(
                       document.name,
                       style: TextStyle(
-                        fontSize: 15,
+                        fontSize: isCompact ? 14 : 15,
                         fontWeight: FontWeight.w700,
                         color: primaryColor,
-                        height: 1.2,
+                        height: 1.1,
                       ),
-                      maxLines: 2,
+                      maxLines: isCompact ? 1 : 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
                       document.sizeFormatted,
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: isCompact ? 11 : 12,
                         fontWeight: FontWeight.w500,
                         color: secondaryColor,
                       ),
@@ -90,26 +97,47 @@ class CadifeDocumentCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: isCompact ? 8 : 12),
               
               // Action Buttons
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _ActionButton(
-                    label: 'VER',
-                    onPressed: onView,
-                    isPrimary: true,
-                  ),
-                  const SizedBox(height: 8),
-                  _ActionButton(
-                    label: 'BAIXAR',
-                    icon: LucideIcons.download,
-                    onPressed: onDownload,
-                    isPrimary: false,
-                  ),
-                ],
-              ),
+              if (isCompact)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _ActionButton(
+                      label: 'VER',
+                      onPressed: onView,
+                      isPrimary: true,
+                      isCompact: true,
+                    ),
+                    const SizedBox(width: 4),
+                    _ActionButton(
+                      label: '',
+                      icon: LucideIcons.download,
+                      onPressed: onDownload,
+                      isPrimary: false,
+                      isCompact: true,
+                    ),
+                  ],
+                )
+              else
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _ActionButton(
+                      label: 'VER',
+                      onPressed: onView,
+                      isPrimary: true,
+                    ),
+                    const SizedBox(height: 8),
+                    _ActionButton(
+                      label: 'BAIXAR',
+                      icon: LucideIcons.download,
+                      onPressed: onDownload,
+                      isPrimary: false,
+                    ),
+                  ],
+                ),
             ],
           ),
         ),
@@ -123,12 +151,14 @@ class _ActionButton extends StatelessWidget {
   final IconData? icon;
   final VoidCallback? onPressed;
   final bool isPrimary;
+  final bool isCompact;
 
   const _ActionButton({
     required this.label,
     required this.isPrimary,
     this.icon,
     this.onPressed,
+    this.isCompact = false,
   });
 
   @override
@@ -136,9 +166,14 @@ class _ActionButton extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final color = isDark ? Colors.white : Colors.black;
 
+    final width = isCompact 
+        ? (label.isEmpty ? 32.0 : 60.0) 
+        : 80.0;
+    final height = isCompact ? 28.0 : 32.0;
+
     return SizedBox(
-      height: 32,
-      width: 80,
+      height: height,
+      width: width,
       child: isPrimary
           ? ShadButton(
               onPressed: onPressed,
@@ -147,18 +182,20 @@ class _ActionButton extends StatelessWidget {
               foregroundColor: isDark ? Colors.black : Colors.white,
               decoration: ShadDecoration(
                 border: ShadBorder.all(
-                  radius: BorderRadius.circular(8),
+                  radius: BorderRadius.circular(isCompact ? 6 : 8),
                 ),
               ),
               padding: EdgeInsets.zero,
-              leading: icon != null ? Icon(icon, size: 12) : null,
-              child: Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
+              leading: icon != null ? Icon(icon, size: isCompact ? 10 : 12) : null,
+              child: label.isNotEmpty 
+                ? Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: isCompact ? 10 : 11,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  )
+                : const SizedBox.shrink(),
             )
           : ShadButton.outline(
               onPressed: onPressed,
@@ -169,18 +206,20 @@ class _ActionButton extends StatelessWidget {
                 border: ShadBorder.all(
                   color: color.withValues(alpha: 0.3),
                   width: 1,
-                  radius: BorderRadius.circular(8),
+                  radius: BorderRadius.circular(isCompact ? 6 : 8),
                 ),
               ),
               padding: EdgeInsets.zero,
-              leading: icon != null ? Icon(icon, size: 12) : null,
-              child: Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
+              leading: icon != null ? Icon(icon, size: isCompact ? 10 : 12) : null,
+              child: label.isNotEmpty
+                ? Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: isCompact ? 9 : 10,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  )
+                : const SizedBox.shrink(),
             ),
     );
   }

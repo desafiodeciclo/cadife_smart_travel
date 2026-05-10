@@ -129,14 +129,14 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
                                 document: doc,
                                 onView: () {
                                   context.push(
-                                    '/client/documentos/viewer',
+                                    '/client/documents/viewer',
                                     extra: doc,
                                   );
                                 },
                                 onDownload: () {
                                   // Navigating to viewer also allows download
                                   context.push(
-                                    '/client/documentos/viewer',
+                                    '/client/documents/viewer',
                                     extra: doc,
                                   );
                                 },
@@ -183,7 +183,7 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
                               trip: trip,
                               onTap: () {
                                 context.push(
-                                  '/client/documentos/${trip.id}',
+                                  '/client/documents/${trip.id}',
                                 );
                               },
                             ),
