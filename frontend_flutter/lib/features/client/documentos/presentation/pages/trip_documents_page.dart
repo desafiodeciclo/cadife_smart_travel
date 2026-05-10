@@ -22,9 +22,14 @@ class _TripDocumentsPageState extends ConsumerState<TripDocumentsPage> {
 
   void _handleBack() {
     if (_isPopping) return;
-    if (context.canPop()) {
+    
+    if (mounted) {
       setState(() => _isPopping = true);
-      context.pop();
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.go('/client/status');
+      }
     }
   }
 
@@ -40,8 +45,14 @@ class _TripDocumentsPageState extends ConsumerState<TripDocumentsPage> {
           orElse: () => throw Exception('Trip not found'),
         );
 
-        return Scaffold(
-          body: CustomScrollView(
+        return PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, result) {
+            if (didPop) return;
+            _handleBack();
+          },
+          child: Scaffold(
+            body: CustomScrollView(
             slivers: [
               SliverAppBar(
                 expandedHeight: 200,
@@ -164,8 +175,9 @@ class _TripDocumentsPageState extends ConsumerState<TripDocumentsPage> {
               const SliverToBoxAdapter(child: SizedBox(height: 24)),
             ],
           ),
-        );
-      },
+        ),
+      );
+    },
       orElse: () => const PageScaffold(
         body: Center(
           child: CircularProgressIndicator(),

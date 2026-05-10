@@ -21,9 +21,11 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
 
   void _handleBack() {
     if (_isPopping) return;
-    if (context.canPop()) {
+    
+    if (mounted) {
       setState(() => _isPopping = true);
-      context.pop();
+      // Garantimos que o "direcionamento" seja para a tela principal de status
+      context.go('/client/status');
     }
   }
 
@@ -34,8 +36,14 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
     // Em um cenário real, buscaríamos a viagem pelo ID
     final trip = ClientHomeMocks.mockCurrentTrip();
 
-    return Scaffold(
-      backgroundColor: cadife.background,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _handleBack();
+      },
+      child: Scaffold(
+        backgroundColor: cadife.background,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
@@ -277,6 +285,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
             ),
           ),
         ],
+        ),
       ),
     );
   }

@@ -658,9 +658,14 @@ class _OfferDetailsPageState extends ConsumerState<OfferDetailsPage> {
 
   void _handleBack() {
     if (_isPopping) return;
-    if (context.canPop()) {
+    
+    if (mounted) {
       setState(() => _isPopping = true);
-      context.pop();
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.go('/client/status');
+      }
     }
   }
 
@@ -679,31 +684,38 @@ class _OfferDetailsPageState extends ConsumerState<OfferDetailsPage> {
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
-      child: Scaffold(
-        backgroundColor: isDark ? AppColors.zinc950 : AppColors.white,
-        body: Stack(
-          children: [
-            CustomScrollView(
-              slivers: [
-                _buildSliverAppBar(offer, isDark),
-                SliverToBoxAdapter(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildHeader(offer, theme, isDark),
-                      _buildPhotoGallery(offer, isDark),
-                      _buildPriceSection(offer, theme, priceFormatter, isDark),
-                      _buildHighlights(theme, isDark),
-                      _buildIncluded(theme, isDark),
-                      _buildItinerary(theme, isDark),
-                      const SizedBox(height: 120),
-                    ],
+      child: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop) return;
+          _handleBack();
+        },
+        child: Scaffold(
+          backgroundColor: isDark ? AppColors.zinc950 : AppColors.white,
+          body: Stack(
+            children: [
+              CustomScrollView(
+                slivers: [
+                  _buildSliverAppBar(offer, isDark),
+                  SliverToBoxAdapter(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildHeader(offer, theme, isDark),
+                        _buildPhotoGallery(offer, isDark),
+                        _buildPriceSection(offer, theme, priceFormatter, isDark),
+                        _buildHighlights(theme, isDark),
+                        _buildIncluded(theme, isDark),
+                        _buildItinerary(theme, isDark),
+                        const SizedBox(height: 120),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-            _buildBottomCTA(offer, theme, priceFormatter, isDark),
-          ],
+                ],
+              ),
+              _buildBottomCTA(offer, theme, priceFormatter, isDark),
+            ],
+          ),
         ),
       ),
     );
