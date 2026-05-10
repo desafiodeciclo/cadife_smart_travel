@@ -67,8 +67,6 @@ class TripStatusSection extends StatelessWidget {
 
         // Componente Unificado: Progresso e Checklist
         CadifeGlassCard(
-          blur: 20,
-          opacity: 0.1,
           borderRadius: BorderRadius.circular(20),
           padding: const EdgeInsets.all(16),
           child: Column(

@@ -3,6 +3,7 @@ import 'package:cadife_smart_travel/features/client/home/infrastructure/mocks/cl
 import 'package:cadife_smart_travel/features/client/presentation/widgets/consultant_contact_card.dart';
 import 'package:cadife_smart_travel/features/client/presentation/widgets/current_trip_banner.dart';
 import 'package:cadife_smart_travel/features/client/presentation/widgets/documents_section.dart';
+import 'package:cadife_smart_travel/features/client/presentation/widgets/itinerary_preview_section.dart';
 import 'package:cadife_smart_travel/features/client/presentation/widgets/recommendations_section.dart';
 import 'package:cadife_smart_travel/features/client/presentation/widgets/trip_status_section.dart';
 import 'package:cadife_smart_travel/features/notifications/presentation/widgets/notification_bell.dart';
@@ -34,14 +35,27 @@ class ClientHomeScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // 1. Banner da viagem atual
                   CurrentTripBanner(trip: trip),
                   const SizedBox(height: 24),
+
+                  // 2. Status da viagem
                   TripStatusSection(trip: trip),
                   const SizedBox(height: 24),
-                  ConsultantContactCard(consultant: consultant),
-                  const SizedBox(height: 24),
+
+                  // 3. Documentos
                   DocumentsSection(documents: documents),
                   const SizedBox(height: 24),
+
+                  // 4. Itinerário (preview das próximas atividades)
+                  ItineraryPreviewSection(tripId: trip.id),
+                  const SizedBox(height: 24),
+
+                  // 5. Consultor
+                  ConsultantContactCard(consultant: consultant),
+                  const SizedBox(height: 24),
+
+                  // 6. Ofertas baseadas no perfil
                   RecommendationsSection(recommendations: recommendations),
                   const SizedBox(height: 16),
                 ],

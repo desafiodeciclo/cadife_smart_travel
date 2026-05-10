@@ -22,9 +22,8 @@ class ItineraryService {
   static String _pendingKey(String leadId) => 'day_note_${leadId}_pending';
 
   Future<List<ItineraryItem>> fetchItinerary(String leadId) async {
-    // Para fins de demonstração/mock, se o ID começar com 'trip-h' ou for o mock padrão, retornamos dados mockados
-    if (leadId.startsWith('trip-h') || leadId == 'mock-lead-123') {
-      await Future.delayed(const Duration(milliseconds: 800));
+    if (leadId.startsWith('trip-') || leadId == 'mock-lead-123') {
+      await Future.delayed(const Duration(milliseconds: 600));
       return _getMockItinerary(leadId);
     }
 
@@ -45,43 +44,92 @@ class ItineraryService {
   }
 
   List<ItineraryItem> _getMockItinerary(String leadId) {
-    final now = DateTime.now();
+    // Usa datas relativas ao mock de viagem Paris (jun/2026) para não depender de DateTime.now()
+    final d1 = DateTime(2026, 6, 15);
+    final d2 = DateTime(2026, 6, 16);
+    final d3 = DateTime(2026, 6, 17);
+    final d4 = DateTime(2026, 6, 18);
+    final d5 = DateTime(2026, 6, 22);
     return [
       ItineraryItem(
         id: 'mock-itin-1',
         leadId: leadId,
         tipo: ItineraryItemType.voo,
-        titulo: 'Voo para o Destino',
-        descricao: 'Voo operado pela LATAM. Terminal 3.',
-        local: 'Aeroporto Internacional',
-        dataHora: DateTime(now.year, now.month, now.day, 10, 30),
+        titulo: 'Voo GRU → CDG',
+        descricao: 'LATAM LA705 — Terminal 3. Check-in às 08h.',
+        local: 'Aeroporto de Guarulhos (GRU)',
+        dataHora: DateTime(d1.year, d1.month, d1.day, 10, 00),
+        dataHoraFim: DateTime(d1.year, d1.month, d1.day, 22, 30),
+        notas: 'Franquia de bagagem: 2 × 23 kg',
       ),
       ItineraryItem(
         id: 'mock-itin-2',
         leadId: leadId,
         tipo: ItineraryItemType.hotelCheckin,
-        titulo: 'Check-in no Hotel',
-        descricao: 'Reserva confirmada. Apresentar voucher.',
-        local: 'Hotel Grand Hyatt',
-        dataHora: DateTime(now.year, now.month, now.day, 15, 00),
+        titulo: 'Check-in — Hôtel Le Marais',
+        descricao: 'Reserva confirmada. Apresentar voucher impresso.',
+        local: 'Rue de Bretagne, 42, Paris',
+        dataHora: DateTime(d1.year, d1.month, d1.day, 23, 30),
+        dataHoraFim: DateTime(d5.year, d5.month, d5.day, 11, 00),
       ),
       ItineraryItem(
         id: 'mock-itin-3',
         leadId: leadId,
-        tipo: ItineraryItemType.refeicao,
-        titulo: 'Jantar de Boas-vindas',
-        descricao: 'Reserva em nome de Cadife.',
-        local: 'Restaurante Le Gourmet',
-        dataHora: DateTime(now.year, now.month, now.day, 20, 00),
+        tipo: ItineraryItemType.passeio,
+        titulo: 'Tour pela Torre Eiffel',
+        descricao: 'Guia privativo em português. Ingresso incluso.',
+        local: 'Champ de Mars, Paris',
+        dataHora: DateTime(d2.year, d2.month, d2.day, 9, 00),
+        dataHoraFim: DateTime(d2.year, d2.month, d2.day, 12, 00),
       ),
       ItineraryItem(
         id: 'mock-itin-4',
         leadId: leadId,
+        tipo: ItineraryItemType.refeicao,
+        titulo: 'Almoço — Café de Flore',
+        descricao: 'Reserva em nome de Cadife Tour.',
+        local: '172 Boulevard Saint-Germain, Paris',
+        dataHora: DateTime(d2.year, d2.month, d2.day, 13, 00),
+        dataHoraFim: DateTime(d2.year, d2.month, d2.day, 14, 30),
+      ),
+      ItineraryItem(
+        id: 'mock-itin-5',
+        leadId: leadId,
         tipo: ItineraryItemType.passeio,
-        titulo: 'Tour pela Cidade',
-        descricao: 'Guia privativo em português.',
-        local: 'Ponto de encontro no Lobby',
-        dataHora: DateTime(now.year, now.month, now.day + 1, 09, 00),
+        titulo: 'Museu do Louvre',
+        descricao: 'Visita autoguiada. Audioguia em português disponível.',
+        local: 'Rue de Rivoli, Paris',
+        dataHora: DateTime(d3.year, d3.month, d3.day, 10, 00),
+        dataHoraFim: DateTime(d3.year, d3.month, d3.day, 13, 00),
+      ),
+      ItineraryItem(
+        id: 'mock-itin-6',
+        leadId: leadId,
+        tipo: ItineraryItemType.passeio,
+        titulo: 'Versalhes — Palácio e Jardins',
+        descricao: 'Transfer incluso. Ingresso e audioguia inclusos.',
+        local: 'Place d\'Armes, Versailles',
+        dataHora: DateTime(d4.year, d4.month, d4.day, 9, 30),
+        dataHoraFim: DateTime(d4.year, d4.month, d4.day, 17, 00),
+      ),
+      ItineraryItem(
+        id: 'mock-itin-7',
+        leadId: leadId,
+        tipo: ItineraryItemType.hotelCheckout,
+        titulo: 'Checkout — Hôtel Le Marais',
+        descricao: 'Entregar chaves até 11h. Bagagem pode ser guardada.',
+        local: 'Rue de Bretagne, 42, Paris',
+        dataHora: DateTime(d5.year, d5.month, d5.day, 11, 00),
+      ),
+      ItineraryItem(
+        id: 'mock-itin-8',
+        leadId: leadId,
+        tipo: ItineraryItemType.voo,
+        titulo: 'Voo CDG → GRU',
+        descricao: 'LATAM LA706 — Embarque às 15h30.',
+        local: 'Aeroporto Charles de Gaulle (CDG)',
+        dataHora: DateTime(d5.year, d5.month, d5.day, 14, 00),
+        dataHoraFim: DateTime(d5.year, d5.month, d5.day + 1, 5, 00),
       ),
     ];
   }

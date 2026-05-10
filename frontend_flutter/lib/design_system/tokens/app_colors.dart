@@ -35,10 +35,18 @@ class AppColors {
   static const Color error   = primary;
   static const Color info    = Color(0xFF2980B9);
 
-  // --- Glassmorphism ---
-  static const Color glassBase     = Color(0x1AFFFFFF); // 10% White
-  static const Color glassBorder   = Color(0x33FFFFFF); // 20% White
-  static const Color glassBlur     = Color(0x0DFFFFFF); // 5% White
+  // --- Card System (CDS — solid, sem glassmorphism) ---
+  static const Color cardBackground     = Color(0xFFF8F9FA); // light surface
+  static const Color cardBackgroundDark = Color(0xFF2D2D2D); // dark surface
+  static const Color borderColor        = Color(0xFFE8EAED); // light border
+  static const Color borderColorDark    = Color(0xFF3F3F46); // dark border
+  static const Color textPrimary        = Color(0xFF1A1A1A); // light text primary
+  static const Color textSecondary      = Color(0xFF5D6D7E); // light text secondary
+
+  // --- Glassmorphism (legado — não usar em novos widgets) ---
+  static const Color glassBase     = Color(0x1AFFFFFF);
+  static const Color glassBorder   = Color(0x33FFFFFF);
+  static const Color glassBlur     = Color(0x0DFFFFFF);
 
   // --- Text ---
   static const Color textPrimaryLight   = zinc950;

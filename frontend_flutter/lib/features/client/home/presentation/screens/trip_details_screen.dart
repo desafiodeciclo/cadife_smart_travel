@@ -2,6 +2,7 @@ import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/client/home/infrastructure/mocks/client_home_mocks.dart';
 import 'package:cadife_smart_travel/features/client/itinerary/presentation/providers/itinerary_provider.dart';
 import 'package:cadife_smart_travel/features/client/itinerary/presentation/widgets/itinerary_card.dart';
+import 'package:cadife_smart_travel/features/client/presentation/widgets/documents_section.dart';
 import 'package:cadife_smart_travel/features/client/presentation/widgets/trip_status_section.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -251,27 +252,13 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
                       )),
 
                     const SizedBox(height: 32),
-                    
-                    // Outras informações ou ações
-                    Text(
-                      'PRÓXIMOS PASSOS',
-                      style: TextStyle(
-                        color: cadife.textPrimary,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    
-                    _buildActionButton(
-                      context,
-                      Icons.description_outlined,
-                      'Documentos da Viagem',
-                      'Acesse vouchers, passagens e seguros',
-                      () => context.pushNamed('client_trip_documents', pathParameters: {'tripId': widget.tripId}),
-                    ),
-                    const SizedBox(height: 12),
+
+                    // Documentos dessa viagem
+                    DocumentsSection(documents: ClientHomeMocks.mockDocuments()),
+
+                    const SizedBox(height: 32),
+
+                    // Ação: calendário completo
                     _buildActionButton(
                       context,
                       Icons.calendar_today_outlined,
@@ -279,8 +266,8 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
                       'Veja o roteiro dia a dia',
                       () => context.pushNamed('client_travel_calendar', pathParameters: {'tripId': widget.tripId}),
                     ),
-                    
-                    const SizedBox(height: 100), // Espaço para não bater no fundo
+
+                    const SizedBox(height: 100),
                   ],
                 ),
               ),

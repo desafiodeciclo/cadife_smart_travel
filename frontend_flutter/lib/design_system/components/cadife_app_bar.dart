@@ -67,13 +67,15 @@ class CadifeAppBar extends ConsumerWidget implements PreferredSizeWidget {
                 )
               : null),
       title: Text(
-        title.toUpperCase(),
+        title.length > 30 ? '${title.substring(0, 28)}…' : title.toUpperCase(),
         style: GoogleFonts.inter(
           color: theme.textPrimary,
           fontWeight: FontWeight.w900,
           fontSize: 16,
           letterSpacing: 1.2,
         ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
       ),
       actions: [
         if (actions != null) ...actions!,
