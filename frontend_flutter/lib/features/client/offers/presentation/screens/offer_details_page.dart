@@ -654,6 +654,16 @@ class _OfferDetailsPageState extends ConsumerState<OfferDetailsPage> {
     }
   }
 
+  bool _isPopping = false;
+
+  void _handleBack() {
+    if (_isPopping) return;
+    if (context.canPop()) {
+      setState(() => _isPopping = true);
+      context.pop();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = ShadTheme.of(context);
@@ -714,7 +724,7 @@ class _OfferDetailsPageState extends ConsumerState<OfferDetailsPage> {
           child: IconButton(
             icon: const Icon(LucideIcons.arrowLeft,
                 color: Colors.white, size: 20),
-            onPressed: () => Navigator.of(context).maybePop(),
+            onPressed: _handleBack,
           ),
         ),
       ),

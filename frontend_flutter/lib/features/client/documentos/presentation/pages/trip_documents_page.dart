@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-class TripDocumentsPage extends ConsumerWidget {
+class TripDocumentsPage extends ConsumerStatefulWidget {
   const TripDocumentsPage({
     required this.tripId,
     super.key,
@@ -14,14 +14,29 @@ class TripDocumentsPage extends ConsumerWidget {
   final String tripId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TripDocumentsPage> createState() => _TripDocumentsPageState();
+}
+
+class _TripDocumentsPageState extends ConsumerState<TripDocumentsPage> {
+  bool _isPopping = false;
+
+  void _handleBack() {
+    if (_isPopping) return;
+    if (context.canPop()) {
+      setState(() => _isPopping = true);
+      context.pop();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final tripsAsync = ref.watch(tripsWithDocumentsProvider);
-    final docsAsync = ref.watch(tripDocumentsProvider(tripId));
+    final docsAsync = ref.watch(tripDocumentsProvider(widget.tripId));
 
     return tripsAsync.maybeWhen(
       data: (trips) {
         final trip = trips.firstWhere(
-          (t) => t.id == tripId,
+          (t) => t.id == widget.tripId,
           orElse: () => throw Exception('Trip not found'),
         );
 
@@ -52,7 +67,7 @@ class TripDocumentsPage extends ConsumerWidget {
                 ),
                 leading: IconButton(
                   icon: const Icon(Icons.arrow_back, color: Colors.white),
-                  onPressed: () => Navigator.of(context).maybePop(),
+                  onPressed: _handleBack,
                 ),
               ),
               SliverToBoxAdapter(

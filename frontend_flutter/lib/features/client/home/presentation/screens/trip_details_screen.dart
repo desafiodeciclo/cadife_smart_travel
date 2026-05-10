@@ -7,15 +7,30 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-class TripDetailsScreen extends ConsumerWidget {
+class TripDetailsScreen extends ConsumerStatefulWidget {
   final String tripId;
 
   const TripDetailsScreen({required this.tripId, super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TripDetailsScreen> createState() => _TripDetailsScreenState();
+}
+
+class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
+  bool _isPopping = false;
+
+  void _handleBack() {
+    if (_isPopping) return;
+    if (context.canPop()) {
+      setState(() => _isPopping = true);
+      context.pop();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final cadife = context.cadife;
-    final itineraryState = ref.watch(itineraryProvider(tripId));
+    final itineraryState = ref.watch(itineraryProvider(widget.tripId));
     // Em um cenário real, buscaríamos a viagem pelo ID
     final trip = ClientHomeMocks.mockCurrentTrip();
 
@@ -37,7 +52,7 @@ class TripDetailsScreen extends ConsumerWidget {
                 backgroundColor: Colors.black45,
                 child: IconButton(
                   icon: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
-                  onPressed: () => Navigator.of(context).maybePop(),
+                  onPressed: _handleBack,
                   tooltip: 'Voltar',
                 ),
               ),
@@ -163,7 +178,7 @@ class TripDetailsScreen extends ConsumerWidget {
                           Icons.calendar_month_outlined,
                           '${trip.startDate.day}/${trip.startDate.month} - ${trip.endDate.day}/${trip.endDate.month}',
                           'Data da Viagem',
-                          onTap: () => context.pushNamed('client_travel_calendar', pathParameters: {'tripId': tripId}),
+                          onTap: () => context.pushNamed('client_travel_calendar', pathParameters: {'tripId': widget.tripId}),
                         ),
                         const SizedBox(width: 12),
                         _buildInfoBadge(
@@ -194,7 +209,7 @@ class TripDetailsScreen extends ConsumerWidget {
                           ),
                         ),
                         TextButton(
-                          onPressed: () => context.pushNamed('client_travel_calendar', pathParameters: {'tripId': tripId}),
+                          onPressed: () => context.pushNamed('client_travel_calendar', pathParameters: {'tripId': widget.tripId}),
                           child: Text(
                             'Ver tudo',
                             style: TextStyle(
@@ -244,7 +259,7 @@ class TripDetailsScreen extends ConsumerWidget {
                       Icons.description_outlined,
                       'Documentos da Viagem',
                       'Acesse vouchers, passagens e seguros',
-                      () => context.pushNamed('client_trip_documents', pathParameters: {'tripId': tripId}),
+                      () => context.pushNamed('client_trip_documents', pathParameters: {'tripId': widget.tripId}),
                     ),
                     const SizedBox(height: 12),
                     _buildActionButton(
@@ -252,7 +267,7 @@ class TripDetailsScreen extends ConsumerWidget {
                       Icons.calendar_today_outlined,
                       'Calendário Completo',
                       'Veja o roteiro dia a dia',
-                      () => context.pushNamed('client_travel_calendar', pathParameters: {'tripId': tripId}),
+                      () => context.pushNamed('client_travel_calendar', pathParameters: {'tripId': widget.tripId}),
                     ),
                     
                     const SizedBox(height: 100), // Espaço para não bater no fundo

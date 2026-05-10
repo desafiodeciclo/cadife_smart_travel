@@ -44,7 +44,11 @@ class CadifeAppBar extends ConsumerWidget implements PreferredSizeWidget {
       leading: showBackButton 
           ? IconButton(
               icon: const Icon(LucideIcons.arrowLeft),
-              onPressed: () => Navigator.maybePop(context),
+              onPressed: () {
+                if (context.canPop()) {
+                  context.pop();
+                }
+              },
             )
           : (showProfile
               ? Padding(
