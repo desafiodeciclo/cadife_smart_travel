@@ -8,7 +8,7 @@ never on concrete SQLAlchemy/DB implementations — enabling testability.
 
 import uuid
 from abc import ABC, abstractmethod
-from datetime import date, time
+from datetime import date, datetime, time
 from decimal import Decimal
 from typing import Optional
 
@@ -240,3 +240,34 @@ class IDocumentoRepository(ABC):
 
     @abstractmethod
     async def soft_delete(self, documento_id: uuid.UUID) -> None: ...
+
+
+class IDiaryRepository(ABC):
+    """Interface for Travel Diary persistence operations."""
+
+    @abstractmethod
+    async def create(
+        self,
+        lead_id: uuid.UUID,
+        user_id: uuid.UUID,
+        foto_url: str,
+        thumb_url: str,
+        nota: Optional[str] = None,
+        data_entrada: Optional[datetime] = None,
+    ) -> object: ...
+
+    @abstractmethod
+    async def get_by_id(self, entry_id: uuid.UUID) -> Optional[object]: ...
+
+    @abstractmethod
+    async def list_by_lead(
+        self, lead_id: uuid.UUID, page: int = 1, limit: int = 20
+    ) -> tuple[list, int]: ...
+
+    @abstractmethod
+    async def list_by_user(
+        self, user_id: uuid.UUID, page: int = 1, limit: int = 20
+    ) -> tuple[list, int]: ...
+
+    @abstractmethod
+    async def delete(self, entry_id: uuid.UUID) -> None: ...

@@ -13,10 +13,13 @@ services:
       REDIS_URL: redis://redis:6379/0
       CHROMA_HOST: chroma
       CHROMA_PORT: "8000"
+      S3_ENDPOINT_URL: http://localstack:4566
     depends_on:
       db:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      localstack:
         condition: service_healthy
     volumes:
       - ../backend:/app
@@ -74,8 +77,25 @@ services:
       - chroma_data:/chroma/chroma
     restart: unless-stopped
 
+  localstack:
+    image: localstack/localstack:3.0
+    ports:
+      - "4566:4566"
+    environment:
+      - DEBUG=1
+      - DEFAULT_REGION=us-east-1
+    volumes:
+      - localstack_data:/var/lib/localstack
+    healthcheck:
+      test: ["CMD-SHELL", "awslocal --version || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   redis_data:
   redis_staging_data:
   chroma_data:
+  localstack_data:
