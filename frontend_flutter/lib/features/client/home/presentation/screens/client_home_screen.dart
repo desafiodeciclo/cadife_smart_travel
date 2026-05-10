@@ -24,26 +24,31 @@ class ClientHomeScreen extends ConsumerWidget {
       actions: [
         const NotificationBell(),
       ],
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 72, 12, 100),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              CurrentTripBanner(trip: trip),
-              const SizedBox(height: 24),
-              TripStatusSection(trip: trip),
-              const SizedBox(height: 24),
-              ConsultantContactCard(consultant: consultant),
-              const SizedBox(height: 24),
-              DocumentsSection(documents: documents),
-              const SizedBox(height: 24),
-              RecommendationsSection(recommendations: recommendations),
-              const SizedBox(height: 16),
-            ],
-          ),
-        ),
+      body: Builder(
+        builder: (context) {
+          final topPad = MediaQuery.of(context).padding.top + kToolbarHeight;
+          return SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(12, topPad, 12, 100),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CurrentTripBanner(trip: trip),
+                  const SizedBox(height: 24),
+                  TripStatusSection(trip: trip),
+                  const SizedBox(height: 24),
+                  ConsultantContactCard(consultant: consultant),
+                  const SizedBox(height: 24),
+                  DocumentsSection(documents: documents),
+                  const SizedBox(height: 24),
+                  RecommendationsSection(recommendations: recommendations),
+                  const SizedBox(height: 16),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }

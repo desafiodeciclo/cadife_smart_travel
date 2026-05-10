@@ -141,14 +141,14 @@ class _PageScaffoldState extends State<PageScaffold>
                         end: _endAlignment.value,
                         colors: isDark
                             ? [
-                                const Color(0xFFDD0B0E).withValues(alpha: 0.18),
-                                const Color(0xFF393532).withValues(alpha: 0.85),
-                                const Color(0xFF1A1A2E).withValues(alpha: 0.6),
+                                const Color(0xFF0A0A0A),
+                                const Color(0xFF161616).withValues(alpha: 0.95),
+                                const Color(0xFF111111).withValues(alpha: 0.9),
                               ]
                             : [
-                                const Color(0xFFDD0B0E).withValues(alpha: 0.06),
-                                cadife.background,
-                                const Color(0xFF393532).withValues(alpha: 0.04),
+                                const Color(0xFFFFFFFF),
+                                const Color(0xFFF7F7F7).withValues(alpha: 0.98),
+                                const Color(0xFFEDEDED).withValues(alpha: 0.95),
                               ],
                       ),
                     ),
@@ -156,33 +156,7 @@ class _PageScaffoldState extends State<PageScaffold>
                 },
               ),
             ),
-          // Subtle glow orbs (dark mode only)
-          if (widget.showBackgroundEffects && isDark) ...[
-            Positioned(
-              top: -80,
-              right: -60,
-              child: Container(
-                width: 280,
-                height: 280,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.primary.withValues(alpha: 0.12),
-                ),
-              ).animate().fadeIn(duration: 800.ms),
-            ),
-            Positioned(
-              bottom: 120,
-              left: -80,
-              child: Container(
-                width: 350,
-                height: 350,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.blue.withValues(alpha: 0.04),
-                ),
-              ).animate().fadeIn(duration: 1200.ms),
-            ),
-          ],
+
           content,
         ],
       ),

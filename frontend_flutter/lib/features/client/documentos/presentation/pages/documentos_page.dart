@@ -128,25 +128,21 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
                             .asMap()
                             .entries
                             .map(
-                              (entry) => Padding(
-                                padding: EdgeInsets.only(
-                                  bottom: entry.key < filteredDocs.length - 1 ? 12 : 0,
-                                ),
-                                child: CadifeDocumentCard(
-                                  document: entry.value,
-                                  onView: () {
-                                    context.push(
-                                      '/client/documents/viewer',
-                                      extra: entry.value,
-                                    );
-                                  },
-                                  onDownload: () {
-                                    context.push(
-                                      '/client/documents/viewer',
-                                      extra: entry.value,
-                                    );
-                                  },
-                                ),
+                              (entry) => CadifeDocumentCard(
+                                document: entry.value,
+                                padding: EdgeInsets.zero,
+                                onView: () {
+                                  context.push(
+                                    '/client/documents/viewer',
+                                    extra: entry.value,
+                                  );
+                                },
+                                onDownload: () {
+                                  context.push(
+                                    '/client/documents/viewer',
+                                    extra: entry.value,
+                                  );
+                                },
                               ),
                             )
                             .toList(),
@@ -186,14 +182,21 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
                     customEmptyType: EmptyType.emptyList,
                     dataBuilder: (trips) => Column(
                       children: trips
+                          .asMap()
+                          .entries
                           .map(
-                            (trip) => TripSelectionCard(
-                              trip: trip,
-                              onTap: () {
-                                context.push(
-                                  '/client/documents/${trip.id}',
-                                );
-                              },
+                            (entry) => Padding(
+                              padding: EdgeInsets.only(
+                                bottom: entry.key < trips.length - 1 ? 10 : 0,
+                              ),
+                              child: TripSelectionCard(
+                                trip: entry.value,
+                                onTap: () {
+                                  context.push(
+                                    '/client/documents/${entry.value.id}',
+                                  );
+                                },
+                              ),
                             ),
                           )
                           .toList(),

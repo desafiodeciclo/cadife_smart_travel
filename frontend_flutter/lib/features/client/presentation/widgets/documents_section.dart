@@ -6,19 +6,15 @@ import 'package:cadife_smart_travel/features/client/home/domain/entities/client_
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-class DocumentsSection extends StatefulWidget {
+class DocumentsSection extends StatelessWidget {
   final List<ClientDocument> documents;
 
   const DocumentsSection({required this.documents, super.key});
 
   @override
-  State<DocumentsSection> createState() => _DocumentsSectionState();
-}
-
-class _DocumentsSectionState extends State<DocumentsSection> {
-  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final cardWidth = MediaQuery.of(context).size.width * 0.72;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -48,51 +44,71 @@ class _DocumentsSectionState extends State<DocumentsSection> {
             ),
           ],
         ),
-        const SizedBox(height: 16),
-        SizedBox(
-          height: 80, // Height for the compact card
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            clipBehavior: Clip.none, // Allow cards to bleed out if needed
-            itemCount: widget.documents.length > 5 ? 5 : widget.documents.length, // Limit for home screen
-            separatorBuilder: (context, index) => const SizedBox(width: 12),
-            itemBuilder: (context, index) {
-              final doc = widget.documents[index];
-              
-              // Map ClientDocument to doc_entity.Documento
-              final documento = doc_entity.Documento(
-                id: doc.id,
-                name: doc.displayName,
-                type: doc_entity.DocumentType.pdf,
-                size: 2 * 1024 * 1024, // Mock size 2MB
-                url: doc.url,
-                category: doc.type,
-                createdAt: doc.uploadedAt,
-              );
+        const SizedBox(height: 12),
+        if (documents.isEmpty)
+          Container(
+            height: 72,
+            width: double.infinity,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: theme.cardColor.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: theme.dividerColor),
+            ),
+            child: Text(
+              'Sem documentos anexados',
+              style: TextStyle(
+                color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
+                fontSize: 13,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          )
+        else
+          SizedBox(
+            // CadifeDocumentCard compact = ~72px content + ShadCard padding
+            height: 72,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              clipBehavior: Clip.none,
+              itemCount: documents.length > 5 ? 5 : documents.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 10),
+              itemBuilder: (context, index) {
+                final doc = documents[index];
 
-              return SizedBox(
-                width: MediaQuery.of(context).size.width * 0.85,
-                child: CadifeDocumentCard(
-                  document: documento,
-                  isCompact: true,
-                  padding: EdgeInsets.zero, // Remove default bottom padding
-                  onView: () {
-                    context.push(
-                      '/client/documentos/viewer',
-                      extra: documento,
-                    );
-                  },
-                  onDownload: () {
-                    context.push(
-                      '/client/documentos/viewer',
-                      extra: documento,
-                    );
-                  },
-                ),
-              );
-            },
+                final documento = doc_entity.Documento(
+                  id: doc.id,
+                  name: doc.displayName,
+                  type: doc_entity.DocumentType.pdf,
+                  size: 2 * 1024 * 1024,
+                  url: doc.url,
+                  category: doc.type,
+                  createdAt: doc.uploadedAt,
+                );
+
+                return SizedBox(
+                  width: cardWidth,
+                  child: CadifeDocumentCard(
+                    document: documento,
+                    isCompact: true,
+                    padding: EdgeInsets.zero,
+                    onView: () {
+                      context.push(
+                        '/client/documentos/viewer',
+                        extra: documento,
+                      );
+                    },
+                    onDownload: () {
+                      context.push(
+                        '/client/documentos/viewer',
+                        extra: documento,
+                      );
+                    },
+                  ),
+                );
+              },
+            ),
           ),
-        ),
       ],
     );
   }
