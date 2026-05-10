@@ -56,14 +56,15 @@ class DiaryRepository(AbstractRepository[TravelDiaryEntryModel], IDiaryRepositor
         return await self._session.get(self.model, entry_id)
 
     async def list_by_lead(
-        self, lead_id: uuid.UUID, page: int = 1, limit: int = 20
+        self, lead_id: uuid.UUID, user_id: uuid.UUID, page: int = 1, limit: int = 20
     ) -> tuple[list[TravelDiaryEntryModel], int]:
         """
-        Lists entries for a specific lead (trip) with pagination.
+        Lists entries for a specific lead (trip) and user with pagination.
         """
         # Count query
         count_query = select(func.count()).select_from(self.model).where(
-            self.model.lead_id == lead_id
+            self.model.lead_id == lead_id,
+            self.model.user_id == user_id,
         )
         total_result = await self._session.execute(count_query)
         total = total_result.scalar() or 0
@@ -71,7 +72,7 @@ class DiaryRepository(AbstractRepository[TravelDiaryEntryModel], IDiaryRepositor
         # Data query
         query = (
             select(self.model)
-            .where(self.model.lead_id == lead_id)
+            .where(self.model.lead_id == lead_id, self.model.user_id == user_id)
             .order_by(desc(self.model.data_entrada))
             .offset((page - 1) * limit)
             .limit(limit)
@@ -113,5 +114,4 @@ class DiaryRepository(AbstractRepository[TravelDiaryEntryModel], IDiaryRepositor
         """
         entry = await self.get_by_id(entry_id)
         if entry:
-            await self._session.delete(entry)
-            await self._session.flush()
+            await super().delete(entry)

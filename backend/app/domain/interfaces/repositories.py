@@ -261,7 +261,7 @@ class IDiaryRepository(ABC):
 
     @abstractmethod
     async def list_by_lead(
-        self, lead_id: uuid.UUID, page: int = 1, limit: int = 20
+        self, lead_id: uuid.UUID, user_id: uuid.UUID, page: int = 1, limit: int = 20
     ) -> tuple[list, int]: ...
 
     @abstractmethod

@@ -10,6 +10,7 @@ from datetime import datetime
 from io import BytesIO
 from typing import Optional
 
+import structlog
 from PIL import Image
 import pillow_heif
 from fastapi import UploadFile, HTTPException, status
@@ -19,6 +20,7 @@ from app.infrastructure.adapters.storage.s3_adapter import S3StorageAdapter
 from app.infrastructure.config.settings import get_settings
 
 settings = get_settings()
+logger = structlog.get_logger()
 
 
 class DiaryService:
@@ -54,6 +56,7 @@ class DiaryService:
             img.save(thumb_io, format="JPEG", quality=85)
             return thumb_io.getvalue()
         except Exception as e:
+            logger.error("thumbnail_generation_failed", error=str(e))
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail=f"Erro ao processar imagem: {str(e)}"
@@ -70,15 +73,27 @@ class DiaryService:
         """
         Creates a new diary entry with photo and thumbnail.
         """
-        # 1. Ownership Check: Lead must belong to the user
+        # 1. Lead existence check
         lead = await self.lead_repo.get_by_id(lead_id)
         if not lead:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead não encontrado")
+            logger.warning("diary_create_lead_not_found", lead_id=str(lead_id))
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Lead não encontrado"
+            )
 
         # 2. Validation: Size (max 5MB)
         content = await photo.read()
-        if len(content) > 5 * 1024 * 1024:
-            raise HTTPException(status_code=status.HTTP_413_CONTENT_TOO_LARGE, detail="Arquivo muito grande (máx 5MB)")
+        if len(content) > settings.DIARY_MAX_SIZE_MB * 1024 * 1024:
+            logger.warning(
+                "diary_create_file_too_large",
+                lead_id=str(lead_id),
+                size_bytes=len(content),
+            )
+            raise HTTPException(
+                status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+                detail=f"Arquivo muito grande (máx {settings.DIARY_MAX_SIZE_MB}MB)"
+            )
 
         # 3. Generate Keys
         entry_id = uuid.uuid4()
@@ -89,10 +104,22 @@ class DiaryService:
         thumb_content = await self._generate_thumbnail(content)
 
         # 5. Upload to S3
-        # Original (Keeping original format but key says jpg for simplicity or we can use photo.content_type)
-        await self.storage.upload_file(content, photo_key, bucket=self.bucket_name, content_type=photo.content_type)
-        # Thumbnail
-        await self.storage.upload_file(thumb_content, thumb_key, bucket=self.bucket_name, content_type="image/jpeg")
+        original_uploaded = await self.storage.upload_file(
+            content, photo_key, bucket=self.bucket_name, content_type=photo.content_type or "image/jpeg"
+        )
+        thumb_uploaded = await self.storage.upload_file(
+            thumb_content, thumb_key, bucket=self.bucket_name, content_type="image/jpeg"
+        )
+        if not original_uploaded or not thumb_uploaded:
+            logger.error(
+                "diary_s3_upload_failed",
+                lead_id=str(lead_id),
+                entry_id=str(entry_id),
+            )
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Erro ao persistir imagem no storage."
+            )
 
         # 6. Persist to Database
         try:
@@ -104,26 +131,44 @@ class DiaryService:
                 nota=nota,
                 data_entrada=data_entrada
             )
-            # Commit the transaction
-            if hasattr(self.diary_repo, "_session"):
-                await self.diary_repo._session.commit()
             
+            # 7. Commit transaction
+            await self.diary_repo.commit()
+
+            # 8. Hydrate presigned URLs for immediate use
+            entry.foto_url = await self.storage.generate_presigned_url(
+                entry.foto_url, bucket=self.bucket_name
+            )
+            entry.thumb_url = await self.storage.generate_presigned_url(
+                entry.thumb_url, bucket=self.bucket_name
+            )
+
+            logger.info(
+                "diary_entry_created",
+                entry_id=str(entry.id),
+                lead_id=str(lead_id),
+                user_id=str(user_id),
+            )
             return entry
 
         except Exception as e:
             # Cleanup S3 if DB fail
+            logger.error(
+                "diary_db_persist_failed",
+                lead_id=str(lead_id),
+                entry_id=str(entry_id),
+                error=str(e),
+            )
             await self.storage.delete_file(photo_key, bucket=self.bucket_name)
             await self.storage.delete_file(thumb_key, bucket=self.bucket_name)
-            if hasattr(self.diary_repo, "_session"):
-                await self.diary_repo._session.rollback()
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
-                detail=f"Erro ao registrar memória no banco de dados: {str(e)}"
+                detail="Erro ao registrar memória no banco de dados."
             )
 
     async def list_entries(self, lead_id: uuid.UUID, user_id: uuid.UUID, page: int = 1, limit: int = 20):
-        # Ownership check (simplified: entries are already filtered by lead_id)
-        entries, total = await self.diary_repo.list_by_lead(lead_id, page, limit)
+        # Ownership check: only entries belonging to the user for this lead
+        entries, total = await self.diary_repo.list_by_lead(lead_id, user_id, page, limit)
         
         # Hydrate URLs
         for entry in entries:
@@ -145,17 +190,32 @@ class DiaryService:
     async def delete_entry(self, entry_id: uuid.UUID, user_id: uuid.UUID):
         entry = await self.diary_repo.get_by_id(entry_id)
         if not entry:
+            logger.warning("diary_delete_entry_not_found", entry_id=str(entry_id))
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Memória não encontrada")
         
         if entry.user_id != user_id:
+            logger.warning(
+                "diary_delete_ownership_violation",
+                entry_id=str(entry_id),
+                owner_id=str(entry.user_id),
+                requester_id=str(user_id),
+            )
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
             
-        # 1. Delete from S3
-        await self.storage.delete_file(entry.foto_url, bucket=self.bucket_name)
-        await self.storage.delete_file(entry.thumb_url, bucket=self.bucket_name)
-        
-        # 2. Delete from DB
+        # 1. Delete from DB first (source of truth)
         await self.diary_repo.delete(entry_id)
-        if hasattr(self.diary_repo, "_session"):
-            await self.diary_repo._session.commit()
+        await self.diary_repo.commit()
+        
+        # 2. Delete from S3 (best effort cleanup)
+        try:
+            await self.storage.delete_file(entry.foto_url, bucket=self.bucket_name)
+            await self.storage.delete_file(entry.thumb_url, bucket=self.bucket_name)
+        except Exception as e:
+            logger.error(
+                "diary_s3_cleanup_failed_after_db_delete",
+                entry_id=str(entry_id),
+                error=str(e),
+            )
+        
+        logger.info("diary_entry_deleted", entry_id=str(entry_id), user_id=str(user_id))
         return True

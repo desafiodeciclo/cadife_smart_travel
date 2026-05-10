@@ -35,4 +35,3 @@ boto3
 aioboto3
 Pillow
 pillow-heif
-aiobotocore

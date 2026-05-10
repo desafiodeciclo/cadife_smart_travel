@@ -9,7 +9,7 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
 
 class DiaryEntryBase(BaseModel):
@@ -39,8 +39,7 @@ class DiaryEntryRead(DiaryEntryBase):
     thumb_url: str
     criado_em: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DiaryEntryList(BaseModel):
