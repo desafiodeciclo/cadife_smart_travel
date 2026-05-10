@@ -1,5 +1,6 @@
+import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/client/documentos/domain/entities/documento.dart' as doc_entity;
-import 'package:cadife_smart_travel/features/client/documentos/presentation/widgets/document_card_item.dart';
+import 'package:cadife_smart_travel/features/client/documentos/presentation/widgets/cadife_document_card.dart';
 import 'package:cadife_smart_travel/features/client/home/domain/entities/client_document.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -11,8 +12,7 @@ class DocumentsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final visible = documents.length > 3 ? documents.sublist(0, 3) : documents;
+    final cadife = context.cadife;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -23,7 +23,7 @@ class DocumentsSection extends StatelessWidget {
             Text(
               'DOCUMENTOS',
               style: TextStyle(
-                color: theme.textTheme.titleLarge?.color,
+                color: cadife.textPrimary,
                 fontSize: 13,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 1.2,
@@ -36,7 +36,7 @@ class DocumentsSection extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.primary,
+                  color: cadife.primary,
                 ),
               ),
             ),
@@ -49,43 +49,58 @@ class DocumentsSection extends StatelessWidget {
             width: double.infinity,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: theme.cardColor.withValues(alpha: 0.5),
+              color: cadife.cardBackground.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: theme.dividerColor),
+              border: Border.all(color: cadife.cardBorder),
             ),
             child: Text(
               'Sem documentos anexados',
               style: TextStyle(
-                color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
+                color: cadife.textSecondary.withValues(alpha: 0.5),
                 fontSize: 13,
                 fontStyle: FontStyle.italic,
               ),
             ),
           )
         else
-          Column(
-            children: [
-              for (int i = 0; i < visible.length; i++) ...[
-                DocumentCardItem(
-                  documentName: visible[i].displayName,
-                  documentType: doc_entity.DocumentType.pdf,
-                  fileSize: '—',
-                  onTap: () => context.push(
-                    '/client/documentos/viewer',
-                    extra: doc_entity.Documento(
-                      id: visible[i].id,
-                      name: visible[i].displayName,
+          SizedBox(
+            height: 130, // Increased height for the new premium card
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              clipBehavior: Clip.none,
+              physics: const BouncingScrollPhysics(),
+              itemCount: documents.length,
+              separatorBuilder: (context, index) => const SizedBox(width: 12),
+              itemBuilder: (context, index) {
+                final doc = documents[index];
+                return SizedBox(
+                  width: MediaQuery.of(context).size.width * 0.85,
+                  child: CadifeDocumentCard(
+                    document: doc_entity.Documento(
+                      id: doc.id,
+                      name: doc.displayName,
                       type: doc_entity.DocumentType.pdf,
                       size: 0,
-                      url: visible[i].url,
-                      category: visible[i].type,
-                      createdAt: visible[i].uploadedAt,
+                      url: doc.url,
+                      category: doc.type,
+                      createdAt: doc.uploadedAt,
+                    ),
+                    onView: () => context.push(
+                      '/client/documentos/viewer',
+                      extra: doc_entity.Documento(
+                        id: doc.id,
+                        name: doc.displayName,
+                        type: doc_entity.DocumentType.pdf,
+                        size: 0,
+                        url: doc.url,
+                        category: doc.type,
+                        createdAt: doc.uploadedAt,
+                      ),
                     ),
                   ),
-                ),
-                if (i < visible.length - 1) const SizedBox(height: 8),
-              ],
-            ],
+                );
+              },
+            ),
           ),
       ],
     );

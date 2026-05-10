@@ -22,7 +22,7 @@ class ItineraryPreviewSection extends ConsumerWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'ITINERÁRIO',
+              'ITINERÁRIO (${state.items.length})',
               style: TextStyle(
                 color: cadife.textPrimary,
                 fontSize: 13,
@@ -52,6 +52,37 @@ class ItineraryPreviewSection extends ConsumerWidget {
             child: Padding(
               padding: EdgeInsets.symmetric(vertical: 16),
               child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          )
+        else if (state.error != null)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: cadife.cardBackground,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: cadife.cardBorder),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  'Erro ao carregar itinerário',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: cadife.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  state.error!,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: cadife.textSecondary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
           )
         else if (state.items.isEmpty)

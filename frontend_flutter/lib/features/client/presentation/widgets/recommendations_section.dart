@@ -46,16 +46,16 @@ class RecommendationsSection extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         SizedBox(
-          height: 200,
+          height: 280, // Reduzido ainda mais
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             clipBehavior: Clip.none,
-            itemCount: recommendations.length > 3 ? 3 : recommendations.length,
+            itemCount: recommendations.length, // Mostrar todos no carrossel
             separatorBuilder: (context, index) => const SizedBox(width: 12),
             itemBuilder: (context, index) {
               final rec = recommendations[index];
               return SizedBox(
-                width: screenWidth * 0.68,
+                width: screenWidth * 0.45, // Reduzido de 0.50 para 0.45
                 child: OfferCard(
                   offer: rec,
                   onTap: () {

@@ -21,13 +21,18 @@ class ClientHomeScreen extends ConsumerWidget {
     final recommendations = ClientHomeMocks.mockRecommendations();
 
     return PageScaffold(
-      title: 'Minha Viagem',
-      actions: [
-        const NotificationBell(),
-      ],
+      showProfile: false, // Perfil agora no leading da AppBar
+      appBar: const CadifeAppBar(
+        title: 'INICIO',
+        showProfile: true,
+        actions: [
+          NotificationBell(),
+          SizedBox(width: 8),
+        ],
+      ),
       body: Builder(
         builder: (context) {
-          final topPad = MediaQuery.of(context).padding.top + kToolbarHeight;
+          const topPad = kToolbarHeight + 8;
           return SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
             child: Padding(

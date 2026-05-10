@@ -39,68 +39,9 @@ class PageScaffold extends StatefulWidget {
 
 class _PageScaffoldState extends State<PageScaffold>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _gradientController;
-  late final Animation<Alignment> _beginAlignment;
-  late final Animation<Alignment> _endAlignment;
-
-  @override
-  void initState() {
-    super.initState();
-    _gradientController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 5),
-    )..repeat(reverse: true);
-
-    _beginAlignment = TweenSequence<Alignment>([
-      TweenSequenceItem(
-        tween: AlignmentTween(
-          begin: const Alignment(-1.0, -1.0),
-          end: const Alignment(0.5, -0.8),
-        ),
-        weight: 1,
-      ),
-      TweenSequenceItem(
-        tween: AlignmentTween(
-          begin: const Alignment(0.5, -0.8),
-          end: const Alignment(-1.0, -1.0),
-        ),
-        weight: 1,
-      ),
-    ]).animate(CurvedAnimation(
-      parent: _gradientController,
-      curve: Curves.easeInOut,
-    ));
-
-    _endAlignment = TweenSequence<Alignment>([
-      TweenSequenceItem(
-        tween: AlignmentTween(
-          begin: const Alignment(1.0, 1.0),
-          end: const Alignment(0.2, 1.0),
-        ),
-        weight: 1,
-      ),
-      TweenSequenceItem(
-        tween: AlignmentTween(
-          begin: const Alignment(0.2, 1.0),
-          end: const Alignment(1.0, 1.0),
-        ),
-        weight: 1,
-      ),
-    ]).animate(CurvedAnimation(
-      parent: _gradientController,
-      curve: Curves.easeInOut,
-    ));
-  }
-
-  @override
-  void dispose() {
-    _gradientController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final cadife = context.cadife;
 
     final effectiveAppBar = widget.appBar ??
@@ -126,40 +67,7 @@ class _PageScaffoldState extends State<PageScaffold>
       extendBody: true,
       extendBodyBehindAppBar: widget.extendBodyBehindAppBar,
       appBar: effectiveAppBar,
-      body: Stack(
-        children: [
-          // Animated gradient background
-          if (widget.showBackgroundEffects)
-            Positioned.fill(
-              child: AnimatedBuilder(
-                animation: _gradientController,
-                builder: (context, _) {
-                  return Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: _beginAlignment.value,
-                        end: _endAlignment.value,
-                        colors: isDark
-                            ? [
-                                const Color(0xFF0A0A0A),
-                                const Color(0xFF161616).withValues(alpha: 0.95),
-                                const Color(0xFF111111).withValues(alpha: 0.9),
-                              ]
-                            : [
-                                const Color(0xFFFFFFFF),
-                                const Color(0xFFF7F7F7).withValues(alpha: 0.98),
-                                const Color(0xFFEDEDED).withValues(alpha: 0.95),
-                              ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-
-          content,
-        ],
-      ),
+      body: content,
       floatingActionButton: widget.floatingActionButton,
       bottomNavigationBar: widget.bottomNavigationBar,
     );

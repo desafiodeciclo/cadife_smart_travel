@@ -256,17 +256,6 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
                     // Documentos dessa viagem
                     DocumentsSection(documents: ClientHomeMocks.mockDocuments()),
 
-                    const SizedBox(height: 32),
-
-                    // Ação: calendário completo
-                    _buildActionButton(
-                      context,
-                      Icons.calendar_today_outlined,
-                      'Calendário Completo',
-                      'Veja o roteiro dia a dia',
-                      () => context.pushNamed('client_travel_calendar', pathParameters: {'tripId': widget.tripId}),
-                    ),
-
                     const SizedBox(height: 100),
                   ],
                 ),
@@ -314,56 +303,4 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
     );
   }
 
-  Widget _buildActionButton(BuildContext context, IconData icon, String title, String subtitle, VoidCallback onTap) {
-    final cadife = context.cadife;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        splashColor: cadife.primary.withValues(alpha: 0.1),
-        highlightColor: cadife.primary.withValues(alpha: 0.05),
-        child: CadifeGlassCard(
-          padding: const EdgeInsets.all(16),
-          borderRadius: BorderRadius.circular(20),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: cadife.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: cadife.primary, size: 22),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        color: cadife.textPrimary,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        color: cadife.textSecondary,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(Icons.chevron_right, color: cadife.textSecondary, size: 20),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }

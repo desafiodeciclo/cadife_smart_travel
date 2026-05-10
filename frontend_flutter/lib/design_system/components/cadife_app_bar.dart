@@ -7,21 +7,25 @@ import 'package:google_fonts/google_fonts.dart';
 
 class CadifeAppBar extends ConsumerWidget implements PreferredSizeWidget {
   const CadifeAppBar({
-    required this.title,
+    this.title,
     super.key,
     this.showProfile = true,
     this.actions,
     this.centerTitle = true,
     this.transparent = true,
     this.showBackButton = false,
+    this.titleWidget,
+    this.leading,
   });
 
-  final String title;
+  final String? title;
+  final Widget? titleWidget;
   final bool showProfile;
   final List<Widget>? actions;
   final bool centerTitle;
   final bool transparent;
   final bool showBackButton;
+  final Widget? leading;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -41,7 +45,7 @@ class CadifeAppBar extends ConsumerWidget implements PreferredSizeWidget {
             ),
           )
         : null,
-      leading: showBackButton 
+      leading: leading ?? (showBackButton 
           ? IconButton(
               icon: const Icon(LucideIcons.arrowLeft),
               onPressed: () {
@@ -65,9 +69,9 @@ class CadifeAppBar extends ConsumerWidget implements PreferredSizeWidget {
                     ),
                   ),
                 )
-              : null),
-      title: Text(
-        title.length > 30 ? '${title.substring(0, 28)}…' : title.toUpperCase(),
+              : null)),
+      title: titleWidget ?? (title != null ? Text(
+        title!.length > 30 ? '${title!.substring(0, 28)}…' : title!.toUpperCase(),
         style: GoogleFonts.inter(
           color: theme.textPrimary,
           fontWeight: FontWeight.w900,
@@ -76,7 +80,7 @@ class CadifeAppBar extends ConsumerWidget implements PreferredSizeWidget {
         ),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-      ),
+      ) : null),
       actions: [
         if (actions != null) ...actions!,
       ],

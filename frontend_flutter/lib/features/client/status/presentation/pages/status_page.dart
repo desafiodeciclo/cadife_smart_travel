@@ -35,7 +35,7 @@ class StatusPage extends ConsumerWidget {
           return SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 72, 20, 100),
+              padding: const EdgeInsets.fromLTRB(20, 64, 20, 100),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

@@ -92,17 +92,17 @@ class ItineraryCard extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(
                     item.titulo,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: cadife.textPrimary,
+                      color: AppColors.zinc50,
                     ),
                   ),
                   if (item.descricao != null && item.descricao!.isNotEmpty) ...[
                     const SizedBox(height: 3),
                     Text(
                       item.descricao!,
-                      style: TextStyle(fontSize: 12, color: cadife.textSecondary),
+                      style: const TextStyle(fontSize: 12, color: AppColors.zinc400),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),

@@ -1,6 +1,8 @@
 import 'package:cadife_smart_travel/features/client/home/domain/entities/client_document.dart';
 import 'package:cadife_smart_travel/features/client/home/domain/entities/client_trip.dart';
 import 'package:cadife_smart_travel/features/client/home/domain/entities/consultant_info.dart';
+import 'package:cadife_smart_travel/features/client/itinerary/domain/entities/itinerary_item.dart';
+import 'package:cadife_smart_travel/features/client/offers/domain/entities/date_range.dart';
 import 'package:cadife_smart_travel/features/client/offers/domain/entities/offer.dart';
 
 class ClientHomeMocks {
@@ -85,15 +87,21 @@ class ClientHomeMocks {
         ),
       ];
 
-  static List<Offer> mockRecommendations() => const [
+  static List<Offer> mockRecommendations() => [
         Offer(
           id: 'rec-001',
           title: 'Milão - Moda e Gastronomia',
           destination: 'Itália',
           category: 'Cultura',
           description: 'Moda, cultura e gastronomia no coração da Itália',
-          estimatedPrice: 5200.0,
-          imageUrl: 'https://images.unsplash.com/photo-1513581166358-b66d2a6438b4?auto=format&fit=crop&q=80&w=800',
+          price: 5200.0,
+          rating: 4.8,
+          daysCount: 7,
+          dates: DateRange(
+            start: DateTime(2026, 9, 10),
+            end: DateTime(2026, 9, 17),
+          ),
+          imageUrl: 'https://images.unsplash.com/photo-1520923179278-ee25e24e467e?auto=format&fit=crop&q=80&w=800',
         ),
         Offer(
           id: 'rec-002',
@@ -101,7 +109,13 @@ class ClientHomeMocks {
           destination: 'Rep. Tcheca',
           category: 'História',
           description: 'A Cidade Dourada com arquitetura medieval incomparável',
-          estimatedPrice: 4100.0,
+          price: 4100.0,
+          rating: 4.9,
+          daysCount: 5,
+          dates: DateRange(
+            start: DateTime(2026, 10, 5),
+            end: DateTime(2026, 10, 10),
+          ),
           imageUrl: 'https://images.unsplash.com/photo-1519677100203-a0e668c92439?auto=format&fit=crop&q=80&w=800',
         ),
         Offer(
@@ -110,8 +124,57 @@ class ClientHomeMocks {
           destination: 'Grécia',
           category: 'Romântico',
           description: 'Vistas deslumbrantes do pôr do sol e águas cristalinas',
-          estimatedPrice: 6500.0,
+          price: 6500.0,
+          rating: 4.7,
+          daysCount: 6,
+          dates: DateRange(
+            start: DateTime(2026, 8, 20),
+            end: DateTime(2026, 8, 26),
+          ),
           imageUrl: 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?auto=format&fit=crop&q=80&w=800',
+        ),
+      ];
+
+  static List<ItineraryItem> mockItineraryItems(String leadId) => [
+        ItineraryItem(
+          id: 'itin-001',
+          leadId: leadId,
+          tipo: ItineraryItemType.voo,
+          titulo: 'Voo GRU → CDG',
+          descricao: 'Air France AF457. Portão G12. Check-in às 19h.',
+          local: 'Aeroporto de Guarulhos (GRU)',
+          dataHora: DateTime(2026, 6, 15, 22, 10),
+          dataHoraFim: DateTime(2026, 6, 16, 14, 00),
+          notas: 'Franquia de bagagem: 2 x 23kg',
+        ),
+        ItineraryItem(
+          id: 'itin-002',
+          leadId: leadId,
+          tipo: ItineraryItemType.transferencia,
+          titulo: 'Traslado Aeroporto → Hotel',
+          descricao: 'Motorista particular aguardando no desembarque com placa.',
+          local: 'Aeroporto Charles de Gaulle (CDG)',
+          dataHora: DateTime(2026, 6, 16, 15, 00),
+          dataHoraFim: DateTime(2026, 6, 16, 16, 00),
+        ),
+        ItineraryItem(
+          id: 'itin-003',
+          leadId: leadId,
+          tipo: ItineraryItemType.hotelCheckin,
+          titulo: 'Check-in — Hôtel Le Marais',
+          descricao: 'Reserva confirmada. Quarto Deluxe com vista.',
+          local: '75003 Paris, França',
+          dataHora: DateTime(2026, 6, 16, 16, 30),
+          dataHoraFim: DateTime(2026, 6, 22, 11, 00),
+        ),
+        ItineraryItem(
+          id: 'itin-004',
+          leadId: leadId,
+          tipo: ItineraryItemType.refeicao,
+          titulo: 'Jantar de Boas-vindas',
+          descricao: 'Reserva no Le Comptoir du Relais.',
+          local: '9 Carrefour de l\'Odéon, Paris',
+          dataHora: DateTime(2026, 6, 16, 20, 00),
         ),
       ];
 }

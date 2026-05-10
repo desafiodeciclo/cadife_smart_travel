@@ -10,136 +10,109 @@ class CadifeDocumentCard extends StatelessWidget {
     this.onView,
     this.onDownload,
     this.padding,
-    this.isCompact = false,
   });
 
   final Documento document;
   final VoidCallback? onView;
   final VoidCallback? onDownload;
   final EdgeInsetsGeometry? padding;
-  final bool isCompact;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final primaryColor = isDark ? Colors.white : Colors.black;
-    final secondaryColor = isDark ? Colors.white.withValues(alpha: 0.7) : Colors.black.withValues(alpha: 0.6);
-    final surfaceColor = isDark ? context.cadife.cardBackground : Colors.white;
-
-    final cardPadding = isCompact ? const EdgeInsets.all(12) : const EdgeInsets.all(16);
+    final secondaryColor = isDark ? Colors.white.withValues(alpha: 0.6) : Colors.black.withValues(alpha: 0.5);
+    final surfaceColor = isDark ? const Color(0xFF1A1A1A) : Colors.white; // Darker surface for premium look
 
     return Padding(
-      padding: padding ?? EdgeInsets.only(bottom: isCompact ? 0 : 16),
-      child: ShadCard(
-        padding: cardPadding,
-        backgroundColor: surfaceColor,
-        radius: BorderRadius.circular(isCompact ? 12 : 16),
-        border: ShadBorder.all(
-          color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
-          width: 1,
+      padding: padding ?? EdgeInsets.zero,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: surfaceColor,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
+            width: 1,
+          ),
         ),
-        child: InkWell(
-          onTap: onView,
-          borderRadius: BorderRadius.circular(isCompact ? 12 : 16),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Document Icon Componentized
-              DocumentIcon(type: document.type, size: isCompact ? 20 : 22),
-              SizedBox(width: isCompact ? 12 : 16),
-              
-              // Document Info
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (document.category != null && !isCompact) ...[
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: primaryColor,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          document.category!.toUpperCase(),
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                            color: isDark ? Colors.black : Colors.white,
-                            letterSpacing: 0.5,
-                          ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Document Icon
+            DocumentIcon(type: document.type, size: 28),
+            const SizedBox(width: 16),
+            
+            // Document Info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (document.category != null) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        document.category!.toUpperCase(),
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.black,
+                          letterSpacing: 0.8,
                         ),
                       ),
-                      const SizedBox(height: 6),
-                    ],
-                    Text(
-                      document.name,
-                      style: TextStyle(
-                        fontSize: isCompact ? 14 : 15,
-                        fontWeight: FontWeight.w700,
-                        color: primaryColor,
-                        height: 1.1,
-                      ),
-                      maxLines: isCompact ? 1 : 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      document.sizeFormatted,
-                      style: TextStyle(
-                        fontSize: isCompact ? 11 : 12,
-                        fontWeight: FontWeight.w500,
-                        color: secondaryColor,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(width: isCompact ? 8 : 12),
-              
-              // Action Buttons
-              if (isCompact)
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _ActionButton(
-                      label: 'VER',
-                      onPressed: onView,
-                      isPrimary: true,
-                      isCompact: true,
-                    ),
-                    const SizedBox(width: 4),
-                    _ActionButton(
-                      label: '',
-                      icon: LucideIcons.download,
-                      onPressed: onDownload,
-                      isPrimary: false,
-                      isCompact: true,
-                    ),
-                  ],
-                )
-              else
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _ActionButton(
-                      label: 'VER',
-                      onPressed: onView,
-                      isPrimary: true,
                     ),
                     const SizedBox(height: 8),
-                    _ActionButton(
-                      label: 'BAIXAR',
-                      icon: LucideIcons.download,
-                      onPressed: onDownload,
-                      isPrimary: false,
-                    ),
                   ],
+                  Text(
+                    document.name,
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: primaryColor,
+                      height: 1.2,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    document.sizeFormatted,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: secondaryColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            
+            // Action Buttons stacked vertically
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _ActionButton(
+                  label: 'VER',
+                  onPressed: onView,
+                  isPrimary: true,
                 ),
-            ],
-          ),
+                const SizedBox(height: 8),
+                _ActionButton(
+                  label: 'BAIXAR',
+                  icon: LucideIcons.download,
+                  onPressed: onDownload,
+                  isPrimary: false,
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -151,75 +124,64 @@ class _ActionButton extends StatelessWidget {
   final IconData? icon;
   final VoidCallback? onPressed;
   final bool isPrimary;
-  final bool isCompact;
 
   const _ActionButton({
     required this.label,
     required this.isPrimary,
     this.icon,
     this.onPressed,
-    this.isCompact = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final color = isDark ? Colors.white : Colors.black;
-
-    final width = isCompact 
-        ? (label.isEmpty ? 32.0 : 60.0) 
-        : 80.0;
-    final height = isCompact ? 28.0 : 32.0;
+    final primaryButtonColor = isDark ? Colors.white : Colors.black;
+    final secondaryButtonColor = isDark ? Colors.white : Colors.black;
 
     return SizedBox(
-      height: height,
-      width: width,
+      height: 38,
+      width: 85,
       child: isPrimary
           ? ShadButton(
               onPressed: onPressed,
-              size: ShadButtonSize.sm,
-              backgroundColor: color,
+              backgroundColor: primaryButtonColor,
               foregroundColor: isDark ? Colors.black : Colors.white,
               decoration: ShadDecoration(
                 border: ShadBorder.all(
-                  radius: BorderRadius.circular(isCompact ? 6 : 8),
+                  radius: BorderRadius.circular(10),
                 ),
               ),
               padding: EdgeInsets.zero,
-              leading: icon != null ? Icon(icon, size: isCompact ? 10 : 12) : null,
-              child: label.isNotEmpty 
-                ? Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: isCompact ? 10 : 11,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  )
-                : const SizedBox.shrink(),
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0.5,
+                ),
+              ),
             )
           : ShadButton.outline(
               onPressed: onPressed,
-              size: ShadButtonSize.sm,
               backgroundColor: Colors.transparent,
-              foregroundColor: color,
+              foregroundColor: secondaryButtonColor,
               decoration: ShadDecoration(
                 border: ShadBorder.all(
-                  color: color.withValues(alpha: 0.3),
+                  color: secondaryButtonColor.withValues(alpha: 0.3),
                   width: 1,
-                  radius: BorderRadius.circular(isCompact ? 6 : 8),
+                  radius: BorderRadius.circular(10),
                 ),
               ),
-              padding: EdgeInsets.zero,
-              leading: icon != null ? Icon(icon, size: isCompact ? 10 : 12) : null,
-              child: label.isNotEmpty
-                ? Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: isCompact ? 9 : 10,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  )
-                : const SizedBox.shrink(),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              leading: icon != null ? Icon(icon, size: 14) : null,
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0.5,
+                ),
+              ),
             ),
     );
   }
