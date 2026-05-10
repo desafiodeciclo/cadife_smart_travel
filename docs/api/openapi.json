@@ -451,6 +451,73 @@
         ]
       }
     },
+    "/leads/manual": {
+      "post": {
+        "tags": [
+          "Leads"
+        ],
+        "summary": "Create Manual Lead",
+        "description": "Criação manual de lead via App Agência.\nPermite preenchimento de briefing inicial e atribuição de consultor.",
+        "operationId": "create_manual_lead_leads_manual_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManualLeadCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeadDetailDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Erro de validação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/leads/{lead_id}": {
       "get": {
         "tags": [
@@ -1568,15 +1635,20 @@
         "summary": "Criar proposta",
         "description": "Cria uma nova proposta vinculada a um lead. O lead deve estar nos status qualificado, agendado ou proposta. Consultores só podem criar propostas para seus próprios leads.",
         "operationId": "create_proposta_propostas_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/PropostaCreate"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "201": {
@@ -1639,12 +1711,84 @@
               }
             }
           }
-        },
+        }
+      },
+      "get": {
+        "tags": [
+          "Propostas"
+        ],
+        "summary": "List Propostas",
+        "operationId": "list_propostas_propostas_get",
         "security": [
           {
             "HTTPBearer": []
           }
-        ]
+        ],
+        "parameters": [
+          {
+            "name": "lead_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Lead Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PropostaResponse"
+                  },
+                  "title": "Response List Propostas Propostas Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Erro de validação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationErrorResponse"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/propostas/{proposta_id}": {
@@ -1806,6 +1950,228 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/leads/{lead_id}/documents": {
+      "post": {
+        "tags": [
+          "Documentos"
+        ],
+        "summary": "Upload Document",
+        "description": "Uploads a travel document (PDF/Image) for a specific lead.\nRestricted to agency staff (consultants/admins).",
+        "operationId": "upload_document_leads__lead_id__documents_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "lead_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Lead Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_document_leads__lead_id__documents_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentoResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Erro de validação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Documentos"
+        ],
+        "summary": "List Documents",
+        "description": "Lists all active documents for a lead.\nIncludes temporary signed URLs for secure access.",
+        "operationId": "list_documents_leads__lead_id__documents_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "lead_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Lead Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DocumentoResponse"
+                  },
+                  "title": "Response List Documents Leads  Lead Id  Documents Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Erro de validação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/leads/{lead_id}/documents/{documento_id}": {
+      "delete": {
+        "tags": [
+          "Documentos"
+        ],
+        "summary": "Delete Document",
+        "description": "Soft deletes a document. Only consultants or admins can perform this.",
+        "operationId": "delete_document_leads__lead_id__documents__documento_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "lead_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Lead Id"
+            }
+          },
+          {
+            "name": "documento_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Documento Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Não autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Erro de validação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationErrorResponse"
                 }
               }
             }
@@ -2124,6 +2490,725 @@
         ]
       }
     },
+    "/leads/{lead_id}/suitcase": {
+      "get": {
+        "tags": [
+          "Suitcase"
+        ],
+        "summary": "Get Suitcase",
+        "description": "Returns all items in the suitcase grouped by category.",
+        "operationId": "get_suitcase_leads__lead_id__suitcase_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "lead_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Lead Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuitcaseGroupedResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Erro de validação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/leads/{lead_id}/suitcase/items": {
+      "post": {
+        "tags": [
+          "Suitcase"
+        ],
+        "summary": "Add Suitcase Item",
+        "description": "Adds a new item to the suitcase.",
+        "operationId": "add_suitcase_item_leads__lead_id__suitcase_items_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "lead_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Lead Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuitcaseItemCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuitcaseItemResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Erro de validação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/leads/{lead_id}/suitcase/items/{item_id}": {
+      "patch": {
+        "tags": [
+          "Suitcase"
+        ],
+        "summary": "Update Suitcase Item",
+        "description": "Updates an existing item (e.g., marks as packed).",
+        "operationId": "update_suitcase_item_leads__lead_id__suitcase_items__item_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "lead_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Lead Id"
+            }
+          },
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Item Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuitcaseItemUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuitcaseItemResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Erro de validação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Suitcase"
+        ],
+        "summary": "Delete Suitcase Item",
+        "description": "Removes an item from the suitcase.",
+        "operationId": "delete_suitcase_item_leads__lead_id__suitcase_items__item_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "lead_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Lead Id"
+            }
+          },
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Item Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Não autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Erro de validação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/leads/{lead_id}/suitcase/suggestions": {
+      "get": {
+        "tags": [
+          "Suitcase"
+        ],
+        "summary": "Get Suitcase Suggestions",
+        "description": "Returns suggested items based on destination type.\nIf tipo_destino is not provided, tries to infer from lead briefing.",
+        "operationId": "get_suitcase_suggestions_leads__lead_id__suitcase_suggestions_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "lead_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Lead Id"
+            }
+          },
+          {
+            "name": "tipo_destino",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/DestinationType"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tipo Destino"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SuitcaseSuggestionResponse"
+                  },
+                  "title": "Response Get Suitcase Suggestions Leads  Lead Id  Suitcase Suggestions Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Erro de validação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/leads/{lead_id}/diary/entries": {
+      "post": {
+        "tags": [
+          "Diário de Viagem"
+        ],
+        "summary": "Create Diary Entry",
+        "description": "Cria uma nova entrada no diário de viagem (foto + nota).\nApenas o dono da viagem pode adicionar memórias.",
+        "operationId": "create_diary_entry_leads__lead_id__diary_entries_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "lead_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Lead Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_create_diary_entry_leads__lead_id__diary_entries_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiaryEntryRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Erro de validação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Diário de Viagem"
+        ],
+        "summary": "List Diary Entries",
+        "description": "Lista as memórias de uma viagem específica de forma paginada.",
+        "operationId": "list_diary_entries_leads__lead_id__diary_entries_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "lead_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Lead Id"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiaryEntryList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Erro de validação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/leads/{lead_id}/diary/entries/{entry_id}": {
+      "delete": {
+        "tags": [
+          "Diário de Viagem"
+        ],
+        "summary": "Delete Diary Entry",
+        "description": "Remove uma memória do diário. Valida se o usuário é o dono da entrada.",
+        "operationId": "delete_diary_entry_leads__lead_id__diary_entries__entry_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "lead_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Lead Id"
+            }
+          },
+          {
+            "name": "entry_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Entry Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Não autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Erro de validação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/me/diary": {
+      "get": {
+        "tags": [
+          "Diário de Viagem"
+        ],
+        "summary": "List My Diary",
+        "description": "Retorna a linha do tempo completa de todas as viagens do usuário logado.",
+        "operationId": "list_my_diary_users_me_diary_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiaryEntryList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Erro de validação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "tags": [
@@ -2310,6 +3395,62 @@
           "status"
         ],
         "title": "AgendamentoUpdate"
+      },
+      "Body_create_diary_entry_leads__lead_id__diary_entries_post": {
+        "properties": {
+          "nota": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 280
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nota"
+          },
+          "data_entrada": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Entrada"
+          },
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_create_diary_entry_leads__lead_id__diary_entries_post"
+      },
+      "Body_upload_document_leads__lead_id__documents_post": {
+        "properties": {
+          "categoria": {
+            "$ref": "#/components/schemas/DocumentoCategoria"
+          },
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "categoria",
+          "file"
+        ],
+        "title": "Body_upload_document_leads__lead_id__documents_post"
       },
       "BriefingResponse": {
         "properties": {
@@ -2633,6 +3774,118 @@
         ],
         "title": "ConversationMessage"
       },
+      "DestinationType": {
+        "type": "string",
+        "enum": [
+          "praia",
+          "frio",
+          "urbano",
+          "aventura"
+        ],
+        "title": "DestinationType",
+        "description": "Deterministic destination categories for suggestions."
+      },
+      "DiaryEntryList": {
+        "properties": {
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/DiaryEntryRead"
+            },
+            "type": "array",
+            "title": "Entries"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "size": {
+            "type": "integer",
+            "title": "Size"
+          }
+        },
+        "type": "object",
+        "required": [
+          "entries",
+          "total",
+          "page",
+          "size"
+        ],
+        "title": "DiaryEntryList",
+        "description": "Schema for paginated diary entries."
+      },
+      "DiaryEntryRead": {
+        "properties": {
+          "nota": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 280
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nota",
+            "description": "Nota de texto da memória (máx. 280 caracteres)"
+          },
+          "data_entrada": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Entrada",
+            "description": "Data em que a memória ocorreu"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "lead_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Lead Id"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "foto_url": {
+            "type": "string",
+            "title": "Foto Url"
+          },
+          "thumb_url": {
+            "type": "string",
+            "title": "Thumb Url"
+          },
+          "criado_em": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Criado Em"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "lead_id",
+          "user_id",
+          "foto_url",
+          "thumb_url",
+          "criado_em"
+        ],
+        "title": "DiaryEntryRead",
+        "description": "Schema for reading a diary entry."
+      },
       "DisponibilidadeResponse": {
         "properties": {
           "slots": {
@@ -2648,6 +3901,87 @@
           "slots"
         ],
         "title": "DisponibilidadeResponse"
+      },
+      "DocumentoCategoria": {
+        "type": "string",
+        "enum": [
+          "passagem",
+          "voucher",
+          "transfer",
+          "seguro",
+          "itinerario",
+          "outros"
+        ],
+        "title": "DocumentoCategoria",
+        "description": "Document categories for travel management (spec.md §7.2)."
+      },
+      "DocumentoResponse": {
+        "properties": {
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "categoria": {
+            "$ref": "#/components/schemas/DocumentoCategoria"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "lead_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Lead Id"
+          },
+          "tamanho_bytes": {
+            "type": "integer",
+            "title": "Tamanho Bytes"
+          },
+          "mimetype": {
+            "type": "string",
+            "title": "Mimetype"
+          },
+          "url_signed": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url Signed"
+          },
+          "criado_em": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Criado Em"
+          },
+          "enviado_por": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enviado Por"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nome",
+          "categoria",
+          "id",
+          "lead_id",
+          "tamanho_bytes",
+          "mimetype",
+          "criado_em"
+        ],
+        "title": "DocumentoResponse"
       },
       "ExtrairBriefingRequest": {
         "properties": {
@@ -3155,7 +4489,13 @@
         "enum": [
           "whatsapp",
           "app",
-          "web"
+          "web",
+          "indicação",
+          "telefone",
+          "presencial",
+          "rede social",
+          "outro",
+          "manual"
         ],
         "title": "LeadOrigem",
         "description": "Channel through which the lead entered the system (spec.md §4.1)."
@@ -3251,6 +4591,106 @@
           "password"
         ],
         "title": "LoginRequest"
+      },
+      "ManualLeadCreate": {
+        "properties": {
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "telefone": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 8,
+            "title": "Telefone"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "destino_interesse": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Destino Interesse"
+          },
+          "datas_aproximadas": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Datas Aproximadas"
+          },
+          "orcamento_estimado": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Orcamento Estimado"
+          },
+          "numero_passageiros": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numero Passageiros"
+          },
+          "origem": {
+            "$ref": "#/components/schemas/LeadOrigem",
+            "description": "Must be one of the manual origins"
+          },
+          "consultor_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consultor Id"
+          },
+          "force_create": {
+            "type": "boolean",
+            "title": "Force Create",
+            "description": "If True, bypasses phone duplication check",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "nome",
+          "telefone",
+          "origem"
+        ],
+        "title": "ManualLeadCreate",
+        "description": "Schema for manual lead creation via agency app."
       },
       "OrcamentoPerfil": {
         "type": "string",
@@ -3603,6 +5043,237 @@
           "disponivel"
         ],
         "title": "SlotDisponivel"
+      },
+      "SuitcaseCategory": {
+        "type": "string",
+        "enum": [
+          "documentos",
+          "roupas",
+          "higiene",
+          "eletrônicos",
+          "saúde",
+          "acessórios",
+          "outros"
+        ],
+        "title": "SuitcaseCategory",
+        "description": "Categories for suitcase items (feat/client-suitcase-backend)."
+      },
+      "SuitcaseGroupedResponse": {
+        "properties": {
+          "items_by_category": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/SuitcaseItemResponse"
+              },
+              "type": "array"
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/SuitcaseCategory"
+            },
+            "type": "object",
+            "title": "Items By Category"
+          },
+          "total_items": {
+            "type": "integer",
+            "title": "Total Items"
+          },
+          "total_packed": {
+            "type": "integer",
+            "title": "Total Packed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items_by_category",
+          "total_items",
+          "total_packed"
+        ],
+        "title": "SuitcaseGroupedResponse"
+      },
+      "SuitcaseItemCreate": {
+        "properties": {
+          "nome": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Nome"
+          },
+          "categoria": {
+            "$ref": "#/components/schemas/SuitcaseCategory",
+            "default": "outros"
+          },
+          "quantidade": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Quantidade",
+            "default": 1
+          },
+          "empacotado": {
+            "type": "boolean",
+            "title": "Empacotado",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "nome"
+        ],
+        "title": "SuitcaseItemCreate"
+      },
+      "SuitcaseItemResponse": {
+        "properties": {
+          "nome": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Nome"
+          },
+          "categoria": {
+            "$ref": "#/components/schemas/SuitcaseCategory",
+            "default": "outros"
+          },
+          "quantidade": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Quantidade",
+            "default": 1
+          },
+          "empacotado": {
+            "type": "boolean",
+            "title": "Empacotado",
+            "default": false
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "lead_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Lead Id"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "criado_em": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Criado Em"
+          },
+          "atualizado_em": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Atualizado Em"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nome",
+          "id",
+          "lead_id",
+          "user_id",
+          "criado_em",
+          "atualizado_em"
+        ],
+        "title": "SuitcaseItemResponse"
+      },
+      "SuitcaseItemUpdate": {
+        "properties": {
+          "nome": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nome"
+          },
+          "categoria": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SuitcaseCategory"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "quantidade": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quantidade"
+          },
+          "empacotado": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Empacotado"
+          }
+        },
+        "type": "object",
+        "title": "SuitcaseItemUpdate"
+      },
+      "SuitcaseSuggestionResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "tipo_destino": {
+            "type": "string",
+            "title": "Tipo Destino"
+          },
+          "categoria": {
+            "$ref": "#/components/schemas/SuitcaseCategory"
+          },
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "quantidade_sugerida": {
+            "type": "integer",
+            "title": "Quantidade Sugerida"
+          },
+          "descricao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descricao"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "tipo_destino",
+          "categoria",
+          "nome",
+          "quantidade_sugerida"
+        ],
+        "title": "SuitcaseSuggestionResponse"
       },
       "TipoMensagem": {
         "type": "string",

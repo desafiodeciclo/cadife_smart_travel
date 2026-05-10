@@ -1,6 +1,6 @@
 {
   "info": {
-    "_postman_id": "e311dcd3-83f0-4369-9d71-279ea1be7e4e",
+    "_postman_id": "ad157a7a-5128-47db-abf2-d5f27873bf63",
     "name": "Cadife Smart Travel API",
     "description": "Backend inteligente para turismo via WhatsApp + Flutter. Orquestra webhooks da Meta, processamento de IA (RAG + LangChain), gestão de leads, propostas e agendamentos. Documentação completa disponível em /docs (Swagger UI) e /redoc (ReDoc).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -331,6 +331,40 @@
               ]
             },
             "description": "Retorna o lead associado ao telefone do usuário autenticado (perfil cliente). Se não existir, cria automaticamente um novo lead."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Manual Lead",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads/manual",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "manual"
+              ]
+            },
+            "description": "Criação manual de lead via App Agência.\nPermite preenchimento de briefing inicial e atribuição de consultor.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           },
           "response": []
         },
@@ -854,6 +888,37 @@
           ]
         },
         {
+          "name": "List Propostas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/propostas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "propostas"
+              ],
+              "query": [
+                {
+                  "key": "lead_id",
+                  "value": "",
+                  "description": ""
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
           "name": "Detalhes de uma proposta",
           "request": {
             "method": "GET",
@@ -909,6 +974,90 @@
                 }
               }
             }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Documentos",
+      "item": [
+        {
+          "name": "Upload Document",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads/{lead_id}/documents",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "{lead_id}",
+                "documents"
+              ]
+            },
+            "description": "Uploads a travel document (PDF/Image) for a specific lead.\nRestricted to agency staff (consultants/admins)."
+          },
+          "response": []
+        },
+        {
+          "name": "List Documents",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads/{lead_id}/documents",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "{lead_id}",
+                "documents"
+              ]
+            },
+            "description": "Lists all active documents for a lead.\nIncludes temporary signed URLs for secure access."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Document",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads/{lead_id}/documents/{documento_id}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "{lead_id}",
+                "documents",
+                "{documento_id}"
+              ]
+            },
+            "description": "Soft deletes a document. Only consultants or admins can perform this."
           },
           "response": []
         }
@@ -1100,6 +1249,309 @@
                 }
               }
             }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Suitcase",
+      "item": [
+        {
+          "name": "Get Suitcase",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads/{lead_id}/suitcase",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "{lead_id}",
+                "suitcase"
+              ]
+            },
+            "description": "Returns all items in the suitcase grouped by category."
+          },
+          "response": []
+        },
+        {
+          "name": "Add Suitcase Item",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads/{lead_id}/suitcase/items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "{lead_id}",
+                "suitcase",
+                "items"
+              ]
+            },
+            "description": "Adds a new item to the suitcase.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Suitcase Item",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads/{lead_id}/suitcase/items/{item_id}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "{lead_id}",
+                "suitcase",
+                "items",
+                "{item_id}"
+              ]
+            },
+            "description": "Updates an existing item (e.g., marks as packed).",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Suitcase Item",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads/{lead_id}/suitcase/items/{item_id}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "{lead_id}",
+                "suitcase",
+                "items",
+                "{item_id}"
+              ]
+            },
+            "description": "Removes an item from the suitcase."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Suitcase Suggestions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads/{lead_id}/suitcase/suggestions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "{lead_id}",
+                "suitcase",
+                "suggestions"
+              ],
+              "query": [
+                {
+                  "key": "tipo_destino",
+                  "value": "",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "Returns suggested items based on destination type.\nIf tipo_destino is not provided, tries to infer from lead briefing."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Diário de Viagem",
+      "item": [
+        {
+          "name": "Create Diary Entry",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads/{lead_id}/diary/entries",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "{lead_id}",
+                "diary",
+                "entries"
+              ]
+            },
+            "description": "Cria uma nova entrada no diário de viagem (foto + nota).\nApenas o dono da viagem pode adicionar memórias."
+          },
+          "response": []
+        },
+        {
+          "name": "List Diary Entries",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads/{lead_id}/diary/entries",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "{lead_id}",
+                "diary",
+                "entries"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "",
+                  "description": ""
+                },
+                {
+                  "key": "limit",
+                  "value": "",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "Lista as memórias de uma viagem específica de forma paginada."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Diary Entry",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads/{lead_id}/diary/entries/{entry_id}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "{lead_id}",
+                "diary",
+                "entries",
+                "{entry_id}"
+              ]
+            },
+            "description": "Remove uma memória do diário. Valida se o usuário é o dono da entrada."
+          },
+          "response": []
+        },
+        {
+          "name": "List My Diary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/diary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "diary"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "",
+                  "description": ""
+                },
+                {
+                  "key": "limit",
+                  "value": "",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "Retorna a linha do tempo completa de todas as viagens do usuário logado."
           },
           "response": []
         }
