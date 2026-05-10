@@ -52,7 +52,7 @@ class LeadsNotifier extends AsyncNotifier<List<Lead>> {
   Future<Either<Failure, Lead>> createManualLead(ManualLeadCreate request) async {
     final result = await ref.read(createManualLeadUseCaseProvider).call(request);
     return result.fold(
-      (failure) => Left(failure),
+      Left.new,
       (lead) {
         refresh();
         return Right(lead);
@@ -71,7 +71,7 @@ class LeadsNotifier extends AsyncNotifier<List<Lead>> {
           return lPhone == cleanPhone;
         },
       );
-    } catch (_) {
+    } on StateError catch (_) {
       return null;
     }
   }

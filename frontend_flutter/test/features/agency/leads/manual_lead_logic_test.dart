@@ -1,5 +1,6 @@
-import 'package:flutter_test/flutter_test.dart';
 import 'package:cadife_smart_travel/core/utils/validators.dart';
+
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('AppValidators Logic Tests', () {

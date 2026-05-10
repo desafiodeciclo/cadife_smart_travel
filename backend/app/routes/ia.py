@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 from app.infrastructure.security.dependencies import get_current_user
 from app.models.briefing import calculate_completude
+from app.presentation.schemas.common_errors import HTTPErrorResponse
 from app.services import ai_service, rag_service
 from app.services.domain_validator import BriefingValidator
 from app.services.ingestion_pipeline import get_ingestion_pipeline
@@ -61,7 +62,18 @@ class ReindexarRequest(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-@router.post("/processar", response_model=ProcessarResponse)
+@router.post(
+    "/processar",
+    response_model=ProcessarResponse,
+    summary="Processar mensagem via IA",
+    description=(
+        "Recebe uma mensagem do cliente, extrai o briefing automaticamente e gera uma resposta contextualizada pela IA. "
+        "Aplica validação de domínio e retorna métricas de completude do briefing."
+    ),
+    responses={
+        422: {"description": "Erro de validação no body", "model": HTTPErrorResponse},
+    },
+)
 @limiter.limit(settings.RATE_LIMIT_IA)
 async def processar_mensagem(request: Request, body: ProcessarRequest):
     # 1. Extrair briefing
@@ -93,7 +105,15 @@ async def processar_mensagem(request: Request, body: ProcessarRequest):
     )
 
 
-@router.post("/extrair-briefing", response_model=ExtrairBriefingResponse)
+@router.post(
+    "/extrair-briefing",
+    response_model=ExtrairBriefingResponse,
+    summary="Extrair briefing de conversa",
+    description="Recebe uma conversa completa e retorna os dados estruturados do briefing com validação de domínio.",
+    responses={
+        422: {"description": "Erro de validação no body", "model": HTTPErrorResponse},
+    },
+)
 @limiter.limit(settings.RATE_LIMIT_IA)
 async def extrair_briefing(request: Request, body: ExtrairBriefingRequest):
     conversation = [{"role": m.role, "content": m.content} for m in body.conversation]
@@ -111,7 +131,11 @@ async def extrair_briefing(request: Request, body: ExtrairBriefingRequest):
     )
 
 
-@router.get("/status")
+@router.get(
+    "/status",
+    summary="Status do serviço de IA",
+    description="Health check do módulo de IA retornando modelo ativo, contagem de documentos RAG e status do validador.",
+)
 async def ia_status():
     return {
         "status": "ok",
@@ -127,16 +151,23 @@ async def ia_status():
 # ---------------------------------------------------------------------------
 
 
-@router.post("/reindexar", dependencies=[Depends(get_current_user)])
+@router.post(
+    "/reindexar",
+    summary="Reindexar base de conhecimento",
+    description=(
+        "Dispara uma re-ingestão completa da base de conhecimento RAG em background. "
+        "force=false: apenas documentos novos/alterados são reindexados. "
+        "force=true: toda a base é apagada e reconstruída do zero. "
+        "Retorna HTTP 202 imediatamente; o processamento ocorre de forma assíncrona."
+    ),
+    dependencies=[Depends(get_current_user)],
+    responses={
+        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
+        403: {"description": "Sem permissão", "model": HTTPErrorResponse},
+        422: {"description": "Erro de validação no body", "model": HTTPErrorResponse},
+    },
+)
 async def reindexar_base(body: ReindexarRequest, background_tasks: BackgroundTasks):
-    """
-    Trigger a full knowledge-base re-ingestion in the background.
-
-    - force=false (default): only changed/new documents are re-indexed.
-    - force=true: all documents are deleted and re-embedded from scratch.
-
-    Returns immediately with HTTP 202; actual indexing runs asynchronously.
-    """
     pipeline = get_ingestion_pipeline()
     background_tasks.add_task(pipeline.ingest_all, body.force)
     return {
@@ -146,8 +177,16 @@ async def reindexar_base(body: ReindexarRequest, background_tasks: BackgroundTas
     }
 
 
-@router.get("/ingestion-status", dependencies=[Depends(get_current_user)])
+@router.get(
+    "/ingestion-status",
+    summary="Status da ingestão",
+    description="Retorna o resumo do cache de ingestão atual (documentos indexados + contagem de chunks).",
+    dependencies=[Depends(get_current_user)],
+    responses={
+        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
+        403: {"description": "Sem permissão", "model": HTTPErrorResponse},
+    },
+)
 async def ingestion_status():
-    """Return the current ingestion cache summary (indexed documents + chunk counts)."""
     pipeline = get_ingestion_pipeline()
     return pipeline.get_status()

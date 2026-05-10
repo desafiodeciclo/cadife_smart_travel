@@ -125,16 +125,22 @@ class Settings(BaseSettings):
     KNOWLEDGE_BASE_DIR: str = Field(default="./knowledge_base")
     INGESTION_CACHE_PATH: str = Field(default="./chroma_db/ingestion_cache.json")
 
-    # ── Object Storage (S3/MinIO) ──────────────────────────────────────────
+    # ── Object Storage (S3 / LocalStack) (spec.md §3.3) ───────────────────
     S3_ENDPOINT_URL: Optional[str] = Field(
-        default=None,
-        description="MinIO endpoint (ex: http://localhost:9000) - None para AWS S3 real",
+        default="http://localhost:4566",
+        description="Endpoint para S3 compatível (LocalStack/MinIO). None para AWS S3 real.",
     )
-    S3_ACCESS_KEY: str = Field(default="", description="S3 Access Key")
-    S3_SECRET_KEY: str = Field(default="", description="S3 Secret Key")
-    S3_BUCKET_NAME: str = Field(default="cadife-documents", description="S3 Bucket Name")
+    S3_ACCESS_KEY: str = Field(default="test", description="S3 Access Key")
+    S3_SECRET_KEY: str = Field(default="test", description="S3 Secret Key")
     S3_REGION: str = Field(default="us-east-1", description="S3 Region")
+    
+    # Buckets específicos por funcionalidade
+    S3_BUCKET_NAME: str = Field(default="cadife-travel-diary", description="Bucket principal (retrocompatibilidade)")
+    DOCUMENTS_BUCKET_NAME: str = Field(default="cadife-documents")
+    DIARY_BUCKET_NAME: str = Field(default="cadife-travel-diary")
+    
     DOCUMENTS_MAX_SIZE_MB: int = Field(default=10, ge=1)
+    DIARY_MAX_SIZE_MB: int = Field(default=5, ge=1)
 
     # ── CORS (spec.md §12.2) ──────────────────────────────────────────────
     ALLOWED_ORIGINS: str = Field(
@@ -197,6 +203,7 @@ class Settings(BaseSettings):
         default="",
         description="Optional HTTP endpoint to POST when proposals are auto-expired (CRM, Slack, etc.)",
     )
+
 
     # ── Request Timeout (spec.md §12.3 — webhook must respond in < 5s) ────
     REQUEST_TIMEOUT_SECONDS: float = Field(

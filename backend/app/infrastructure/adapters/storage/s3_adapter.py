@@ -39,21 +39,22 @@ class S3StorageAdapter:
         return args
 
     async def upload_file(
-        self, file_content: bytes, object_key: str, content_type: str
+        self, file_content: bytes, object_key: str, content_type: str, bucket: Optional[str] = None
     ) -> bool:
         """
         Uploads file content to the configured S3 bucket.
         """
+        target_bucket = bucket or self.bucket_name
         try:
             async with self.session.client(**self._get_client_args()) as s3:
                 await s3.put_object(
-                    Bucket=self.bucket_name,
+                    Bucket=target_bucket,
                     Key=object_key,
                     Body=file_content,
                     ContentType=content_type,
                 )
                 logger.info(
-                    f"Successfully uploaded {object_key} to {self.bucket_name}"
+                    f"Successfully uploaded {object_key} to {target_bucket}"
                 )
                 return True
         except ClientError as e:
@@ -64,17 +65,18 @@ class S3StorageAdapter:
             return False
 
     async def generate_presigned_url(
-        self, object_key: str, expires_in: int = 3600
+        self, object_key: str, expires_in: int = 3600, bucket: Optional[str] = None
     ) -> Optional[str]:
         """
         Generates a temporary signed URL for a private object.
         Default expiration is 1 hour (3600 seconds) as per requirements.
         """
+        target_bucket = bucket or self.bucket_name
         try:
             async with self.session.client(**self._get_client_args()) as s3:
                 url = await s3.generate_presigned_url(
                     "get_object",
-                    Params={"Bucket": self.bucket_name, "Key": object_key},
+                    Params={"Bucket": target_bucket, "Key": object_key},
                     ExpiresIn=expires_in,
                 )
                 return url
@@ -82,15 +84,16 @@ class S3StorageAdapter:
             logger.error(f"Error generating presigned URL: {e}")
             return None
 
-    async def delete_file(self, object_key: str) -> bool:
+    async def delete_file(self, object_key: str, bucket: Optional[str] = None) -> bool:
         """
         Deletes an object from the S3 bucket.
         """
+        target_bucket = bucket or self.bucket_name
         try:
             async with self.session.client(**self._get_client_args()) as s3:
-                await s3.delete_object(Bucket=self.bucket_name, Key=object_key)
+                await s3.delete_object(Bucket=target_bucket, Key=object_key)
                 logger.info(
-                    f"Successfully deleted {object_key} from {self.bucket_name}"
+                    f"Successfully deleted {object_key} from {target_bucket}"
                 )
                 return True
         except ClientError as e:

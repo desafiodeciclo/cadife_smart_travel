@@ -26,6 +26,9 @@ from app.infrastructure.persistence.models.suitcase_model import (
     SuitcaseItemModel,
     SuitcaseSuggestionModel,
 )  # noqa: F401
+from app.infrastructure.persistence.models.travel_diary_model import (
+    TravelDiaryEntryModel,
+)  # noqa: F401
 from app.infrastructure.persistence.models.documento_model import (
     Documento,
 )  # noqa: F401
@@ -46,6 +49,7 @@ __all__ = [
     "PropostaModel",
     "SuitcaseItemModel",
     "SuitcaseSuggestionModel",
+    "TravelDiaryEntryModel",
     "Documento",
     "NotificationQueue",
     "DeadLetterQueue",

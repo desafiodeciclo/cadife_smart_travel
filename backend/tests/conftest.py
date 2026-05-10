@@ -67,6 +67,7 @@ import app.infrastructure.persistence.models.user_model  # noqa: F401
 import app.infrastructure.persistence.models.documento_model  # noqa: F401
 import app.infrastructure.persistence.models.suitcase_model  # noqa: F401
 import app.infrastructure.persistence.models.offer_model  # noqa: F401
+import app.infrastructure.persistence.models.travel_diary_model  # noqa: F401
 
 # Now import the app and models AFTER setting env vars
 from main import app

@@ -11,6 +11,7 @@ from app.infrastructure.security.scope_check import check_lead_access
 from app.domain.entities.enums import LeadStatus, PropostaStatus
 from app.models.proposta import Proposta, PropostaCreate, PropostaResponse, PropostaUpdate
 from app.models.user import User
+from app.presentation.schemas.common_errors import HTTPErrorResponse
 from app.services import lead_service
 
 router = APIRouter(
@@ -24,7 +25,19 @@ router = APIRouter(
     "",
     response_model=PropostaResponse,
     status_code=status.HTTP_201_CREATED,
+    summary="Criar proposta",
+    description=(
+        "Cria uma nova proposta vinculada a um lead. O lead deve estar nos status qualificado, agendado ou proposta. "
+        "Consultores só podem criar propostas para seus próprios leads."
+    ),
     dependencies=[Depends(RequiresRole("consultor", "admin"))],
+    responses={
+        400: {"description": "Lead em status inadequado para proposta", "model": HTTPErrorResponse},
+        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
+        403: {"description": "Sem permissão para o lead", "model": HTTPErrorResponse},
+        404: {"description": "Lead não encontrado", "model": HTTPErrorResponse},
+        422: {"description": "Erro de validação no body", "model": HTTPErrorResponse},
+    },
 )
 async def create_proposta(
     body: PropostaCreate,
@@ -75,17 +88,27 @@ async def list_propostas(
     query = select(Proposta)
     if lead_id:
         query = query.where(Proposta.lead_id == lead_id)
-    
+
     # Adicionando filtro por consultor para segurança (RBAC)
     if current_user.perfil == "consultor":
         query = query.where(Proposta.consultor_id == current_user.id)
-        
+
     result = await db.execute(query)
     propostas = result.scalars().all()
     return [PropostaResponse.model_validate(p) for p in propostas]
 
 
-@router.get("/{proposta_id}", response_model=PropostaResponse)
+@router.get(
+    "/{proposta_id}",
+    response_model=PropostaResponse,
+    summary="Detalhes de uma proposta",
+    description="Retorna os dados completos de uma proposta, com verificação de acesso via lead associado.",
+    responses={
+        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
+        403: {"description": "Sem permissão para o lead vinculado", "model": HTTPErrorResponse},
+        404: {"description": "Proposta não encontrada", "model": HTTPErrorResponse},
+    },
+)
 async def get_proposta(
     proposta_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -107,7 +130,21 @@ async def get_proposta(
     return PropostaResponse.model_validate(proposta)
 
 
-@router.put("/{proposta_id}", response_model=PropostaResponse)
+@router.put(
+    "/{proposta_id}",
+    response_model=PropostaResponse,
+    summary="Atualizar proposta",
+    description=(
+        "Atualiza dados ou status de uma proposta. Aprovação (aprovada) propaga o lead para fechado; "
+        "recusa (recusada) retorna o lead para proposta."
+    ),
+    responses={
+        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
+        403: {"description": "Sem permissão para o lead vinculado", "model": HTTPErrorResponse},
+        404: {"description": "Proposta não encontrada", "model": HTTPErrorResponse},
+        422: {"description": "Status inválido ou erro de validação", "model": HTTPErrorResponse},
+    },
+)
 async def update_proposta(
     proposta_id: uuid.UUID,
     body: PropostaUpdate,

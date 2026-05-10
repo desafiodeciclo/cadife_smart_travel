@@ -3,6 +3,8 @@ import 'dart:math' as math;
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/agency/perfil/domain/entities/consultor_profile_models.dart';
 import 'package:cadife_smart_travel/features/agency/perfil/presentation/providers/profile_notifier.dart';
+import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_notifier.dart';
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
@@ -10,7 +12,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_notifier.dart';
 
 class ConsultorProfileScreen extends ConsumerStatefulWidget {
   const ConsultorProfileScreen({super.key});
