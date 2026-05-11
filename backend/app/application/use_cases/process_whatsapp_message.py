@@ -63,8 +63,9 @@ async def execute(payload: dict, db: AsyncSession) -> None:
     text: str | None = msg.get("text")
     msg_type: str = msg.get("type", "text")
     media_id: str | None = msg.get("media_id")
+    msg_id: str | None = msg.get("id")
 
-    logger.info("processing_whatsapp_message", phone=phone, msg_type=msg_type)
+    logger.info("processing_whatsapp_message", phone=phone, msg_type=msg_type, msg_id=msg_id)
 
     # ── Step 1: Get or create lead (Upsert) ───────────────────────────────
     lead_data = {
@@ -163,6 +164,7 @@ async def execute(payload: dict, db: AsyncSession) -> None:
         msg_cliente=text,
         msg_ia=reply,
         tipo=tipo,
+        whatsapp_message_id=msg_id,
     )
 
     # ── Step 8: Reply to client via WhatsApp; persist send outcome ────────

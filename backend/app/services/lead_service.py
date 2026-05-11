@@ -344,12 +344,23 @@ async def save_interacao(
     msg_cliente: Optional[str],
     msg_ia: Optional[str],
     tipo: TipoMensagem = TipoMensagem.texto,
+    whatsapp_message_id: Optional[str] = None,
 ) -> Interacao:
+    # Evita duplicidade (Idempotência)
+    if whatsapp_message_id:
+        existing = await db.execute(
+            select(Interacao).where(Interacao.whatsapp_message_id == whatsapp_message_id)
+        )
+        if existing.scalar_one_or_none():
+            logger.info("skip_duplicate_message", message_id=whatsapp_message_id)
+            return None
+
     interacao = Interacao(
         lead_id=lead_id,
         mensagem_cliente=msg_cliente,
         mensagem_ia=msg_ia,
         tipo_mensagem=tipo,
+        whatsapp_message_id=whatsapp_message_id,
     )
     db.add(interacao)
     await db.commit()
