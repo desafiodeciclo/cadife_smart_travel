@@ -8,7 +8,7 @@ from fastapi import HTTPException, UploadFile, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.domain.entities.enums import LeadStatus, OfferStatus
+from app.domain.entities.enums import LeadStatus, OfferStatus, OfferCategoria, PropostaStatus
 from app.infrastructure.adapters.storage.s3_adapter import S3StorageAdapter
 from app.infrastructure.config.settings import get_settings
 from app.models.lead import Lead

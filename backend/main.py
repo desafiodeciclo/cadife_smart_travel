@@ -215,3 +215,14 @@ async def health():
         "version": app.version,
         "env": settings.APP_ENV,
     }
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(
+        "main:app",
+        host=settings.HOST,
+        port=settings.PORT,
+        reload=settings.DEBUG,
+    )
