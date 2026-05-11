@@ -74,6 +74,12 @@ async def main() -> None:
     print("  camila.santos@gmail.com           → Cliente (Tóquio, proposta)")
     print("  rafael.mendes@gmail.com           → Cliente (Nova York, agendado)")
     print("  Senha de todos: Cadife@2026")
+    print()
+    print("Dados de referência:")
+    print("  08_documentos   → 9 docs (passagens, vouchers, seguros, roteiros)")
+    print("  09_offers       → 13 ofertas publicadas (Maldivas → Dubai)")
+    print("  10_travel_diary → 5 entradas (3 Paris/Otávio, 2 Tóquio/Camila)")
+    print("  11_itinerary    → 13 itens Paris/Otávio + 12 itens Tóquio/Camila")
 
 
 if __name__ == "__main__":
