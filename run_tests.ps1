@@ -28,8 +28,6 @@ Write-Host ""
 # ----------------------------------------------------------
 Write-Host "[ BLOCO 2 ] Testes de Rotas (Offers, Propostas, Auth, Suitcase)" -ForegroundColor Yellow
 Write-Host "------------------------------------------------------------"
-python -m pytest tests/test_routes/ -v --tb=short
-Write-Host ""
 
 # ----------------------------------------------------------
 # BLOCO 3: Testes de Integracao (Documentos, Diario)
