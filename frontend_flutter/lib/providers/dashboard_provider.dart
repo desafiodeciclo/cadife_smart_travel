@@ -1,4 +1,4 @@
-import 'package:riverpod/riverpod.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class DashboardMetrics {
   final int leadsQualified;
@@ -17,7 +17,9 @@ class DashboardMetrics {
 class DashboardMetricsNotifier extends AsyncNotifier<DashboardMetrics> {
   @override
   Future<DashboardMetrics> build() async {
-    // TODO: Buscar do backend via GET /dashboard/metrics
+    // Simulando fetch do backend via GET /dashboard/metrics
+    await Future.delayed(const Duration(milliseconds: 800));
+
     return DashboardMetrics(
       leadsQualified: 12,
       conversionRate: 65.0,
@@ -28,11 +30,11 @@ class DashboardMetricsNotifier extends AsyncNotifier<DashboardMetrics> {
 
   Future<void> refresh() async {
     state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() => build());
+    state = await AsyncValue.guard(build);
   }
 }
 
 final dashboardMetricsProvider =
     AsyncNotifierProvider<DashboardMetricsNotifier, DashboardMetrics>(
-  () => DashboardMetricsNotifier(),
+  DashboardMetricsNotifier.new,
 );

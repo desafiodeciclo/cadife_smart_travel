@@ -281,7 +281,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     required String label,
     required String description,
     required bool initialValue,
-    required void Function(bool value) onChanged,
+    required ValueChanged<bool> onChanged,
   }) {
     return Padding(
       padding: const EdgeInsets.all(14),
@@ -312,7 +312,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget _buildTimeInput({
     required String label,
     required TimeOfDay initialTime,
-    required Function(TimeOfDay) onChanged,
+    required ValueChanged<TimeOfDay> onChanged,
   }) {
     return GestureDetector(
       onTap: () async {
@@ -347,7 +347,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     required String label,
     required List<String> options,
     required String initialValue,
-    required Function(String) onChanged,
+    required ValueChanged<String> onChanged,
   }) {
     return Padding(
       padding: const EdgeInsets.all(14),

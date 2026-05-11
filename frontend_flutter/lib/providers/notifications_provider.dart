@@ -68,7 +68,8 @@ class NotificationsNotifier extends AsyncNotifier<List<Notification>> {
         isRead: true,
       );
     }).toList());
-    // TODO: POST /notifications/{id}/mark-as-read ao integrar backend
+    // Simulando chamada ao backend: POST /notifications/{id}/mark-as-read
+    await Future.delayed(const Duration(milliseconds: 300));
   }
 
   Future<void> deleteNotification(String notificationId) async {
@@ -81,5 +82,5 @@ class NotificationsNotifier extends AsyncNotifier<List<Notification>> {
 }
 
 final notificationsProvider = AsyncNotifierProvider<NotificationsNotifier, List<Notification>>(
-  () => NotificationsNotifier(),
+  NotificationsNotifier.new,
 );

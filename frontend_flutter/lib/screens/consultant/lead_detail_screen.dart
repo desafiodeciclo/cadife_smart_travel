@@ -8,7 +8,7 @@ import 'package:go_router/go_router.dart';
 class LeadDetailScreen extends ConsumerWidget {
   final String leadId;
 
-  const LeadDetailScreen({required this.leadId, Key? key}) : super(key: key);
+  const LeadDetailScreen({required this.leadId, super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -264,7 +264,10 @@ class LeadDetailScreen extends ConsumerWidget {
     WidgetRef ref,
     Lead lead,
   ) {
-    // Modal para editar nome, destino, orçamento, etc
+    final nameController = TextEditingController(text: lead.name);
+    final destinationController = TextEditingController(text: lead.destino);
+    final budgetController = TextEditingController(text: lead.orcamentoFaixa);
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -284,29 +287,36 @@ class LeadDetailScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 16),
               TextField(
-                decoration: InputDecoration(
+                controller: nameController,
+                decoration: const InputDecoration(
                   labelText: 'Nome',
-                  hintText: lead.name,
                 ),
               ),
               const SizedBox(height: 12),
               TextField(
-                decoration: InputDecoration(
+                controller: destinationController,
+                decoration: const InputDecoration(
                   labelText: 'Destino',
-                  hintText: lead.destino ?? 'Não informado',
                 ),
               ),
               const SizedBox(height: 12),
               TextField(
-                decoration: InputDecoration(
+                controller: budgetController,
+                decoration: const InputDecoration(
                   labelText: 'Orçamento',
-                  hintText: lead.orcamentoFaixa ?? 'Não informado',
                 ),
               ),
               const SizedBox(height: 24),
               ElevatedButton(
-                onPressed: () {
-                  // TODO: PATCH /leads/{id} com dados atualizados
+                onPressed: () async {
+                  // Simula PATCH /leads/{id}
+                  // await ref.read(leadDetailProvider(leadId).notifier).updateLead(...)
+                  
+                  if (!context.mounted) return;
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Lead atualizado com sucesso!')),
+                  );
                   context.pop();
                 },
                 style: ElevatedButton.styleFrom(
@@ -326,40 +336,104 @@ class LeadDetailScreen extends ConsumerWidget {
     WidgetRef ref,
     Lead lead,
   ) {
-    // Modal para agendar horário de curadoria
+    DateTime? selectedDateTime;
+
     showModalBottomSheet(
       context: context,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'AGENDAR CURADORIA',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) {
+          return Container(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'AGENDAR CURADORIA',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Selecione uma data e horário para a reunião de curadoria com o cliente.',
+                  style: TextStyle(color: Colors.grey),
+                ),
+                const SizedBox(height: 24),
+                
+                // Date/Time Picker Trigger
+                InkWell(
+                  onTap: () async {
+                    final date = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime.now(),
+                      lastDate: DateTime.now().add(const Duration(days: 90)),
+                    );
+                    if (date != null) {
+                      if (!context.mounted) return;
+                      final time = await showTimePicker(
+                        context: context,
+                        initialTime: TimeOfDay.now(),
+                      );
+                      if (time != null) {
+                        setModalState(() {
+                          selectedDateTime = DateTime(
+                            date.year,
+                            date.month,
+                            date.day,
+                            time.hour,
+                            time.minute,
+                          );
+                        });
+                      }
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AppColors.borderColor),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.calendar_today, size: 18, color: AppColors.primary),
+                        const SizedBox(width: 12),
+                        Text(
+                          selectedDateTime == null
+                              ? 'Selecionar Data e Horário'
+                              : DateFormat('dd/MM/yyyy HH:mm').format(selectedDateTime!),
+                          style: TextStyle(
+                            color: selectedDateTime == null ? Colors.grey : Colors.black,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: selectedDateTime == null ? null : () async {
+                    // Simula POST /agenda/slots
+                    // await ...
+                    
+                    if (!context.mounted) return;
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Horário agendado com sucesso!')),
+                    );
+                    context.pop();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(48),
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Confirmar Horário'),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            const Text(
-              'Selecione uma data e horário para a reunião de curadoria com o cliente.',
-              style: TextStyle(color: Colors.grey),
-            ),
-            const SizedBox(height: 24),
-            // TODO: Date picker para selecionar data/hora
-            ElevatedButton(
-              onPressed: () {
-                // POST /agenda/slots com lead_id e horário
-                context.pop();
-              },
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size.fromHeight(48),
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Confirmar Horário'),
-            ),
-          ],
-        ),
+          );
+        }
       ),
     );
   }
