@@ -9,7 +9,9 @@ class ApiConstants {
   // Recupera a URL base dinamicamente do AppConfig registrado no Service Locator.
   static String get baseUrl => GetIt.I<AppConfig>().apiBaseUrl;
 
-  static const String baseUrlDev = 'http://10.0.2.2:8000';
+  // Para testar no celular físico via USB, use o IP da máquina (WiFi)
+  // Substitua pelo seu IP local: ipconfig → Endereço IPv4
+  static const String baseUrlDev = 'http://192.168.1.113:8080';
   static const String baseUrlStaging = 'https://api-staging.cadife.com';
   static const String baseUrlProd = 'https://api.cadife.com';
 
