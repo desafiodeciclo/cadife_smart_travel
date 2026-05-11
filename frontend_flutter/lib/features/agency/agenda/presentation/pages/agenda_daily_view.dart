@@ -3,7 +3,7 @@ part of 'agenda_page.dart';
 // ─── Daily view ───────────────────────────────────────────────────────────────
 
 class _DailyView extends ConsumerWidget {
-  const _DailyView({required this.items});
+  const _DailyView({required this.items, super.key});
   final List<Agendamento> items;
 
   @override

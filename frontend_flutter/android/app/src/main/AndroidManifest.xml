@@ -4,7 +4,7 @@
     <application
         android:label="${appName}"
         android:name="${applicationName}"
-        android:icon="${appIcon}"
+        android:icon="@mipmap/launcher_icon"
         android:enableOnBackInvokedCallback="true">
         <activity
             android:name=".MainActivity"

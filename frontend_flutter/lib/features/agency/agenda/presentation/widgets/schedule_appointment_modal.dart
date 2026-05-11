@@ -3,6 +3,7 @@ import 'package:cadife_smart_travel/features/agency/agenda/presentation/provider
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 
 class ScheduleAppointmentModal extends ConsumerStatefulWidget {
@@ -84,7 +85,7 @@ class _ScheduleAppointmentModalState
         color: Theme.of(context).scaffoldBackgroundColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      child: Padding(
+      child: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(24, 16, 24, 24 + bottomInset),
         child: Column(
           mainAxisSize: MainAxisSize.min,

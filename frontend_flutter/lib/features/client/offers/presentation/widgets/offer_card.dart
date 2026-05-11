@@ -1,6 +1,7 @@
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/client/offers/domain/entities/offer.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class OfferCard extends StatelessWidget {
   final Offer offer;
