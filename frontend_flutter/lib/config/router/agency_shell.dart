@@ -36,7 +36,16 @@ class _AgencyShellState extends ConsumerState<AgencyShell> {
   int _previousIndex = 0;
   List<String> _tabs = _baseTabs;
 
-  int _indexFromPath(String path, List<String> tabs) {
+  List<String> _tabs(bool isAdmin) {
+    final tabs = ['/agency/dashboard', '/agency/leads', '/agency/agenda', '/agency/profile'];
+    if (isAdmin) {
+      tabs.insert(3, '/agency/admin/consultants');
+    }
+    return tabs;
+  }
+
+  int _indexFromPath(String path, bool isAdmin) {
+    final tabs = _tabs(isAdmin);
     for (int i = 0; i < tabs.length; i++) {
       if (path.startsWith(tabs[i])) return i;
     }
@@ -46,8 +55,9 @@ class _AgencyShellState extends ConsumerState<AgencyShell> {
   @override
   void initState() {
     super.initState();
-    _tabs = _baseTabs;
-    _currentIndex = _indexFromPath(widget.location, _tabs);
+    final user = ref.read(authNotifierProvider).valueOrNull;
+    final isAdmin = user?.role == UserRole.admin;
+    _currentIndex = _indexFromPath(widget.location, isAdmin);
     _previousIndex = _currentIndex;
   }
 
@@ -67,7 +77,9 @@ class _AgencyShellState extends ConsumerState<AgencyShell> {
   @override
   void didUpdateWidget(AgencyShell old) {
     super.didUpdateWidget(old);
-    final newIndex = _indexFromPath(widget.location, _tabs);
+    final user = ref.read(authNotifierProvider).valueOrNull;
+    final isAdmin = user?.role == UserRole.admin;
+    final newIndex = _indexFromPath(widget.location, isAdmin);
     if (newIndex != _currentIndex) {
       setState(() {
         _previousIndex = _currentIndex;
@@ -80,6 +92,16 @@ class _AgencyShellState extends ConsumerState<AgencyShell> {
   Widget build(BuildContext context) {
     final user = ref.watch(authNotifierProvider).valueOrNull;
     final isAdmin = user?.role == UserRole.admin;
+    final tabs = _tabs(isAdmin);
+
+    final items = <CadifeBottomNavItem>[
+      const CadifeBottomNavItem(icon: LucideIcons.layoutDashboard, label: 'Dashboard'),
+      const CadifeBottomNavItem(icon: LucideIcons.users, label: 'Leads'),
+      const CadifeBottomNavItem(icon: LucideIcons.calendarDays, label: 'Agenda'),
+      if (isAdmin)
+        const CadifeBottomNavItem(icon: LucideIcons.shield, label: 'Admin'),
+      const CadifeBottomNavItem(icon: LucideIcons.circleUser, label: 'Perfil'),
+    ];
 
     return Scaffold(
       body: PageTransitionSwitcher(

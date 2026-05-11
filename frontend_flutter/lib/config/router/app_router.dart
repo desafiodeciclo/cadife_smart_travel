@@ -7,6 +7,7 @@ import 'package:cadife_smart_travel/features/admin/presentation/pages/admin_all_
 import 'package:cadife_smart_travel/features/admin/presentation/pages/admin_consultant_list_page.dart';
 import 'package:cadife_smart_travel/features/admin/presentation/pages/admin_overview_page.dart';
 import 'package:cadife_smart_travel/features/admin/presentation/pages/create_consultant_page.dart';
+import 'package:cadife_smart_travel/features/agency/admin/presentation/pages/admin_consultant_management_page.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/presentation/pages/agenda_page.dart';
 import 'package:cadife_smart_travel/features/agency/dashboard/dashboard_screen.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/pages/lead_detail_page.dart';
@@ -191,6 +192,14 @@ final routerProvider = Provider<GoRouter>((ref) {
             pageBuilder: (context, state) => SlideTransitionPage(
               name: state.name,
               child: const ConsultorProfileScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/agency/admin/consultants',
+            name: 'agency_admin_consultants',
+            pageBuilder: (context, state) => SlideTransitionPage(
+              name: state.name,
+              child: const AdminConsultantManagementPage(),
             ),
           ),
           GoRoute(

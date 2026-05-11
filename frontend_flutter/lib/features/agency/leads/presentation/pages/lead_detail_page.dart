@@ -10,6 +10,7 @@ import 'package:cadife_smart_travel/features/agency/leads/presentation/providers
 import 'package:cadife_smart_travel/features/agency/propostas/presentation/widgets/create_proposal_modal.dart';
 import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:cadife_smart_travel/features/agency/propostas/presentation/widgets/proposal_form_tab.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/animated_tab_content.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/empty_state/empty_type.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/state_container.dart';
@@ -25,13 +26,14 @@ class LeadDetailPage extends ConsumerStatefulWidget {
   ConsumerState<LeadDetailPage> createState() => _LeadDetailPageState();
 }
 
-class _LeadDetailPageState extends ConsumerState<LeadDetailPage> with SingleTickerProviderStateMixin {
+class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -39,6 +41,8 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> with SingleTick
     _tabController.dispose();
     super.dispose();
   }
+
+  void _goToProposalTab() => _tabController.animateTo(2);
 
   @override
   Widget build(BuildContext context) {
@@ -112,7 +116,10 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> with SingleTick
                       children: [
                         _InfoCard(lead: lead),
                         const SizedBox(height: 16),
-                        _ActionButtons(lead: lead),
+                        _ActionButtons(
+                          lead: lead,
+                          onCreateProposal: _goToProposalTab,
+                        ),
                       ],
                     ),
                   ),
@@ -123,11 +130,12 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> with SingleTick
                     indicatorColor: AppColors.primary,
                     tabs: const [
                       Tab(text: 'Briefing'),
-                      Tab(text: 'Chat & Timeline'),
+                      Tab(text: 'Timeline'),
+                      Tab(text: 'Proposta'),
                     ],
                   ),
                   SizedBox(
-                    height: 500,
+                    height: 600,
                     child: TabBarView(
                       controller: _tabController,
                       children: [
@@ -138,6 +146,10 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> with SingleTick
                         const AnimatedTabContent(
                           tabIndex: 1,
                           child: _ChatTimelineTab(),
+                        ),
+                        AnimatedTabContent(
+                          tabIndex: 2,
+                          child: ProposalFormTab(lead: lead),
                         ),
                       ],
                     ),
@@ -228,7 +240,8 @@ class _InfoCard extends StatelessWidget {
 
 class _ActionButtons extends ConsumerWidget {
   final Lead lead;
-  const _ActionButtons({required this.lead});
+  final VoidCallback onCreateProposal;
+  const _ActionButtons({required this.lead, required this.onCreateProposal});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -255,9 +268,7 @@ class _ActionButtons extends ConsumerWidget {
                 variant: ButtonVariant.secondary,
                 isOutline: true,
                 analyticsLabel: 'lead_detail_create_proposal',
-                onPressed: () {
-                  CreateProposalModal.show(context, lead.id);
-                },
+                onPressed: onCreateProposal,
               ),
             ),
           ],
