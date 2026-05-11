@@ -4,6 +4,8 @@ import 'package:cadife_smart_travel/core/security/secure_config.dart';
 import 'package:cadife_smart_travel/features/auth/data/datasources/i_auth_datasource.dart';
 import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
 import 'package:cadife_smart_travel/features/auth/domain/repositories/i_auth_repository.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:fpdart/fpdart.dart';
 
 class AuthRepositoryImpl implements IAuthRepository {
@@ -21,13 +23,36 @@ class AuthRepositoryImpl implements IAuthRepository {
     try {
       final data = await _remoteDatasource.login(email, password, profileHint: profileHint);
 
-      final tokenData = data['token'] as Map<String, dynamic>;
+      // Mock format: {user: {...}, token: {access_token, refresh_token}}
+      final tokenData = data['token'] as Map<String, dynamic>?;
+      if (tokenData == null) {
+        return const Left(ServerFailure('Resposta de login inválida.'));
+      }
+
+      final accessToken = tokenData['access_token']?.toString();
+      final refreshToken = tokenData['refresh_token']?.toString();
+      if (accessToken == null || refreshToken == null) {
+        return const Left(ServerFailure('Token ausente na resposta.'));
+      }
+
       await _secureConfig.saveTokens(
-        accessToken: tokenData['access_token'] as String,
-        refreshToken: tokenData['refresh_token'] as String,
+        accessToken: accessToken,
+        refreshToken: refreshToken,
       );
 
-      return Right(AuthUser.fromJson(data['user'] as Map<String, dynamic>));
+      // Try to get user from login response first (mock format)
+      final userData = data['user'] as Map<String, dynamic>?;
+      if (userData != null) {
+        return Right(AuthUser.fromJson(userData));
+      }
+      
+      // Fallback: try /users/me endpoint
+      final currentUserData = await _remoteDatasource.getCurrentUser();
+      if (currentUserData != null) {
+        return Right(AuthUser.fromJson(currentUserData));
+      }
+      
+      return const Left(ServerFailure('Dados do usuário ausentes.'));
     } on Exception catch (e) {
       return Left(Failure.fromException(e));
     }

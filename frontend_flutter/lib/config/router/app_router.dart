@@ -3,6 +3,7 @@ import 'package:cadife_smart_travel/config/router/agency_shell.dart';
 import 'package:cadife_smart_travel/config/router/client_shell.dart';
 import 'package:cadife_smart_travel/config/router/transitions/custom_page_route.dart';
 import 'package:cadife_smart_travel/core/analytics/analytics_navigation_observer.dart';
+import 'package:cadife_smart_travel/features/agency/admin/presentation/pages/admin_consultant_management_page.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/presentation/pages/agenda_page.dart';
 import 'package:cadife_smart_travel/features/agency/dashboard/dashboard_screen.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/pages/lead_detail_page.dart';
@@ -57,15 +58,20 @@ final routerProvider = Provider<GoRouter>((ref) {
           if (user == null) return isLoggingIn ? null : '/auth/login';
 
           if (isLoggingIn || state.matchedLocation == '/splash') {
-            return user.role == UserRole.consultor
-                ? '/agency/dashboard'
-                : '/client/status';
+            if (user.role == UserRole.cliente) {
+              return '/client/status';
+            }
+            return '/agency/dashboard';
           }
 
           final isAgencyRoute = state.matchedLocation.startsWith('/agency');
           final isClientRoute = state.matchedLocation.startsWith('/client');
+          final isAdminRoute = state.matchedLocation.startsWith('/agency/admin');
 
-          if (isAgencyRoute && user.role != UserRole.consultor) {
+          if (isAdminRoute && user.role != UserRole.admin) {
+            return '/agency/dashboard';
+          }
+          if (isAgencyRoute && user.role == UserRole.cliente) {
             return '/client/status';
           }
           if (isClientRoute && user.role == UserRole.consultor) {
@@ -183,6 +189,14 @@ final routerProvider = Provider<GoRouter>((ref) {
             pageBuilder: (context, state) => SlideTransitionPage(
               name: state.name,
               child: const ConsultorProfileScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/agency/admin/consultants',
+            name: 'agency_admin_consultants',
+            pageBuilder: (context, state) => SlideTransitionPage(
+              name: state.name,
+              child: const AdminConsultantManagementPage(),
             ),
           ),
           GoRoute(
