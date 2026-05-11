@@ -1,7 +1,6 @@
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/client/documentos/domain/entities/trip_summary.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 class TripHistoryCard extends StatelessWidget {
   const TripHistoryCard({

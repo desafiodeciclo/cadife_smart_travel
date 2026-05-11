@@ -8,7 +8,6 @@ import 'package:cadife_smart_travel/features/client/itinerary/presentation/widge
 import 'package:cadife_smart_travel/features/notifications/presentation/widgets/notification_bell.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 
 class TravelCalendarPage extends ConsumerStatefulWidget {

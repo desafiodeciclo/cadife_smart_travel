@@ -136,7 +136,7 @@ class _DiaryEntryTile extends StatelessWidget {
                             ),
                           ),
                         ),
-                  errorBuilder: (_, __, st) => Container(
+                  errorBuilder: (_, _, st) => Container(
                     color: cadife.muted,
                     child: Icon(LucideIcons.image, color: cadife.textSecondary, size: 20),
                   ),
