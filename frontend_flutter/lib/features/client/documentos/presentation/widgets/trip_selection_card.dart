@@ -49,21 +49,24 @@ class TripSelectionCard extends StatelessWidget {
                     width: 84,
                     height: 84,
                     color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
-                    child: trip.imageUrl != null
-                        ? Image.network(
-                            trip.imageUrl!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => Icon(
+                    child: Hero(
+                      tag: 'trip_banner_${trip.id}',
+                      child: trip.imageUrl != null
+                          ? Image.network(
+                              trip.imageUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => Icon(
+                                LucideIcons.image,
+                                color: secondaryColor,
+                                size: 24,
+                              ),
+                            )
+                          : Icon(
                               LucideIcons.image,
                               color: secondaryColor,
                               size: 24,
                             ),
-                          )
-                        : Icon(
-                            LucideIcons.image,
-                            color: secondaryColor,
-                            size: 24,
-                          ),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 16),

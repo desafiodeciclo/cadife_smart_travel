@@ -1,11 +1,16 @@
+import 'package:cadife_smart_travel/features/client/offers/domain/entities/date_range.dart';
+
 class Offer {
   final String id;
   final String title;
   final String destination;
   final String category;
   final String description;
-  final double estimatedPrice;
+  final double price;
   final String imageUrl;
+  final double rating;
+  final int daysCount;
+  final DateRange dates;
 
   const Offer({
     required this.id,
@@ -13,11 +18,14 @@ class Offer {
     required this.destination,
     required this.category,
     required this.description,
-    required this.estimatedPrice,
+    required this.price,
     required this.imageUrl,
+    required this.rating,
+    required this.daysCount,
+    required this.dates,
   });
 
-  double get price => estimatedPrice;
+  double get estimatedPrice => price;
 
   // copyWith
   Offer copyWith({
@@ -26,8 +34,11 @@ class Offer {
     String? destination,
     String? category,
     String? description,
-    double? estimatedPrice,
+    double? price,
     String? imageUrl,
+    double? rating,
+    int? daysCount,
+    DateRange? dates,
   }) {
     return Offer(
       id: id ?? this.id,
@@ -35,8 +46,11 @@ class Offer {
       destination: destination ?? this.destination,
       category: category ?? this.category,
       description: description ?? this.description,
-      estimatedPrice: estimatedPrice ?? this.estimatedPrice,
+      price: price ?? this.price,
       imageUrl: imageUrl ?? this.imageUrl,
+      rating: rating ?? this.rating,
+      daysCount: daysCount ?? this.daysCount,
+      dates: dates ?? this.dates,
     );
   }
 }

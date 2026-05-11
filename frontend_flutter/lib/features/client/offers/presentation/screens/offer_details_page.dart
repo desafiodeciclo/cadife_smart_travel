@@ -6,6 +6,7 @@ import 'package:cadife_smart_travel/features/client/offers/domain/entities/offer
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
 // ── Internal mock data structures ────────────────────────
@@ -569,6 +570,9 @@ IconData _iconForService(String service) {
 
 // ── Page ─────────────────────────────────────────────────
 
+final _offerInterestLoadingProvider =
+    StateProvider.autoDispose<bool>((ref) => false);
+
 class OfferDetailsPage extends ConsumerStatefulWidget {
   final String offerId;
   final Offer? offer;
@@ -589,8 +593,6 @@ class _OfferDetailsPageState extends ConsumerState<OfferDetailsPage> {
   late final PageController _pageController;
   int _galleryPage = 0;
   bool _isDescriptionExpanded = false;
-  bool _isSubmitting = false;
-
   @override
   void initState() {
     super.initState();
@@ -635,7 +637,7 @@ class _OfferDetailsPageState extends ConsumerState<OfferDetailsPage> {
   }
 
   Future<void> _submitInterest(Offer offer) async {
-    setState(() => _isSubmitting = true);
+    ref.read(_offerInterestLoadingProvider.notifier).state = true;
     try {
       // POST /leads { origem: "oferta", oferta_id: offer.id }
       await Future.delayed(const Duration(milliseconds: 1200));
@@ -649,7 +651,22 @@ class _OfferDetailsPageState extends ConsumerState<OfferDetailsPage> {
         );
       }
     } finally {
-      if (mounted) setState(() => _isSubmitting = false);
+      if (mounted) ref.read(_offerInterestLoadingProvider.notifier).state = false;
+    }
+  }
+
+  bool _isPopping = false;
+
+  void _handleBack() {
+    if (_isPopping) return;
+    
+    if (mounted) {
+      setState(() => _isPopping = true);
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.go('/client/status');
+      }
     }
   }
 
@@ -668,31 +685,38 @@ class _OfferDetailsPageState extends ConsumerState<OfferDetailsPage> {
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
-      child: Scaffold(
-        backgroundColor: isDark ? AppColors.zinc950 : AppColors.white,
-        body: Stack(
-          children: [
-            CustomScrollView(
-              slivers: [
-                _buildSliverAppBar(offer, isDark),
-                SliverToBoxAdapter(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildHeader(offer, theme, isDark),
-                      _buildPhotoGallery(offer, isDark),
-                      _buildPriceSection(offer, theme, priceFormatter, isDark),
-                      _buildHighlights(theme, isDark),
-                      _buildIncluded(theme, isDark),
-                      _buildItinerary(theme, isDark),
-                      const SizedBox(height: 120),
-                    ],
+      child: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop) return;
+          _handleBack();
+        },
+        child: Scaffold(
+          backgroundColor: isDark ? AppColors.zinc950 : AppColors.white,
+          body: Stack(
+            children: [
+              CustomScrollView(
+                slivers: [
+                  _buildSliverAppBar(offer, isDark),
+                  SliverToBoxAdapter(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildHeader(offer, theme, isDark),
+                        _buildPhotoGallery(offer, isDark),
+                        _buildPriceSection(offer, theme, priceFormatter, isDark),
+                        _buildHighlights(theme, isDark),
+                        _buildIncluded(theme, isDark),
+                        _buildItinerary(theme, isDark),
+                        const SizedBox(height: 120),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-            _buildBottomCTA(offer, theme, priceFormatter, isDark),
-          ],
+                ],
+              ),
+              _buildBottomCTA(offer, theme, priceFormatter, isDark),
+            ],
+          ),
         ),
       ),
     );
@@ -713,7 +737,7 @@ class _OfferDetailsPageState extends ConsumerState<OfferDetailsPage> {
           child: IconButton(
             icon: const Icon(LucideIcons.arrowLeft,
                 color: Colors.white, size: 20),
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: _handleBack,
           ),
         ),
       ),
@@ -842,7 +866,7 @@ class _OfferDetailsPageState extends ConsumerState<OfferDetailsPage> {
                 icon: LucideIcons.star,
                 label:
                     '${_details.rating.toStringAsFixed(1)} (${_details.reviewCount} avaliações)',
-                iconColor: const Color(0xFFF59E0B),
+                iconColor: AppColors.amber,
                 isDark: isDark,
               ),
               const SizedBox(width: 8),
@@ -1011,7 +1035,7 @@ class _OfferDetailsPageState extends ConsumerState<OfferDetailsPage> {
                   child: Image.network(
                     allPhotos[i],
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, _) => Container(
+                    errorBuilder: (_, _, _) => Container(
                       color: AppColors.zinc700,
                       child: const Icon(LucideIcons.imageOff,
                           color: AppColors.zinc500),
@@ -1402,7 +1426,7 @@ class _OfferDetailsPageState extends ConsumerState<OfferDetailsPage> {
               child: CadifeButton(
                 label: 'Tenho interesse',
                 icon: LucideIcons.heart,
-                onPressed: _isSubmitting
+                onPressed: ref.watch(_offerInterestLoadingProvider)
                     ? null
                     : () => _onTenhoInteresse(offer, formatter, isDark),
               ),
@@ -1549,7 +1573,7 @@ class _OfferDetailsPageState extends ConsumerState<OfferDetailsPage> {
     return Scaffold(
       appBar: AppBar(
         leading: BackButton(
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => context.pop(),
         ),
         title: const Text('Detalhes da Oferta'),
       ),

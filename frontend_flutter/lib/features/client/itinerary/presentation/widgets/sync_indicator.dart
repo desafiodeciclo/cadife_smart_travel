@@ -1,3 +1,4 @@
+import 'package:cadife_smart_travel/design_system/tokens/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -21,20 +22,20 @@ class SyncIndicator extends StatelessWidget {
 
     if (isSyncing) {
       return Shimmer.fromColors(
-        baseColor: Colors.grey.shade300,
-        highlightColor: Colors.grey.shade100,
+        baseColor: AppColors.zinc300,
+        highlightColor: AppColors.zinc100,
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-          color: Colors.grey.shade200,
+          color: AppColors.zinc200,
           child: const Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(LucideIcons.refreshCw, size: 14, color: Colors.grey),
+              Icon(LucideIcons.refreshCw, size: 14, color: AppColors.zinc500),
               SizedBox(width: 8),
               Text(
                 'Sincronizando itinerário...',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
+                style: TextStyle(fontSize: 12, color: AppColors.zinc500),
               ),
             ],
           ),
@@ -51,15 +52,15 @@ class SyncIndicator extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      color: Colors.orange.shade700,
+      color: AppColors.warning,
       child: Row(
         children: [
-          const Icon(LucideIcons.wifiOff, size: 14, color: Colors.white),
+          const Icon(LucideIcons.wifiOff, size: 14, color: AppColors.white),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               'Modo offline — $lastSyncText',
-              style: const TextStyle(fontSize: 12, color: Colors.white),
+              style: const TextStyle(fontSize: 12, color: AppColors.white),
             ),
           ),
         ],

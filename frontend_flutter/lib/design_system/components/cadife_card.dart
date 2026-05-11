@@ -63,6 +63,7 @@ class CadifeCard extends StatelessWidget {
               ),
           ],
         ),
+        clipBehavior: Clip.antiAlias,
         child: child,
       ),
     );
