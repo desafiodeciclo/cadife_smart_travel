@@ -54,7 +54,7 @@ class OngoingTripCard extends StatelessWidget {
                       Text(
                         destination,
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: AppColors.white,
                           fontSize: 22,
                           fontWeight: FontWeight.w800,
                         ),
@@ -62,30 +62,30 @@ class OngoingTripCard extends StatelessWidget {
                       const SizedBox(height: 6),
                       Row(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.calendar_month_outlined,
-                            color: Colors.white70,
+                            color: AppColors.white.withValues(alpha: 0.7),
                             size: 14,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             date,
-                            style: const TextStyle(
-                              color: Colors.white70,
+                            style: TextStyle(
+                              color: AppColors.white.withValues(alpha: 0.7),
                               fontSize: 12,
                             ),
                           ),
                           const SizedBox(width: 16),
-                          const Icon(
+                          Icon(
                             Icons.access_time_outlined,
-                            color: Colors.white70,
+                            color: AppColors.white.withValues(alpha: 0.7),
                             size: 14,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             time,
-                            style: const TextStyle(
-                              color: Colors.white70,
+                            style: TextStyle(
+                              color: AppColors.white.withValues(alpha: 0.7),
                               fontSize: 12,
                             ),
                           ),

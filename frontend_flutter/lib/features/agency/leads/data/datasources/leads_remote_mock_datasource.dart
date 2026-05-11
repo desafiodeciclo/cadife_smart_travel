@@ -239,4 +239,27 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
     _mockLeads.insert(0, newLead);
     return newLead;
   }
+
+  @override
+  Future<LeadApiModel> createManualLead(ManualLeadCreate request) async {
+    await Future.delayed(const Duration(milliseconds: 600));
+    final newLead = LeadApiModel(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      name: request.name,
+      phone: request.phone,
+      email: request.email,
+      status: LeadStatus.novo,
+      score: LeadScore.morno, // Manual starts as morno
+      completudePct: 15,
+      destino: request.destino,
+      dataIda: request.dataIda,
+      numPessoas: request.numPessoas,
+      orcamentoFaixa: request.orcamentoFaixa,
+      preferencias: request.preferencias,
+      consultorNome: 'Você', // Mocking current user
+      createdAt: DateTime.now(),
+    );
+    _mockLeads.insert(0, newLead);
+    return newLead;
+  }
 }

@@ -15,7 +15,7 @@ extension GetOfferCacheCollection on Isar {
 
 const OfferCacheSchema = CollectionSchema(
   name: r'OfferCache',
-  id: 3424763598407337984,
+  id: 3424763598407338025,
   properties: {
     r'category': PropertySchema(
       id: 0,
@@ -65,7 +65,7 @@ const OfferCacheSchema = CollectionSchema(
   idName: r'id',
   indexes: {
     r'serverId': IndexSchema(
-      id: -7950187970872907776,
+      id: -7950187970872907662,
       name: r'serverId',
       unique: true,
       replace: true,
@@ -78,7 +78,7 @@ const OfferCacheSchema = CollectionSchema(
       ],
     ),
     r'updatedAt': IndexSchema(
-      id: -6238191080293565440,
+      id: -6238191080293565125,
       name: r'updatedAt',
       unique: false,
       replace: false,

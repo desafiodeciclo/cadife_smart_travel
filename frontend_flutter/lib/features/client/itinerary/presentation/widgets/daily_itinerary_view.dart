@@ -1,9 +1,8 @@
+import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/client/itinerary/domain/entities/itinerary_item.dart';
 import 'package:cadife_smart_travel/features/client/itinerary/presentation/widgets/daily_note_field.dart';
 import 'package:cadife_smart_travel/features/client/itinerary/presentation/widgets/itinerary_card.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:shimmer/shimmer.dart';
 
 class DailyItineraryView extends StatefulWidget {
@@ -123,20 +122,21 @@ class _DateNavigator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cadife = context.cadife;
     final label = DateFormat("d 'de' MMMM", 'pt_BR').format(date);
     final weekday = DateFormat('EEEE', 'pt_BR').format(date);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: Color(0xFFE2E8F0)),
+          bottom: BorderSide(color: cadife.cardBorder),
         ),
       ),
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(LucideIcons.chevronLeft, size: 20),
+            icon: Icon(LucideIcons.chevronLeft, size: 20, color: cadife.textPrimary),
             onPressed: onPrevious,
             tooltip: 'Dia anterior',
           ),
@@ -145,18 +145,18 @@ class _DateNavigator extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF1A1A1A),
+                    color: cadife.textPrimary,
                   ),
                   textAlign: TextAlign.center,
                 ),
                 Text(
                   _capitalize(weekday),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: Color(0xFF5D6D7E),
+                    color: cadife.textSecondary,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -164,7 +164,7 @@ class _DateNavigator extends StatelessWidget {
             ),
           ),
           IconButton(
-            icon: const Icon(LucideIcons.chevronRight, size: 20),
+            icon: Icon(LucideIcons.chevronRight, size: 20, color: cadife.textPrimary),
             onPressed: onNext,
             tooltip: 'Próximo dia',
           ),
@@ -185,6 +185,7 @@ class _TimelineHourRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cadife = context.cadife;
     final hasItems = items.isNotEmpty;
     final hourLabel = '${hour.toString().padLeft(2, '0')}:00';
 
@@ -201,11 +202,8 @@ class _TimelineHourRow extends StatelessWidget {
                 hourLabel,
                 style: TextStyle(
                   fontSize: 11,
-                  color: hasItems
-                      ? const Color(0xFF1A1A1A)
-                      : const Color(0xFFCBD5E1),
-                  fontWeight:
-                      hasItems ? FontWeight.w600 : FontWeight.normal,
+                  color: hasItems ? cadife.textPrimary : cadife.cardBorder,
+                  fontWeight: hasItems ? FontWeight.w600 : FontWeight.normal,
                 ),
                 textAlign: TextAlign.right,
               ),
@@ -221,15 +219,13 @@ class _TimelineHourRow extends StatelessWidget {
                 margin: const EdgeInsets.only(top: 12),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: hasItems
-                      ? const Color(0xFFDD0B0E)
-                      : const Color(0xFFE2E8F0),
+                  color: hasItems ? cadife.primary : cadife.cardBorder,
                 ),
               ),
               Expanded(
                 child: Container(
                   width: 2,
-                  color: const Color(0xFFE2E8F0),
+                  color: cadife.cardBorder,
                 ),
               ),
             ],
@@ -258,6 +254,7 @@ class _TimelineHourRow extends StatelessWidget {
 class _EmptyDayState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final cadife = context.cadife;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 48),
       child: Center(
@@ -266,21 +263,21 @@ class _EmptyDayState extends StatelessWidget {
             Icon(
               LucideIcons.calendarX2,
               size: 48,
-              color: Colors.grey.shade300,
+              color: cadife.textSecondary.withValues(alpha: 0.3),
             ),
             const SizedBox(height: 12),
             Text(
               'Sem atividades neste dia',
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey.shade500,
+                color: cadife.textSecondary,
                 fontWeight: FontWeight.w500,
               ),
             ),
             const SizedBox(height: 4),
             Text(
               'Seu itinerário aparecerá após a curadoria',
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade400),
+              style: TextStyle(fontSize: 12, color: cadife.textSecondary.withValues(alpha: 0.6)),
             ),
           ],
         ),

@@ -7,6 +7,7 @@ import 'package:cadife_smart_travel/features/agency/agenda/presentation/pages/ag
 import 'package:cadife_smart_travel/features/agency/dashboard/dashboard_screen.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/pages/lead_detail_page.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/pages/leads_page.dart';
+import 'package:cadife_smart_travel/features/agency/leads/presentation/pages/manual_lead_create_page.dart';
 import 'package:cadife_smart_travel/features/agency/perfil/presentation/pages/profile_page.dart';
 import 'package:cadife_smart_travel/features/agency/propostas/presentation/pages/proposal_create_page.dart';
 import 'package:cadife_smart_travel/features/agency/settings/presentation/pages/settings_page.dart' as agency_settings;
@@ -21,13 +22,15 @@ import 'package:cadife_smart_travel/features/client/documentos/presentation/page
 import 'package:cadife_smart_travel/features/client/documentos/presentation/pages/documentos_page.dart';
 import 'package:cadife_smart_travel/features/client/documentos/presentation/pages/trip_documents_page.dart';
 import 'package:cadife_smart_travel/features/client/historico/presentation/pages/historico_page.dart';
+import 'package:cadife_smart_travel/features/client/home/presentation/screens/client_home_screen.dart';
+import 'package:cadife_smart_travel/features/client/home/presentation/screens/trip_details_screen.dart';
 import 'package:cadife_smart_travel/features/client/itinerary/presentation/pages/travel_calendar_page.dart';
 import 'package:cadife_smart_travel/features/client/offers/domain/entities/offer.dart';
 import 'package:cadife_smart_travel/features/client/offers/presentation/screens/offer_details_page.dart';
 import 'package:cadife_smart_travel/features/client/offers/presentation/screens/offers_list_page.dart';
 import 'package:cadife_smart_travel/features/client/profile/presentation/pages/profile_page.dart' as client_profile;
 import 'package:cadife_smart_travel/features/client/profile/presentation/pages/travel_journal_detail_screen.dart';
-import 'package:cadife_smart_travel/features/client/status/presentation/pages/status_page.dart';
+import 'package:cadife_smart_travel/features/notifications/presentation/screens/notification_center_screen.dart';
 import 'package:cadife_smart_travel/features/settings/presentation/screens/settings_page.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -94,6 +97,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'forgot_password',
         builder: (context, state) => const ForgotPasswordScreen(),
       ),
+      GoRoute(
+        path: '/notifications',
+        name: 'notifications',
+        pageBuilder: (context, state) => SlideTransitionPage(
+          name: state.name,
+          child: const NotificationCenterScreen(),
+        ),
+      ),
 
 
 
@@ -119,6 +130,14 @@ final routerProvider = Provider<GoRouter>((ref) {
               child: const LeadsPage(),
             ),
             routes: [
+              GoRoute(
+                path: 'new',
+                name: 'agency_lead_new',
+                pageBuilder: (context, state) => SlideTransitionPage(
+                  name: state.name,
+                  child: const ManualLeadCreatePage(),
+                ),
+              ),
               // Path-param route for deep linking via FCM
               GoRoute(
                 path: ':leadId',
@@ -188,7 +207,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             name: 'client_status',
             pageBuilder: (context, state) => SlideTransitionPage(
               name: state.name,
-              child: const StatusPage(),
+              child: const ClientHomeScreen(),
             ),
           ),
           GoRoute(
@@ -293,18 +312,18 @@ final routerProvider = Provider<GoRouter>((ref) {
           final tripId = state.pathParameters['tripId']!;
           return SlideTransitionPage(
             name: state.name,
-            child: StatusPage(tripId: tripId),
+            child: TripDetailsScreen(tripId: tripId),
           );
         },
       ),
       GoRoute(
-        path: '/client/travel/:leadId/calendar',
+        path: '/client/travel/:tripId/calendar',
         name: 'client_travel_calendar',
         pageBuilder: (context, state) {
-          final leadId = state.pathParameters['leadId']!;
+          final tripId = state.pathParameters['tripId']!;
           return SlideTransitionPage(
             name: state.name,
-            child: TravelCalendarPage(leadId: leadId),
+            child: TravelCalendarPage(tripId: tripId),
           );
         },
       ),

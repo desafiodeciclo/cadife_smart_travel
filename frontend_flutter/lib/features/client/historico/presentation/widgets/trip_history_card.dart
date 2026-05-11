@@ -31,14 +31,10 @@ class TripHistoryCard extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 24),
       child: GestureDetector(
         onTap: onTap,
-        child: ShadCard(
+        child: CadifeCard(
           padding: EdgeInsets.zero,
-          radius: BorderRadius.circular(24),
-          backgroundColor: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.black.withValues(alpha: 0.03),
-          border: ShadBorder.all(
-            color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.08),
-            width: 1,
-          ),
+          borderRadius: 24,
+          variant: CardVariant.standard,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(24),
             child: Column(
@@ -62,21 +58,8 @@ class TripHistoryCard extends StatelessWidget {
                       else
                         _ImagePlaceholder(isDark: isDark),
                       
-                      // Gradiente sobre a imagem
-                      Positioned.fill(
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.transparent,
-                                Colors.black.withValues(alpha: 0.6),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
+                      // Removido gradiente para padronização CDS
+
                       
                       // Nome da viagem sobre a imagem
                       Positioned(
@@ -173,7 +156,7 @@ class _InfoItem extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
+            color: context.cadife.muted,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(
@@ -221,11 +204,11 @@ class _ImagePlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
+      color: context.cadife.muted,
       child: Center(
         child: Icon(
           LucideIcons.image,
-          color: isDark ? Colors.white.withValues(alpha: 0.24) : Colors.black.withValues(alpha: 0.24),
+          color: context.cadife.textSecondary,
           size: 48,
         ),
       ),

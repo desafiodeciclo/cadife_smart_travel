@@ -82,4 +82,14 @@ class LeadsRepositoryImpl implements ILeadsRepository {
       return Left(Failure.fromException(e));
     }
   }
+
+  @override
+  Future<Either<Failure, Lead>> createManualLead(ManualLeadCreate request) async {
+    try {
+      final lead = await _remoteDatasource.createManualLead(request);
+      return Right(lead);
+    } on Exception catch (e) {
+      return Left(Failure.fromException(e));
+    }
+  }
 }

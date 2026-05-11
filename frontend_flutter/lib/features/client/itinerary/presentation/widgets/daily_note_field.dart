@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cadife_smart_travel/design_system/tokens/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class DailyNoteField extends StatefulWidget {
@@ -71,9 +72,9 @@ class _DailyNoteFieldState extends State<DailyNoteField> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F9FA),
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: AppColors.borderColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -85,7 +86,7 @@ class _DailyNoteFieldState extends State<DailyNoteField> {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF1A1A1A),
+                  color: AppColors.textPrimary,
                 ),
               ),
               const Spacer(),
@@ -98,20 +99,20 @@ class _DailyNoteFieldState extends State<DailyNoteField> {
             maxLength: _maxLength,
             maxLines: 3,
             onChanged: _onChanged,
-            style: const TextStyle(fontSize: 14, color: Color(0xFF1A1A1A)),
+            style: const TextStyle(fontSize: 14, color: AppColors.textPrimary),
             decoration: InputDecoration(
               hintText: 'Anotações sobre este dia...',
               hintStyle: const TextStyle(
                 fontSize: 14,
-                color: Color(0xFFADB5BD),
+                color: AppColors.zinc400,
               ),
               border: InputBorder.none,
               counterText: '$remaining restantes',
               counterStyle: TextStyle(
                 fontSize: 11,
                 color: remaining < 50
-                    ? Colors.orange.shade700
-                    : const Color(0xFF5D6D7E),
+                    ? AppColors.warning
+                    : AppColors.textSecondary,
               ),
             ),
           ),
@@ -143,7 +144,7 @@ class _SaveIndicator extends StatelessWidget {
             SizedBox(width: 4),
             Text(
               'Salvando...',
-              style: TextStyle(fontSize: 11, color: Color(0xFF5D6D7E)),
+              style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
             ),
           ],
         );
@@ -151,18 +152,18 @@ class _SaveIndicator extends StatelessWidget {
         return const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.check_circle_outline, size: 12, color: Color(0xFF1E8449)),
+            Icon(Icons.check_circle_outline, size: 12, color: AppColors.success),
             SizedBox(width: 4),
             Text(
               'Anotação salva',
-              style: TextStyle(fontSize: 11, color: Color(0xFF1E8449)),
+              style: TextStyle(fontSize: 11, color: AppColors.success),
             ),
           ],
         );
       case _SaveState.error:
         return const Text(
           'Erro ao salvar',
-          style: TextStyle(fontSize: 11, color: Color(0xFFDD0B0E)),
+          style: TextStyle(fontSize: 11, color: AppColors.primary),
         );
       case _SaveState.idle:
         return const SizedBox.shrink();

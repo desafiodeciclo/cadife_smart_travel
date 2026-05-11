@@ -1,14 +1,23 @@
 import 'package:cadife_smart_travel/features/client/documentos/domain/entities/trip_summary.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Provider que gerencia a lista de viagens do cliente para o histórico.
-final historicoProvider = AsyncNotifierProvider<HistoricoNotifier, List<TripSummary>>(
+final travelHistoryProvider = AsyncNotifierProvider<HistoricoNotifier, List<TripSummary>>(
   HistoricoNotifier.new,
 );
 
 class HistoricoNotifier extends AsyncNotifier<List<TripSummary>> {
   @override
   Future<List<TripSummary>> build() async {
+    // Escuta eventos FCM para recarregar o histórico quando uma viagem for concluída
+    final subscription = FirebaseMessaging.onMessage.listen((message) {
+      if (message.data['type'] == 'travel_completed') {
+        ref.invalidateSelf();
+      }
+    });
+    ref.onDispose(subscription.cancel);
+
     // Simulando busca de dados
     await Future.delayed(const Duration(milliseconds: 800));
     return _mockHistoryTrips;

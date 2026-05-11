@@ -4,6 +4,7 @@ import 'package:cadife_smart_travel/features/client/status/presentation/provider
 import 'package:cadife_smart_travel/features/client/status/presentation/providers/status_providers.dart';
 import 'package:cadife_smart_travel/features/client/status/presentation/widgets/ongoing_trip_card.dart';
 import 'package:cadife_smart_travel/features/client/status/presentation/widgets/status_stepper_widget.dart';
+import 'package:cadife_smart_travel/features/notifications/presentation/widgets/notification_bell.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -25,6 +26,7 @@ class StatusPage extends ConsumerWidget {
 
     return PageScaffold(
       title: tripId != null ? 'DETALHES DA VIAGEM' : 'MINHA VIAGEM',
+      actions: const [NotificationBell(), SizedBox(width: 8)],
       body: statusAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text('Erro ao carregar status: $err')),
@@ -36,7 +38,7 @@ class StatusPage extends ConsumerWidget {
           return SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 72, 20, 100),
+              padding: const EdgeInsets.fromLTRB(20, kToolbarHeight, 20, 100),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

@@ -30,3 +30,8 @@ pytest-cov
 pytest-mock
 aiosqlite
 apscheduler>=3.10,<4.0
+async_timeout
+boto3
+aioboto3
+Pillow
+pillow-heif

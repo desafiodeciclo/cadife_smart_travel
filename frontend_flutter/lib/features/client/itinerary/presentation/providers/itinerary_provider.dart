@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cadife_smart_travel/core/di/service_locator.dart';
 import 'package:cadife_smart_travel/core/network/network_info.dart';
+import 'package:cadife_smart_travel/core/notifications/travel_update_bus.dart';
 import 'package:cadife_smart_travel/features/client/itinerary/data/services/itinerary_service.dart';
 import 'package:cadife_smart_travel/features/client/itinerary/domain/entities/itinerary_item.dart';
 import 'package:equatable/equatable.dart';
@@ -97,9 +98,18 @@ class ItineraryNotifier extends FamilyNotifier<ItineraryState, String> {
   @override
   ItineraryState build(String arg) {
     ref.onDispose(() => _pollingTimer?.cancel());
+
+    // Invalida e recarrega quando FCM sinalizar travel_updated para esta viagem
+    final fcmSub = TravelUpdateBus.stream.listen((travelId) {
+      if (travelId.isEmpty || travelId == arg) {
+        loadItinerary(arg);
+      }
+    });
+    ref.onDispose(fcmSub.cancel);
+
     Future.microtask(() => loadItinerary(arg));
     _startPolling(arg);
-    return ItineraryState(selectedDate: DateTime.now());
+    return ItineraryState(selectedDate: DateTime.now(), isLoading: false);
   }
 
   void _startPolling(String leadId) {
@@ -118,7 +128,10 @@ class ItineraryNotifier extends FamilyNotifier<ItineraryState, String> {
   Future<void> loadItinerary(String leadId) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      final isOnline = await sl<NetworkInfo>().isConnected;
+      bool isOnline = false;
+      try {
+        isOnline = await sl<NetworkInfo>().isConnected;
+      } on Object catch (_) {}
       final service = sl<ItineraryService>();
       final items = await service.fetchItinerary(leadId);
       if (isOnline) {
@@ -130,7 +143,7 @@ class ItineraryNotifier extends FamilyNotifier<ItineraryState, String> {
         isOffline: !isOnline,
         lastSyncedAt: service.lastSyncedAt(leadId),
       );
-    } on Exception catch (e) {
+    } on Object catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
@@ -147,7 +160,7 @@ class ItineraryNotifier extends FamilyNotifier<ItineraryState, String> {
         isOffline: false,
         lastSyncedAt: service.lastSyncedAt(leadId),
       );
-    } on Exception catch (_) {
+    } on Object catch (_) {
       state = state.copyWith(isSyncing: false);
     }
   }

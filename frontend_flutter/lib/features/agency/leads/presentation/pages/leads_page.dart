@@ -2,9 +2,12 @@ import 'package:cadife_smart_travel/core/utils/extensions/extensions.dart';
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/providers/leads_notifier.dart';
+import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
+import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/empty_state/empty_type.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/hero_image.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/state_container.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -77,17 +80,29 @@ class _LeadsPageState extends ConsumerState<LeadsPage> {
         activeScore != null ||
         ref.watch(_searchQueryProvider).isNotEmpty;
 
+    final authAsync = ref.watch(authNotifierProvider);
+    final user = authAsync.valueOrNull;
+    final canCreateManual = user?.role == UserRole.admin || user?.role == UserRole.consultor;
+
     return PageScaffold(
-      appBar: CadifeAppBar(
+      appBar: const CadifeAppBar(
         title: 'Leads',
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add, color: Colors.white),
-            tooltip: 'Novo lead',
-            onPressed: () => context.push('/agency/leads/new'),
-          ),
-        ],
       ),
+      floatingActionButton: canCreateManual 
+        ? FloatingActionButton.extended(
+            onPressed: () => context.push('/agency/leads/new'),
+            backgroundColor: AppColors.primary,
+            icon: const Icon(Icons.add, color: Colors.white),
+            label: const Text(
+              'NOVO LEAD',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.5,
+              ),
+            ),
+          )
+        : null,
       body: Column(
         children: [
           _SearchBar(
@@ -109,7 +124,7 @@ class _LeadsPageState extends ConsumerState<LeadsPage> {
               itemBuilder: (lead, _) => _LeadCard(lead: lead),
               onRetry: () => ref.read(leadsNotifierProvider.notifier).refresh(),
               emptyType: isFiltered ? EmptyType.emptySearch : EmptyType.noLeads,
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 100), // More padding at bottom for FAB
             ),
           ),
         ],

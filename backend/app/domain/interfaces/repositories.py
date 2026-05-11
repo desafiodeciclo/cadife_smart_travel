@@ -8,7 +8,7 @@ never on concrete SQLAlchemy/DB implementations — enabling testability.
 
 import uuid
 from abc import ABC, abstractmethod
-from datetime import date, time
+from datetime import date, datetime, time
 from decimal import Decimal
 from typing import Optional
 
@@ -19,6 +19,9 @@ from app.domain.entities.enums import (
     LeadStatus,
     PropostaStatus,
     TipoMensagem,
+    DocumentoCategoria,
+    SuitcaseCategory,
+    DestinationType,
 )
 
 
@@ -27,6 +30,9 @@ class ILeadRepository(ABC):
 
     @abstractmethod
     async def get_by_phone(self, phone: str) -> Optional[object]: ...
+
+    @abstractmethod
+    async def find_active_by_phone(self, telefone_hash: str) -> Optional[object]: ...
 
     @abstractmethod
     async def get_by_id(self, lead_id: uuid.UUID) -> Optional[object]: ...
@@ -170,3 +176,98 @@ class IMessageGateway(ABC):
 
     @abstractmethod
     async def send(self, phone: str, message: str) -> None: ...
+
+
+class ISuitcaseRepository(ABC):
+    """Interface for Suitcase (checklist) persistence operations."""
+
+    @abstractmethod
+    async def get_items_by_lead(self, lead_id: uuid.UUID) -> list: ...
+
+    @abstractmethod
+    async def get_item_by_id(self, item_id: uuid.UUID) -> Optional[object]: ...
+
+    @abstractmethod
+    async def create_item(
+        self,
+        lead_id: uuid.UUID,
+        user_id: uuid.UUID,
+        nome: str,
+        categoria: str,
+        quantidade: int = 1,
+    ) -> object: ...
+
+    @abstractmethod
+    async def update_item(
+        self,
+        item_id: uuid.UUID,
+        *,
+        nome: Optional[str] = None,
+        empacotado: Optional[bool] = None,
+        quantidade: Optional[int] = None,
+        categoria: Optional[str] = None,
+    ) -> object: ...
+
+    @abstractmethod
+    async def delete_item(self, item_id: uuid.UUID) -> None: ...
+
+    @abstractmethod
+    async def get_suggestions_by_destination(self, destination_type: str) -> list: ...
+
+
+class IDocumentoRepository(ABC):
+    """Interface for Documento (travel documents) persistence."""
+
+    @abstractmethod
+    async def create(
+        self,
+        lead_id: uuid.UUID,
+        nome: str,
+        s3_key: str,
+        categoria: str,
+        tamanho_bytes: int,
+        mimetype: str,
+        enviado_por: Optional[uuid.UUID] = None,
+    ) -> object: ...
+
+    @abstractmethod
+    async def get_by_id(self, documento_id: uuid.UUID) -> Optional[object]: ...
+
+    @abstractmethod
+    async def list_by_lead(
+        self, lead_id: uuid.UUID, include_deleted: bool = False
+    ) -> list: ...
+
+    @abstractmethod
+    async def soft_delete(self, documento_id: uuid.UUID) -> None: ...
+
+
+class IDiaryRepository(ABC):
+    """Interface for Travel Diary persistence operations."""
+
+    @abstractmethod
+    async def create(
+        self,
+        lead_id: uuid.UUID,
+        user_id: uuid.UUID,
+        foto_url: str,
+        thumb_url: str,
+        nota: Optional[str] = None,
+        data_entrada: Optional[datetime] = None,
+    ) -> object: ...
+
+    @abstractmethod
+    async def get_by_id(self, entry_id: uuid.UUID) -> Optional[object]: ...
+
+    @abstractmethod
+    async def list_by_lead(
+        self, lead_id: uuid.UUID, user_id: uuid.UUID, page: int = 1, limit: int = 20
+    ) -> tuple[list, int]: ...
+
+    @abstractmethod
+    async def list_by_user(
+        self, user_id: uuid.UUID, page: int = 1, limit: int = 20
+    ) -> tuple[list, int]: ...
+
+    @abstractmethod
+    async def delete(self, entry_id: uuid.UUID) -> None: ...

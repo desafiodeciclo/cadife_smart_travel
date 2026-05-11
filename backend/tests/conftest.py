@@ -63,6 +63,9 @@ import app.infrastructure.persistence.models.interacao_model  # noqa: F401
 import app.infrastructure.persistence.models.agendamento_model  # noqa: F401
 import app.infrastructure.persistence.models.proposta_model  # noqa: F401
 import app.infrastructure.persistence.models.user_model  # noqa: F401
+import app.infrastructure.persistence.models.documento_model  # noqa: F401
+import app.infrastructure.persistence.models.suitcase_model  # noqa: F401
+import app.infrastructure.persistence.models.travel_diary_model  # noqa: F401
 
 # Now import the app and models AFTER setting env vars
 from main import app
@@ -152,7 +155,7 @@ def override_get_current_user():
 
     # Create a mock user object
     mock_user = UserModel(
-        id=uuid.UUID("00000000-0000-0000-0000-000000000001"),
+        id=uuid.UUID("deadeade-dead-dead-dead-deadeadeadea"),
         nome="Test User",
         email="test@example.com",
         hashed_password="hashed_password_here",
@@ -162,7 +165,7 @@ def override_get_current_user():
         criado_em=datetime.now(timezone.utc),
     )
 
-    async def _get_current_user(*args, **kwargs):
+    async def _get_current_user():
         return mock_user
 
     app.dependency_overrides[get_current_user] = _get_current_user
@@ -191,7 +194,7 @@ async def async_client(
 @pytest.fixture()
 def valid_jwt_token() -> str:
     """Generate a valid JWT access token for the mock user."""
-    user_id = "00000000-0000-0000-0000-000000000001"
+    user_id = "deadeade-dead-dead-dead-deadeadeadea"
     return create_access_token(user_id)
 
 
@@ -199,7 +202,7 @@ def valid_jwt_token() -> str:
 def expired_jwt_token() -> str:
     """Generate an expired JWT access token."""
     payload = {
-        "sub": "00000000-0000-0000-0000-000000000001",
+        "sub": "deadeade-dead-dead-dead-deadeadeadea",
         "type": "access",
         "exp": datetime.now(timezone.utc) - timedelta(hours=1),
     }
@@ -212,7 +215,7 @@ def expired_jwt_token() -> str:
 def invalid_jwt_token() -> str:
     """Generate an invalid JWT token (wrong signature)."""
     payload = {
-        "sub": "00000000-0000-0000-0000-000000000001",
+        "sub": "deadeade-dead-dead-dead-deadeadeadea",
         "type": "access",
     }
     # Use a different secret to simulate a bad signature

@@ -30,7 +30,7 @@ class StatusStepperWidget extends StatelessWidget {
               fontSize: 11,
               fontWeight: FontWeight.w700,
               letterSpacing: 1.5,
-              color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.6),
+              color: context.cadife.textSecondary,
             ),
           ),
           const SizedBox(height: 16),
@@ -88,7 +88,7 @@ class StatusStepperWidget extends StatelessWidget {
                                       : FontWeight.w400,
                                   color: i <= currentStep
                                       ? theme.colorScheme.onSurface
-                                      : theme.textTheme.bodySmall?.color?.withValues(alpha: 0.5),
+                                      : context.cadife.textSecondary,
                                 ),
                               ),
                             ],
@@ -120,19 +120,19 @@ class _StepCircle extends StatelessWidget {
     if (isCompleted) {
       return _Circle(
         color: theme.colorScheme.primary,
-        child: const Icon(Icons.check, color: Colors.white, size: 15),
+        child: const Icon(Icons.check, color: AppColors.white, size: 15),
       );
     }
     if (isCurrent) {
       return _Circle(
         color: theme.colorScheme.primary,
-        child: const Icon(Icons.flight, color: Colors.white, size: 15),
+        child: const Icon(Icons.flight, color: AppColors.white, size: 15),
       );
     }
     return _Circle(
       color: Colors.transparent,
       border: Border.all(
-        color: context.cadife.textSecondary.withValues(alpha: 0.35),
+        color: context.cadife.cardBorder,
         width: 2,
       ),
     );
