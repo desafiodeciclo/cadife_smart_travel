@@ -12,7 +12,7 @@ class AuthRemoteApiDatasource implements IAuthDatasource {
 
   @override
   Future<Map<String, dynamic>> login(String email, String password, {UserRole? profileHint}) async {
-    final url = ApiConstants.login;
+    const url = ApiConstants.login;
     developer.log('LOGIN REQUEST: POST $url', name: 'AuthRemote');
     developer.log('LOGIN PAYLOAD: email=$email password=$password', name: 'AuthRemote');
     try {

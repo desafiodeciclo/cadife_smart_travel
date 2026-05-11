@@ -7,10 +7,9 @@ import 'package:cadife_smart_travel/features/agency/agenda/presentation/widgets/
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/providers/lead_detail_provider.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/providers/leads_notifier.dart';
-import 'package:cadife_smart_travel/features/agency/propostas/presentation/widgets/create_proposal_modal.dart';
+import 'package:cadife_smart_travel/features/agency/propostas/presentation/widgets/proposal_form_tab.dart';
 import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_notifier.dart';
-import 'package:cadife_smart_travel/features/agency/propostas/presentation/widgets/proposal_form_tab.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/animated_tab_content.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/empty_state/empty_type.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/state_container.dart';
