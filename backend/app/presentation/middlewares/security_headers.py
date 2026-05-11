@@ -38,6 +38,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Content-Security-Policy"] = (
             "default-src 'none'; frame-ancestors 'none'"
         )
+        # Proteção XSS legada (modo bloco)
+        response.headers["X-XSS-Protection"] = "1; mode=block"
         # Remove o header que expõe o servidor
         if "server" in response.headers:
             del response.headers["server"]
