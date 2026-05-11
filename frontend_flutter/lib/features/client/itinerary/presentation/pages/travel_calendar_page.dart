@@ -5,6 +5,7 @@ import 'package:cadife_smart_travel/features/client/itinerary/presentation/widge
 import 'package:cadife_smart_travel/features/client/itinerary/presentation/widgets/sync_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 class TravelCalendarPage extends ConsumerStatefulWidget {
   const TravelCalendarPage({required this.leadId, super.key});
