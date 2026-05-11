@@ -8,9 +8,7 @@ import 'package:cadife_smart_travel/features/agency/dashboard/dashboard_screen.d
 import 'package:cadife_smart_travel/features/agency/leads/presentation/pages/lead_detail_page.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/pages/leads_page.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/pages/manual_lead_create_page.dart';
-import 'package:cadife_smart_travel/features/agency/perfil/presentation/pages/profile_page.dart';
 import 'package:cadife_smart_travel/features/agency/propostas/presentation/pages/proposal_create_page.dart';
-import 'package:cadife_smart_travel/features/agency/settings/presentation/pages/settings_page.dart' as agency_settings;
 import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/screens/forgot_password_screen.dart';
@@ -31,7 +29,9 @@ import 'package:cadife_smart_travel/features/client/offers/presentation/screens/
 import 'package:cadife_smart_travel/features/client/profile/presentation/pages/profile_page.dart' as client_profile;
 import 'package:cadife_smart_travel/features/client/profile/presentation/pages/travel_journal_detail_screen.dart';
 import 'package:cadife_smart_travel/features/notifications/presentation/screens/notification_center_screen.dart';
-import 'package:cadife_smart_travel/features/settings/presentation/screens/settings_page.dart';
+import 'package:cadife_smart_travel/screens/consultant/lead_detail_screen.dart';
+import 'package:cadife_smart_travel/screens/consultant/profile_screen.dart';
+import 'package:cadife_smart_travel/screens/settings_screen.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -103,6 +103,21 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) => SlideTransitionPage(
           name: state.name,
           child: const NotificationCenterScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/settings',
+        name: 'settings',
+        pageBuilder: (context, state) => SlideTransitionPage(
+          name: state.name,
+          child: const SettingsScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/consultant/leads/:leadId',
+        name: 'leadDetail',
+        builder: (context, state) => LeadDetailScreen(
+          leadId: state.pathParameters['leadId']!,
         ),
       ),
 
@@ -182,7 +197,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             name: 'agency_profile',
             pageBuilder: (context, state) => SlideTransitionPage(
               name: state.name,
-              child: const ConsultorProfileScreen(),
+              child: const ProfileScreen(),
             ),
           ),
           GoRoute(
@@ -190,7 +205,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             name: 'agency_settings',
             pageBuilder: (context, state) => SlideTransitionPage(
               name: state.name,
-              child: const agency_settings.SettingsScreen(),
+              child: const SettingsScreen(),
             ),
           ),
         ],
@@ -298,7 +313,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             name: 'client_settings',
             pageBuilder: (context, state) => SlideTransitionPage(
               name: state.name,
-              child: const SettingsPage(),
+              child: const SettingsScreen(),
             ),
           ),
         ],
