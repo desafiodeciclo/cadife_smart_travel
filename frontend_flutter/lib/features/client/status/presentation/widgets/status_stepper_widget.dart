@@ -120,13 +120,13 @@ class _StepCircle extends StatelessWidget {
     if (isCompleted) {
       return _Circle(
         color: theme.colorScheme.primary,
-        child: const Icon(Icons.check, color: Colors.white, size: 15),
+        child: const Icon(Icons.check, color: AppColors.white, size: 15),
       );
     }
     if (isCurrent) {
       return _Circle(
         color: theme.colorScheme.primary,
-        child: const Icon(Icons.flight, color: Colors.white, size: 15),
+        child: const Icon(Icons.flight, color: AppColors.white, size: 15),
       );
     }
     return _Circle(

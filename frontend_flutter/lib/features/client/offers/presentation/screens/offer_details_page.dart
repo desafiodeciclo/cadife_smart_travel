@@ -570,6 +570,9 @@ IconData _iconForService(String service) {
 
 // ── Page ─────────────────────────────────────────────────
 
+final _offerInterestLoadingProvider =
+    StateProvider.autoDispose<bool>((ref) => false);
+
 class OfferDetailsPage extends ConsumerStatefulWidget {
   final String offerId;
   final Offer? offer;
@@ -590,8 +593,6 @@ class _OfferDetailsPageState extends ConsumerState<OfferDetailsPage> {
   late final PageController _pageController;
   int _galleryPage = 0;
   bool _isDescriptionExpanded = false;
-  bool _isSubmitting = false;
-
   @override
   void initState() {
     super.initState();
@@ -636,7 +637,7 @@ class _OfferDetailsPageState extends ConsumerState<OfferDetailsPage> {
   }
 
   Future<void> _submitInterest(Offer offer) async {
-    setState(() => _isSubmitting = true);
+    ref.read(_offerInterestLoadingProvider.notifier).state = true;
     try {
       // POST /leads { origem: "oferta", oferta_id: offer.id }
       await Future.delayed(const Duration(milliseconds: 1200));
@@ -650,7 +651,7 @@ class _OfferDetailsPageState extends ConsumerState<OfferDetailsPage> {
         );
       }
     } finally {
-      if (mounted) setState(() => _isSubmitting = false);
+      if (mounted) ref.read(_offerInterestLoadingProvider.notifier).state = false;
     }
   }
 
@@ -865,7 +866,7 @@ class _OfferDetailsPageState extends ConsumerState<OfferDetailsPage> {
                 icon: LucideIcons.star,
                 label:
                     '${_details.rating.toStringAsFixed(1)} (${_details.reviewCount} avaliações)',
-                iconColor: const Color(0xFFF59E0B),
+                iconColor: AppColors.amber,
                 isDark: isDark,
               ),
               const SizedBox(width: 8),
@@ -1425,7 +1426,7 @@ class _OfferDetailsPageState extends ConsumerState<OfferDetailsPage> {
               child: CadifeButton(
                 label: 'Tenho interesse',
                 icon: LucideIcons.heart,
-                onPressed: _isSubmitting
+                onPressed: ref.watch(_offerInterestLoadingProvider)
                     ? null
                     : () => _onTenhoInteresse(offer, formatter, isDark),
               ),

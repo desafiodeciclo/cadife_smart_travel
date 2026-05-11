@@ -38,11 +38,13 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> with SingleTick
   @override
   Widget build(BuildContext context) {
     ref.listen(leadDetailProvider(widget.leadId), (previous, next) {
-      if (next is AsyncData && next.value != null && previous?.value == null) {
+      if (next is AsyncData && previous?.value == null) {
+        final lead = next.value;
+        if (lead == null) return;
         sl<AnalyticsService>().logEvent('lead_viewed', parameters: {
-          'lead_id': next.value!.id,
-          'status': next.value!.status.name,
-          'score': next.value!.score,
+          'lead_id': lead.id,
+          'status': lead.status.name,
+          'score': lead.score,
         });
       }
     });
@@ -68,16 +70,16 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> with SingleTick
                 stretch: true,
                 backgroundColor: context.cadife.primary,
                 leading: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  icon: const Icon(Icons.arrow_back, color: AppColors.white),
                   onPressed: () => context.pop(),
                 ),
                 flexibleSpace: FlexibleSpaceBar(
                   title: Text(
                     lead.name,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppColors.white,
                       fontWeight: FontWeight.bold,
-                      shadows: [Shadow(color: Colors.black45, blurRadius: 10)],
+                      shadows: [Shadow(color: AppColors.overlayMedium, blurRadius: 10)],
                     ),
                   ),
                   background: lead.imageUrl != null
@@ -92,7 +94,7 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> with SingleTick
                 ),
                 actions: [
                   IconButton(
-                    icon: const Icon(Icons.more_vert, color: Colors.white),
+                    icon: const Icon(Icons.more_vert, color: AppColors.white),
                     onPressed: () {},
                   ),
                 ],

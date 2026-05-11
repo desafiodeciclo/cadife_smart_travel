@@ -58,9 +58,9 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
             leading: Padding(
               padding: const EdgeInsets.all(8),
               child: CircleAvatar(
-                backgroundColor: Colors.black45,
+                backgroundColor: AppColors.overlayMedium,
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+                  icon: const Icon(Icons.arrow_back, color: AppColors.white, size: 20),
                   onPressed: _handleBack,
                   tooltip: 'Voltar',
                 ),
@@ -83,9 +83,9 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
                         if (loadingProgress == null) return child;
                         return Container(
                           color: AppColors.zinc800,
-                          child: const Center(
+                          child: Center(
                             child: CircularProgressIndicator(
-                              color: Colors.white24,
+                              color: AppColors.white.withValues(alpha: 0.24),
                               strokeWidth: 2,
                             ),
                           ),
@@ -93,11 +93,11 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
                       },
                       errorBuilder: (_, _, _) => Container(
                         color: AppColors.zinc800,
-                        child: const Center(
+                        child: Center(
                           child: Icon(
                             Icons.landscape,
                             size: 64,
-                            color: Colors.white24,
+                            color: AppColors.white.withValues(alpha: 0.24),
                           ),
                         ),
                       ),
@@ -126,7 +126,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
                                   Text(
                                     trip.destination,
                                     style: const TextStyle(
-                                      color: Colors.white,
+                                      color: AppColors.white,
                                       fontSize: 28,
                                       fontWeight: FontWeight.bold,
                                       letterSpacing: -0.5,
@@ -135,7 +135,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
                                   Text(
                                     trip.destinationCountry,
                                     style: const TextStyle(
-                                      color: Colors.white,
+                                      color: AppColors.white,
                                       fontSize: 16,
                                       fontWeight: FontWeight.w500,
                                     ),

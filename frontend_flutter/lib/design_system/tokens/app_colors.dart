@@ -66,8 +66,12 @@ class AppColors {
   static const Color googleRed    = Color(0xFFEA4335);
 
   // --- Overlays ---
-  static const Color overlayDark    = Color(0xCC000000); 
+  static const Color overlayDark    = Color(0xCC000000);
+  static const Color overlayMedium  = Color(0x73000000); // ~Colors.black45 for shadows/scrim
   static const Color whiteOverlay15 = Color(0x26FFFFFF);
+
+  // --- Accent ---
+  static const Color amber = Color(0xFFF59E0B); // star / rating accent
 
   // --- Legacy / Missing Getters (for compatibility) ---
   static const Color textOnPrimary = white;
