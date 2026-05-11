@@ -1,10 +1,15 @@
 import 'package:cadife_smart_travel/core/analytics/analytics_service.dart';
 import 'package:cadife_smart_travel/core/di/service_locator.dart';
 import 'package:cadife_smart_travel/design_system/design_system.dart';
+import 'package:cadife_smart_travel/features/admin/domain/entities/admin_entities.dart';
+import 'package:cadife_smart_travel/features/admin/presentation/providers/admin_providers.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/presentation/widgets/schedule_appointment_modal.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/providers/lead_detail_provider.dart';
+import 'package:cadife_smart_travel/features/agency/leads/presentation/providers/leads_notifier.dart';
 import 'package:cadife_smart_travel/features/agency/propostas/presentation/widgets/create_proposal_modal.dart';
+import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
+import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/animated_tab_content.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/empty_state/empty_type.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/state_container.dart';
@@ -227,6 +232,9 @@ class _ActionButtons extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(authNotifierProvider).valueOrNull;
+    final isAdmin = user?.role == UserRole.admin;
+
     return Column(
       children: [
         Row(
@@ -279,19 +287,91 @@ class _ActionButtons extends ConsumerWidget {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: CadifeButton(
-                text: 'WhatsApp',
-                icon: Icons.chat_bubble_outline,
-                variant: ButtonVariant.secondary,
-                isOutline: true,
-                analyticsLabel: 'lead_detail_whatsapp',
-                onPressed: () {},
-              ),
+              child: isAdmin
+                  ? CadifeButton(
+                      text: 'Reatribuir',
+                      icon: LucideIcons.userCog,
+                      variant: ButtonVariant.secondary,
+                      isOutline: true,
+                      analyticsLabel: 'lead_detail_reassign',
+                      onPressed: () => _showReassignModal(context, ref, lead),
+                    )
+                  : CadifeButton(
+                      text: 'WhatsApp',
+                      icon: Icons.chat_bubble_outline,
+                      variant: ButtonVariant.secondary,
+                      isOutline: true,
+                      analyticsLabel: 'lead_detail_whatsapp',
+                      onPressed: () {},
+                    ),
             ),
           ],
         ),
       ],
     );
+  }
+
+  Future<void> _showReassignModal(BuildContext context, WidgetRef ref, Lead lead) async {
+    final consultoresAsync = ref.read(adminConsultoresProvider);
+    final consultores = consultoresAsync.valueOrNull ?? [];
+    final activeConsultores = consultores.where((c) => c.isActive).toList();
+
+    if (activeConsultores.isEmpty) {
+      if (context.mounted) {
+        ShadToaster.of(context).show(
+          const ShadToast(
+            description: Text('Nenhum consultor ativo disponível para reatribuição.'),
+          ),
+        );
+      }
+      return;
+    }
+
+    ConsultorAdmin? selected;
+
+    await showShadDialog(
+      context: context,
+      builder: (context) => ShadDialog(
+        title: const Text('Reatribuir Lead'),
+        description: Text('Selecione o novo consultor para atender ${lead.name}:'),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 16),
+            ...activeConsultores.map((c) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: ShadButton.outline(
+                  width: double.infinity,
+                  onPressed: () {
+                    selected = c;
+                    Navigator.of(context).pop();
+                  },
+                  leading: CircleAvatar(
+                    radius: 14,
+                    backgroundImage: c.avatarUrl != null ? NetworkImage(c.avatarUrl!) : null,
+                    child: c.avatarUrl == null ? const Icon(LucideIcons.user, size: 14) : null,
+                  ),
+                  child: Text('${c.name} (${c.leadsAtivos} ativos)'),
+                ),
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+
+    if (selected != null && context.mounted) {
+      await ref.read(leadsNotifierProvider.notifier).reassignLead(lead.id, selected!.name);
+      ref.invalidate(leadDetailProvider(lead.id));
+      if (context.mounted) {
+        ShadToaster.of(context).show(
+          ShadToast(
+            description: Text('Lead reatribuído para ${selected!.name}'),
+          ),
+        );
+      }
+    }
   }
 }
 

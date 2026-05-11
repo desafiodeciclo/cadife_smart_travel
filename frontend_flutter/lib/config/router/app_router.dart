@@ -3,6 +3,10 @@ import 'package:cadife_smart_travel/config/router/agency_shell.dart';
 import 'package:cadife_smart_travel/config/router/client_shell.dart';
 import 'package:cadife_smart_travel/config/router/transitions/custom_page_route.dart';
 import 'package:cadife_smart_travel/core/analytics/analytics_navigation_observer.dart';
+import 'package:cadife_smart_travel/features/admin/presentation/pages/admin_all_leads_page.dart';
+import 'package:cadife_smart_travel/features/admin/presentation/pages/admin_consultant_list_page.dart';
+import 'package:cadife_smart_travel/features/admin/presentation/pages/admin_overview_page.dart';
+import 'package:cadife_smart_travel/features/admin/presentation/pages/create_consultant_page.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/presentation/pages/agenda_page.dart';
 import 'package:cadife_smart_travel/features/agency/dashboard/dashboard_screen.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/pages/lead_detail_page.dart';
@@ -57,18 +61,22 @@ final routerProvider = Provider<GoRouter>((ref) {
           if (user == null) return isLoggingIn ? null : '/auth/login';
 
           if (isLoggingIn || state.matchedLocation == '/splash') {
-            return user.role == UserRole.consultor
+            return (user.role == UserRole.consultor || user.role == UserRole.admin)
                 ? '/agency/dashboard'
                 : '/client/status';
           }
 
           final isAgencyRoute = state.matchedLocation.startsWith('/agency');
           final isClientRoute = state.matchedLocation.startsWith('/client');
+          final isAdminRoute = state.matchedLocation.startsWith('/agency/admin');
 
-          if (isAgencyRoute && user.role != UserRole.consultor) {
+          if (isAdminRoute && user.role != UserRole.admin) {
+            return '/agency/dashboard';
+          }
+          if (isAgencyRoute && user.role != UserRole.consultor && user.role != UserRole.admin) {
             return '/client/status';
           }
-          if (isClientRoute && user.role == UserRole.consultor) {
+          if (isClientRoute && (user.role == UserRole.consultor || user.role == UserRole.admin)) {
             return '/agency/dashboard';
           }
 
@@ -191,6 +199,46 @@ final routerProvider = Provider<GoRouter>((ref) {
             pageBuilder: (context, state) => SlideTransitionPage(
               name: state.name,
               child: const agency_settings.SettingsScreen(),
+            ),
+          ),
+          // Admin routes (protected by AdminGuard redirect above)
+          GoRoute(
+            path: '/agency/admin',
+            name: 'agency_admin',
+            redirect: (context, state) => '/agency/admin/overview',
+          ),
+          GoRoute(
+            path: '/agency/admin/overview',
+            name: 'agency_admin_overview',
+            pageBuilder: (context, state) => SlideTransitionPage(
+              name: state.name,
+              child: const AdminOverviewPage(),
+            ),
+          ),
+          GoRoute(
+            path: '/agency/admin/consultants',
+            name: 'agency_admin_consultants',
+            pageBuilder: (context, state) => SlideTransitionPage(
+              name: state.name,
+              child: const AdminConsultantListPage(),
+            ),
+            routes: [
+              GoRoute(
+                path: 'new',
+                name: 'agency_admin_consultant_new',
+                pageBuilder: (context, state) => SlideTransitionPage(
+                  name: state.name,
+                  child: const CreateConsultantPage(),
+                ),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: '/agency/admin/leads',
+            name: 'agency_admin_leads',
+            pageBuilder: (context, state) => SlideTransitionPage(
+              name: state.name,
+              child: const AdminAllLeadsPage(),
             ),
           ),
         ],
