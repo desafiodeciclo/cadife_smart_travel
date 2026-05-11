@@ -22,20 +22,30 @@ class AgencySettingsNotifier extends AsyncNotifier<AgencySettings> {
     );
   }
 
+  /// Salva settings completos; retorna mensagem de erro ou null em sucesso.
+  Future<String?> saveAll(AgencySettings settings) async {
+    final result =
+        await ref.read(iAgencySettingsRepositoryProvider).updateSettings(settings);
+    return result.fold(
+      (failure) => failure.message,
+      (updated) {
+        state = AsyncData(updated);
+        return null;
+      },
+    );
+  }
+
+  // ── Métodos granulares (usados internamente / por outras features) ──────────
+
   Future<void> _save(AgencySettings updated) async {
     final previous = state.valueOrNull;
     state = AsyncData(updated);
-    
-    final result = await ref.read(iAgencySettingsRepositoryProvider).updateSettings(updated);
+    final result =
+        await ref.read(iAgencySettingsRepositoryProvider).updateSettings(updated);
     state = result.fold(
-      (failure) {
-        if (previous != null) {
-          // Emitting AsyncData(previous) then AsyncError(failure) might be weird, 
-          // usually we just emit the error or revert.
-          return AsyncError(failure, StackTrace.current);
-        }
-        return AsyncError(failure, StackTrace.current);
-      },
+      (failure) => previous != null
+          ? AsyncData(previous)
+          : AsyncError(failure, StackTrace.current),
       AsyncData.new,
     );
   }
@@ -85,10 +95,7 @@ class AgencySettingsNotifier extends AsyncNotifier<AgencySettings> {
   Future<void> removeTemplate(String id) async {
     final current = state.valueOrNull;
     if (current == null) return;
-    final templates =
-        current.templates.where((t) => t.id != id).toList();
+    final templates = current.templates.where((t) => t.id != id).toList();
     await _save(current.copyWith(templates: templates));
   }
 }
-
-

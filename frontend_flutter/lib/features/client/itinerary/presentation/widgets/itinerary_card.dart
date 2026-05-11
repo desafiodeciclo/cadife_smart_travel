@@ -23,7 +23,6 @@ class ItineraryCard extends StatelessWidget {
     final timeFmt = DateFormat('HH:mm');
     final cadife = context.cadife;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final surface = isDark ? AppColors.cardBackgroundDark : AppColors.cardBackground;
 
     final innerContent = Row(
       crossAxisAlignment: CrossAxisAlignment.start,

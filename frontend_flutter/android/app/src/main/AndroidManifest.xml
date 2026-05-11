@@ -5,7 +5,7 @@
     <application
         android:label="${appName}"
         android:name="${applicationName}"
-        android:icon="${appIcon}"
+        android:icon="@mipmap/launcher_icon"
         android:usesCleartextTraffic="true"
         android:enableOnBackInvokedCallback="true">
         <activity

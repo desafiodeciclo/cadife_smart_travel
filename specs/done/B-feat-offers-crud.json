@@ -1,0 +1,135 @@
+{
+  "id": "B-feat-offers-crud",
+  "title": "(B) feat/offers-crud",
+  "priority": "high",
+  "assignee": "Backend",
+  "sprint": 7,
+  "status": "done",
+  "steps": [
+    {
+      "id": "1.1",
+      "name": "Add OfferStatus and OfferCategoria enums to domain/entities/enums.py",
+      "status": "done"
+    },
+    {
+      "id": "1.2",
+      "name": "Create Offer SQLAlchemy model in app/models/offer.py",
+      "status": "done"
+    },
+    {
+      "id": "1.3",
+      "name": "Create Alembic migration for offers table",
+      "status": "done"
+    },
+    {
+      "id": "2.1",
+      "name": "Create Offer Pydantic schemas (Create, Update, Response, List)",
+      "status": "done"
+    },
+    {
+      "id": "3.1",
+      "name": "Create offer_service.py with CRUD, filters, pagination and S3 image upload",
+      "status": "done"
+    },
+    {
+      "id": "4.1",
+      "name": "Create routes/offers.py with POST, GET list, GET detail, PATCH, PATCH publish, DELETE, POST interest",
+      "status": "done"
+    },
+    {
+      "id": "4.2",
+      "name": "Register offers router in main.py",
+      "status": "done"
+    },
+    {
+      "id": "5.1",
+      "name": "Create backend tests for offer service and routes",
+      "status": "done"
+    },
+    {
+      "id": "6.1",
+      "name": "Move Pydantic schemas from app/models/offer.py to app/presentation/schemas/offer_schema.py",
+      "status": "done"
+    },
+    {
+      "id": "6.2",
+      "name": "Add magic-bytes validation for image uploads (reuse documento_service logic)",
+      "status": "done"
+    },
+    {
+      "id": "6.3",
+      "name": "Fix test_express_interest_unpublished to assert against a real draft offer (400 Bad Request)",
+      "status": "done"
+    },
+    {
+      "id": "7.1",
+      "name": "Implement S3 partial rollback (compensation) on image upload failure",
+      "status": "done"
+    },
+    {
+      "id": "7.2",
+      "name": "Add search filter by title/destination to GET /offers",
+      "status": "done"
+    },
+    {
+      "id": "7.3",
+      "name": "Remove unnecessary LeadModel alias in create_lead_from_interest",
+      "status": "done"
+    },
+    {
+      "id": "8.1",
+      "name": "Restore Pydantic validation: routes convert form data to OfferCreate/OfferUpdate schemas",
+      "status": "done"
+    },
+    {
+      "id": "8.2",
+      "name": "Create OfferInterestResponse schema and apply to express_interest endpoint",
+      "status": "done"
+    },
+    {
+      "id": "8.3",
+      "name": "Implement S3 cleanup of old images on offer update",
+      "status": "done"
+    },
+    {
+      "id": "8.4",
+      "name": "Fix OfferListResponse type mismatch: use OfferListItem.model_validate",
+      "status": "done"
+    },
+    {
+      "id": "8.5",
+      "name": "Remove unused imports from offer_service.py",
+      "status": "done"
+    },
+    {
+      "id": "9.1",
+      "name": "Test: client GET /offers/{id} draft → 403 Forbidden",
+      "status": "done"
+    },
+    {
+      "id": "9.2",
+      "name": "Test: client GET /offers only shows published offers",
+      "status": "done"
+    },
+    {
+      "id": "9.3",
+      "name": "Test: RBAC denial on publish and delete for non-owner consultant",
+      "status": "done"
+    },
+    {
+      "id": "9.4",
+      "name": "Test: invalid image uploads — magic bytes spoof, >5 images, >5MB",
+      "status": "done"
+    },
+    {
+      "id": "9.5",
+      "name": "Test: search query param on GET /offers route",
+      "status": "done"
+    },
+    {
+      "id": "9.6",
+      "name": "Test: express_interest with no phone → 400 Bad Request",
+      "status": "done"
+    }
+  ]
+}

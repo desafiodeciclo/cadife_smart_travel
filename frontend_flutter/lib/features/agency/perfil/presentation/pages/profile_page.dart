@@ -158,7 +158,7 @@ class _ConsultorProfileScreenState
         showProfile: false,
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings_outlined, color: Colors.white),
+            icon: Icon(LucideIcons.settings, color: context.cadife.textPrimary),
             tooltip: 'Configurações',
             onPressed: () => context.push('/agency/settings'),
           ),
@@ -1063,12 +1063,6 @@ class _ActionsSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Column(
       children: [
-        _ActionTile(
-          icon: Icons.tune_rounded,
-          label: 'Configurações de perfil',
-          onTap: () => context.push('/agency/settings'),
-        ),
-        const SizedBox(height: 8),
         _ActionTile(
           icon: Icons.logout_rounded,
           label: 'Sair da conta',

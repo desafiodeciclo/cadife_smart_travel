@@ -72,4 +72,15 @@ class AuthRemoteApiDatasource implements IAuthDatasource {
   Future<void> forgotPassword(String email) async {
     await _dio.post(ApiConstants.forgotPassword, data: {'email': email});
   }
+
+  @override
+  Future<void> changePassword(String currentPassword, String newPassword) async {
+    await _dio.post(
+      ApiConstants.changePassword,
+      data: {
+        'current_password': currentPassword,
+        'new_password': newPassword,
+      },
+    );
+  }
 }

@@ -84,7 +84,7 @@ class _ScheduleAppointmentModalState
         color: Theme.of(context).scaffoldBackgroundColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      child: Padding(
+      child: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(24, 16, 24, 24 + bottomInset),
         child: Column(
           mainAxisSize: MainAxisSize.min,

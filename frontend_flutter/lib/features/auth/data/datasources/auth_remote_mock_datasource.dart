@@ -69,6 +69,15 @@ class AuthRemoteMockDatasource implements IAuthDatasource {
     await Future.delayed(const Duration(milliseconds: 1000));
   }
 
+  @override
+  Future<void> changePassword(String currentPassword, String newPassword) async {
+    await Future.delayed(const Duration(milliseconds: 1000));
+    // Simulate error if current password is 'error'
+    if (currentPassword == 'error') {
+      throw Exception('Senha atual incorreta');
+    }
+  }
+
   String _buildMockJwt(String userId, UserRole role, {int hours = 24}) {
     final header = base64Url
         .encode(utf8.encode('{"alg":"none","typ":"JWT"}'))
