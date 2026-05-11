@@ -48,7 +48,7 @@ class TripStatusSection extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
               decoration: BoxDecoration(
-                color: _statusColor.withValues(alpha: 0.15),
+                color: cadife.muted,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: _statusColor),
               ),
@@ -66,8 +66,8 @@ class TripStatusSection extends StatelessWidget {
         const SizedBox(height: 12),
 
         // Componente Unificado: Progresso e Checklist
-        CadifeGlassCard(
-          borderRadius: BorderRadius.circular(20),
+        CadifeCard(
+          borderRadius: 20,
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -108,7 +108,7 @@ class TripStatusSection extends StatelessWidget {
               
               // Divisor sutil
               Divider(
-                color: cadife.cardBorder.withValues(alpha: 0.1),
+                color: cadife.cardBorder,
                 height: 1,
               ),
               const SizedBox(height: 20),
@@ -151,7 +151,7 @@ class TripProgressTimeline extends StatelessWidget {
                     color: cp.completed
                         ? cadife.primary
                         : cp.isCurrent
-                            ? cadife.primary.withValues(alpha: 0.25)
+                            ? cadife.primary
                             : cadife.muted,
                     border: Border.all(
                       color: cp.completed || cp.isCurrent

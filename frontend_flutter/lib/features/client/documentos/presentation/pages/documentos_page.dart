@@ -1,6 +1,7 @@
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/client/documentos/presentation/providers/documentos_notifier.dart';
 import 'package:cadife_smart_travel/features/client/documentos/presentation/widgets/widgets.dart';
+import 'package:cadife_smart_travel/features/notifications/presentation/widgets/notification_bell.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/empty_state/app_empty_state.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/empty_state/empty_type.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/state_container.dart';
@@ -25,10 +26,11 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
 
     return PageScaffold(
       title: 'Documentos',
+      actions: const [NotificationBell(), SizedBox(width: 8)],
       body: SingleChildScrollView(
         child: Column(
           children: [
-            const SizedBox(height: 72),
+            const SizedBox(height: kToolbarHeight),
             // Principais Documentos Section
             Padding(
               padding: const EdgeInsets.all(12),
@@ -127,23 +129,27 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
                         children: filteredDocs
                             .asMap()
                             .entries
-                            .map(
-                              (entry) => CadifeDocumentCard(
-                                document: entry.value,
-                                padding: EdgeInsets.zero,
-                                onView: () {
-                                  context.push(
-                                    '/client/documents/viewer',
-                                    extra: entry.value,
-                                  );
-                                },
-                                onDownload: () {
-                                  context.push(
-                                    '/client/documents/viewer',
-                                    extra: entry.value,
-                                  );
-                                },
-                              ),
+                            .expand(
+                              (entry) => [
+                                CadifeDocumentCard(
+                                  document: entry.value,
+                                  padding: EdgeInsets.zero,
+                                  onView: () {
+                                    context.push(
+                                      '/client/documents/viewer',
+                                      extra: entry.value,
+                                    );
+                                  },
+                                  onDownload: () {
+                                    context.push(
+                                      '/client/documents/viewer',
+                                      extra: entry.value,
+                                    );
+                                  },
+                                ),
+                                if (entry.key < filteredDocs.length - 1)
+                                  const SizedBox(height: 10),
+                              ],
                             )
                             .toList(),
                       );

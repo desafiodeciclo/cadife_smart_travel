@@ -19,21 +19,17 @@ class CadifeDocumentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final primaryColor = isDark ? Colors.white : Colors.black;
-    final secondaryColor = isDark ? Colors.white.withValues(alpha: 0.6) : Colors.black.withValues(alpha: 0.5);
-    final surfaceColor = isDark ? const Color(0xFF1A1A1A) : Colors.white; // Darker surface for premium look
+    final cadife = context.cadife;
 
     return Padding(
       padding: padding ?? EdgeInsets.zero,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: surfaceColor,
+          color: cadife.cardBackground,
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
+            color: cadife.cardBorder,
             width: 1,
           ),
         ),
@@ -74,7 +70,7 @@ class CadifeDocumentCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
-                      color: primaryColor,
+                      color: cadife.textPrimary,
                       height: 1.2,
                     ),
                     maxLines: 1,
@@ -86,7 +82,7 @@ class CadifeDocumentCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
-                      color: secondaryColor,
+                      color: cadife.textSecondary,
                     ),
                   ),
                 ],
@@ -134,6 +130,7 @@ class _ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cadife = context.cadife;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryButtonColor = isDark ? Colors.white : Colors.black;
     final secondaryButtonColor = isDark ? Colors.white : Colors.black;
@@ -167,7 +164,7 @@ class _ActionButton extends StatelessWidget {
               foregroundColor: secondaryButtonColor,
               decoration: ShadDecoration(
                 border: ShadBorder.all(
-                  color: secondaryButtonColor.withValues(alpha: 0.3),
+                  color: cadife.cardBorder,
                   width: 1,
                   radius: BorderRadius.circular(10),
                 ),

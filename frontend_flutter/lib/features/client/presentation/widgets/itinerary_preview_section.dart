@@ -105,14 +105,24 @@ class ItineraryPreviewSection extends ConsumerWidget {
             ),
           )
         else
-          Column(
-            children: state.items
-                .take(3)
-                .map((item) => ItineraryCard(
-                      key: ValueKey('home_itin_${item.id}'),
-                      item: item,
-                    ))
-                .toList(),
+          CadifeCard(
+            padding: EdgeInsets.zero,
+            borderRadius: 16,
+            showBorder: true,
+            child: Column(
+              children: [
+                for (int i = 0; i < state.items.take(3).length; i++) ...[
+                  ItineraryCard(
+                    key: ValueKey('home_itin_${state.items[i].id}'),
+                    item: state.items[i],
+                    showCard: false,
+                    showBorder: false,
+                  ),
+                  if (i < state.items.take(3).length - 1)
+                    Divider(height: 1, thickness: 1, color: cadife.cardBorder, indent: 12, endIndent: 12),
+                ],
+              ],
+            ),
           ),
       ],
     );

@@ -32,11 +32,11 @@ class ClientHomeScreen extends ConsumerWidget {
       ),
       body: Builder(
         builder: (context) {
-          const topPad = kToolbarHeight + 8;
+          const topPad = kToolbarHeight;
           return SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
             child: Padding(
-              padding: EdgeInsets.fromLTRB(12, topPad, 12, 100),
+              padding: const EdgeInsets.fromLTRB(12, topPad, 12, 100),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

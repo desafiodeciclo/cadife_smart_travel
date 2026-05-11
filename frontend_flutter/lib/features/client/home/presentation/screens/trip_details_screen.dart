@@ -103,21 +103,8 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
                       ),
                     ),
                   ),
-                  const DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.black45,
-                          Colors.transparent,
-                          Colors.transparent,
-                          Colors.black87,
-                        ],
-                        stops: [0.0, 0.3, 0.6, 1.0],
-                      ),
-                    ),
-                  ),
+                  // Removido gradiente para padronização CDS
+
                   Positioned(
                     bottom: 20,
                     left: 20,
@@ -147,8 +134,8 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
                                   ),
                                   Text(
                                     trip.destinationCountry,
-                                    style: TextStyle(
-                                      color: Colors.white.withValues(alpha: 0.8),
+                                    style: const TextStyle(
+                                      color: Colors.white,
                                       fontSize: 16,
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -236,7 +223,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
                     if (itineraryState.isLoading)
                       const Center(child: CircularProgressIndicator())
                     else if (itineraryState.items.isEmpty)
-                      CadifeGlassCard(
+                      CadifeCard(
                         padding: const EdgeInsets.all(20),
                         child: Center(
                           child: Text(
@@ -273,9 +260,9 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
-        child: CadifeGlassCard(
+        child: CadifeCard(
           padding: const EdgeInsets.all(12),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: 16,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

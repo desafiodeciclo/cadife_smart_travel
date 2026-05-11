@@ -49,14 +49,14 @@ class DocumentsSection extends StatelessWidget {
             width: double.infinity,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: cadife.cardBackground.withValues(alpha: 0.5),
+              color: cadife.muted,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: cadife.cardBorder),
             ),
             child: Text(
               'Sem documentos anexados',
               style: TextStyle(
-                color: cadife.textSecondary.withValues(alpha: 0.5),
+                color: cadife.textSecondary,
                 fontSize: 13,
                 fontStyle: FontStyle.italic,
               ),

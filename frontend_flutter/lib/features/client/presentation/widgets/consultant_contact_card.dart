@@ -45,10 +45,8 @@ class ConsultantContactCard extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        CadifeGlassCard(
-          blur: 20,
-          opacity: 0.1,
-          borderRadius: BorderRadius.circular(24),
+        CadifeCard(
+          borderRadius: 24,
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
@@ -137,12 +135,13 @@ class ContactButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cadife = context.cadife;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.12),
+          color: cadife.muted,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: color),
         ),
