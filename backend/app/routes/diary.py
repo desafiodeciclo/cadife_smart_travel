@@ -51,6 +51,7 @@ async def create_diary_entry(
     """
     return await service.create_entry(
         user_id=current_user.id,
+        user_phone=current_user.telefone,
         lead_id=lead_id,
         photo=file,
         nota=nota,
