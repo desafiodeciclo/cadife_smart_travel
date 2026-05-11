@@ -17,8 +17,24 @@ class AgencyShell extends ConsumerStatefulWidget {
 }
 
 class _AgencyShellState extends ConsumerState<AgencyShell> {
+  static const _baseTabs = [
+    '/agency/dashboard',
+    '/agency/leads',
+    '/agency/agenda',
+    '/agency/profile',
+  ];
+
+  static const _adminTabs = [
+    '/agency/dashboard',
+    '/agency/leads',
+    '/agency/agenda',
+    '/agency/admin',
+    '/agency/profile',
+  ];
+
   int _currentIndex = 0;
   int _previousIndex = 0;
+  List<String> _tabs = _baseTabs;
 
   List<String> _tabs(bool isAdmin) {
     final tabs = ['/agency/dashboard', '/agency/leads', '/agency/agenda', '/agency/profile'];
@@ -43,6 +59,19 @@ class _AgencyShellState extends ConsumerState<AgencyShell> {
     final isAdmin = user?.role == UserRole.admin;
     _currentIndex = _indexFromPath(widget.location, isAdmin);
     _previousIndex = _currentIndex;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final user = ref.read(authNotifierProvider).valueOrNull;
+    final newTabs = user?.role == UserRole.admin ? _adminTabs : _baseTabs;
+    if (newTabs.length != _tabs.length) {
+      setState(() {
+        _tabs = newTabs;
+        _currentIndex = _indexFromPath(widget.location, _tabs);
+      });
+    }
   }
 
   @override
@@ -90,8 +119,15 @@ class _AgencyShellState extends ConsumerState<AgencyShell> {
       ),
       bottomNavigationBar: CadifeBottomNav(
         currentIndex: _currentIndex,
-        onTap: (i) => context.go(tabs[i]),
-        items: items,
+        onTap: (i) => context.go(_tabs[i]),
+        items: [
+          const CadifeBottomNavItem(icon: LucideIcons.layoutDashboard, label: 'Dashboard'),
+          const CadifeBottomNavItem(icon: LucideIcons.users, label: 'Leads'),
+          const CadifeBottomNavItem(icon: LucideIcons.calendarDays, label: 'Agenda'),
+          if (isAdmin)
+            const CadifeBottomNavItem(icon: LucideIcons.shield, label: 'ADM'),
+          const CadifeBottomNavItem(icon: LucideIcons.circleUser, label: 'Perfil'),
+        ],
       ),
     );
   }

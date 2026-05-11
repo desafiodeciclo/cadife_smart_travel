@@ -12,4 +12,5 @@ abstract class ILeadsDatasource {
   Future<List<Interacao>> getInteractions(String leadId);
   Future<LeadApiModel> createLead(CreateLeadRequest request);
   Future<LeadApiModel> createManualLead(ManualLeadCreate request);
+  Future<LeadApiModel> reassignLead(String id, String consultorNome);
 }

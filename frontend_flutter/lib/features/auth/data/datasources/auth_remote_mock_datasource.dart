@@ -15,9 +15,12 @@ class AuthRemoteMockDatasource implements IAuthDatasource {
          email.contains('agencia') ? UserRole.consultor : UserRole.cliente);
 
     final userMap = {
-      'id': 'mock-id-123',
-      'nome': role == UserRole.admin ? 'Administrador' :
-              role == UserRole.consultor ? 'Consultor de Teste' : 'Cliente de Teste',
+      'id': email.contains('admin') ? 'mock-admin-001' : 'mock-id-123',
+      'nome': switch (role) {
+        UserRole.admin => 'Administrador Cadife',
+        UserRole.consultor => 'Consultor de Teste',
+        UserRole.cliente => 'Cliente de Teste',
+      },
       'email': email,
       'perfil': role.name,
     };
