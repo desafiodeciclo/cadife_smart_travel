@@ -46,7 +46,7 @@ class RecommendationsSection extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         SizedBox(
-          height: 280, // Reduzido ainda mais
+          height: 320, // Aumentado para evitar overflow nos cards
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             clipBehavior: Clip.none,

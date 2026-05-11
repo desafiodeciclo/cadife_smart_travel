@@ -63,6 +63,7 @@ class _TravelCalendarPageState extends ConsumerState<TravelCalendarPage> {
         ),
         actions: [
           const NotificationBell(),
+          const SizedBox(width: 8),
           if (state.isSyncing)
             Padding(
               padding: const EdgeInsets.only(right: 12),
