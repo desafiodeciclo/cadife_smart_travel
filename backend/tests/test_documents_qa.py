@@ -9,6 +9,7 @@ from app.infrastructure.persistence.models.user_model import UserModel
 from app.models import Documento
 from app.models.user import UserPerfil
 from app.infrastructure.security.dependencies import get_current_user
+from app.infrastructure.security.pii_encryption import hmac_hash
 
 from main import app as fastapi_app
 
@@ -37,7 +38,7 @@ async def sample_lead(db_session):
         id=uuid.uuid4(),
         nome="Cliente QA Teste",
         telefone="+5511999999999",
-        telefone_hash="hash_teste_qa",
+        telefone_hash=hmac_hash("+5511999999999"),
         status=LeadStatus.novo
     )
     db_session.add(lead)
@@ -200,7 +201,7 @@ async def test_delete_document_rbac_client_denied(async_client, sample_lead, sam
 
 
 @pytest.mark.asyncio
-async def test_delete_document_rbac_consultant_success(async_client, sample_lead, sample_document):
+async def test_delete_document_rbac_consultant_success(async_client, db_session, sample_lead, sample_document):
     """CT-03: Consultants must be allowed to delete documents (204)."""
     mock_consultant = UserModel(
         id=uuid.uuid4(),
@@ -209,6 +210,10 @@ async def test_delete_document_rbac_consultant_success(async_client, sample_lead
         email="consultor@agencia.com",
         is_active=True
     )
+
+    # Assign consultant as owner of the lead so RBAC ownership check passes
+    sample_lead.consultor_id = mock_consultant.id
+    await db_session.commit()
 
     async def get_mock_consultant():
         return mock_consultant
