@@ -35,6 +35,10 @@ class Interacao(Base):
     timestamp: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
+    # ID único da mensagem vindo da Meta para evitar Replay Attacks
+    whatsapp_message_id: Mapped[Optional[str]] = mapped_column(
+        String(255), unique=True, nullable=True, index=True
+    )
 
     # Outbound send tracking (spec.md §9.1 — reply back to customer)
     enviado_em: Mapped[Optional[datetime]] = mapped_column(
