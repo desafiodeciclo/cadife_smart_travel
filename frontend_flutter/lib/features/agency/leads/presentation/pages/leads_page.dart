@@ -1,13 +1,15 @@
 import 'package:cadife_smart_travel/core/utils/extensions/extensions.dart';
 import 'package:cadife_smart_travel/design_system/design_system.dart';
+import 'package:cadife_smart_travel/features/agency/dashboard/widgets/notifications_modal.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/providers/leads_notifier.dart';
 import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:cadife_smart_travel/providers/notifications_provider.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/empty_state/empty_type.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/hero_image.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/state_container.dart';
-
+import 'package:cadife_smart_travel/widgets/notification_badge.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -84,9 +86,34 @@ class _LeadsPageState extends ConsumerState<LeadsPage> {
     final user = authAsync.valueOrNull;
     final canCreateManual = user?.role == UserRole.admin || user?.role == UserRole.consultor;
 
+    final notificationsAsync = ref.watch(notificationsProvider);
+    final unreadCount = notificationsAsync.maybeWhen(
+      data: (list) => list.where((n) => !n.isRead).length,
+      orElse: () => 0,
+    );
+
     return PageScaffold(
-      appBar: const CadifeAppBar(
+      appBar: CadifeAppBar(
         title: 'Leads',
+        actions: [
+          IconButton(
+            icon: const Icon(LucideIcons.slidersHorizontal, size: 20),
+            onPressed: () => _showFilterOptions(context, ref),
+            tooltip: 'Filtrar leads',
+          ),
+          NotificationBadge(
+            unreadCount: unreadCount,
+            onTap: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (context) => const NotificationsModal(),
+              );
+            },
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       floatingActionButton: canCreateManual 
         ? FloatingActionButton.extended(
@@ -126,6 +153,139 @@ class _LeadsPageState extends ConsumerState<LeadsPage> {
               emptyType: isFiltered ? EmptyType.emptySearch : EmptyType.noLeads,
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 100), // More padding at bottom for FAB
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showFilterOptions(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => _LeadsFilterSheet(
+        activeStatus: ref.watch(_statusFilterProvider),
+        activeScore: ref.watch(_scoreFilterProvider),
+        onStatusChanged: (s) => ref.read(_statusFilterProvider.notifier).state = s,
+        onScoreChanged: (s) => ref.read(_scoreFilterProvider.notifier).state = s,
+        onClear: _clearFilters,
+      ),
+    );
+  }
+}
+
+class _LeadsFilterSheet extends StatelessWidget {
+  const _LeadsFilterSheet({
+    required this.activeStatus,
+    required this.activeScore,
+    required this.onStatusChanged,
+    required this.onScoreChanged,
+    required this.onClear,
+  });
+
+  final LeadStatus? activeStatus;
+  final LeadScore? activeScore;
+  final ValueChanged<LeadStatus?> onStatusChanged;
+  final ValueChanged<LeadScore?> onScoreChanged;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final cadife = context.cadife;
+    return Container(
+      decoration: BoxDecoration(
+        color: cadife.background,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: cadife.cardBorder,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Filtros', style: AppTextStyles.h4),
+              TextButton(
+                onPressed: () {
+                  onClear();
+                  context.pop();
+                },
+                child: const Text('Limpar'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Text('Status do Lead', style: AppTextStyles.labelLarge),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              null,
+              ...LeadStatus.values,
+            ].map((s) {
+              final isActive = activeStatus == s;
+              final label = s == null ? 'Todos' : s.name.sentenceCase;
+              return ChoiceChip(
+                label: Text(label),
+                selected: isActive,
+                onSelected: (val) {
+                  if (val) onStatusChanged(s);
+                },
+                selectedColor: AppColors.primary.withValues(alpha: 0.15),
+                checkmarkColor: AppColors.primary,
+                labelStyle: TextStyle(
+                  color: isActive ? AppColors.primary : cadife.textSecondary,
+                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 24),
+          Text('Score (Temperatura)', style: AppTextStyles.labelLarge),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              null,
+              ...LeadScore.values,
+            ].map((s) {
+              final isActive = activeScore == s;
+              final label = s == null ? 'Todos' : s.name.sentenceCase;
+              return ChoiceChip(
+                label: Text(label),
+                selected: isActive,
+                onSelected: (val) {
+                  if (val) onScoreChanged(s);
+                },
+                selectedColor: AppColors.primary.withValues(alpha: 0.15),
+                checkmarkColor: AppColors.primary,
+                labelStyle: TextStyle(
+                  color: isActive ? AppColors.primary : cadife.textSecondary,
+                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 32),
+          ShadButton(
+            onPressed: () => context.pop(),
+            width: double.infinity,
+            child: const Text('Aplicar Filtros'),
           ),
         ],
       ),

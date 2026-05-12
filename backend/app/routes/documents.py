@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.entities.enums import DocumentoCategoria
 from app.infrastructure.persistence.repositories.documento_repository import DocumentoRepository
+from app.infrastructure.persistence.repositories.lead_repository import LeadRepository
 from app.infrastructure.adapters.storage.s3_adapter import S3StorageAdapter
 from app.infrastructure.security.dependencies import RequiresRole, get_current_user, get_db
 from app.presentation.schemas.documento_schema import DocumentoResponse
@@ -22,15 +23,16 @@ router = APIRouter(
 def get_documento_service(db: AsyncSession = Depends(get_db)) -> DocumentoService:
     """Dependency provider for DocumentoService."""
     repo = DocumentoRepository(db)
+    lead_repo = LeadRepository(db)
     storage = S3StorageAdapter()
-    return DocumentoService(repo, storage)
+    return DocumentoService(repo, lead_repo, storage)
 
 
 @router.post(
     "/{lead_id}/documents",
     response_model=DocumentoResponse,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))],
+    dependencies=[Depends(RequiresRole("consultor", "admin", "agencia", "cliente"))],
 )
 async def upload_document(
     lead_id: uuid.UUID,
@@ -41,13 +43,15 @@ async def upload_document(
 ):
     """
     Uploads a travel document (PDF/Image) for a specific lead.
-    Restricted to agency staff (consultants/admins).
+    Restricted to agency staff (consultants/admins) and the lead owner.
     """
     return await service.upload_document(
         lead_id=lead_id,
         file=file,
         categoria=categoria,
-        enviado_por=current_user.id
+        enviado_por=current_user.id,
+        user_role=current_user.perfil,
+        user_phone=current_user.telefone
     )
 
 
@@ -65,7 +69,12 @@ async def list_documents(
     Lists all active documents for a lead.
     Includes temporary signed URLs for secure access.
     """
-    return await service.list_documents(lead_id)
+    return await service.list_documents(
+        lead_id=lead_id,
+        user_id=current_user.id,
+        user_role=current_user.perfil,
+        user_phone=current_user.telefone
+    )
 
 
 @router.delete(

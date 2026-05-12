@@ -63,8 +63,9 @@ async def execute(payload: dict, db: AsyncSession) -> None:
     text: str | None = msg.get("text")
     msg_type: str = msg.get("type", "text")
     media_id: str | None = msg.get("media_id")
+    message_id: str | None = msg.get("message_id")
 
-    logger.info("processing_whatsapp_message", phone=phone, msg_type=msg_type)
+    logger.info("processing_whatsapp_message", phone=phone, msg_type=msg_type, message_id=message_id)
 
     # ── Step 1: Get or create lead (Upsert) ───────────────────────────────
     lead_data = {
@@ -165,7 +166,13 @@ async def execute(payload: dict, db: AsyncSession) -> None:
         msg_cliente=text,
         msg_ia=reply,
         tipo=tipo,
+        whatsapp_message_id=message_id,
     )
+
+    # Se a interação retornada já possuía um status de envio, significa que era um Replay
+    if interacao.status_envio == "sent":
+        logger.info("skipping_replay_reply", lead_id=str(lead.id), message_id=message_id)
+        return
 
     # ── Step 8: Reply to client via WhatsApp; persist send outcome ────────
     send_result = await whatsapp_service.send_message(phone, reply)

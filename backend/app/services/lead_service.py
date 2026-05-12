@@ -476,12 +476,24 @@ async def save_interacao(
     msg_cliente: Optional[str],
     msg_ia: Optional[str],
     tipo: TipoMensagem = TipoMensagem.texto,
+    whatsapp_message_id: Optional[str] = None,
 ) -> Interacao:
+    # 1. Check for replay attack if message ID is provided
+    if whatsapp_message_id:
+        existing = await db.execute(
+            select(Interacao).where(Interacao.whatsapp_message_id == whatsapp_message_id)
+        )
+        duplicate = existing.scalar_one_or_none()
+        if duplicate:
+            logger.warning("webhook_replay_detected", message_id=whatsapp_message_id, lead_id=str(lead_id))
+            return duplicate
+
     interacao = Interacao(
         lead_id=lead_id,
         mensagem_cliente=msg_cliente,
         mensagem_ia=msg_ia,
         tipo_mensagem=tipo,
+        whatsapp_message_id=whatsapp_message_id,
     )
     db.add(interacao)
     await db.commit()
