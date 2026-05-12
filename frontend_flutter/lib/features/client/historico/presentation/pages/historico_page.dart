@@ -104,8 +104,6 @@ class _HistoricoPageState extends ConsumerState<HistoricoPage> {
       actions: const [NotificationBell(), SizedBox(width: 8)],
       body: Column(
         children: [
-          const SizedBox(height: kToolbarHeight),
-
           // Search bar
           Padding(
             padding: const EdgeInsets.all(16.0),
@@ -144,9 +142,9 @@ class _HistoricoPageState extends ConsumerState<HistoricoPage> {
                   ),
                   const SizedBox(width: 4),
                   ShadIconButton.ghost(
-                    icon: Icon(
+                    icon: const Icon(
                       LucideIcons.slidersHorizontal,
-                      color: context.isDark ? Colors.white60 : context.cadife.textSecondary,
+                      color: AppColors.primary,
                       size: 18,
                     ),
                     width: 32,

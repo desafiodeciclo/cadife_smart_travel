@@ -100,7 +100,6 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            const SizedBox(height: kToolbarHeight),
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: ShadInput(
@@ -138,9 +137,9 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
                     ),
                     const SizedBox(width: 4),
                     ShadIconButton.ghost(
-                      icon: Icon(
+                      icon: const Icon(
                         LucideIcons.slidersHorizontal,
-                        color: context.isDark ? Colors.white60 : context.cadife.textSecondary,
+                        color: AppColors.primary,
                         size: 18,
                       ),
                       width: 32,
