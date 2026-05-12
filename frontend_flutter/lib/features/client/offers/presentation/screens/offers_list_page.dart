@@ -23,6 +23,7 @@ class OffersListPage extends ConsumerWidget {
       title: 'Ofertas',
       actions: [
         const NotificationBell(),
+        const SizedBox(width: 8),
       ],
       body: Column(
         children: [
@@ -102,7 +103,7 @@ class OffersListPage extends ConsumerWidget {
                         sliver: SliverGrid(
                           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: MediaQuery.of(context).size.width > 600 ? 3 : 2,
-                            childAspectRatio: 0.7,
+                            childAspectRatio: 0.58,
                             crossAxisSpacing: 16,
                             mainAxisSpacing: 16,
                           ),
@@ -133,7 +134,7 @@ class OffersListPage extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: MediaQuery.of(context).size.width > 600 ? 3 : 2,
-                  childAspectRatio: 0.7,
+                  childAspectRatio: 0.58,
                   crossAxisSpacing: 16,
                   mainAxisSpacing: 16,
                 ),

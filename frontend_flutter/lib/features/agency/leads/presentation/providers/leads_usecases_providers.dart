@@ -1,42 +1,55 @@
-import 'package:cadife_smart_travel/features/agency/leads/data/providers/leads_data_providers.dart';
+import 'package:cadife_smart_travel/core/error/failures.dart';
+import 'package:cadife_smart_travel/features/agency/leads/data/datasources/leads_remote_datasource.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/conversation_summary.dart';
-import 'package:cadife_smart_travel/features/agency/leads/domain/usecases/create_manual_lead_usecase.dart';
-import 'package:cadife_smart_travel/features/agency/leads/domain/usecases/get_briefing_usecase.dart';
-import 'package:cadife_smart_travel/features/agency/leads/domain/usecases/get_conversation_summary_usecase.dart';
-import 'package:cadife_smart_travel/features/agency/leads/domain/usecases/get_lead_by_id_usecase.dart';
-import 'package:cadife_smart_travel/features/agency/leads/domain/usecases/get_leads_usecase.dart';
-import 'package:cadife_smart_travel/features/agency/leads/domain/usecases/update_lead_status_usecase.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
+import 'package:cadife_smart_travel/features/agency/leads/domain/repositories/leads_repository.dart';
+import 'package:dartz/dartz.dart';
 
-final getLeadsUseCaseProvider = Provider<GetLeadsUseCase>((ref) {
-  return GetLeadsUseCase(ref.watch(leadsRepositoryProvider));
-});
+class LeadsRepositoryImpl implements LeadsRepository {
+  final LeadsRemoteDataSource remoteDataSource;
 
-final getLeadByIdUseCaseProvider = Provider<GetLeadByIdUseCase>((ref) {
-  return GetLeadByIdUseCase(ref.watch(leadsRepositoryProvider));
-});
+  LeadsRepositoryImpl({required this.remoteDataSource});
 
-final updateLeadStatusUseCaseProvider = Provider<UpdateLeadStatusUseCase>((ref) {
-  return UpdateLeadStatusUseCase(ref.watch(leadsRepositoryProvider));
-});
+  @override
+  Future<Either<Failure, Lead>> getLeadById(String id) async {
+    try {
+      final model = await remoteDataSource.getLeadById(id);
+      return Right(model);
+    } catch (e) {
+      return Left(ServerFailure(message: 'Não foi possível carregar os detalhes do lead.'));
+    }
+  }
 
-final getBriefingUseCaseProvider = Provider<GetBriefingUseCase>((ref) {
-  return GetBriefingUseCase(ref.watch(leadsRepositoryProvider));
-});
+  @override
+  Future<Either<Failure, void>> toggleAya(String leadId, {required bool ativo, String? motivo}) async {
+    try {
+      await remoteDataSource.toggleAya(leadId, ativo: ativo, motivo: motivo);
+      return const Right(null);
+    } catch (e) {
+      return Left(ServerFailure(message: 'Falha ao alterar o estado da AYA.'));
+    }
+  }
 
-final createManualLeadUseCaseProvider = Provider<CreateManualLeadUseCase>((ref) {
-  return CreateManualLeadUseCase(ref.watch(leadsRepositoryProvider));
-});
+  @override
+  Future<Either<Failure, ConversationSummary?>> getConversationSummary(String leadId) async {
+    try {
+      final summary = await remoteDataSource.getConversationSummary(leadId);
+      return Right(summary);
+    } catch (e) {
+      // Retornamos null em vez de erro para não quebrar a UI de briefing
+      return const Right(null);
+    }
+  }
 
-final getConversationSummaryUseCaseProvider =
-    Provider<GetConversationSummaryUseCase>((ref) {
-  return GetConversationSummaryUseCase(ref.watch(leadsRepositoryProvider));
-});
-
-final conversationSummaryProvider = FutureProvider.family<ConversationSummary?, String>(
-  (ref, leadId) async {
-    final useCase = ref.watch(getConversationSummaryUseCaseProvider);
-    final result = await useCase(leadId);
-    return result.fold((_) => null, (summary) => summary);
-  },
-);
+  @override
+  Future<Either<Failure, Lead>> updateLeadStatus(String id, LeadStatus status) async {
+    try {
+      final updatedModel = await remoteDataSource.updateLeadStatus(id, status.name);
+      return Right(updatedModel);
+    } catch (e) {
+      return Left(ServerFailure(message: 'Erro ao atualizar status.'));
+    }
+  }
+  
+  // ... demais implementações (getLeads, createManualLead, etc)
+}

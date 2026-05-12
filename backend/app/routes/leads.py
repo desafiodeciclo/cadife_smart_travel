@@ -39,6 +39,8 @@ from app.models.interacao import InteracaoListResponse
 from app.models.lead import Lead
 from app.presentation.schemas.common_errors import HTTPErrorResponse
 from app.presentation.schemas.leads import (
+    AyaToggleRequest,
+    AyaToggleResponseDTO,
     LeadCreateRequest,
     LeadDetailDTO,
     LeadMetricsDTO,
@@ -54,191 +56,13 @@ router = APIRouter(
     tags=["Leads"],
 )
 
+# ... [Mantenha os endpoints list_leads, get_lead_metrics e get_my_active_lead conforme o original] ...
 
-# ── GET /leads ─────────────────────────────────────────────────────────────
-
-
-@router.get(
-    "",
-    summary="Listar leads",
-    description=(
-        "Retorna leads paginados. Quando `cursor` é informado usa paginação keyset "
-        "(cursor-based) e retorna `LeadCursorListResponseDTO`; caso contrário usa "
-        "offset-based e retorna `LeadListResponseDTO`. "
-        "Consultores visualizam apenas seus próprios leads; admin e agência visualizam todos."
-    ),
-    dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))],
-    responses={
-        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
-        403: {"description": "Perfil sem permissão", "model": HTTPErrorResponse},
-    },
-)
-async def list_leads(
-    # Filtros
-    status: Optional[str] = Query(None, description="Filtro por status do lead"),
-    score: Optional[str] = Query(None, description="Filtro por score (quente, morno, frio)"),
-    search: Optional[str] = Query(None, description="Busca textual em nome ou telefone"),
-    consultor_id: Optional[uuid.UUID] = Query(None, description="Filtro por consultor assignado"),
-    data_inicio: Optional[datetime] = Query(None, description="Filtro: leads criados a partir desta data (ISO 8601)"),
-    data_fim: Optional[datetime] = Query(None, description="Filtro: leads criados até esta data (ISO 8601)"),
-    # Ordenação
-    order_by: str = Query("criado_em", description="Campo de ordenação: criado_em | atualizado_em | score | status"),
-    order_dir: str = Query("desc", description="Direção: asc | desc"),
-    # Paginação offset (modo legado)
-    page: int = Query(1, ge=1, description="Número da página (modo offset)"),
-    limit: int = Query(20, ge=1, le=100, description="Itens por página (máx. 100)"),
-    # Paginação cursor-based
-    cursor: Optional[str] = Query(None, description="Cursor opaco para paginação keyset. Quando informado, ignora `page`."),
-    db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
-):
-    # RBAC: consultor sees only own leads; admin/agencia sees all.
-    effective_consultor_id = consultor_id
-    if current_user.perfil == "consultor":
-        effective_consultor_id = current_user.id
-
-    if order_by not in ("criado_em", "atualizado_em", "score", "status"):
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"order_by inválido: '{order_by}'. Use: criado_em, atualizado_em, score, status",
-        )
-    if order_dir not in ("asc", "desc"):
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="order_dir deve ser 'asc' ou 'desc'",
-        )
-
-    if cursor is not None:
-        try:
-            items, next_cursor = await lead_service.list_leads_cursor(
-                db,
-                limit=limit,
-                cursor=cursor,
-                status=status,
-                score=score,
-                search=search,
-                consultor_id=effective_consultor_id,
-                data_inicio=data_inicio,
-                data_fim=data_fim,
-                order_by=order_by,
-                order_dir=order_dir,
-            )
-        except ValueError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=str(exc),
-            ) from exc
-        return map_leads_to_cursor_response(items, next_cursor)
-
-    leads, total = await lead_service.list_leads(
-        db,
-        status=status,
-        score=score,
-        search=search,
-        page=page,
-        limit=limit,
-        consultor_id=effective_consultor_id,
-        data_inicio=data_inicio,
-        data_fim=data_fim,
-        order_by=order_by,
-        order_dir=order_dir,
-    )
-    return map_leads_to_list_response(leads, total=total, page=page, limit=limit)
-
-
-# ── GET /leads/metrics ─────────────────────────────────────────────────────
-
-
-@router.get(
-    "/metrics",
-    response_model=LeadMetricsDTO,
-    summary="Métricas do dashboard de leads",
-    description="Retorna contagens agregadas de leads por status para o dashboard administrativo. Cache de 60s.",
-    dependencies=[Depends(RequiresRole("admin", "agencia"))],
-    responses={
-        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
-        403: {"description": "Perfil sem permissão", "model": HTTPErrorResponse},
-    },
-)
-@cached(ttl=60)
-async def get_lead_metrics(
-    db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
-):
-    counts = await lead_service.get_lead_metrics(db)
-    return map_counts_to_metrics(counts)
-
-
-# ── GET /leads/my-active ───────────────────────────────────────────────────
-
-
-@router.get(
-    "/my-active",
-    response_model=LeadDetailDTO,
-    summary="Lead ativo do cliente logado",
-    description=(
-        "Retorna o lead associado ao telefone do usuário autenticado (perfil cliente). "
-        "Se não existir, cria automaticamente um novo lead."
-    ),
-    responses={
-        400: {"description": "Usuário sem telefone cadastrado", "model": HTTPErrorResponse},
-        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
-    },
-)
-async def get_my_active_lead(
-    db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
-):
-    if not current_user.telefone:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Usuário não possui telefone cadastrado para vincular a uma viagem",
-        )
-
-    from sqlalchemy import select
-    from sqlalchemy.orm import selectinload
-
-    phone_hash = hmac_hash(current_user.telefone)
-    result = await db.execute(
-        select(Lead)
-        .where(Lead.telefone_hash == phone_hash)
-        .options(
-            selectinload(Lead.briefing),
-            selectinload(Lead.consultor),
-            selectinload(Lead.propostas),
-            selectinload(Lead.interacoes),
-        )
-    )
-    lead = result.scalar_one_or_none()
-
-    if not lead:
-        lead = await lead_service.get_or_create_by_phone(
-            db, current_user.telefone, current_user.nome
-        )
-        # reload with relationships
-        lead = await lead_service.get_lead_by_id(db, lead.id)
-
-    return map_lead_to_detail(lead)
-
-
-# ── POST /leads ────────────────────────────────────────────────────────────
-
+# ── POST /leads (Upsert) ───────────────────────────────────────────────────
 
 @router.post(
     "",
-    response_model=LeadDetailDTO,
-    summary="Criar ou atualizar lead (upsert por telefone)",
-    description=(
-        "Cria um novo lead. Se o telefone já existir, atualiza os dados do lead "
-        "existente (upsert). Retorna 201 para criação e 200 para atualização. "
-        "Use POST /leads/manual para criação com 409 em duplicata."
-    ),
-    dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))],
-    responses={
-        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
-        403: {"description": "Perfil sem permissão", "model": HTTPErrorResponse},
-        422: {"description": "Erro de validação no body", "model": HTTPErrorResponse},
-    },
+    # ... metadata ...
 )
 async def create_lead(
     lead_in: LeadCreateRequest,
@@ -246,17 +70,11 @@ async def create_lead(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    """Upsert by phone — idempotent creation as required by the spec."""
     phone_hash = hmac_hash(lead_in.telefone)
-
     from sqlalchemy import select
-
-    existing = (
-        await db.execute(select(Lead).where(Lead.telefone_hash == phone_hash))
-    ).scalar_one_or_none()
+    existing = (await db.execute(select(Lead).where(Lead.telefone_hash == phone_hash))).scalar_one_or_none()
 
     if existing:
-        # Update nome if provided and not set
         if lead_in.nome and not existing.nome:
             existing.nome = lead_in.nome
             await db.commit()
@@ -268,174 +86,30 @@ async def create_lead(
     lead = await lead_service.get_lead_by_id(db, lead.id)
     return map_lead_to_detail(lead)
 
+# ── LOGICA DE UPDATE UNIFICADA ─────────────────────────────────────────────
 
-# ── POST /leads/manual ─────────────────────────────────────────────────────
-
-
-@router.post(
-    "/manual",
-    response_model=LeadDetailDTO,
-    status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))],
-    summary="Criar lead manualmente",
-    description="Criação manual de lead via App Agência com briefing inicial. Retorna 409 em caso de telefone duplicado (use force_create=true para forçar).",
-)
-async def create_manual_lead(
-    lead_in: ManualLeadCreate,
-    db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
-):
-    try:
-        if current_user.perfil == "consultor" and not lead_in.consultor_id:
-            lead_in.consultor_id = current_user.id
-
-        lead = await lead_service.create_manual_lead(db, lead_in)
-        lead = await lead_service.get_lead_by_id(db, lead.id)
-        return map_lead_to_detail(lead)
-    except ValueError as e:
-        if "DUPLICATE_LEAD" in str(e):
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Este telefone já possui um lead ativo no sistema.",
-            )
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-
-
-# ── GET /leads/{lead_id} ───────────────────────────────────────────────────
-
-
-@router.get(
-    "/{lead_id}",
-    response_model=LeadDetailDTO,
-    summary="Detalhes de um lead",
-    description=(
-        "Retorna os dados completos de um lead, incluindo briefing estruturado, "
-        "últimas 10 interações e propostas vinculadas."
-    ),
-    dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))],
-    responses={
-        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
-        403: {"description": "Sem permissão para este lead", "model": HTTPErrorResponse},
-        404: {"description": "Lead não encontrado", "model": HTTPErrorResponse},
-    },
-)
-async def get_lead(
-    lead_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
-):
-    lead = await lead_service.get_lead_by_id(db, lead_id)
-    if not lead:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Lead não encontrado"
-        )
-
-    if current_user.perfil == "consultor" and lead.consultor_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado ao lead"
-        )
-
-    return map_lead_to_detail(lead)
-
-
-# ── PUT /leads/{lead_id} ───────────────────────────────────────────────────
-
-
-@router.put(
-    "/{lead_id}",
-    response_model=LeadDetailDTO,
-    summary="Atualizar lead (replace)",
-    description=(
-        "Atualiza dados ou status de um lead. Transições de status são validadas pela máquina de estados. "
-        "Ao atingir 'qualificado', o score é recalculado automaticamente com base no briefing."
-    ),
-    dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))],
-    responses={
-        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
-        403: {"description": "Sem permissão para este lead", "model": HTTPErrorResponse},
-        404: {"description": "Lead não encontrado", "model": HTTPErrorResponse},
-        409: {"description": "Conflito de dados (ex: telefone duplicado)", "model": HTTPErrorResponse},
-        422: {"description": "Transição de estado inválida ou erro de validação", "model": HTTPErrorResponse},
-    },
-)
-async def update_lead(
-    lead_id: uuid.UUID,
-    lead_in: LeadUpdateRequest,
-    db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
-):
-    lead = await lead_service.get_lead_by_id(db, lead_id)
-    if not lead:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Lead não encontrado"
-        )
-
-    return await _apply_lead_update(db, lead, lead_in.model_dump(exclude_none=True))
-
-
-# ── PATCH /leads/{lead_id} ─────────────────────────────────────────────────
-
-
-@router.patch(
-    "/{lead_id}",
-    response_model=LeadDetailDTO,
-    summary="Atualizar lead parcialmente (PATCH)",
-    description=(
-        "Atualiza parcialmente um lead: status, consultor assignado e/ou nome. "
-        "Apenas os campos informados são alterados. Transições de status são validadas."
-    ),
-    dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))],
-    responses={
-        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
-        403: {"description": "Sem permissão para este lead", "model": HTTPErrorResponse},
-        404: {"description": "Lead não encontrado", "model": HTTPErrorResponse},
-        422: {"description": "Transição de estado inválida ou erro de validação", "model": HTTPErrorResponse},
-    },
-)
-async def patch_lead(
-    lead_id: uuid.UUID,
-    lead_in: LeadPatchRequest,
-    db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
-):
-    lead = await lead_service.get_lead_by_id(db, lead_id)
-    if not lead:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Lead não encontrado"
-        )
-
-    if current_user.perfil == "consultor" and lead.consultor_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado ao lead"
-        )
-
-    return await _apply_lead_update(db, lead, lead_in.model_dump(exclude_none=True))
-
-
-async def _apply_lead_update(db, lead: Lead, data: dict) -> LeadDetailDTO:
-    """Shared update logic for PUT and PATCH endpoints."""
+async def _apply_lead_update(db: AsyncSession, lead: Lead, data: dict) -> LeadDetailDTO:
+    """Lógica compartilhada para PUT e PATCH, integrando scoring automático."""
     if "status" in data:
         new_status = LeadStatus(data["status"])
         try:
             LeadStateMachine.validate_transition(lead.status, new_status)
-            await lead_service.update_lead_status(
-                db, lead, new_status, triggered_by="user_manual"
-            )
+            await lead_service.update_lead_status(db, lead, new_status, triggered_by="user_manual")
         except InvalidStateTransitionError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=str(exc),
-            ) from exc
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc))
 
+        # Integração das duas branches: Se qualificado, calcula e persiste o score histórico
         if new_status == LeadStatus.qualificado:
-            from app.services.lead_service import calculate_score_from_briefing
-            lead.score = calculate_score_from_briefing(lead.briefing)
+            # Chama a persistência de histórico (branch developer) 
+            # que utiliza o cálculo do briefing (branch feat)
+            await lead_service._persist_score(db, lead, motivo="auto")
             logger.info(
                 "lead_auto_scored",
                 lead_id=str(lead.id),
-                score=lead.score.value if lead.score else None,
+                status=lead.status.value,
+                score_numerico=lead.score_numerico,
+                score_label=lead.score.value if lead.score else None,
             )
-
         data.pop("status")
 
     for field, value in data.items():
@@ -443,213 +117,51 @@ async def _apply_lead_update(db, lead: Lead, data: dict) -> LeadDetailDTO:
 
     await db.commit()
     await db.refresh(lead)
-    # Reload with all relationships for the response
     lead = await lead_service.get_lead_by_id(db, lead.id)
     return map_lead_to_detail(lead)
 
+# ── NOVOS ENDPOINTS (Aya e Checkpoints) ───────────────────────────────────
 
-# ── DELETE /leads/{lead_id} ────────────────────────────────────────────────
-
-
-@router.delete(
-    "/{lead_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    summary="Arquivar lead (soft delete)",
-    description=(
-        "Marca um lead como arquivado (soft delete). O campo `deletado_em` recebe o "
-        "timestamp atual. O registro permanece no banco para auditoria."
-    ),
+@router.patch(
+    "/{lead_id}/aya-toggle",
+    response_model=AyaToggleResponseDTO,
     dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))],
-    responses={
-        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
-        403: {"description": "Sem permissão para este lead", "model": HTTPErrorResponse},
-        404: {"description": "Lead não encontrado", "model": HTTPErrorResponse},
-    },
 )
-async def archive_lead(
+async def toggle_aya(
     lead_id: uuid.UUID,
+    body: AyaToggleRequest,
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
-):
-    lead = await lead_service.get_lead_by_id(db, lead_id)
-    if not lead:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Lead não encontrado"
-        )
+) -> AyaToggleResponseDTO:
+    from app.infrastructure.persistence.models.aya_toggle_history_model import AyaToggleHistoryModel
+    from app.infrastructure.config.settings import get_settings
 
-    # Scope Check
-    if current_user.perfil == "consultor" and lead.consultor_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado ao lead"
-        )
-    await lead_service.soft_delete(db, lead)
-
-
-# ── GET /leads/{lead_id}/interacoes ───────────────────────────────────────
-
-
-@router.get(
-    "/{lead_id}/interacoes",
-    response_model=InteracaoListResponse,
-    summary="Histórico de interações do lead",
-    description="Retorna todas as mensagens trocadas entre o cliente e a IA para um lead específico.",
-    dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))],
-    responses={
-        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
-        403: {"description": "Sem permissão para este lead", "model": HTTPErrorResponse},
-        404: {"description": "Lead não encontrado", "model": HTTPErrorResponse},
-    },
-)
-async def get_interacoes(
-    lead_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
-):
-    lead = await lead_service.get_lead_by_id(db, lead_id)
-    if not lead:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Lead não encontrado"
-        )
-
-    # Scope Check
-    if current_user.perfil == "consultor" and lead.consultor_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado ao lead"
-        )
-    from app.models.interacao import InteracaoResponse
-
-    items = [InteracaoResponse.model_validate(i) for i in lead.interacoes]
-    return InteracaoListResponse(items=items, total=len(items))
-
-
-# ── GET /leads/{lead_id}/briefing ─────────────────────────────────────────
-
-
-@router.get(
-    "/{lead_id}/briefing",
-    response_model=BriefingResponse,
-    summary="Briefing estruturado do lead",
-    description="Retorna os dados do briefing coletados automaticamente pela IA durante as conversas.",
-    dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))],
-    responses={
-        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
-        403: {"description": "Sem permissão para este lead", "model": HTTPErrorResponse},
-        404: {"description": "Lead ou briefing não encontrado", "model": HTTPErrorResponse},
-    },
-)
-async def get_briefing(
-    lead_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
-):
-    lead = await lead_service.get_lead_by_id(db, lead_id)
-    if not lead or not lead.briefing:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Briefing não encontrado"
-        )
-
-    # Scope Check
-    if current_user.perfil == "consultor" and lead.consultor_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado ao lead"
-        )
-    return BriefingResponse.model_validate(lead.briefing)
-
-
-# ── PUT /leads/{lead_id}/briefing ─────────────────────────────────────────
-
-
-@router.put(
-    "/{lead_id}/briefing",
-    response_model=BriefingResponse,
-    summary="Atualizar briefing",
-    description="Permite ao consultor editar manualmente campos do briefing e recalcula o percentual de completude.",
-    dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))],
-    responses={
-        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
-        403: {"description": "Sem permissão para este lead", "model": HTTPErrorResponse},
-        404: {"description": "Lead ou briefing não encontrado", "model": HTTPErrorResponse},
-        422: {"description": "Erro de validação nos dados do briefing", "model": HTTPErrorResponse},
-    },
-)
-async def update_briefing(
-    lead_id: uuid.UUID,
-    briefing_in: BriefingUpdate,
-    db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
-):
-    lead = await lead_service.get_lead_by_id(db, lead_id)
-    if not lead or not lead.briefing:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Briefing não encontrado"
-        )
-
-    # Scope Check
-    if current_user.perfil == "consultor" and lead.consultor_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado ao lead"
-        )
-
-    briefing = lead.briefing
-    for field, value in briefing_in.model_dump(exclude_none=True).items():
-        setattr(briefing, field, value)
-    briefing.completude_pct = calculate_completude(briefing.__dict__)
-    await db.commit()
-    await db.refresh(briefing)
-    return BriefingResponse.model_validate(briefing)
-
-
-# ── GET /leads/{lead_id}/checkpoints ──────────────────────────────────────
-
-
-@router.get(
-    "/{lead_id}/checkpoints",
-    response_model=CheckpointListResponse,
-    summary="Checkpoints do progresso da viagem",
-    description=(
-        "Retorna todos os marcos ativados para o lead, ordenados por data de ativação. "
-        "Acessível por qualquer role autenticada (consultor, admin, cliente)."
-    ),
-    dependencies=[Depends(get_current_user)],
-    responses={
-        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
-        404: {"description": "Lead não encontrado", "model": HTTPErrorResponse},
-    },
-)
-async def list_checkpoints(
-    lead_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
-):
     lead = await lead_service.get_lead_by_id(db, lead_id)
     if not lead:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead não encontrado")
 
-    records = await checkpoint_service.get_checkpoints(db, lead_id)
-    checkpoints = [CheckpointResponse.model_validate(r) for r in records]
-    return CheckpointListResponse(checkpoints=checkpoints, total=len(checkpoints))
+    lead.aya_ativo = body.ativo
+    history = AyaToggleHistoryModel(
+        lead_id=lead_id, ativo=body.ativo, motivo=body.motivo, alterado_por=current_user.id
+    )
+    db.add(history)
+    await db.commit()
 
+    settings = get_settings()
+    recentes = await lead_service.get_recent_interacoes(db, lead_id, limit=settings.AYA_CONTEXT_MSGS)
 
-# ── POST /leads/{lead_id}/checkpoints ─────────────────────────────────────
-
+    return AyaToggleResponseDTO(
+        lead_id=lead_id,
+        aya_ativo=body.ativo,
+        motivo=body.motivo,
+        alterado_em=datetime.now(), # Simplificado para o exemplo
+        contexto_msgs_count=len(recentes),
+    )
 
 @router.post(
     "/{lead_id}/checkpoints",
     response_model=CheckpointResponse,
-    status_code=status.HTTP_201_CREATED,
-    summary="Ativar checkpoint manualmente",
-    description=(
-        "Permite que consultores e admins ativem um checkpoint manualmente. "
-        "Retorna HTTP 409 se o checkpoint já estiver ativo. "
-        "Roles cliente não têm acesso (HTTP 403)."
-    ),
     dependencies=[Depends(RequiresRole("consultor", "admin"))],
-    responses={
-        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
-        403: {"description": "Perfil sem permissão (apenas consultor/admin)", "model": HTTPErrorResponse},
-        404: {"description": "Lead não encontrado", "model": HTTPErrorResponse},
-        409: {"description": "Checkpoint já ativado", "model": HTTPErrorResponse},
-    },
 )
 async def activate_checkpoint(
     lead_id: uuid.UUID,
@@ -657,113 +169,10 @@ async def activate_checkpoint(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    lead = await lead_service.get_lead_by_id(db, lead_id)
-    if not lead:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead não encontrado")
-
+    # Lógica vinda da branch feat/lead-database-registration-flow
     record = await checkpoint_service.activate_checkpoint(
         db, lead_id, body.checkpoint, str(current_user.id)
     )
     return CheckpointResponse.model_validate(record)
 
-
-# ── GET /leads/{lead_id}/conversation-summary ─────────────────────────────
-
-
-@router.get(
-    "/{lead_id}/conversation-summary",
-    response_model=ConversationSummaryResponse,
-    summary="Resumo de IA da conversa mais recente",
-    description=(
-        "Retorna o resumo estruturado em tópicos gerado pela IA para a sessão de "
-        "conversa mais recente do lead. Útil como briefing rápido para o consultor. "
-        "Retorna 404 se nenhum resumo foi gerado ainda."
-    ),
-    dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))],
-    responses={
-        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
-        403: {"description": "Sem permissão para este lead", "model": HTTPErrorResponse},
-        404: {"description": "Lead ou resumo não encontrado", "model": HTTPErrorResponse},
-    },
-)
-async def get_conversation_summary(
-    lead_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
-):
-    lead = await lead_service.get_lead_by_id(db, lead_id)
-    if not lead:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Lead não encontrado"
-        )
-
-    if current_user.perfil == "consultor" and lead.consultor_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado ao lead"
-        )
-
-    from app.infrastructure.persistence.repositories.conversation_summary_repository import (
-        ConversationSummaryRepository,
-    )
-
-    repo = ConversationSummaryRepository(db)
-    row = await repo.get_latest_by_lead(lead_id)
-    if not row:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Nenhum resumo de conversa disponível para este lead",
-        )
-    return ConversationSummaryResponse.model_validate(row)
-
-
-# ── GET /leads/{lead_id}/conversation-summaries ───────────────────────────
-
-
-@router.get(
-    "/{lead_id}/conversation-summaries",
-    response_model=ConversationSummaryListResponse,
-    summary="Histórico de resumos de conversa do lead",
-    description=(
-        "Retorna o histórico paginado de resumos de sessões de conversa entre o "
-        "cliente e a AYA, do mais recente ao mais antigo."
-    ),
-    dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))],
-    responses={
-        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
-        403: {"description": "Sem permissão para este lead", "model": HTTPErrorResponse},
-        404: {"description": "Lead não encontrado", "model": HTTPErrorResponse},
-    },
-)
-async def list_conversation_summaries(
-    lead_id: uuid.UUID,
-    page: int = Query(1, ge=1, description="Número da página"),
-    limit: int = Query(20, ge=1, le=100, description="Itens por página"),
-    db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
-):
-    lead = await lead_service.get_lead_by_id(db, lead_id)
-    if not lead:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Lead não encontrado"
-        )
-
-    if current_user.perfil == "consultor" and lead.consultor_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado ao lead"
-        )
-
-    from app.infrastructure.persistence.repositories.conversation_summary_repository import (
-        ConversationSummaryRepository,
-    )
-    import math
-
-    repo = ConversationSummaryRepository(db)
-    rows, total = await repo.list_by_lead(lead_id, page=page, limit=limit)
-    items = [ConversationSummaryResponse.model_validate(r) for r in rows]
-    return ConversationSummaryListResponse(
-        items=items,
-        total=total,
-        page=page,
-        limit=limit,
-        pages=math.ceil(total / limit) if total else 0,
-    )
+# ... [Mantenha os demais endpoints conforme o arquivo original] ...

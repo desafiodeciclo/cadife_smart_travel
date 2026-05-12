@@ -21,7 +21,7 @@ async def require_meta_signature(
 ) -> bytes:
     body = await request.body()
     if not settings.META_APP_SECRET:
-        logger.error("webhook_signature_error", reason="META_APP_SECRET not set")
+        logger.error("webhook_security_critical_failure", reason="META_APP_SECRET not set")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Configuração de segurança incompleta"

@@ -126,6 +126,29 @@ class LeadPatchRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+class AyaToggleRequest(BaseModel):
+    ativo: bool
+    motivo: Optional[str] = Field(
+        default=None,
+        max_length=500,
+        description="Motivo do toggle — obrigatório ao desativar (recomendado)",
+    )
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class AyaToggleResponseDTO(BaseModel):
+    lead_id: uuid.UUID
+    aya_ativo: bool
+    motivo: Optional[str] = None
+    alterado_em: datetime
+    contexto_msgs_count: int = Field(
+        description="Mensagens recentes disponíveis para contexto quando AYA for reativada"
+    )
+
+    model_config = ConfigDict(extra="forbid")
+
+
 # ── Response DTOs ──────────────────────────────────────────────────────────
 
 
@@ -139,6 +162,7 @@ class LeadListItemDTO(BaseModel):
     status: LeadStatus
     score: Optional[LeadScore] = None
     consultor_id: Optional[uuid.UUID] = None
+    score_numerico: Optional[int] = None
     criado_em: datetime
     atualizado_em: datetime
     completude_pct: Optional[int] = None
@@ -157,6 +181,12 @@ class LeadDetailDTO(BaseModel):
     origem: LeadOrigem
     status: LeadStatus
     score: Optional[LeadScore] = None
+    
+    # --- Unificação de campos Aya e Score ---
+    aya_ativo: bool = True
+    score_numerico: Optional[int] = None
+    score_calculado_em: Optional[datetime] = None
+
     consultor_id: Optional[uuid.UUID] = None
     consultor_nome: Optional[str] = None
     consultor_avatar: Optional[str] = None
@@ -184,12 +214,7 @@ class LeadListResponseDTO(BaseModel):
 
 
 class LeadCursorListResponseDTO(BaseModel):
-    """Cursor-based paginated list response.
-
-    The `next_cursor` value is an opaque base64 string. Pass it as the
-    `cursor` query parameter of the next request to get the following page.
-    When `next_cursor` is None, there are no more results.
-    """
+    """Cursor-based paginated list response."""
 
     items: list[LeadListItemDTO]
     next_cursor: Optional[str] = None

@@ -7,8 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final leadDetailProvider =
     AsyncNotifierProvider.family<LeadDetailNotifier, Lead?, String>(
-      LeadDetailNotifier.new,
-    );
+  LeadDetailNotifier.new,
+);
 
 class LeadDetailNotifier extends FamilyAsyncNotifier<Lead?, String> {
   @override
@@ -61,6 +61,52 @@ class LeadDetailNotifier extends FamilyAsyncNotifier<Lead?, String> {
         }
 
         refresh();
+      },
+    );
+  }
+
+  /// Ativa ou desativa a IA (Aya) para esta conversa específica
+  Future<void> toggleAya({required bool ativo, String? motivo}) async {
+    final result = await ref.read(toggleAyaUseCaseProvider).call(
+      arg,
+      ativo: ativo,
+      motivo: motivo,
+    );
+
+    result.fold(
+      (failure) => state = AsyncError(failure, StackTrace.current),
+      (_) {
+        sl<AnalyticsService>().logEvent('aya_toggle', parameters: {
+          'lead_id': arg,
+          'ativo': ativo,
+          'motivo': motivo,
+        });
+        refresh();
+      },
+    );
+  }
+
+  /// Atualiza os dados gerais do Lead (Nome, Telefone, Email, etc)
+  Future<void> updateLead({
+    String? name,
+    String? phone,
+    String? email,
+    LeadStatus? status,
+    LeadScore? score,
+  }) async {
+    final result = await ref.read(updateLeadUseCaseProvider).call(
+      id: arg,
+      name: name,
+      phone: phone,
+      email: email,
+      status: status,
+      score: score,
+    );
+    
+    result.fold(
+      (failure) => state = AsyncError(failure, StackTrace.current),
+      (updatedLead) {
+        state = AsyncData(updatedLead);
       },
     );
   }

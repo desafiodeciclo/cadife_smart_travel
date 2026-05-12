@@ -156,11 +156,13 @@ class ProfileSectionCard extends StatelessWidget {
   const ProfileSectionCard({
     required this.title,
     required this.children,
+    this.onEdit,
     super.key,
   });
 
   final String title;
   final List<Widget> children;
+  final VoidCallback? onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -181,24 +183,45 @@ class ProfileSectionCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Container(
-                  width: 4,
-                  height: 16,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+                Row(
+                  children: [
+                    Container(
+                      width: 4,
+                      height: 16,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      title.toUpperCase(),
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        letterSpacing: 1.5,
+                        fontWeight: FontWeight.w800,
+                        color: context.cadife.textSecondary,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  title.toUpperCase(),
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    letterSpacing: 1.5,
-                    fontWeight: FontWeight.w800,
-                    color: context.cadife.textSecondary,
+                if (onEdit != null)
+                  GestureDetector(
+                    onTap: onEdit,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        LucideIcons.pencil,
+                        size: 14,
+                        color: AppColors.primary,
+                      ),
+                    ),
                   ),
-                ),
               ],
             ),
             const SizedBox(height: 24),

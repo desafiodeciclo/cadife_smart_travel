@@ -50,7 +50,10 @@ def map_lead_to_list_item(
         origem=lead.origem,
         status=lead.status,
         score=lead.score,
+        # Unificação dos campos em conflito:
         consultor_id=lead.consultor_id,
+        score_numerico=getattr(lead, "score_numerico", None),
+        aya_ativo=getattr(lead, "aya_ativo", True), # Mantendo consistência com o novo recurso
         criado_em=lead.criado_em,
         atualizado_em=lead.atualizado_em,
         completude_pct=completude_pct,
@@ -96,7 +99,10 @@ def map_lead_to_detail(lead: "Lead") -> LeadDetailDTO:
         origem=lead.origem,
         status=lead.status,
         score=lead.score,
+        score_numerico=getattr(lead, "score_numerico", None),
+        score_calculado_em=getattr(lead, "score_calculado_em", None),
         consultor_id=lead.consultor_id,
+        aya_ativo=getattr(lead, "aya_ativo", True),
         is_archived=lead.is_archived,
         deletado_em=getattr(lead, "deletado_em", None),
         criado_em=lead.criado_em,

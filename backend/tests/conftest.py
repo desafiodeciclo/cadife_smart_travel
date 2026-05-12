@@ -56,6 +56,7 @@ import app.models.user  # noqa: F401
 import app.models.offer  # noqa: F401
 import app.models.notification_queue  # noqa: F401
 import app.models.dead_letter_queue  # noqa: F401
+import app.models.lead_score_history  # noqa: F401
 
 # Import SQLAlchemy persistence models so Base.metadata knows all tables
 import app.infrastructure.persistence.models.lead_model  # noqa: F401

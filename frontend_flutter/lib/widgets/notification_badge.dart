@@ -18,7 +18,7 @@ class NotificationBadge extends StatelessWidget {
         IconButton(
           icon: const Icon(Icons.notifications_none, size: 24),
           onPressed: onTap,
-          color: AppColors.textPrimary,
+          color: context.cadife.textPrimary,
         ),
         if (unreadCount > 0)
           Positioned(

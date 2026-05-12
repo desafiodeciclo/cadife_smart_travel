@@ -1,0 +1,49 @@
+{
+  "id": "lead-scoring-engine-001",
+  "title": "Motor de Análise e Recálculo Dinâmico do Score de Qualificação de Leads",
+  "status": "in-progress",
+  "owner": "Nikolas Tesch",
+  "created_at": "2026-05-11",
+  "sprint": "ciclo-1",
+  "depends_on": ["chore/setup-database-orm-architecture", "feat/langchain-rag-orchestration"],
+  "blocks": ["feat/ui-manager-dashboard"],
+  "description": "Implementar motor determinístico de scoring (0–100) para leads, recalculado automaticamente após cada mensagem processada pela IA. Score persistido em leads.score_numerico com histórico auditável em lead_score_history.",
+  "user_story": "Como consultor, quero que o sistema calcule automaticamente o score de qualificação de cada lead com base nas informações coletadas, para que eu priorize meu atendimento nos leads com maior potencial de conversão.",
+  "acceptance_criteria": [
+    "Score calculado em escala 0–100 com classificação: Frio (0–40), Morno (41–70), Quente (71–100)",
+    "Critérios de scoring configuráveis como constantes no LeadScoringService",
+    "Score recalculado automaticamente após cada processamento de mensagem pela IA",
+    "Campo score_numerico (Integer 0–100) e score_calculado_em (DateTime) na tabela leads",
+    "Tabela lead_score_history com campos: lead_id, score_numerico, score_label, criterios (JSON), motivo, criado_em",
+    "Endpoint GET /leads/{id}/score-history retorna histórico com paginação",
+    "Score exposto no GET /leads/{id} e GET /leads",
+    "Recálculo manual via POST /leads/{id}/recalculate-score (admin/agencia only)"
+  ],
+  "scoring_criteria": {
+    "completude_briefing": 20,
+    "orcamento_alto": 15,
+    "datas_definidas": 10,
+    "destino_informado": 10,
+    "passageiros_informados": 5,
+    "engajamento_rapido_30min": 10,
+    "interesse_em_proposta": 20,
+    "desistencia_detectada": -30
+  },
+  "classification": {
+    "frio": "0–40",
+    "morno": "41–70",
+    "quente": "71–100"
+  },
+  "steps": [
+    {"id": 1, "description": "Criar spec JSON SDD", "status": "done"},
+    {"id": 2, "description": "Criar LeadScoreHistory ORM model (app/models/lead_score_history.py)", "status": "done"},
+    {"id": 3, "description": "Criar LeadScoringService (app/application/services/lead_scoring_service.py)", "status": "done"},
+    {"id": 4, "description": "Criar migration Alembic (score_numerico, score_calculado_em, lead_score_history)", "status": "done"},
+    {"id": 5, "description": "Atualizar Lead model com novos campos e relationship", "status": "done"},
+    {"id": 6, "description": "Integrar LeadScoringService no lead_service.py (após briefing update)", "status": "done"},
+    {"id": 7, "description": "Adicionar endpoints /score-history e /recalculate-score em routes/leads.py", "status": "done"},
+    {"id": 8, "description": "Atualizar DTOs e mappers para expor score_numerico e score_calculado_em", "status": "done"},
+    {"id": 9, "description": "Atualizar conftest.py com import do novo model", "status": "done"},
+    {"id": 10, "description": "Criar testes unitários para LeadScoringService", "status": "done"}
+  ]
+}

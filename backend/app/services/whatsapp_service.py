@@ -34,7 +34,8 @@ _TRANSIENT_STATUS_CODES = frozenset({429, 500, 502, 503, 504})
 _MAX_RETRIES = 3
 _BASE_DELAY_S = 0.5
 _MAX_DELAY_S = 4.0
-_TIMEOUT_S = 3.0
+_TIMEOUT_S = 3.0          # send_message / mark_as_read (Meta SLA ≤ 5s)
+_MEDIA_TIMEOUT_S = 20.0   # download_media — áudio WhatsApp pode ter vários MB
 
 
 # ── Exceptions ────────────────────────────────────────────────────────────────
@@ -106,11 +107,13 @@ def extract_message_from_payload(payload: dict[str, Any]) -> Optional[dict[str, 
         contact = value.get("contacts", [{}])[0]
         msg_type: str = msg.get("type", "text")
 
-        # Extract media ID from the type-specific sub-object (audio, image, etc.)
+        # Extract media ID and mime_type from the type-specific sub-object (audio, image, etc.)
         media_id: Optional[str] = None
+        mime_type: Optional[str] = None
         media_data = msg.get(msg_type)
         if isinstance(media_data, dict):
             media_id = media_data.get("id")
+            mime_type = media_data.get("mime_type")  # e.g. "audio/ogg; codecs=opus"
 
         return {
             "phone": msg["from"],
@@ -119,6 +122,7 @@ def extract_message_from_payload(payload: dict[str, Any]) -> Optional[dict[str, 
             "text": msg.get("text", {}).get("body"),
             "name": contact.get("profile", {}).get("name"),
             "media_id": media_id,
+            "mime_type": mime_type,
         }
     except (KeyError, IndexError):
         return None
@@ -136,7 +140,7 @@ async def download_media(media_id: str) -> Optional[bytes]:
     """
     headers = {"Authorization": f"Bearer {settings.WHATSAPP_TOKEN}"}
 
-    async with httpx.AsyncClient(timeout=_TIMEOUT_S) as client:
+    async with httpx.AsyncClient(timeout=_MEDIA_TIMEOUT_S) as client:
         # Step 1: resolve the temporary download URL
         try:
             meta_resp = await client.get(
@@ -180,6 +184,39 @@ async def download_media(media_id: str) -> Optional[bytes]:
             bytes=len(media_resp.content),
         )
         return media_resp.content
+
+
+async def mark_as_read(phone: str, message_id: str) -> None:
+    """Mark an incoming WhatsApp message as read (shows blue double-ticks).
+
+    Best-effort: failures are logged but never raised, so they never block
+    the main processing pipeline.
+    """
+    url = f"{WHATSAPP_API_URL}/{settings.PHONE_NUMBER_ID}/messages"
+    headers = {
+        "Authorization": f"Bearer {settings.WHATSAPP_TOKEN}",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "messaging_product": "whatsapp",
+        "status": "read",
+        "message_id": message_id,
+    }
+    masked = _mask_phone(phone)
+    try:
+        async with httpx.AsyncClient(timeout=_TIMEOUT_S) as client:
+            response = await client.post(url, json=payload, headers=headers)
+            if response.status_code == 200:
+                logger.debug("whatsapp_message_marked_read", phone=masked, message_id=message_id)
+            else:
+                logger.warning(
+                    "whatsapp_mark_read_failed",
+                    phone=masked,
+                    message_id=message_id,
+                    status_code=response.status_code,
+                )
+    except Exception as exc:
+        logger.warning("whatsapp_mark_read_error", phone=masked, error=str(exc))
 
 
 async def send_message(phone: str, text: str) -> SendResult:

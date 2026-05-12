@@ -370,7 +370,7 @@ class _CadifeLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SvgPicture.asset(
-      AssetsConstants.logoFull,
+      isDark ? AssetsConstants.logoSvgNegativo : AssetsConstants.logoSvgPositivo,
       width: 220,
       height: 110,
       fit: BoxFit.contain,

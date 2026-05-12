@@ -15,16 +15,22 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import IntegrityError, ProgrammingError
 from sqlalchemy.dialects.postgresql import insert
 from app.application.services.lead_state_machine import LeadStateMachine
+from app.application.services.lead_scoring_service import (
+    lead_scoring_service,
+    ScoringContext,
+)
 from app.domain.entities.enums import LeadOrigem, LeadScore, LeadStatus, TipoMensagem
 from app.infrastructure.security.pii_encryption import hmac_hash
 from app.models.briefing import Briefing, BriefingExtracted, calculate_completude
 from app.models.interacao import Interacao
 from app.models.lead import Lead
+from app.models.lead_score_history import LeadScoreHistory
 from app.services.whatsapp_service import SendResult
 
 logger = structlog.get_logger()
 
 SCORE_QUENTE_FIELDS = {"destino", "data_ida", "qtd_pessoas", "orcamento"}
+ENGAJAMENTO_RAPIDO_MINUTOS = 30
 
 
 def calculate_score_from_briefing(briefing: Briefing | None) -> LeadScore | None:
@@ -440,6 +446,55 @@ async def soft_delete(db: AsyncSession, lead: Lead) -> None:
     await db.commit()
 
 
+async def _persist_score(
+    db: AsyncSession,
+    lead: Lead,
+    engajamento_rapido: bool = False,
+    motivo: str = "auto",
+) -> None:
+    """Calcula score via LeadScoringService, persiste em leads e insere histórico."""
+    ctx = lead_scoring_service.context_from_lead(
+        lead, engajamento_rapido=engajamento_rapido, motivo=motivo
+    )
+    result = lead_scoring_service.calculate(ctx)
+
+    lead.score = LeadScore(result.score_label)
+    lead.score_numerico = result.score_numerico
+    lead.score_calculado_em = datetime.now(timezone.utc)
+
+    history_entry = LeadScoreHistory(
+        id=uuid.uuid4(),
+        lead_id=lead.id,
+        score_numerico=result.score_numerico,
+        score_label=result.score_label,
+        motivo=result.motivo,
+        criterios_json=result.criterios_json,
+    )
+    db.add(history_entry)
+
+    logger.info(
+        "lead_score_calculated",
+        lead_id=str(lead.id),
+        score_numerico=result.score_numerico,
+        score_label=result.score_label,
+        motivo=motivo,
+    )
+
+
+def _is_engajamento_rapido(interacoes: list) -> bool:
+    """True se a penúltima interação e a última têm gap < 30 min (cliente respondeu rápido)."""
+    timestamps = [
+        getattr(i, "timestamp", None)
+        for i in interacoes
+        if getattr(i, "timestamp", None) is not None
+    ]
+    if len(timestamps) < 2:
+        return False
+    timestamps_sorted = sorted(timestamps)
+    delta = timestamps_sorted[-1] - timestamps_sorted[-2]
+    return delta.total_seconds() < ENGAJAMENTO_RAPIDO_MINUTOS * 60
+
+
 async def update_briefing_from_extraction(
     db: AsyncSession, lead: Lead, extracted: BriefingExtracted
 ) -> Briefing:
@@ -455,6 +510,8 @@ async def update_briefing_from_extraction(
             setattr(briefing, field, value)
 
     briefing.completude_pct = calculate_completude(briefing.__dict__)
+
+    # Mantém compatibilidade retroativa com o score qualitativo legado
     lead.score = calculate_score_from_briefing(briefing)
 
     if briefing.completude_pct >= 60 and lead.status == LeadStatus.em_atendimento:
@@ -464,6 +521,17 @@ async def update_briefing_from_extraction(
         logger.info(
             "lead_qualified", lead_id=str(lead.id), completude=briefing.completude_pct
         )
+
+    # Garante que lead.briefing aponta para o objeto atualizado na sessão
+    lead.briefing = briefing
+
+    # Calcula score numérico e persiste histórico
+    interacoes_result = await db.execute(
+        select(Interacao).where(Interacao.lead_id == lead.id).order_by(Interacao.timestamp.desc()).limit(2)
+    )
+    recent = list(interacoes_result.scalars().all())
+    engajamento = _is_engajamento_rapido(recent)
+    await _persist_score(db, lead, engajamento_rapido=engajamento, motivo="auto")
 
     await db.commit()
     await db.refresh(briefing)
