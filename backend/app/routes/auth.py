@@ -15,6 +15,7 @@ from app.models.user import (
     TokenResponse,
     UserResponse,
 )
+from app.presentation.schemas.common_errors import HTTPErrorResponse
 from app.services.user_service import (
     get_user_by_email,
     get_user_by_id,

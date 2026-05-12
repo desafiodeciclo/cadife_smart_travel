@@ -3,7 +3,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import get_db
 from app.middleware.auth import verify_jwt
-from app.models.user import UserResponse, UserProfileUpdate, FcmTokenRequest
+from app.models.user import UserProfileUpdate, FcmTokenRequest
+from app.schemas.user import UserResponse, UserRole
 from app.services.user_service import get_user_by_id
 from app.presentation.schemas.common_errors import HTTPErrorResponse
 
@@ -32,7 +33,13 @@ async def get_me(
             status_code=status.HTTP_401_UNAUTHORIZED, 
             detail="Usuário não encontrado"
         )
-    return UserResponse.model_validate(user)
+    return UserResponse(
+        id=str(user.id),
+        name=user.nome,
+        email=user.email,
+        role=UserRole.CLIENT if user.perfil == "cliente" else (UserRole.ADMIN if user.perfil == "admin" else UserRole.CONSULTANT),
+        avatar=user.avatar_url
+    )
 
 @router.patch(
     "/me",
