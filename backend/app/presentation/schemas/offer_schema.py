@@ -1,90 +1,86 @@
 import uuid
-from datetime import date, datetime
+from datetime import datetime
 from decimal import Decimal
-from typing import Optional
+from typing import Optional, List, Dict
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field
 
-from app.domain.entities.enums import OfferCategoria, OfferStatus
-
-
-class OfferCreate(BaseModel):
-    titulo: str = Field(..., min_length=3, max_length=255)
-    destino: str = Field(..., min_length=2, max_length=255)
-    descricao: Optional[str] = None
-    categoria: OfferCategoria = OfferCategoria.outros
-    preco_base: Optional[Decimal] = Field(None, ge=0, decimal_places=2)
-    servicos_inclusos: list[str] = Field(default_factory=list)
-    data_saida_sugerida: Optional[date] = None
-    duracao_dias: Optional[int] = Field(None, ge=1)
-
-    model_config = ConfigDict(extra="forbid")
-
-
-class OfferUpdate(BaseModel):
-    titulo: Optional[str] = Field(None, min_length=3, max_length=255)
-    destino: Optional[str] = Field(None, min_length=2, max_length=255)
-    descricao: Optional[str] = None
-    categoria: Optional[OfferCategoria] = None
-    preco_base: Optional[Decimal] = Field(None, ge=0, decimal_places=2)
-    servicos_inclusos: Optional[list[str]] = None
-    imagens: Optional[list[str]] = None
-    data_saida_sugerida: Optional[date] = None
-    duracao_dias: Optional[int] = Field(None, ge=1)
-
-    model_config = ConfigDict(extra="forbid")
+from app.domain.entities.enums import OfferStatus
 
 
 class OfferResponse(BaseModel):
+    """Resposta ao listar oferta (minimal)"""
     id: uuid.UUID
-    titulo: str
-    destino: str
-    descricao: Optional[str]
-    categoria: OfferCategoria
-    preco_base: Optional[Decimal]
-    servicos_inclusos: list[str]
-    imagens: list[str]
-    data_saida_sugerida: Optional[date]
-    duracao_dias: Optional[int]
+    title: str
+    destination: str
+    destination_image_url: Optional[str]
+    departure_date: datetime
+    return_date: datetime
+    duration_days: int
+    base_price: Decimal
+    final_price: Decimal
+    currency: str
+    travelers: int
+    available_spots: int
+    spots_reserved: int
     status: OfferStatus
-    criado_por: uuid.UUID
-    criado_em: datetime
-    atualizado_em: datetime
+    highlights: List[str]
+    amenities: List[str]
+    views: int
+    interests: int
+    conversions: int
 
-    model_config = ConfigDict(from_attributes=True, extra="forbid")
-
-    @field_validator("servicos_inclusos", "imagens", mode="before")
-    @classmethod
-    def _ensure_list(cls, v):
-        return v if v is not None else []
+    model_config = ConfigDict(from_attributes=True)
 
 
-class OfferListItem(BaseModel):
-    id: uuid.UUID
-    titulo: str
-    destino: str
-    categoria: OfferCategoria
-    preco_base: Optional[Decimal]
-    imagens: list[str]
-    status: OfferStatus
-    criado_em: datetime
+class OfferDetailResponse(OfferResponse):
+    """Response com detalhes completos"""
+    description: str
+    accommodations: List[str]
+    included_services: List[str]
+    booking_deadline: datetime
+    discounts: Optional[Dict[str, float]]
+    created_at: datetime
+    published_at: Optional[datetime]
 
-    model_config = ConfigDict(from_attributes=True, extra="forbid")
-
-
-class OfferInterestResponse(BaseModel):
-    message: str
-    lead_id: uuid.UUID
-    offer_id: uuid.UUID
-
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(from_attributes=True)
 
 
-class OfferListResponse(BaseModel):
-    items: list[OfferListItem]
+class OfferCreateRequest(BaseModel):
+    """Request para criar oferta"""
+    title: str = Field(..., min_length=5, max_length=100)
+    description: str = Field(..., min_length=20, max_length=2000)
+    destination: str = Field(..., min_length=3)
+    destination_image_url: Optional[str] = None
+    departure_date: datetime
+    return_date: datetime
+    booking_deadline: datetime
+    accommodations: List[str] = Field(..., min_length=1)
+    included_services: List[str] = Field(..., min_length=1)
+    travelers: int = Field(..., ge=1)
+    available_spots: int = Field(..., ge=1)
+    base_price: Decimal = Field(..., gt=0)
+    discounts: Optional[Dict[str, float]] = None
+    highlights: List[str] = Field(..., min_length=1)
+    amenities: List[str] = Field(default_factory=list)
+
+
+class OfferUpdateRequest(BaseModel):
+    """Request para atualizar oferta"""
+    title: Optional[str] = Field(None, min_length=5, max_length=100)
+    description: Optional[str] = Field(None, min_length=20, max_length=2000)
+    destination: Optional[str] = None
+    destination_image_url: Optional[str] = None
+    base_price: Optional[Decimal] = Field(None, gt=0)
+    available_spots: Optional[int] = Field(None, ge=0)
+    status: Optional[OfferStatus] = None
+    discounts: Optional[Dict[str, float]] = None
+
+
+class OffersListResponse(BaseModel):
+    """Lista de ofertas com paginação"""
+    offers: List[OfferResponse]
     total: int
     page: int
-    limit: int
     pages: int
-
-    model_config = ConfigDict(extra="forbid")
+    filters_applied: Optional[Dict] = None

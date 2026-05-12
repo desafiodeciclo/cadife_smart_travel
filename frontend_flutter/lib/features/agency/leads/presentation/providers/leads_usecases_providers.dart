@@ -1,55 +1,50 @@
-import 'package:cadife_smart_travel/core/error/failures.dart';
-import 'package:cadife_smart_travel/features/agency/leads/data/datasources/leads_remote_datasource.dart';
-import 'package:cadife_smart_travel/features/agency/leads/domain/entities/conversation_summary.dart';
-import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
-import 'package:cadife_smart_travel/features/agency/leads/domain/repositories/leads_repository.dart';
-import 'package:dartz/dartz.dart';
+import 'package:cadife_smart_travel/features/agency/leads/data/providers/leads_data_providers.dart';
+import 'package:cadife_smart_travel/features/agency/leads/domain/usecases/create_manual_lead_usecase.dart';
+import 'package:cadife_smart_travel/features/agency/leads/domain/usecases/get_briefing_usecase.dart';
+import 'package:cadife_smart_travel/features/agency/leads/domain/usecases/get_conversation_summary_usecase.dart';
+import 'package:cadife_smart_travel/features/agency/leads/domain/usecases/get_lead_by_id_usecase.dart';
+import 'package:cadife_smart_travel/features/agency/leads/domain/usecases/get_leads_usecase.dart';
+import 'package:cadife_smart_travel/features/agency/leads/domain/usecases/toggle_aya_usecase.dart';
+import 'package:cadife_smart_travel/features/agency/leads/domain/usecases/update_lead_status_usecase.dart';
+import 'package:cadife_smart_travel/features/agency/leads/domain/usecases/update_lead_usecase.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class LeadsRepositoryImpl implements LeadsRepository {
-  final LeadsRemoteDataSource remoteDataSource;
+final getLeadsUseCaseProvider = Provider<GetLeadsUseCase>((ref) {
+  final repository = ref.watch(leadsRepositoryProvider);
+  return GetLeadsUseCase(repository);
+});
 
-  LeadsRepositoryImpl({required this.remoteDataSource});
+final getLeadByIdUseCaseProvider = Provider<GetLeadByIdUseCase>((ref) {
+  final repository = ref.watch(leadsRepositoryProvider);
+  return GetLeadByIdUseCase(repository);
+});
 
-  @override
-  Future<Either<Failure, Lead>> getLeadById(String id) async {
-    try {
-      final model = await remoteDataSource.getLeadById(id);
-      return Right(model);
-    } catch (e) {
-      return Left(ServerFailure(message: 'Não foi possível carregar os detalhes do lead.'));
-    }
-  }
+final getBriefingUseCaseProvider = Provider<GetBriefingUseCase>((ref) {
+  final repository = ref.watch(leadsRepositoryProvider);
+  return GetBriefingUseCase(repository);
+});
 
-  @override
-  Future<Either<Failure, void>> toggleAya(String leadId, {required bool ativo, String? motivo}) async {
-    try {
-      await remoteDataSource.toggleAya(leadId, ativo: ativo, motivo: motivo);
-      return const Right(null);
-    } catch (e) {
-      return Left(ServerFailure(message: 'Falha ao alterar o estado da AYA.'));
-    }
-  }
+final getConversationSummaryUseCaseProvider = Provider<GetConversationSummaryUseCase>((ref) {
+  final repository = ref.watch(leadsRepositoryProvider);
+  return GetConversationSummaryUseCase(repository);
+});
 
-  @override
-  Future<Either<Failure, ConversationSummary?>> getConversationSummary(String leadId) async {
-    try {
-      final summary = await remoteDataSource.getConversationSummary(leadId);
-      return Right(summary);
-    } catch (e) {
-      // Retornamos null em vez de erro para não quebrar a UI de briefing
-      return const Right(null);
-    }
-  }
+final createManualLeadUseCaseProvider = Provider<CreateManualLeadUseCase>((ref) {
+  final repository = ref.watch(leadsRepositoryProvider);
+  return CreateManualLeadUseCase(repository);
+});
 
-  @override
-  Future<Either<Failure, Lead>> updateLeadStatus(String id, LeadStatus status) async {
-    try {
-      final updatedModel = await remoteDataSource.updateLeadStatus(id, status.name);
-      return Right(updatedModel);
-    } catch (e) {
-      return Left(ServerFailure(message: 'Erro ao atualizar status.'));
-    }
-  }
-  
-  // ... demais implementações (getLeads, createManualLead, etc)
-}
+final toggleAyaUseCaseProvider = Provider<ToggleAyaUseCase>((ref) {
+  final repository = ref.watch(leadsRepositoryProvider);
+  return ToggleAyaUseCase(repository);
+});
+
+final updateLeadStatusUseCaseProvider = Provider<UpdateLeadStatusUseCase>((ref) {
+  final repository = ref.watch(leadsRepositoryProvider);
+  return UpdateLeadStatusUseCase(repository);
+});
+
+final updateLeadUseCaseProvider = Provider<UpdateLeadUseCase>((ref) {
+  final repository = ref.watch(leadsRepositoryProvider);
+  return UpdateLeadUseCase(repository);
+});

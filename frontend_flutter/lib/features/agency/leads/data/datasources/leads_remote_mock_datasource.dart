@@ -154,7 +154,10 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
   @override
   Future<LeadApiModel> getLeadById(String id) async {
     await Future.delayed(const Duration(milliseconds: 300));
-    return _mockLeads.firstWhere((l) => l.id == id);
+    return _mockLeads.firstWhere(
+      (l) => l.id == id,
+      orElse: () => throw Exception('Lead não encontrado: $id'),
+    );
   }
 
   @override
@@ -209,7 +212,7 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
         datasEPassageiros: 'Julho 2026 · 4 pessoas (casal + 2 filhos)',
         orcamento: 'Médio — aprox. R\$ 20.000',
         restricoesEPreferencias: 'Hotel próximo a pontos turísticos, voos diretos preferidos',
-        decisõesTomadas: 'Interesse confirmado, aguardando proposta',
+        decisoesTomadas: 'Interesse confirmado, aguardando proposta',
         proximosPassos: 'Consultor irá enviar proposta de pacote completo',
       ),
       tokensUtilizados: 312,
@@ -264,7 +267,7 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
   @override
   Future<void> toggleAya(String leadId, {required bool ativo, String? motivo}) async {
     await Future.delayed(const Duration(milliseconds: 300));
-    print('DEBUG: AYA ${ativo ? 'ativada' : 'desativada'} para lead $leadId. Motivo: $motivo');
+    // Simulação de alteração de estado da IA concluída
   }
 
   @override

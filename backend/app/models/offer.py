@@ -1,10 +1,9 @@
 import uuid
-from datetime import date, datetime
+from datetime import datetime
 from decimal import Decimal
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, List, Dict
 
 from sqlalchemy import (
-    Date,
     DateTime,
     ForeignKey,
     Integer,
@@ -12,13 +11,13 @@ from sqlalchemy import (
     String,
     Text,
     func,
+    JSON,
 )
 from sqlalchemy.dialects.postgresql import ENUM as PgEnum, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
-from app.domain.entities.enums import OfferCategoria, OfferStatus
-from app.infrastructure.persistence.types import StringArray
+from app.domain.entities.enums import OfferStatus
 
 if TYPE_CHECKING:
     from app.models.user import User
@@ -33,42 +32,62 @@ class Offer(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    titulo: Mapped[str] = mapped_column(String(255), nullable=False)
-    destino: Mapped[str] = mapped_column(String(255), nullable=False)
-    descricao: Mapped[Optional[str]] = mapped_column(Text)
-    categoria: Mapped[OfferCategoria] = mapped_column(
-        PgEnum(OfferCategoria, name="offer_categoria_enum", create_type=False),
-        nullable=False,
-        default=OfferCategoria.outros,
+    agency_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True
     )
-    preco_base: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2))
-    servicos_inclusos: Mapped[Optional[list[str]]] = mapped_column(
-        StringArray(), nullable=True, default=list
-    )
-    imagens: Mapped[Optional[list[str]]] = mapped_column(
-        StringArray(), nullable=True, default=list
-    )
-    data_saida_sugerida: Mapped[Optional[date]] = mapped_column(Date)
-    duracao_dias: Mapped[Optional[int]] = mapped_column(Integer)
+    title: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    destination: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    destination_image_url: Mapped[Optional[str]] = mapped_column(String(500))
+    
+    # Datas
+    departure_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    return_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    booking_deadline: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    
+    # Detalhes da viagem
+    duration_days: Mapped[int] = mapped_column(Integer, nullable=False)
+    accommodations: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    included_services: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    travelers: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    available_spots: Mapped[int] = mapped_column(Integer, nullable=False)
+    spots_reserved: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    
+    # Preço
+    base_price: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    currency: Mapped[str] = mapped_column(String(3), nullable=False, default="BRL")
+    discounts: Mapped[Optional[dict]] = mapped_column(JSON)
+    final_price: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    
+    # SEO/Marketing
+    highlights: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    amenities: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    
+    # Status
     status: Mapped[OfferStatus] = mapped_column(
         PgEnum(OfferStatus, name="offer_status_enum", create_type=False),
         nullable=False,
-        default=OfferStatus.rascunho,
+        default=OfferStatus.draft,
+        index=True,
     )
-    criado_por: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
-    )
-    criado_em: Mapped[datetime] = mapped_column(
+    views: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    interests: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    conversions: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    
+    # Metadata
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
-    atualizado_em: Mapped[datetime] = mapped_column(
+    updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
         onupdate=func.now(),
         nullable=False,
     )
+    published_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), index=True)
+    
     is_deleted: Mapped[bool] = mapped_column(
         default=False, nullable=False, server_default="false"
     )
 
-    creator: Mapped["User"] = relationship("User", foreign_keys=[criado_por])
+    agency: Mapped["User"] = relationship("User", foreign_keys=[agency_id])

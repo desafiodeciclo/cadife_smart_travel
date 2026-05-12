@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 from decimal import Decimal
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, func, Numeric
 from sqlalchemy.dialects.postgresql import ENUM as PgEnum, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from pydantic import BaseModel
@@ -19,7 +19,6 @@ if TYPE_CHECKING:
     from app.models.proposta import Proposta
     from app.models.user import User
     from app.models.documento import Documento
-    # --- UNIFICAÇÃO DE TIPOS ---
     from app.models.travel_checkpoint import TravelCheckpointRecord
     from app.models.lead_score_history import LeadScoreHistory
 
@@ -58,6 +57,13 @@ class Lead(Base):
     consultor_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id")
     )
+    client_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id"), nullable=True
+    )
+    offer_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("offers.id"), nullable=True
+    )
+    budget: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), nullable=True)
     aya_ativo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_archived: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     deletado_em: Mapped[Optional[datetime]] = mapped_column(
@@ -138,6 +144,8 @@ class LeadResponse(BaseModel):
     status: LeadStatus
     score: Optional[LeadScore]
     consultor_id: Optional[uuid.UUID]
+    client_id: Optional[uuid.UUID] = None
+    offer_id: Optional[uuid.UUID] = None
     consultor_nome: Optional[str] = None
     consultor_avatar: Optional[str] = None
     is_archived: bool
