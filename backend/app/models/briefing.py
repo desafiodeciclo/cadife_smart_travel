@@ -1,10 +1,9 @@
 import uuid
 from datetime import date
-from typing import TYPE_CHECKING, Optional
-
+from typing import TYPE_CHECKING, Optional, Any
 from sqlalchemy import Boolean, Date, Enum as SAEnum, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from app.infrastructure.persistence.types import GUID, StringArray
 
@@ -122,7 +121,7 @@ class BriefingExtracted(BaseModel):
         None, description="Número total de passageiros (adultos + crianças)."
     )
     perfil: Optional[PerfilViagem] = Field(
-        None, description="Composição do grupo: casal, família, solo, grupo ou amigos."
+        None, description="Composição do grupo: casal, familia, solo, grupo ou amigos."
     )
     tipo_viagem: list[str] = Field(
         default_factory=list,
@@ -134,7 +133,7 @@ class BriefingExtracted(BaseModel):
     )
     orcamento: Optional[OrcamentoNivel] = Field(
         None,
-        description="Nível de investimento: baixo (econômico), médio (padrão), alto (conforto) ou premium (luxo).",
+        description="Nível de investimento: baixo (econômico), medio (padrão), alto (conforto) ou premium (luxo).",
     )
     tem_passaporte: Optional[bool] = Field(
         None,
@@ -144,6 +143,24 @@ class BriefingExtracted(BaseModel):
         None,
         description="Notas adicionais, restrições alimentares, celebrações ou pedidos especiais.",
     )
+
+    @field_validator("perfil", mode="before")
+    @classmethod
+    def normalize_perfil(cls, v: Any) -> Any:
+        if isinstance(v, str):
+            v = v.lower().strip()
+            if v == "família":
+                return "familia"
+        return v
+
+    @field_validator("orcamento", mode="before")
+    @classmethod
+    def normalize_orcamento(cls, v: Any) -> Any:
+        if isinstance(v, str):
+            v = v.lower().strip()
+            if v == "médio":
+                return "medio"
+        return v
 
 
 class BriefingUpdate(BaseModel):
