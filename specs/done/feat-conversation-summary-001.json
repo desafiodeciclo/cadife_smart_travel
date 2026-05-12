@@ -1,0 +1,37 @@
+{
+  "id": "feat-conversation-summary-001",
+  "title": "Resumo Automático de Conversas (AYA Briefing)",
+  "status": "in-progress",
+  "priority": "high",
+  "assignee": "Frank Willian / Nikolas Tesch",
+  "estimate_hours": 10,
+  "dependencies": ["feat/langchain-rag-orchestration"],
+  "related": ["feat/ui-manager-leads-crm"],
+  "description": "Implementar o sistema de resumo automático de conversas entre o cliente e a AYA. Ao invés de armazenar apenas o log bruto de mensagens, o sistema deve gerar e armazenar um resumo estruturado em tópicos de cada conversa, atualizado a cada sessão encerrada (inatividade > 30 minutos). O consultor visualiza esse resumo como briefing do atendimento na aba Briefing da LeadDetailsPage.",
+  "acceptance_criteria": [
+    "Resumo gerado automaticamente após cada sessão de conversa (período de inatividade > 30 minutos)",
+    "Resumo estruturado em tópicos: Intenção Principal, Datas e Passageiros, Orçamento, Restrições ou Preferências, Decisões tomadas, Próximos passos acordados",
+    "Resumo gerado via LangChain com prompt específico de sumarização (Gemini via OpenRouter) e validado antes de persistir",
+    "Tabela conversation_summaries: id, lead_id, sessao_id, resumo_json (JSONB), gerado_em, tokens_utilizados, resumo_pendente",
+    "GET /leads/{id}/conversation-summary retorna o resumo mais recente",
+    "GET /leads/{id}/conversation-summaries retorna histórico de resumos com paginação",
+    "Fallback: se a geração falhar, armazenar log bruto com flag resumo_pendente=true para retry",
+    "Custo de tokens logado em tokens_utilizados",
+    "Cron job de retry para resumos pendentes (a cada 15 minutos)",
+    "Aba Briefing da LeadDetailsPage exibe resumo de IA da conversa mais recente"
+  ],
+  "steps": [
+    {"id": "BE-01", "description": "ORM Model ConversationSummaryModel", "status": "done"},
+    {"id": "BE-02", "description": "Pydantic schemas (response + list)", "status": "done"},
+    {"id": "BE-03", "description": "ConversationSummaryRepository", "status": "done"},
+    {"id": "BE-04", "description": "ConversationSummaryService (session detection + LangChain chain)", "status": "done"},
+    {"id": "BE-05", "description": "Alembic migration i3j4k5l6m7n8", "status": "done"},
+    {"id": "BE-06", "description": "Routes GET /conversation-summary e GET /conversation-summaries", "status": "done"},
+    {"id": "BE-07", "description": "Cron job retry resumos pendentes", "status": "done"},
+    {"id": "BE-08", "description": "Integração em process_whatsapp_message.py", "status": "done"},
+    {"id": "BE-09", "description": "Registros em models/__init__.py e main.py", "status": "done"},
+    {"id": "BE-10", "description": "Testes unitários service + routes", "status": "done"},
+    {"id": "FE-01", "description": "Flutter entity + API model + use case + provider", "status": "done"},
+    {"id": "FE-02", "description": "LeadDetailPage aba Briefing com seção de resumo de IA", "status": "done"}
+  ]
+}

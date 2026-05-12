@@ -9,6 +9,7 @@ class LeadApiModel extends Lead {
     required super.score,
     required super.completudePct,
     super.email,
+    super.ayaAtivo = true,
     super.origem,
     super.destino,
     super.dataIda,
@@ -34,21 +35,14 @@ class LeadApiModel extends Lead {
       name: json['name'] as String,
       phone: json['phone'] as String,
       email: json['email'] as String?,
-      status: LeadStatus.values.firstWhere(
-        (e) => e.name == json['status'],
-        orElse: () => LeadStatus.novo,
-      ),
+      ayaAtivo: json['aya_ativo'] as bool? ?? true,
+      status: LeadStatus.fromSnakeCase(json['status'] as String? ?? 'novo'),
       score: LeadScore.values.firstWhere(
         (e) => e.name == json['score'],
         orElse: () => LeadScore.frio,
       ),
       completudePct: json['completude_pct'] as int? ?? 0,
-      origem: json['origem'] != null
-          ? LeadOrigem.values.firstWhere(
-              (e) => e.name == json['origem'],
-              orElse: () => LeadOrigem.manual,
-            )
-          : null,
+      origem: json['origem'] != null ? LeadOrigem.fromSnakeCase(json['origem'] as String) : null,
       destino: json['destino'] as String?,
       dataIda: json['data_ida'] != null
           ? DateTime.parse(json['data_ida'] as String)
@@ -82,7 +76,8 @@ class LeadApiModel extends Lead {
         'name': name,
         'phone': phone,
         'email': email,
-        'status': status.name,
+        'aya_ativo': ayaAtivo,
+        'status': status.toSnakeCase(),
         'score': score.name,
         'completude_pct': completudePct,
         'origem': origem?.name,

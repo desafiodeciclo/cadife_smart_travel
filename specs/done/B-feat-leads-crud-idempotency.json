@@ -1,0 +1,77 @@
+{
+  "id": "B-feat-leads-crud-idempotency",
+  "title": "CRUD completo de leads com idempotência e paginação cursor-based",
+  "type": "feature",
+  "status": "done",
+  "priority": "high",
+  "owner": "Nikolas Tesch",
+  "created_at": "2026-05-11",
+  "user_story": "Como sistema, quero que cada novo contato via WhatsApp gere automaticamente um lead único e estruturado no banco, para que o consultor tenha visibilidade completa do pipeline de atendimento.",
+  "acceptance_criteria": [
+    "POST /leads cria lead com validação: número WhatsApp único (upsert se já existir), campos obrigatórios (telefone, canal de origem), status inicial NOVO",
+    "Idempotência garantida: dois webhooks do mesmo número WhatsApp não criam dois leads — atualizam o existente",
+    "GET /leads com paginação cursor-based, filtros por status, score, data, consultor assignado e ordenação configurável",
+    "GET /leads/{id} retorna lead completo com briefing, histórico de score e últimas mensagens",
+    "PATCH /leads/{id} permite atualizar status, consultor assignado e campos do briefing manualmente",
+    "DELETE /leads/{id} soft-delete (campo deletado_em) — lead nunca removido fisicamente",
+    "Webhook de criação dispara notificação FCM ao consultor designado (ou ao próximo da fila round-robin)",
+    "Todos os endpoints documentados no Swagger com response models estritos"
+  ],
+  "steps": [
+    {
+      "id": "step-1",
+      "description": "Criar migration: merge heads + adicionar campo deletado_em à tabela leads",
+      "status": "done"
+    },
+    {
+      "id": "step-2",
+      "description": "Atualizar modelo Lead ORM com campo deletado_em e eager loading no get_lead_by_id",
+      "status": "done"
+    },
+    {
+      "id": "step-3",
+      "description": "Atualizar schemas Pydantic: cursor pagination DTO, LeadDetailDTO enriquecido (briefing + interações), LeadPatchRequest",
+      "status": "done"
+    },
+    {
+      "id": "step-4",
+      "description": "Atualizar lead_mapper com map_lead_to_full_detail (inclui briefing e últimas mensagens)",
+      "status": "done"
+    },
+    {
+      "id": "step-5",
+      "description": "Atualizar lead_service: soft_delete com deletado_em, list_leads cursor-based + novos filtros, get_lead_by_id com selectinload",
+      "status": "done"
+    },
+    {
+      "id": "step-6",
+      "description": "Atualizar routes/leads.py: POST upsert, PATCH endpoint, GET cursor+filtros enriquecidos, GET/{id} com detail completo",
+      "status": "done"
+    },
+    {
+      "id": "step-7",
+      "description": "Implementar FCM round-robin na criação do lead via webhook em process_whatsapp_message.py",
+      "status": "done"
+    },
+    {
+      "id": "step-8",
+      "description": "Criar testes: idempotência upsert, paginação cursor, filtros, soft-delete com deletado_em, FCM criação",
+      "status": "done"
+    }
+  ],
+  "dependencies": [
+    "chore/setup-database-orm-architecture",
+    "feat/whatsapp-cloud-webhook-async"
+  ],
+  "estimated_hours": 8,
+  "files_changed": [
+    "backend/migrations/versions/g1h2i3j4k5l6_merge_heads_add_deletado_em.py",
+    "backend/app/models/lead.py",
+    "backend/app/services/lead_service.py",
+    "backend/app/presentation/schemas/leads.py",
+    "backend/app/application/dto/lead_mapper.py",
+    "backend/app/routes/leads.py",
+    "backend/app/application/use_cases/process_whatsapp_message.py",
+    "backend/tests/test_leads_crud.py"
+  ]
+}
