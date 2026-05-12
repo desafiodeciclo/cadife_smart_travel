@@ -23,6 +23,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Index,
+    Integer,
     String,
     func,
 )
@@ -94,6 +95,10 @@ class LeadModel(Base):
         lead_status_enum, nullable=False, default=LeadStatus.novo.value
     )
     score: Mapped[Optional[str]] = mapped_column(lead_score_enum)
+    score_numerico: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    score_calculado_em: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     consultor_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL")
     )
