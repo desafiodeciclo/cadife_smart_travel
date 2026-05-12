@@ -1,6 +1,6 @@
 {
   "info": {
-    "_postman_id": "ad157a7a-5128-47db-abf2-d5f27873bf63",
+    "_postman_id": "7c954b3c-3dfd-4e83-a114-12b8829e8a69",
     "name": "Cadife Smart Travel API",
     "description": "Backend inteligente para turismo via WhatsApp + Flutter. Orquestra webhooks da Meta, processamento de IA (RAG + LangChain), gestão de leads, propostas e agendamentos. Documentação completa disponível em /docs (Swagger UI) e /redoc (ReDoc).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -527,6 +527,41 @@
               ]
             },
             "description": "Permite ao consultor editar manualmente campos do briefing e recalcula o percentual de completude.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Ativar ou desativar a AYA para um lead",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads/{lead_id}/aya-toggle",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "{lead_id}",
+                "aya-toggle"
+              ]
+            },
+            "description": "Permite ao consultor pausar o atendimento da IA para uma conversa específica. Quando desativada (ativo=false): mensagens são persistidas no log mas não processadas pela IA. Quando reativada (ativo=true): AYA retoma com contexto das últimas mensagens. Cada toggle é registrado em aya_toggle_history para auditoria.",
             "body": {
               "mode": "raw",
               "raw": "{}",
@@ -1415,6 +1450,230 @@
               ]
             },
             "description": "Returns suggested items based on destination type.\nIf tipo_destino is not provided, tries to infer from lead briefing."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Offers",
+      "item": [
+        {
+          "name": "Create Offer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/offers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "offers"
+              ]
+            },
+            "description": "Create a new travel offer with optional image uploads."
+          },
+          "response": []
+        },
+        {
+          "name": "List Offers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/offers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "offers"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "",
+                  "description": ""
+                },
+                {
+                  "key": "categoria",
+                  "value": "",
+                  "description": ""
+                },
+                {
+                  "key": "preco_min",
+                  "value": "",
+                  "description": ""
+                },
+                {
+                  "key": "preco_max",
+                  "value": "",
+                  "description": ""
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "description": "Busca por título ou destino"
+                },
+                {
+                  "key": "page",
+                  "value": "",
+                  "description": ""
+                },
+                {
+                  "key": "limit",
+                  "value": "",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "List offers with filters and pagination."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Offer",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/offers/{offer_id}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "offers",
+                "{offer_id}"
+              ]
+            },
+            "description": "Get a single offer by ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Offer",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/offers/{offer_id}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "offers",
+                "{offer_id}"
+              ]
+            },
+            "description": "Update an offer. RBAC: creator or admin only."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Offer",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/offers/{offer_id}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "offers",
+                "{offer_id}"
+              ]
+            },
+            "description": "Soft-delete an offer. RBAC: creator or admin only."
+          },
+          "response": []
+        },
+        {
+          "name": "Toggle Publish",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/offers/{offer_id}/publish",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "offers",
+                "{offer_id}",
+                "publish"
+              ],
+              "query": [
+                {
+                  "key": "publish",
+                  "value": "",
+                  "description": "True to publish, False to unpublish"
+                }
+              ]
+            },
+            "description": "Publish or unpublish an offer. RBAC: creator or admin only."
+          },
+          "response": []
+        },
+        {
+          "name": "Express Interest",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/offers/{offer_id}/interest",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "offers",
+                "{offer_id}",
+                "interest"
+              ]
+            },
+            "description": "Client expresses interest in an offer → auto-creates a lead."
           },
           "response": []
         }
