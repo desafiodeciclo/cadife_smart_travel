@@ -277,7 +277,48 @@ async def _get_client_fcm_token(db: AsyncSession, lead: Lead) -> Optional[str]:
     return None
 
 
-async def update_lead_status(db: AsyncSession, lead: Lead, new_status: LeadStatus, triggered_by: str = "user_manual") -> Lead:
+async def get_leads_paginated(
+    db: AsyncSession,
+    page: int = 1,
+    size: int = 10,
+    status: Optional[LeadStatus] = None,
+    search: Optional[str] = None
+) -> dict:
+    """
+    Retorna leads paginados seguindo o contrato LeadsListResponse.
+    Usa o LeadRepository para realizar a consulta.
+    """
+    from math import ceil
+    from app.infrastructure.persistence.repositories.lead_repository import LeadRepository
+
+    repo = LeadRepository(db)
+    
+    # LeadRepository.list_all espera strings ou None para status/score
+    status_val = status.value if status else None
+    
+    leads, total = await repo.list_all(
+        status=status_val,
+        search=search,
+        page=page,
+        limit=size
+    )
+
+    pages = ceil(total / size) if size > 0 else 0
+
+    return {
+        "items": leads,
+        "total": total,
+        "page": page,
+        "pages": pages
+    }
+
+
+async def update_lead_status(
+    db: AsyncSession,
+    lead: Lead,
+    new_status: LeadStatus,
+    triggered_by: str = "user_manual",
+) -> Lead:
     old_status = lead.status
     if old_status == new_status: return lead
     

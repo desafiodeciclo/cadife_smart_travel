@@ -1,19 +1,8 @@
-from enum import Enum
 from typing import List, Optional
 from datetime import datetime
 import uuid
 from pydantic import BaseModel, Field, ConfigDict
-
-class LeadStatus(str, Enum):
-    """
-    Representa os estados possíveis de um Lead no sistema.
-    """
-    NOVO = "novo"
-    EM_QUALIFICACAO = "em_qualificacao"
-    QUALIFICADO = "qualificado"
-    DESQUALIFICADO = "desqualificado"
-    CONVERTIDO = "convertido"
-    ARQUIVADO = "arquivado"
+from app.domain.entities.enums import LeadStatus
 
 class LeadResponse(BaseModel):
     """
@@ -25,8 +14,8 @@ class LeadResponse(BaseModel):
     telefone: str
     status: LeadStatus
     score: float = Field(default=0.0, description="Pontuação de qualificação do lead (0-100)")
-    created_at: datetime
-    updated_at: Optional[datetime] = None
+    criado_em: datetime
+    atualizado_em: Optional[datetime] = None
 
     model_config = ConfigDict(
         from_attributes=True,
@@ -38,8 +27,8 @@ class LeadResponse(BaseModel):
                 "telefone": "+5511999998888",
                 "status": "novo",
                 "score": 85.5,
-                "created_at": "2024-05-12T10:00:00",
-                "updated_at": "2024-05-12T10:30:00"
+                "criado_em": "2024-05-12T10:00:00",
+                "atualizado_em": "2024-05-12T10:30:00"
             }
         }
     )
@@ -65,7 +54,7 @@ class LeadsListResponse(BaseModel):
                         "telefone": "+5511999998888",
                         "status": "novo",
                         "score": 85.5,
-                        "created_at": "2024-05-12T10:00:00"
+                        "criado_em": "2024-05-12T10:00:00"
                     }
                 ],
                 "total": 1,

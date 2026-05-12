@@ -36,7 +36,8 @@ from app.jobs.conversation_summary_retry_job import run_conversation_summary_ret
 from app.jobs.aya_alert_job import alert_aya_disabled_leads
 
 # Routers
-from app.routes import admin, agenda, auth, documents, ia, leads, offers, propostas, webhook, suitcase, diary, travels
+from app.routes import admin, agenda, auth, documents, ia, offers, propostas, webhook, suitcase, diary, travels
+from app.api.endpoints import leads
 
 # Middlewares
 from app.presentation.middlewares.request_id import RequestIdMiddleware
