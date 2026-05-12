@@ -22,11 +22,11 @@ async def verify_jwt(credentials: HTTPAuthorizationCredentials = Depends(securit
         if user_id is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token"
+                detail="Token inválido ou expirado"
             )
         return user_id
     except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token"
+            detail="Token inválido ou expirado"
         )

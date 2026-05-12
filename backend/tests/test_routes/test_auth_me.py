@@ -22,7 +22,7 @@ async def test_get_me_invalid_token(async_client: AsyncClient, invalid_jwt_token
     headers = {"Authorization": f"Bearer {invalid_jwt_token}"}
     response = await async_client.get("/users/me", headers=headers)
     assert response.status_code == 401
-    assert response.json()["detail"] == "Invalid token"
+    assert response.json()["detail"] == "Token inválido ou expirado"
 
 @pytest.mark.asyncio
 async def test_get_me_expired_token(async_client: AsyncClient, expired_jwt_token: str):
@@ -30,7 +30,7 @@ async def test_get_me_expired_token(async_client: AsyncClient, expired_jwt_token
     headers = {"Authorization": f"Bearer {expired_jwt_token}"}
     response = await async_client.get("/users/me", headers=headers)
     assert response.status_code == 401
-    assert response.json()["detail"] == "Invalid token"
+    assert response.json()["detail"] == "Token inválido ou expirado"
 
 @pytest.mark.asyncio
 async def test_get_me_success(async_client: AsyncClient, db_session: AsyncSession):
