@@ -1,54 +1,55 @@
 import 'package:cadife_smart_travel/features/admin/domain/entities/admin_entities.dart';
 
+/// Dados alinhados com backend/scripts/db/seeds/01_users.py e 02_leads.py
 class MockAdminRepository {
   final List<ConsultorAdmin> _consultores = [
     const ConsultorAdmin(
-      id: 'c1',
+      id: 'daniela-costa',
+      name: 'Daniela Costa',
+      email: 'daniela.costa@cadifetoure.com.br',
+      phone: '+55 11 97777-7777',
+      isActive: true,
+      leadsAtivos: 2,
+      taxaConversao: 0.75,
+      avatarUrl: 'https://i.pravatar.cc/150?u=daniela',
+      totalLeadsAtendidos: 42,
+      receitaGerada: 1480000.0,
+    ),
+    const ConsultorAdmin(
+      id: 'jakeline-lima',
       name: 'Jakeline Lima',
-      email: 'jakeline@cadifetour.com.br',
+      email: 'jakeline.lima@cadifetoure.com.br',
       phone: '+55 11 99999-1111',
       isActive: true,
-      leadsAtivos: 12,
-      taxaConversao: 0.78,
+      leadsAtivos: 2,
+      taxaConversao: 0.68,
       avatarUrl: 'https://i.pravatar.cc/150?u=jakeline',
-      totalLeadsAtendidos: 45,
-      receitaGerada: 1250000.0,
+      totalLeadsAtendidos: 35,
+      receitaGerada: 980000.0,
     ),
     const ConsultorAdmin(
-      id: 'c2',
+      id: 'diego-costa',
       name: 'Diego Costa',
-      email: 'diego@cadifetour.com.br',
+      email: 'diego.costa@cadifetoure.com.br',
       phone: '+55 11 98888-2222',
       isActive: true,
-      leadsAtivos: 8,
-      taxaConversao: 0.65,
+      leadsAtivos: 2,
+      taxaConversao: 0.62,
       avatarUrl: 'https://i.pravatar.cc/150?u=diego',
-      totalLeadsAtendidos: 32,
-      receitaGerada: 890000.0,
+      totalLeadsAtendidos: 28,
+      receitaGerada: 740000.0,
     ),
     const ConsultorAdmin(
-      id: 'c3',
-      name: 'Otávio Grotto',
-      email: 'otavio@cadifetour.com.br',
+      id: 'marcos-andrade',
+      name: 'Marcos Andrade',
+      email: 'marcos.andrade@cadifetoure.com.br',
       phone: '+55 11 97777-3333',
       isActive: false,
-      leadsAtivos: 0,
-      taxaConversao: 0.42,
-      avatarUrl: 'https://i.pravatar.cc/150?u=otavio',
-      totalLeadsAtendidos: 18,
-      receitaGerada: 320000.0,
-    ),
-    const ConsultorAdmin(
-      id: 'c4',
-      name: 'Nikolas Tesch',
-      email: 'nikolas@cadifetour.com.br',
-      phone: '+55 11 96666-4444',
-      isActive: true,
-      leadsAtivos: 5,
-      taxaConversao: 0.71,
-      avatarUrl: 'https://i.pravatar.cc/150?u=nikolas',
-      totalLeadsAtendidos: 28,
-      receitaGerada: 760000.0,
+      leadsAtivos: 1,
+      taxaConversao: 0.45,
+      avatarUrl: 'https://i.pravatar.cc/150?u=marcos',
+      totalLeadsAtendidos: 16,
+      receitaGerada: 310000.0,
     ),
   ];
 
@@ -110,7 +111,7 @@ class MockAdminRepository {
 
   Future<AgenciaMetrics> getMetrics() async {
     await Future.delayed(const Duration(milliseconds: 500));
-    
+
     int totalLeadsAtivos = 0;
     int totalLeadsAtendidos = 0;
     double totalReceita = 0;
@@ -125,16 +126,17 @@ class MockAdminRepository {
       if (c.isActive) consultoresAtivos++;
     }
 
-    final mediaTaxaConversao = _consultores.isEmpty ? 0.0 : somaTaxaConversao / _consultores.length;
+    final mediaTaxaConversao =
+        _consultores.isEmpty ? 0.0 : somaTaxaConversao / _consultores.length;
 
     return AgenciaMetrics(
       totalLeads: totalLeadsAtivos,
       taxaConversao: mediaTaxaConversao,
       receitaEstimada: totalReceita,
       consultoresAtivos: consultoresAtivos,
-      leadsNovosMes: 23, // Mantendo estático ou poderia ser calculado
+      leadsNovosMes: 7,
       leadsFechadosMes: totalLeadsAtendidos,
-      leadsPerdidosMes: 4,
+      leadsPerdidosMes: 3,
     );
   }
 }
