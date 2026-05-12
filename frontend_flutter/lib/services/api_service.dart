@@ -6,7 +6,14 @@ import 'package:riverpod/riverpod.dart';
 const String API_BASE_URL = "http://localhost:8000"; // Mudar para 10.0.2.2:8000 se estiver no Android Emulator
 
 class ApiService {
-  final _secureStorage = const FlutterSecureStorage();
+  final FlutterSecureStorage _secureStorage;
+  final http.Client _client;
+
+  ApiService({
+    FlutterSecureStorage? secureStorage,
+    http.Client? client,
+  })  : _secureStorage = secureStorage ?? const FlutterSecureStorage(),
+        _client = client ?? http.Client();
 
   /// Get JWT token from secure storage
   Future<String?> getToken() async {
@@ -30,7 +37,7 @@ class ApiService {
       if (token == null) {
         throw Exception("No token found");
       }
-      final response = await http.get(
+      final response = await _client.get(
         Uri.parse('$API_BASE_URL$endpoint'),
         headers: {
           'Content-Type': 'application/json',
@@ -57,7 +64,7 @@ class ApiService {
   Future<dynamic> post(String endpoint, Map<String, dynamic> body) async {
     try {
       final token = await getToken();
-      final response = await http.post(
+      final response = await _client.post(
         Uri.parse('$API_BASE_URL$endpoint'),
         headers: {
           'Content-Type': 'application/json',
@@ -84,7 +91,7 @@ class ApiService {
   Future<dynamic> patch(String endpoint, Map<String, dynamic> body) async {
     try {
       final token = await getToken();
-      final response = await http.patch(
+      final response = await _client.patch(
         Uri.parse('$API_BASE_URL$endpoint'),
         headers: {
           'Content-Type': 'application/json',
@@ -111,7 +118,7 @@ class ApiService {
   Future<dynamic> delete(String endpoint) async {
     try {
       final token = await getToken();
-      final response = await http.delete(
+      final response = await _client.delete(
         Uri.parse('$API_BASE_URL$endpoint'),
         headers: {
           'Content-Type': 'application/json',
