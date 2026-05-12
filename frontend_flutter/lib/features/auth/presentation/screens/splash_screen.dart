@@ -65,8 +65,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       if (!mounted) return;
       context.go(seen ? '/auth/login' : '/onboarding');
     } else {
-      // GoRouter redirect routes to the correct home based on role.
-      context.go('/auth/login');
+      // O GoRouter já fará o redirecionamento global baseado no estado do authNotifierProvider.
+      // Se tentarmos forçar um context.go aqui, podemos causar loops ou sobrescrever a lógica central.
+      // Apenas garantimos que o SplashScreen saia da frente.
+      if (GoRouterState.of(context).matchedLocation == '/splash') {
+         // Se ainda estiver no splash, o redirect global deve atuar. 
+         // Caso contrário, não fazemos nada para não interromper uma navegação em curso.
+      }
     }
   }
 

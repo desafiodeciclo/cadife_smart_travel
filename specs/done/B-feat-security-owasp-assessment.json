@@ -1,0 +1,70 @@
+{
+  "id": "B-feat-security-owasp-assessment",
+  "title": "(B) feat/security-owasp-assessment",
+  "priority": "high",
+  "assignee": "Backend",
+  "sprint": 7,
+  "status": "in-progress",
+  "steps": [
+    {
+      "id": "1.1",
+      "name": "Implementar SecurityHeadersMiddleware (HSTS, CSP, X-Frame, nosniff, Referrer-Policy)",
+      "status": "done"
+    },
+    {
+      "id": "1.2",
+      "name": "Implementar PII Encryption at-rest com Fernet (AES-128) + HMAC-SHA256 para indexacao",
+      "status": "done"
+    },
+    {
+      "id": "1.3",
+      "name": "Adicionar scope checks (ownership/RBAC) em leads.py para consultores",
+      "status": "done"
+    },
+    {
+      "id": "2.1",
+      "name": "DocumentoService: validacao de magic bytes, sanitizacao de filename, ownership via HMAC",
+      "status": "done"
+    },
+    {
+      "id": "2.2",
+      "name": "DiaryService: ownership validation via telefone_hash e cleanup atomico S3",
+      "status": "done"
+    },
+    {
+      "id": "2.3",
+      "name": "OfferService: reutilizar _validate_magic_bytes para upload de imagens",
+      "status": "done"
+    },
+    {
+      "id": "3.1",
+      "name": "Scripts de pentest automatizado (seed_pentest.py, security_pentest.py)",
+      "status": "done"
+    },
+    {
+      "id": "3.2",
+      "name": "Corrigir import faltante LeadRepository em documents.py",
+      "status": "done"
+    },
+    {
+      "id": "3.3",
+      "name": "Unificar modelos Lead: lead_model.py como canônico com EncryptedString, app/models/lead.py como re-export",
+      "status": "done"
+    },
+    {
+      "id": "4.1",
+      "name": "Corrigir fixtures de teste para usar telefone_hash consistente com HMAC",
+      "status": "done"
+    },
+    {
+      "id": "4.2",
+      "name": "Executar suite completa de testes e garantir 0 regressoes",
+      "status": "done"
+    },
+    {
+      "id": "5.1",
+      "name": "Code review e PO validation (Diego)",
+      "status": "pending"
+    }
+  ]
+}

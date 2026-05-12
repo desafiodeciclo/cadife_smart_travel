@@ -108,7 +108,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     return PageScaffold(
       appBar: const CadifeAppBar(
         title: 'Configurações',
-        showProfile: false,
+        showProfile: true,
       ),
       body: Column(
         children: [

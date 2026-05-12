@@ -41,6 +41,9 @@ class ProfileRepositoryImpl implements IProfileRepository {
     List<String>? tipoViagem,
     List<String>? preferencias,
     bool? temPassaporte,
+    String? bio,
+    String? avatarUrl,
+    String? phone,
   }) async {
     try {
       final response = await _dio.patch(
@@ -50,6 +53,9 @@ class ProfileRepositoryImpl implements IProfileRepository {
           'tipo_viagem': tipoViagem,
           'preferencias': preferencias,
           'tem_passaporte': temPassaporte,
+          'bio': bio,
+          'avatar_url': avatarUrl,
+          'telefone': phone,
         }..removeWhere((_, v) => v == null),
       );
       final user = AuthUser.fromJson(response.data as Map<String, dynamic>);
