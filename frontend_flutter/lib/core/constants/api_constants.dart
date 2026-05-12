@@ -19,7 +19,7 @@ class ApiConstants {
   static const String login = '/auth/login';
   static const String refresh = '/auth/refresh';
   static const String registerFcmToken = '/users/fcm-token';
-  static const String me = '/me';
+  static const String me = '/users/me';
   static const String forgotPassword = '/auth/forgot-password';
   static const String changePassword = '/auth/change-password';
 
