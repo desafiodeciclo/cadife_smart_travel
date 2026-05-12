@@ -33,9 +33,10 @@ if TYPE_CHECKING:
     from app.infrastructure.persistence.models.proposta_model import PropostaModel
     from app.infrastructure.persistence.models.suitcase_model import SuitcaseItemModel
     from app.infrastructure.persistence.models.travel_diary_model import TravelDiaryEntryModel
-    # --- RESOLUÇÃO DO CONFLITO DE IMPORTS (Accept Both) ---
+    # --- Imports Unificados ---
     from app.infrastructure.persistence.models.aya_toggle_history_model import AyaToggleHistoryModel
     from app.infrastructure.persistence.models.itinerary_model import ItineraryItemModel
+    from app.infrastructure.persistence.models.conversation_summary_model import ConversationSummaryModel
     from app.infrastructure.persistence.models.lead_score_history_model import LeadScoreHistoryModel
 
 
@@ -97,6 +98,9 @@ class LeadModel(Base):
     )
     aya_ativo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, server_default="true")
     is_archived: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    deletado_em: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     criado_em: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -107,7 +111,7 @@ class LeadModel(Base):
         nullable=False,
     )
 
-    # Relationships
+    # --- Relationships ---
     briefing: Mapped[Optional["BriefingModel"]] = relationship(
         "BriefingModel", back_populates="lead", uselist=False, lazy="select"
     )
@@ -127,7 +131,16 @@ class LeadModel(Base):
         "TravelDiaryEntryModel", back_populates="lead", lazy="select", cascade="all, delete-orphan"
     )
     
-    # --- RESOLUÇÃO DO CONFLITO DE RELACIONAMENTOS ---
+    # Adicionado pela branch de Fluxo de Registro
+    itinerary_items: Mapped[list["ItineraryItemModel"]] = relationship(
+        "ItineraryItemModel", back_populates="lead", lazy="select", cascade="all, delete-orphan",
+        order_by="ItineraryItemModel.horario_inicio",
+    )
+    conversation_summaries: Mapped[list["ConversationSummaryModel"]] = relationship(
+        "ConversationSummaryModel", back_populates="lead", lazy="select", cascade="all, delete-orphan"
+    )
+
+    # Adicionado pela branch Developer
     aya_toggle_history: Mapped[list["AyaToggleHistoryModel"]] = relationship(
         "AyaToggleHistoryModel", back_populates="lead", lazy="select", cascade="all, delete-orphan"
     )

@@ -6,8 +6,6 @@ from typing import Optional
 import structlog
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_openai import ChatOpenAI
-from langchain_classic.memory import ConversationBufferWindowMemory
-
 from app.core.config import get_settings
 from app.models.briefing import BriefingExtracted, calculate_completude
 from app.services import rag_service, alert_service
@@ -117,7 +115,7 @@ class SimpleWindowMemory:
         return {self.memory_key: messages}
 
 
-_memories: dict[str, ConversationBufferWindowMemory] = {}
+_memories: dict[str, SimpleWindowMemory] = {}
 _llm: Optional[ChatOpenAI] = None
 
 
@@ -147,9 +145,9 @@ def get_llm() -> ChatOpenAI:
     return _llm
 
 
-def get_memory(phone: str) -> ConversationBufferWindowMemory:
+def get_memory(phone: str) -> SimpleWindowMemory:
     if phone not in _memories:
-        _memories[phone] = ConversationBufferWindowMemory(
+        _memories[phone] = SimpleWindowMemory(
             k=_MEMORY_WINDOW_K,
             memory_key="chat_history",
             return_messages=True,
@@ -160,8 +158,9 @@ def get_memory(phone: str) -> ConversationBufferWindowMemory:
 def preload_memory_from_db(
     phone: str,
     interacoes: list[dict],
+    summary: str = "",
 ) -> None:
-    """Populate conversation memory from persisted interacoes rows.
+    """Populate conversation memory from persisted interacoes rows and summary.
 
     Call this at the start of a conversation when memory is
     empty (e.g. after a server restart/cache clear) to restore the AI's context.
@@ -170,6 +169,7 @@ def preload_memory_from_db(
         phone: Customer phone number (used as memory key).
         interacoes: List of dicts with keys 'mensagem_cliente' and
                     'mensagem_ia', ordered oldest-first.
+        summary: Previously compressed summary from conversation_summaries table.
     """
     memory = get_memory(phone)
     history = memory.load_memory_variables({})
@@ -178,13 +178,16 @@ def preload_memory_from_db(
     if history.get("chat_history"):
         return
 
+    if summary:
+        memory._summary = summary
+
     for row in interacoes[-_MEMORY_WINDOW_K:]:
         cliente = row.get("mensagem_cliente") or ""
         ia = row.get("mensagem_ia") or ""
         if cliente or ia:
             memory.save_context({"input": cliente}, {"output": ia})
 
-    logger.info("memory_preloaded_from_db", phone=phone, rows=len(interacoes))
+    logger.info("memory_preloaded_from_db", phone=phone, rows=len(interacoes), has_summary=bool(summary))
 
 
 def _resolve_destino_tag(destino: Optional[str]) -> Optional[str]:

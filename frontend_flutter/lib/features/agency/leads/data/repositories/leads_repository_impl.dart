@@ -1,4 +1,5 @@
 import 'package:cadife_smart_travel/features/agency/leads/data/datasources/i_leads_datasource.dart';
+import 'package:cadife_smart_travel/features/agency/leads/data/models/conversation_summary_api_model.dart'; // Importante adicionar
 import 'package:cadife_smart_travel/features/agency/leads/data/models/lead_api_model.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/briefing.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
@@ -68,6 +69,8 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
     ),
   ];
 
+  // --- CONSULTAS (READ) ---
+
   @override
   Future<List<LeadApiModel>> getLeads({LeadStatus? status, LeadScore? score}) async {
     await Future.delayed(const Duration(milliseconds: 600));
@@ -81,7 +84,8 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
   @override
   Future<LeadApiModel> getLeadById(String id) async {
     await Future.delayed(const Duration(milliseconds: 300));
-    return _mockLeads.firstWhere((l) => l.id == id, orElse: () => throw Exception('Lead não encontrado'));
+    return _mockLeads.firstWhere((l) => l.id == id,
+        orElse: () => throw Exception('Lead não encontrado'));
   }
 
   @override
@@ -91,26 +95,10 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
   }
 
   @override
-  Future<LeadApiModel> updateLeadStatus(String id, LeadStatus newStatus) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    final index = _mockLeads.indexWhere((l) => l.id == id);
-    if (index == -1) throw Exception('Lead não encontrado: $id');
-    
-    final updated = _mockLeads[index].copyWith(
-      status: newStatus,
-      updatedAt: DateTime.now(),
-    );
-    _mockLeads[index] = updated;
-    return updated;
-  }
-
-  @override
   Future<Briefing> getBriefing(String leadId) async {
     await Future.delayed(const Duration(milliseconds: 300));
-    final lead = _mockLeads.firstWhere(
-      (l) => l.id == leadId,
-      orElse: () => _mockLeads.first,
-    );
+    final lead = _mockLeads.firstWhere((l) => l.id == leadId,
+        orElse: () => _mockLeads.first);
     return Briefing(
       leadId: leadId,
       completudePct: lead.completudePct,
@@ -138,6 +126,30 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
       ),
     ];
   }
+
+  @override
+  Future<ConversationSummaryApiModel?> getConversationSummary(String leadId) async {
+    await Future.delayed(const Duration(milliseconds: 400));
+    // Simula um resumo estruturado vindo da IA
+    return ConversationSummaryApiModel(
+      id: 'summary_$leadId',
+      leadId: leadId,
+      sessaoId: 'sess_123',
+      resumoPendente: false,
+      geradoEm: DateTime.now(),
+      resumoJson: const ConversationSummaryTopicsApiModel(
+        intencaoPrincipal: 'Viagem de férias para a Europa',
+        datasEPassageiros: 'Setembro/2025, 2 adultos',
+        orcamento: 'R\$ 20.000 - R\$ 30.000',
+        restricoesEPreferencias: 'Prefere hotéis boutique e voos noturnos',
+        decisoesTomadas: 'Destino confirmado: Paris e Londres',
+        proximosPassos: 'Enviar cotação de seguro viagem',
+      ),
+      tokensUtilizados: 150,
+    );
+  }
+
+  // --- CRIAÇÃO (CREATE) ---
 
   @override
   Future<LeadApiModel> createLead(CreateLeadRequest request) async {
@@ -180,11 +192,26 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
     return newLead;
   }
 
+  // --- OPERAÇÕES E ATUALIZAÇÃO (UPDATE/ACTION) ---
+
   @override
   Future<void> toggleAya(String leadId, {required bool ativo, String? motivo}) async {
     await Future.delayed(const Duration(milliseconds: 300));
-    // Simula a operação no backend imprimindo no console
     print('LOG: AYA ${ativo ? 'ATIVADA' : 'DESATIVADA'} para Lead $leadId. Motivo: $motivo');
+  }
+
+  @override
+  Future<LeadApiModel> updateLeadStatus(String id, LeadStatus newStatus) async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    final index = _mockLeads.indexWhere((l) => l.id == id);
+    if (index == -1) throw Exception('Lead não encontrado: $id');
+
+    final updated = _mockLeads[index].copyWith(
+      status: newStatus,
+      updatedAt: DateTime.now(),
+    );
+    _mockLeads[index] = updated;
+    return updated;
   }
 
   @override
@@ -192,7 +219,7 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
     await Future.delayed(const Duration(milliseconds: 500));
     final index = _mockLeads.indexWhere((l) => l.id == id);
     if (index == -1) throw Exception('Lead não encontrado: $id');
-    
+
     final updated = _mockLeads[index].copyWith(
       consultorNome: consultorNome,
       updatedAt: DateTime.now(),
@@ -213,7 +240,7 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
     await Future.delayed(const Duration(milliseconds: 600));
     final index = _mockLeads.indexWhere((l) => l.id == id);
     if (index == -1) throw Exception('Lead não encontrado: $id');
-    
+
     final old = _mockLeads[index];
     final updated = old.copyWith(
       name: name ?? old.name,

@@ -44,6 +44,13 @@ class ApiConstants {
   static String leadItinerary(String id) => '/leads/$id/itinerary';
   static String leadNote(String id, String date) => '/leads/$id/notes/$date';
 
+  // ── Checkpoints ────────────────────────────────────────
+  static String leadCheckpoints(String id) => '/leads/$id/checkpoints';
+
+  // ── Conversation Summaries ─────────────────────────────
+  static String leadConversationSummary(String id) => '/leads/$id/conversation-summary';
+  static String leadConversationSummaries(String id) => '/leads/$id/conversation-summaries';
+
   // ── IA ─────────────────────────────────────────────────
   static const String iaProcessar = '/ia/processar';
   static const String iaExtrairBriefing = '/ia/extrair-briefing';
