@@ -37,9 +37,15 @@ langchain-google-genai==1.0.0
 chromadb==0.5.3
 tiktoken==0.7.0
 rank-bm25==0.2.2
+langgraph==0.2.0
 
 # Observability
 langfuse==2.0.0
+
+# Google APIs
+google-api-python-client==2.100.0
+google-auth-httplib2==0.2.0
+google-auth-oauthlib==1.1.0
 
 # Image Processing
 Pillow==10.4.0
@@ -50,3 +56,6 @@ pytest==8.3.0
 pytest-asyncio==0.24.0
 pytest-cov==5.0.0
 pytest-mock==3.14.0
+
+# Utilities
+async_timeout==4.0.3
