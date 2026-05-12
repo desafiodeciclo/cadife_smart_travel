@@ -6,12 +6,15 @@ from datetime import datetime, timezone
 
 import structlog
 from fastapi import UploadFile, HTTPException, status
+from sqlalchemy import select
 
 from app.domain.entities.enums import DocumentoCategoria
 from app.domain.interfaces.repositories import ILeadRepository
 from app.infrastructure.adapters.storage.s3_adapter import S3StorageAdapter
 from app.infrastructure.persistence.repositories.documento_repository import DocumentoRepository
+from app.infrastructure.security.pii_encryption import hmac_hash
 from app.models.documento import Documento
+from app.models.user import User, UserPerfil
 from app.infrastructure.config.settings import get_settings
 from app.services.fcm_service import send_push_notification
 
@@ -73,6 +76,23 @@ class DocumentoService:
         self.repository = repository
         self.lead_repo = lead_repo
         self.storage_adapter = storage_adapter
+
+    async def _get_client_fcm_token(self, lead) -> Optional[str]:
+        """Returns the FCM token of the client User matching this lead's phone hash."""
+        if not getattr(lead, "telefone_hash", None):
+            return None
+        db = self.repository._session
+        result = await db.execute(
+            select(User).where(
+                User.perfil == UserPerfil.cliente.value,
+                User.telefone.isnot(None),
+                User.fcm_token.isnot(None),
+            )
+        )
+        for user in result.scalars().all():
+            if user.telefone and hmac_hash(user.telefone) == lead.telefone_hash:
+                return user.fcm_token
+        return None
 
     async def upload_document(
         self,
@@ -153,13 +173,15 @@ class DocumentoService:
                 enviado_por=enviado_por
             )
 
-            # 7. Send Push Notification (Best effort)
-            await send_push_notification(
-                fcm_token="TARGET_TOKEN_PLACEHOLDER",  # TODO: Get actual client token
-                title="Novo documento disponível",
-                body=f"Um novo documento ({categoria.value}) foi adicionado à sua viagem.",
-                data={"type": "document_upload", "lead_id": str(lead_id)}
-            )
+            # 7. Send Push Notification to client (best-effort)
+            client_token = await self._get_client_fcm_token(lead)
+            if client_token:
+                await send_push_notification(
+                    fcm_token=client_token,
+                    title="Novo documento disponível",
+                    body=f"Um novo documento ({categoria.value}) foi adicionado à sua viagem.",
+                    data={"type": "document_upload", "lead_id": str(lead_id)},
+                )
 
             logger.info("document_uploaded", lead_id=str(lead_id), doc_id=str(documento.id))
             return documento

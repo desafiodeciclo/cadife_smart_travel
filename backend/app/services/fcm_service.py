@@ -1,9 +1,32 @@
+import asyncio
 from typing import Optional
+
 import structlog
+
+from app.domain.entities.enums import LeadStatus
 
 logger = structlog.get_logger()
 
 _firebase_initialized = False
+
+_STATUS_MESSAGES: dict[LeadStatus, tuple[str, str]] = {
+    LeadStatus.qualificado: (
+        "Novidade sobre sua viagem",
+        "Suas informações foram recebidas! Um consultor entrará em contato em breve.",
+    ),
+    LeadStatus.agendado: (
+        "Atendimento agendado",
+        "Seu atendimento foi agendado. Em breve você receberá mais detalhes.",
+    ),
+    LeadStatus.proposta: (
+        "Proposta disponível",
+        "Você tem uma nova proposta de viagem disponível!",
+    ),
+    LeadStatus.fechado: (
+        "Viagem confirmada",
+        "Parabéns! Sua viagem foi confirmada.",
+    ),
+}
 
 
 def _init_firebase() -> bool:
@@ -41,7 +64,7 @@ async def send_push_notification(
             data=data or {},
             token=fcm_token,
         )
-        messaging.send(message)
+        await asyncio.to_thread(messaging.send, message)
         logger.info("fcm_notification_sent", title=title)
         return True
     except Exception as exc:
@@ -60,4 +83,24 @@ async def notify_new_lead(
         title="Novo lead qualificado",
         body=body,
         data={"type": "new_lead"},
+    )
+
+
+async def notify_travel_status_change(
+    fcm_token: str,
+    new_status: LeadStatus,
+    lead_nome: Optional[str] = None,
+) -> bool:
+    """Notifies the client when their travel/lead status changes."""
+    entry = _STATUS_MESSAGES.get(new_status)
+    if not entry:
+        return False
+    title, body = entry
+    if lead_nome:
+        title = f"Olá, {lead_nome}! {title}"
+    return await send_push_notification(
+        fcm_token=fcm_token,
+        title=title,
+        body=body,
+        data={"type": "travel_status_change", "new_status": new_status.value},
     )

@@ -22,6 +22,7 @@ from app.models.briefing import Briefing, BriefingExtracted, calculate_completud
 from app.models.interacao import Interacao
 from app.models.lead import Lead
 from app.models.lead_score_history import LeadScoreHistory
+from app.models.user import User, UserPerfil
 from app.services.whatsapp_service import SendResult
 
 logger = structlog.get_logger()
@@ -281,6 +282,23 @@ async def list_leads(
     return list(result.scalars().all()), total
 
 
+async def _get_client_fcm_token(db: AsyncSession, lead: Lead) -> Optional[str]:
+    """Finds the FCM token of the client User matching this lead's phone hash."""
+    if not lead.telefone_hash:
+        return None
+    result = await db.execute(
+        select(User).where(
+            User.perfil == UserPerfil.cliente.value,
+            User.telefone.isnot(None),
+            User.fcm_token.isnot(None),
+        )
+    )
+    for user in result.scalars().all():
+        if user.telefone and hmac_hash(user.telefone) == lead.telefone_hash:
+            return user.fcm_token
+    return None
+
+
 async def update_lead_status(
     db: AsyncSession,
     lead: Lead,
@@ -306,6 +324,17 @@ async def update_lead_status(
         ),
         triggered_by=triggered_by,
     )
+
+    client_token = await _get_client_fcm_token(db, lead)
+    if client_token:
+        from app.services.fcm_service import notify_travel_status_change
+
+        await notify_travel_status_change(
+            fcm_token=client_token,
+            new_status=new_status,
+            lead_nome=lead.nome,
+        )
+
     return lead
 
 
