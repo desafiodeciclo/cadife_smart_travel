@@ -42,6 +42,7 @@ from app.presentation.schemas.leads import (
     AyaToggleRequest,
     AyaToggleResponseDTO,
     LeadCreateRequest,
+    LeadCursorListResponseDTO,
     LeadDetailDTO,
     LeadMetricsDTO,
     LeadPatchRequest,
@@ -56,7 +57,95 @@ router = APIRouter(
     tags=["Leads"],
 )
 
-# ... [Mantenha os endpoints list_leads, get_lead_metrics e get_my_active_lead conforme o original] ...
+# ── GET /leads (Cursor-based + Filtros) ────────────────────────────────────
+
+@router.get(
+    "",
+    summary="Listar leads com paginação cursor-based e filtros",
+    description=(
+        "Retorna leads ativos com paginação cursor-based, filtros por status, score, "
+        "consultor assignado, período de data e busca textual. Ideal para o dashboard "
+        "do CRM onde o consultor navega pelo pipeline sem page-drift."
+    ),
+    response_model=LeadCursorListResponseDTO,
+    dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))],
+    responses={
+        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
+        403: {"description": "Sem permissão", "model": HTTPErrorResponse},
+    },
+)
+async def list_leads(
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+    limit: int = Query(20, ge=1, le=100),
+    cursor: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),
+    score: Optional[str] = Query(None),
+    search: Optional[str] = Query(None),
+    consultor_id: Optional[uuid.UUID] = Query(None),
+    data_inicio: Optional[datetime] = Query(None),
+    data_fim: Optional[datetime] = Query(None),
+    order_by: str = Query("criado_em"),
+    order_dir: str = Query("desc"),
+):
+    items, next_cursor = await lead_service.list_leads_cursor(
+        db,
+        limit=limit,
+        cursor=cursor,
+        status=status,
+        score=score,
+        search=search,
+        consultor_id=consultor_id,
+        data_inicio=data_inicio,
+        data_fim=data_fim,
+        order_by=order_by,
+        order_dir=order_dir,
+    )
+    return map_leads_to_cursor_response(items, next_cursor)
+
+
+# ── GET /leads/{id} ────────────────────────────────────────────────────────
+
+@router.get(
+    "/{lead_id}",
+    summary="Obter detalhes completos de um lead",
+    description=(
+        "Retorna o lead com todos os relacionamentos carregados: briefing completo, "
+        "histórico de score, últimas 10 interações, propostas e dados do consultor assignado."
+    ),
+    response_model=LeadDetailDTO,
+    dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))],
+    responses={
+        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
+        403: {"description": "Sem permissão", "model": HTTPErrorResponse},
+        404: {"description": "Lead não encontrado", "model": HTTPErrorResponse},
+    },
+)
+async def get_lead(
+    lead_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    lead = await lead_service.get_lead_by_id(db, lead_id)
+    if not lead:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead não encontrado")
+    return map_lead_to_detail(lead)
+
+
+# ── GET /leads/metrics ─────────────────────────────────────────────────────
+
+@router.get(
+    "/metrics",
+    response_model=LeadMetricsDTO,
+    dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))],
+)
+async def get_lead_metrics(
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    counts = await lead_service.get_lead_metrics(db)
+    return map_counts_to_metrics(counts)
+
 
 # ── POST /leads (Upsert) ───────────────────────────────────────────────────
 
@@ -119,6 +208,66 @@ async def _apply_lead_update(db: AsyncSession, lead: Lead, data: dict) -> LeadDe
     await db.refresh(lead)
     lead = await lead_service.get_lead_by_id(db, lead.id)
     return map_lead_to_detail(lead)
+
+# ── PATCH /leads/{id} ──────────────────────────────────────────────────────
+
+@router.patch(
+    "/{lead_id}",
+    summary="Atualizar lead parcialmente",
+    description=(
+        "Permite atualizar status, consultor assignado, nome e score de um lead. "
+        "Transições de status são validadas pela máquina de estados (ex: NOVO → FECHADO é proibido). "
+        "Se o status mudar para QUALIFICADO, o score numérico é recalculado e persistido automaticamente."
+    ),
+    response_model=LeadDetailDTO,
+    dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))],
+    responses={
+        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
+        403: {"description": "Sem permissão", "model": HTTPErrorResponse},
+        404: {"description": "Lead não encontrado", "model": HTTPErrorResponse},
+        422: {"description": "Transição de status inválida", "model": HTTPErrorResponse},
+    },
+)
+async def patch_lead(
+    lead_id: uuid.UUID,
+    body: LeadPatchRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    lead = await lead_service.get_lead_by_id(db, lead_id)
+    if not lead:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead não encontrado")
+    return await _apply_lead_update(db, lead, body.model_dump(exclude_unset=True))
+
+
+# ── DELETE /leads/{id} (Soft Delete) ───────────────────────────────────────
+
+@router.delete(
+    "/{lead_id}",
+    summary="Remover lead (soft-delete)",
+    description=(
+        "Realiza soft-delete do lead, preenchendo o campo 'deletado_em' e arquivando-o. "
+        "O lead nunca é removido fisicamente do banco, garantindo auditoria e rastreabilidade completa."
+    ),
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))],
+    responses={
+        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
+        403: {"description": "Sem permissão", "model": HTTPErrorResponse},
+        404: {"description": "Lead não encontrado", "model": HTTPErrorResponse},
+    },
+)
+async def delete_lead(
+    lead_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    lead = await lead_service.get_lead_by_id(db, lead_id)
+    if not lead:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead não encontrado")
+    await lead_service.soft_delete(db, lead)
+    return None
+
 
 # ── NOVOS ENDPOINTS (Aya e Checkpoints) ───────────────────────────────────
 
