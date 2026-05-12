@@ -4,7 +4,7 @@ Dependency Injection — Infrastructure/Security Layer
 FastAPI dependency providers for DB session and authenticated user.
 """
 
-from typing import TYPE_CHECKING, AsyncGenerator
+from typing import TYPE_CHECKING, AsyncGenerator, Optional
 
 if TYPE_CHECKING:
     from app.models.user import User
@@ -53,6 +53,32 @@ async def get_current_user(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuário não encontrado"
         )
+    return user
+
+
+_optional_bearer = HTTPBearer(auto_error=False)
+
+
+async def get_optional_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(_optional_bearer),
+    db: AsyncSession = Depends(get_db),
+) -> "Optional[User]":
+    """Return the authenticated user if a valid Bearer token is present, else None."""
+    if not credentials:
+        return None
+    try:
+        payload = decode_token(credentials.credentials)
+    except ValueError:
+        return None
+
+    if payload.get("type") != "access":
+        return None
+
+    from app.services.user_service import get_user_by_id
+
+    user = await get_user_by_id(db, payload["sub"])
+    if not user or not user.is_active:
+        return None
     return user
 
 

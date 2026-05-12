@@ -2,6 +2,7 @@ import 'package:cadife_smart_travel/core/cache/isar_cache_manager.dart';
 import 'package:cadife_smart_travel/core/cache/isar_schemas/isar_schemas.dart';
 import 'package:cadife_smart_travel/core/di/service_locator.dart';
 import 'package:cadife_smart_travel/design_system/design_system.dart';
+import 'package:cadife_smart_travel/features/client/offers/data/repositories/offer_repository.dart';
 import 'package:cadife_smart_travel/features/client/offers/domain/entities/offer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -617,8 +618,8 @@ class _OfferDetailsPageState extends ConsumerState<OfferDetailsPage> {
       serverId: offer.id,
       title: offer.title,
       destination: offer.destination,
-      category: offer.category,
-      description: offer.description,
+      category: offer.category ?? 'Geral',
+      description: offer.description ?? '',
       estimatedPrice: offer.estimatedPrice,
       imageUrl: offer.imageUrl,
       updatedAt: DateTime.now(),
@@ -639,13 +640,22 @@ class _OfferDetailsPageState extends ConsumerState<OfferDetailsPage> {
   Future<void> _submitInterest(Offer offer) async {
     ref.read(_offerInterestLoadingProvider.notifier).state = true;
     try {
-      // POST /leads { origem: "oferta", oferta_id: offer.id }
-      await Future.delayed(const Duration(milliseconds: 1200));
+      await ref.read(offerRepositoryProvider).expressInterest(offer.id);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Interesse registrado! Um consultor entrará em contato em breve.'),
             backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao registrar interesse: $e'),
+            backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -823,7 +833,7 @@ class _OfferDetailsPageState extends ConsumerState<OfferDetailsPage> {
                   color: AppColors.primary.withValues(alpha: 0.3)),
             ),
             child: Text(
-              offer.category,
+              offer.category ?? 'Geral',
               style: AppTextStyles.labelSmall.copyWith(
                 color: AppColors.primary,
                 fontWeight: FontWeight.w600,
@@ -927,7 +937,7 @@ class _OfferDetailsPageState extends ConsumerState<OfferDetailsPage> {
           const SizedBox(height: 8),
           AnimatedCrossFade(
             firstChild: Text(
-              offer.description,
+              offer.description ?? '',
               style: AppTextStyles.bodyMedium.copyWith(
                 color: textSecondary,
                 height: 1.6,
@@ -936,7 +946,7 @@ class _OfferDetailsPageState extends ConsumerState<OfferDetailsPage> {
               overflow: TextOverflow.ellipsis,
             ),
             secondChild: Text(
-              offer.description,
+              offer.description ?? '',
               style: AppTextStyles.bodyMedium.copyWith(
                 color: textSecondary,
                 height: 1.6,
