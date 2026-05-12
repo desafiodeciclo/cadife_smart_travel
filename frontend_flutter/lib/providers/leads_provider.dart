@@ -8,17 +8,19 @@ import 'package:cadife_smart_travel/features/agency/leads/domain/repositories/i_
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+// Este Ã© o provider central que controla se usamos Mock ou API real
 final leadsDatasourceProvider = Provider<ILeadsDatasource>((ref) {
-  // Para fins de desenvolvimento, mantendo o mock como default se nÃ£o especificado.
-  // No futuro, isso pode ser controlado por uma config global ou flavor.
-  const useMock = bool.fromEnvironment('USE_MOCK', defaultValue: true);
+  // Mudamos para FALSE aqui para que o teste use o BACKEND REAL
+  const useMock = false; 
   
-  return useMock
-      ? LeadsRemoteMockDatasource()
-      : LeadsRemoteApiDatasource(
-          dio: sl<Dio>(),
-          offlineManager: sl<OfflineManager>(),
-        );
+  if (useMock) {
+    return LeadsRemoteMockDatasource();
+  } else {
+    return LeadsRemoteApiDatasource(
+      dio: sl<Dio>(),
+      offlineManager: sl<OfflineManager>(),
+    );
+  }
 });
 
 final leadsRepositoryProvider = Provider<ILeadsRepository>((ref) {

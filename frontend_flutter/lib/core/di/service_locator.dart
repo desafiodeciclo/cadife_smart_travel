@@ -22,6 +22,7 @@ import 'package:cadife_smart_travel/features/agency/agenda/data/datasources/mock
 import 'package:cadife_smart_travel/features/agency/agenda/domain/repositories/i_agenda_repository.dart';
 import 'package:cadife_smart_travel/features/agency/leads/data/datasources/i_leads_datasource.dart';
 import 'package:cadife_smart_travel/features/agency/leads/data/datasources/leads_remote_api_datasource.dart';
+import 'package:cadife_smart_travel/features/agency/leads/data/datasources/leads_remote_mock_datasource.dart';
 import 'package:cadife_smart_travel/features/agency/leads/data/repositories/leads_repository_impl.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/repositories/i_leads_repository.dart';
 import 'package:cadife_smart_travel/features/agency/perfil/data/datasources/mock_consultor_repository.dart';
@@ -32,6 +33,7 @@ import 'package:cadife_smart_travel/features/agency/settings/data/datasources/mo
 import 'package:cadife_smart_travel/features/agency/settings/domain/repositories/i_agency_settings_repository.dart';
 import 'package:cadife_smart_travel/features/auth/data/datasources/auth_remote_mock_datasource.dart';
 import 'package:cadife_smart_travel/features/auth/data/datasources/i_auth_datasource.dart';
+import 'package:cadife_smart_travel/features/auth/data/datasources/auth_remote_api_datasource.dart';
 import 'package:cadife_smart_travel/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:cadife_smart_travel/features/auth/domain/repositories/i_auth_repository.dart';
 import 'package:cadife_smart_travel/features/client/itinerary/data/services/itinerary_service.dart';
@@ -174,8 +176,9 @@ void _registerItineraryModule() {
 }
 
 void _registerAuthModule() {
+  // Mudando para usar a API real para o teste E2E
   sl.registerLazySingleton<IAuthDatasource>(
-    AuthRemoteMockDatasource.new,
+    () => AuthRemoteApiDatasource(dio: sl<Dio>()),
   );
 
   sl.registerLazySingleton<IAuthRepository>(
@@ -196,7 +199,7 @@ void _registerLeadModule() {
 
   sl.registerLazySingleton<ILeadsRepository>(
     () => LeadsRepositoryImpl(
-      remoteDatasource: LeadsRemoteMockDatasource(),
+      remoteDatasource: sl<ILeadsDatasource>(),
     ),
   );
 }

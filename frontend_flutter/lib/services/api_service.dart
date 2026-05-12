@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:riverpod/riverpod.dart';
 
-const String API_BASE_URL = "http://localhost:8000"; // Mudar para 10.0.2.2:8000 se estiver no Android Emulator
+const String API_BASE_URL = "http://10.0.2.2:8000"; // Mudar para localhost se estiver no Web ou Desktop
 
 class ApiService {
   final FlutterSecureStorage _secureStorage;

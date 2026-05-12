@@ -8,6 +8,7 @@ import 'package:cadife_smart_travel/features/client/presentation/widgets/recomme
 import 'package:cadife_smart_travel/features/client/presentation/widgets/trip_status_section.dart';
 import 'package:cadife_smart_travel/features/notifications/presentation/widgets/notification_bell.dart';
 import 'package:cadife_smart_travel/providers/auth_provider.dart';
+import 'package:cadife_smart_travel/design_system/components/shimmer_loading.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -43,18 +44,26 @@ class ClientHomeScreen extends ConsumerWidget {
                 children: [
                   // 0. Saudação ao usuário
                   userAsync.when(
-                    data: (user) => Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: Text(
-                        'Olá, ${user.name}! 👋',
-                        style: AppTextStyles.h3.copyWith(
-                          color: context.cadife.textPrimary,
+                    data: (user) {
+                      if (user == null) return const SizedBox.shrink();
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 20),
+                        child: Text(
+                          'Olá, ${user.name}',
+                          style: AppTextStyles.h2.copyWith(
+                            color: context.cadife.textPrimary,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.5,
+                          ),
                         ),
-                      ),
-                    ),
+                      );
+                    },
                     loading: () => const Padding(
-                      padding: EdgeInsets.only(bottom: 16),
-                      child: LinearProgressIndicator(),
+                      padding: EdgeInsets.only(bottom: 20),
+                      child: ShimmerLoading(
+                        isLoading: true,
+                        child: Skeleton(height: 32, width: 200),
+                      ),
                     ),
                     error: (err, _) => const SizedBox.shrink(),
                   ),

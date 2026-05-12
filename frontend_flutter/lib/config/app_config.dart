@@ -20,7 +20,7 @@ class AppConfig {
   // Pré-configurados
   static const AppConfig dev = AppConfig(
     environment: AppEnvironment.dev,
-    apiBaseUrl: 'http://10.0.2.2:8080', // Use '10.0.2.2' para emulador Android
+    apiBaseUrl: 'http://10.0.2.2:8000', // Use '10.0.2.2' para emulador Android
     firebaseProjectId: 'cadife-dev-123',
     enableDebugLogs: true,
     appName: 'Cadife Dev',
