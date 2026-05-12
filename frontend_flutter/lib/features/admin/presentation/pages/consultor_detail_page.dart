@@ -47,97 +47,97 @@ class _ConsultorDetailPageState extends ConsumerState<ConsultorDetailPage>
         customEmptyType: EmptyType.notFound,
         dataBuilder: (consultor) {
           if (consultor == null) return const SizedBox.shrink();
-          return CustomScrollView(
-            slivers: [
-              SliverAppBar(
-                expandedHeight: 220,
-                pinned: true,
-                stretch: true,
-                backgroundColor: AppColors.primary,
-                leading: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: AppColors.white),
-                  onPressed: () => context.pop(),
-                ),
-                flexibleSpace: FlexibleSpaceBar(
-                  centerTitle: true,
-                  title: Text(
-                    consultor.name,
-                    style: const TextStyle(
-                      color: AppColors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      shadows: [Shadow(color: Colors.black38, blurRadius: 8)],
-                    ),
-                    textAlign: TextAlign.center,
+          return NestedScrollView(
+            headerSliverBuilder: (context, innerBoxIsScrolled) {
+              return [
+                SliverAppBar(
+                  expandedHeight: 220,
+                  pinned: true,
+                  stretch: true,
+                  backgroundColor: AppColors.primary,
+                  leading: IconButton(
+                    icon: const Icon(Icons.arrow_back, color: AppColors.white),
+                    onPressed: () => context.pop(),
                   ),
-                  background: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      Container(
-                        decoration: const BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [AppColors.primary, AppColors.primaryDark],
+                  flexibleSpace: FlexibleSpaceBar(
+                    centerTitle: true,
+                    title: Text(
+                      consultor.name,
+                      style: const TextStyle(
+                        color: AppColors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        shadows: [Shadow(color: Colors.black38, blurRadius: 8)],
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    background: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Container(
+                          decoration: const BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [AppColors.primary, AppColors.primaryDark],
+                            ),
                           ),
                         ),
-                      ),
-                      if (consultor.avatarUrl != null)
-                        Image.network(
-                          consultor.avatarUrl!,
-                          fit: BoxFit.cover,
-                          color: Colors.black45,
-                          colorBlendMode: BlendMode.darken,
-                          errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                        if (consultor.avatarUrl != null)
+                          Image.network(
+                            consultor.avatarUrl!,
+                            fit: BoxFit.cover,
+                            color: Colors.black45,
+                            colorBlendMode: BlendMode.darken,
+                            errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                          ),
+                        // Avatar circular centralizado
+                        Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const SizedBox(height: 16),
+                              CircleAvatar(
+                                radius: 40,
+                                backgroundColor: Colors.white.withValues(alpha: 0.2),
+                                backgroundImage: consultor.avatarUrl != null
+                                    ? NetworkImage(consultor.avatarUrl!)
+                                    : null,
+                                child: consultor.avatarUrl == null
+                                    ? const Icon(LucideIcons.user, size: 36, color: Colors.white)
+                                    : null,
+                              ),
+                            ],
+                          ),
                         ),
-                      // Avatar circular centralizado
-                      Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const SizedBox(height: 16),
-                            CircleAvatar(
-                              radius: 40,
-                              backgroundColor: Colors.white.withValues(alpha: 0.2),
-                              backgroundImage: consultor.avatarUrl != null
-                                  ? NetworkImage(consultor.avatarUrl!)
-                                  : null,
-                              child: consultor.avatarUrl == null
-                                  ? const Icon(LucideIcons.user, size: 36, color: Colors.white)
-                                  : null,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
+                  actions: [
+                    PopupMenuButton<String>(
+                      icon: const Icon(Icons.more_vert, color: AppColors.white),
+                      onSelected: (value) {
+                        if (value == 'edit') {
+                          context.push('/agency/admin/consultants/${widget.consultorId}/edit');
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: 'edit',
+                          child: Row(
+                            children: [
+                              Icon(Icons.edit_outlined, size: 20),
+                              SizedBox(width: 8),
+                              Text('Editar Consultor'),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-                actions: [
-                  PopupMenuButton<String>(
-                    icon: const Icon(Icons.more_vert, color: AppColors.white),
-                    onSelected: (value) {
-                      if (value == 'edit') {
-                        context.push('/agency/admin/consultants/${widget.consultorId}/edit');
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      const PopupMenuItem(
-                        value: 'edit',
-                        child: Row(
-                          children: [
-                            Icon(Icons.edit_outlined, size: 20),
-                            SizedBox(width: 8),
-                            Text('Editar Consultor'),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              SliverList(
-                delegate: SliverChildListDelegate([
-                  Padding(
+                SliverToBoxAdapter(
+                  child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       children: [
@@ -150,39 +150,67 @@ class _ConsultorDetailPageState extends ConsumerState<ConsultorDetailPage>
                       ],
                     ),
                   ),
-                  TabBar(
-                    controller: _tabController,
-                    labelColor: AppColors.primary,
-                    unselectedLabelColor: context.cadife.textSecondary,
-                    indicatorColor: AppColors.primary,
-                    tabs: const [
-                      Tab(text: 'Estatísticas'),
-                      Tab(text: 'Observações'),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 500,
-                    child: TabBarView(
+                ),
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: _SliverAppBarDelegate(
+                    TabBar(
                       controller: _tabController,
-                      children: [
-                        AnimatedTabContent(
-                          tabIndex: 0,
-                          child: _StatsTab(consultor: consultor),
-                        ),
-                        const AnimatedTabContent(
-                          tabIndex: 1,
-                          child: _NotesTab(),
-                        ),
+                      labelColor: AppColors.primary,
+                      unselectedLabelColor: context.cadife.textSecondary,
+                      indicatorColor: AppColors.primary,
+                      tabs: const [
+                        Tab(text: 'Estatísticas'),
+                        Tab(text: 'Observações'),
                       ],
                     ),
                   ),
-                ]),
-              ),
-            ],
+                ),
+              ];
+            },
+            body: TabBarView(
+              controller: _tabController,
+              children: [
+                AnimatedTabContent(
+                  tabIndex: 0,
+                  child: _StatsTab(consultor: consultor),
+                ),
+                const AnimatedTabContent(
+                  tabIndex: 1,
+                  child: _NotesTab(),
+                ),
+              ],
+            ),
           );
         },
       ),
     );
+  }
+}
+
+// ─── Sliver App Bar Delegate ────────────────────────────────────────────────
+
+class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
+  final TabBar _tabBar;
+
+  _SliverAppBarDelegate(this._tabBar);
+
+  @override
+  double get minExtent => _tabBar.preferredSize.height;
+  @override
+  double get maxExtent => _tabBar.preferredSize.height;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Container(
+      color: context.cadife.background,
+      child: _tabBar,
+    );
+  }
+
+  @override
+  bool shouldRebuild(_SliverAppBarDelegate oldDelegate) {
+    return false;
   }
 }
 
@@ -342,15 +370,6 @@ class _StatsTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Text(
-          'Performance do Consultor',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: context.cadife.textSecondary,
-          ),
-        ),
-        const SizedBox(height: 16),
         GridView.count(
           crossAxisCount: 2,
           shrinkWrap: true,

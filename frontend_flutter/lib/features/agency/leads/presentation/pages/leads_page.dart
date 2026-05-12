@@ -94,16 +94,17 @@ class _LeadsPageState extends ConsumerState<LeadsPage> {
         ],
       ),
       floatingActionButton: canCreateManual 
-        ? FloatingActionButton.extended(
+        ? FloatingActionButton(
             onPressed: () => context.push('/agency/leads/new'),
             backgroundColor: AppColors.primary,
-            icon: const Icon(Icons.add, color: Colors.white),
-            label: const Text(
-              'NOVO LEAD',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.5,
+            child: const Center(
+              child: Text(
+                '+',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           )
@@ -115,7 +116,6 @@ class _LeadsPageState extends ConsumerState<LeadsPage> {
             onChanged: (v) => ref.read(_searchQueryProvider.notifier).state = v,
             onClear: _clearFilters,
             onFilterPressed: () => _showFilterOptions(context, ref),
-            hasActiveFilters: activeStatus != null || activeScore != null,
           ),
           _StatsRow(
             totalCount: totalCount,
@@ -281,14 +281,12 @@ class _SearchBar extends StatelessWidget {
     required this.onChanged,
     required this.onClear,
     required this.onFilterPressed,
-    required this.hasActiveFilters,
   });
 
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
   final VoidCallback onClear;
   final VoidCallback onFilterPressed;
-  final bool hasActiveFilters;
 
   @override
   Widget build(BuildContext context) {
@@ -332,9 +330,9 @@ class _SearchBar extends StatelessWidget {
             ),
             const SizedBox(width: 4),
             ShadIconButton.ghost(
-              icon: Icon(
+              icon: const Icon(
                 LucideIcons.slidersHorizontal, 
-                color: hasActiveFilters ? AppColors.primary : (isDark ? Colors.white60 : cadife.textSecondary),
+                color: AppColors.primary,
                 size: 18
               ),
               width: 32,

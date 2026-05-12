@@ -1,7 +1,7 @@
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/client/documentos/domain/entities/trip_summary.dart';
 import 'package:cadife_smart_travel/features/client/documentos/presentation/providers/documentos_notifier.dart';
-import 'package:cadife_smart_travel/features/client/documentos/presentation/widgets/documents_section.dart';
+import 'package:cadife_smart_travel/features/client/documentos/presentation/widgets/cadife_document_card.dart';
 import 'package:cadife_smart_travel/features/client/historico/presentation/providers/historico_notifier.dart';
 import 'package:cadife_smart_travel/features/client/home/domain/entities/client_trip.dart';
 import 'package:cadife_smart_travel/features/client/home/infrastructure/mocks/client_home_mocks.dart';
@@ -232,10 +232,7 @@ class _DetailView extends ConsumerWidget {
                             icon: LucideIcons.calendar,
                             label: 'Período',
                             value: dateRange,
-                            onTap: () => context.pushNamed(
-                              'client_travel_calendar',
-                              pathParameters: {'tripId': vm.id},
-                            ),
+                            onTap: () => context.push('/client/travel/${vm.id}/calendar'),
                           ),
                         ),
                         if (durationDays != null) ...[
@@ -275,10 +272,7 @@ class _DetailView extends ConsumerWidget {
                           ),
                         ),
                         TextButton(
-                          onPressed: () => context.pushNamed(
-                            'client_travel_calendar',
-                            pathParameters: {'tripId': vm.id},
-                          ),
+                          onPressed: () => context.push('/client/travel/${vm.id}/calendar'),
                           child: Text(
                             'Ver calendário',
                             style: TextStyle(
@@ -316,10 +310,7 @@ class _DetailView extends ConsumerWidget {
                           ),
                         ),
                         GestureDetector(
-                          onTap: () => context.pushNamed(
-                            'client_trip_documents',
-                            pathParameters: {'tripId': vm.id},
-                          ),
+                          onTap: () => context.push('/client/documents/${vm.id}'),
                           child: Text(
                             'Ver todos',
                             style: TextStyle(
@@ -335,7 +326,29 @@ class _DetailView extends ConsumerWidget {
                     docsAsync.when(
                       data: (docs) => docs.isEmpty
                           ? const _EmptyCard(label: 'Nenhum documento disponível')
-                          : DocumentsSection(documents: docs),
+                          : SizedBox(
+                              height: 130,
+                              child: ListView.separated(
+                                scrollDirection: Axis.horizontal,
+                                clipBehavior: Clip.none,
+                                physics: const BouncingScrollPhysics(),
+                                itemCount: docs.length,
+                                separatorBuilder: (_, _) => const SizedBox(width: 12),
+                                itemBuilder: (_, i) {
+                                  final doc = docs[i];
+                                  return SizedBox(
+                                    width: MediaQuery.of(context).size.width * 0.85,
+                                    child: CadifeDocumentCard(
+                                      document: doc,
+                                      onView: () => context.push(
+                                        '/client/documentos/viewer',
+                                        extra: doc,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
                       loading: () => const Center(child: CircularProgressIndicator()),
                       error: (_, _) => const SizedBox.shrink(),
                     ),
@@ -359,10 +372,7 @@ class _DetailView extends ConsumerWidget {
                             icon: LucideIcons.bookOpen,
                             label: 'Diário de\nViagem',
                             accentColor: const Color(0xFF4F46E5),
-                            onTap: () => context.pushNamed(
-                              'client_diary_detail',
-                              pathParameters: {'tripId': vm.id},
-                            ),
+                            onTap: () => context.push('/client/profile/diary/${vm.id}'),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -371,7 +381,7 @@ class _DetailView extends ConsumerWidget {
                             icon: LucideIcons.briefcase,
                             label: 'Minha\nMala',
                             accentColor: const Color(0xFF0D9488),
-                            onTap: () => context.pushNamed('client_profile'),
+                            onTap: () => context.go('/client/profile?tab=2'),
                           ),
                         ),
                       ],

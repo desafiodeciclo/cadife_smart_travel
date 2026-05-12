@@ -318,11 +318,9 @@ class _AdminSearchBar extends StatelessWidget {
             Container(width: 1, height: 20, color: cadife.cardBorder),
             const SizedBox(width: 4),
             ShadIconButton.ghost(
-              icon: Icon(
+              icon: const Icon(
                 LucideIcons.slidersHorizontal,
-                color: hasActiveFilters
-                    ? AppColors.primary
-                    : (isDark ? Colors.white60 : cadife.textSecondary),
+                color: AppColors.primary,
                 size: 18,
               ),
               width: 32,
