@@ -17,6 +17,9 @@ if TYPE_CHECKING:
     from app.models.lead import Lead
 
 from app.presentation.schemas.leads import (
+    BriefingDTO,
+    InteracaoSummaryDTO,
+    LeadCursorListResponseDTO,
     LeadDetailDTO,
     LeadListItemDTO,
     LeadListResponseDTO,
@@ -47,6 +50,7 @@ def map_lead_to_list_item(
         origem=lead.origem,
         status=lead.status,
         score=lead.score,
+        consultor_id=lead.consultor_id,
         criado_em=lead.criado_em,
         atualizado_em=lead.atualizado_em,
         completude_pct=completude_pct,
@@ -54,7 +58,11 @@ def map_lead_to_list_item(
 
 
 def map_lead_to_detail(lead: "Lead") -> LeadDetailDTO:
-    """Map a Lead ORM instance to the full-detail DTO."""
+    """Map a Lead ORM instance to the full-detail DTO.
+
+    Includes briefing snapshot and last interactions when they are
+    eagerly loaded on the ORM object (use selectinload in the query).
+    """
     propostas = []
     raw_propostas = getattr(lead, "propostas", None)
     if raw_propostas and isinstance(raw_propostas, (list, tuple)):
@@ -69,6 +77,18 @@ def map_lead_to_detail(lead: "Lead") -> LeadDetailDTO:
                 )
             )
 
+    briefing_dto: BriefingDTO | None = None
+    raw_briefing = getattr(lead, "briefing", None)
+    if raw_briefing is not None:
+        briefing_dto = BriefingDTO.model_validate(raw_briefing)
+
+    interacoes: list[InteracaoSummaryDTO] = []
+    raw_interacoes = getattr(lead, "interacoes", None)
+    if raw_interacoes and isinstance(raw_interacoes, (list, tuple)):
+        # Most-recent 10, newest-last order (already sorted in service query)
+        for i in raw_interacoes[-10:]:
+            interacoes.append(InteracaoSummaryDTO.model_validate(i))
+
     dto = LeadDetailDTO(
         id=lead.id,
         nome=lead.nome,
@@ -78,9 +98,12 @@ def map_lead_to_detail(lead: "Lead") -> LeadDetailDTO:
         score=lead.score,
         consultor_id=lead.consultor_id,
         is_archived=lead.is_archived,
+        deletado_em=getattr(lead, "deletado_em", None),
         criado_em=lead.criado_em,
         atualizado_em=lead.atualizado_em,
         propostas=propostas,
+        briefing=briefing_dto,
+        ultimas_interacoes=interacoes,
     )
 
     if lead.consultor:
@@ -98,7 +121,7 @@ def map_leads_to_list_response(
     page: int,
     limit: int,
 ) -> LeadListResponseDTO:
-    """Map a page of Lead ORM instances to the paginated list response."""
+    """Map a page of Lead ORM instances to the offset-paginated list response."""
     items: list[LeadListItemDTO] = []
     for lead in leads:
         completude = None
@@ -113,6 +136,25 @@ def map_leads_to_list_response(
         page=page,
         limit=limit,
         pages=pages,
+    )
+
+
+def map_leads_to_cursor_response(
+    leads: list["Lead"],
+    next_cursor: str | None,
+) -> LeadCursorListResponseDTO:
+    """Map a cursor page of Lead ORM instances to the cursor list response."""
+    items: list[LeadListItemDTO] = []
+    for lead in leads:
+        completude = None
+        if lead.briefing:
+            completude = lead.briefing.completude_pct
+        items.append(map_lead_to_list_item(lead, completude_pct=completude))
+
+    return LeadCursorListResponseDTO(
+        items=items,
+        next_cursor=next_cursor,
+        has_more=next_cursor is not None,
     )
 
 
