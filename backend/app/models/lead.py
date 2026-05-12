@@ -53,6 +53,9 @@ class Lead(Base):
         UUID(as_uuid=True), ForeignKey("users.id")
     )
     is_archived: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    deletado_em: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     criado_em: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
