@@ -83,6 +83,7 @@ class LeadListItemDTO(BaseModel):
     origem: LeadOrigem
     status: LeadStatus
     score: Optional[LeadScore] = None
+    score_numerico: Optional[int] = None
     criado_em: datetime
     atualizado_em: datetime
     completude_pct: Optional[int] = None
@@ -99,6 +100,8 @@ class LeadDetailDTO(BaseModel):
     origem: LeadOrigem
     status: LeadStatus
     score: Optional[LeadScore] = None
+    score_numerico: Optional[int] = None
+    score_calculado_em: Optional[datetime] = None
     consultor_id: Optional[uuid.UUID] = None
     consultor_nome: Optional[str] = None
     consultor_avatar: Optional[str] = None
