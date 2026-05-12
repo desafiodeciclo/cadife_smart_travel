@@ -64,4 +64,24 @@ class LeadDetailNotifier extends FamilyAsyncNotifier<Lead?, String> {
       },
     );
   }
+
+  Future<void> toggleAya({required bool ativo, String? motivo}) async {
+    final result = await ref.read(toggleAyaUseCaseProvider).call(
+      arg,
+      ativo: ativo,
+      motivo: motivo,
+    );
+
+    result.fold(
+      (failure) => state = AsyncError(failure, StackTrace.current),
+      (_) {
+        sl<AnalyticsService>().logEvent('aya_toggle', parameters: {
+          'lead_id': arg,
+          'ativo': ativo,
+          'motivo': motivo,
+        });
+        refresh();
+      },
+    );
+  }
 }
