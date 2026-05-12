@@ -380,7 +380,13 @@ async def _run_agent(
             fn_name = tc["function"]["name"]
             try:
                 fn_args = json.loads(tc["function"]["arguments"])
-            except (json.JSONDecodeError, KeyError):
+            except (json.JSONDecodeError, KeyError) as parse_exc:
+                logger.warning(
+                    "tool_args_parse_failed",
+                    tool=fn_name,
+                    error=str(parse_exc),
+                    raw=str(tc.get("function", {}).get("arguments", ""))[:200],
+                )
                 fn_args = {}
 
             logger.info("agent_tool_call", round=round_idx, tool=fn_name, model=model)

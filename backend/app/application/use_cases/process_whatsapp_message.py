@@ -207,8 +207,12 @@ async def execute(payload: dict, db: AsyncSession) -> None:
             # de continuar — evita PendingRollbackError nas etapas seguintes.
             try:
                 await db.rollback()
-            except Exception:
-                pass
+            except Exception as rollback_exc:
+                logger.error(
+                    "db_rollback_failed",
+                    lead_id=lead_id_str,
+                    error=str(rollback_exc),
+                )
             logger.error("briefing_update_error", lead_id=lead_id_str, error=str(exc))
 
     # ── Step 6: Persist interaction record (sempre executado) ─────────────

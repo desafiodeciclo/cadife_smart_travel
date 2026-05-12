@@ -3,7 +3,7 @@ import 'package:cadife_smart_travel/features/agency/leads/data/datasources/i_lea
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/briefing.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/repositories/i_leads_repository.dart';
-import 'package:cadife_smart_travel/features/client/historico/domain/entities/interacao.dart';
+import 'package:cadife_smart_travel/shared/domain/entities/interacao.dart';
 import 'package:fpdart/fpdart.dart';
 
 class LeadsRepositoryImpl implements ILeadsRepository {

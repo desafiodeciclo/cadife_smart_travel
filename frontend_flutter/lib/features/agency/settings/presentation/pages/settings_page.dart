@@ -97,10 +97,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     // Also listen for future refreshes (e.g. pull-to-refresh)
     ref.listen<AsyncValue<AgencySettings>>(agencySettingsProvider, (_, next) {
       final s = next.valueOrNull;
-      if (s != null && _draft == null) {
-        setState(() {
-          _draft = s;
-          _saved = s;
+      if (s != null && _draft == null && mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            setState(() {
+              _draft = s;
+              _saved = s;
+            });
+          }
         });
       }
     });
