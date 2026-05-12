@@ -71,6 +71,29 @@ class LeadUpdateRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+class AyaToggleRequest(BaseModel):
+    ativo: bool
+    motivo: Optional[str] = Field(
+        default=None,
+        max_length=500,
+        description="Motivo do toggle — obrigatório ao desativar (recomendado)",
+    )
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class AyaToggleResponseDTO(BaseModel):
+    lead_id: uuid.UUID
+    aya_ativo: bool
+    motivo: Optional[str] = None
+    alterado_em: datetime
+    contexto_msgs_count: int = Field(
+        description="Mensagens recentes disponíveis para contexto quando AYA for reativada"
+    )
+
+    model_config = ConfigDict(extra="forbid")
+
+
 # ── Response DTOs ──────────────────────────────────────────────────────────
 
 
@@ -99,6 +122,7 @@ class LeadDetailDTO(BaseModel):
     origem: LeadOrigem
     status: LeadStatus
     score: Optional[LeadScore] = None
+    aya_ativo: bool = True
     consultor_id: Optional[uuid.UUID] = None
     consultor_nome: Optional[str] = None
     consultor_avatar: Optional[str] = None
