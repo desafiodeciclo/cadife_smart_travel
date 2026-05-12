@@ -13,4 +13,5 @@ abstract class ILeadsRepository {
   Future<Either<Failure, List<Interacao>>> getInteractions(String leadId);
   Future<Either<Failure, Lead>> createLead(CreateLeadRequest request);
   Future<Either<Failure, Lead>> createManualLead(ManualLeadCreate request);
+  Future<Either<Failure, Unit>> toggleAya(String leadId, {required bool ativo, String? motivo});
 }
