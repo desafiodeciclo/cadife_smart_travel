@@ -44,4 +44,6 @@ abstract class ILeadsRepository {
     LeadStatus? status,
     LeadScore? score,
   });
+
+  Future<Either<Failure, Lead>> reassignLead(String id, String consultorNome);
 }

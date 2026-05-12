@@ -184,7 +184,6 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
   Future<void> toggleAya(String leadId, {required bool ativo, String? motivo}) async {
     await Future.delayed(const Duration(milliseconds: 300));
     // Simulação de alteração de estado da IA
-    print('AYA ${ativo ? 'ativada' : 'desativada'} para lead $leadId. Motivo: $motivo');
   }
 
   @override

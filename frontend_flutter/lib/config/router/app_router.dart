@@ -15,6 +15,8 @@ import 'package:cadife_smart_travel/features/agency/leads/presentation/pages/lea
 import 'package:cadife_smart_travel/features/agency/leads/presentation/pages/lead_edit_page.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/pages/leads_page.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/pages/manual_lead_create_page.dart';
+import 'package:cadife_smart_travel/features/agency/offers/presentation/screens/offer_form_screen.dart';
+import 'package:cadife_smart_travel/features/agency/offers/presentation/screens/offers_management_screen.dart';
 import 'package:cadife_smart_travel/features/agency/propostas/presentation/pages/proposal_create_page.dart';
 import 'package:cadife_smart_travel/features/agency/propostas/presentation/pages/proposals_page.dart';
 import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
@@ -238,6 +240,35 @@ final routerProvider = Provider<GoRouter>((ref) {
                         consultorId: consultorId,
                       );
                     },
+                  );
+                },
+              ),
+            ],
+          ),
+          GoRoute(
+            path: '/agency/offers',
+            name: 'agency_offers',
+            pageBuilder: (context, state) => SlideTransitionPage(
+              name: state.name,
+              child: const OffersManagementScreen(),
+            ),
+            routes: [
+              GoRoute(
+                path: 'create',
+                name: 'agency_offer_create',
+                pageBuilder: (context, state) => SlideTransitionPage(
+                  name: state.name,
+                  child: const OfferFormScreen(),
+                ),
+              ),
+              GoRoute(
+                path: ':offerId/edit',
+                name: 'agency_offer_edit',
+                pageBuilder: (context, state) {
+                  final offerId = state.pathParameters['offerId']!;
+                  return SlideTransitionPage(
+                    name: state.name,
+                    child: OfferFormScreen(offerId: offerId),
                   );
                 },
               ),

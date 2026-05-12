@@ -16,7 +16,7 @@ class OfferCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final currencyFormatter =
         NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
-    final formattedPrice = currencyFormatter.format(offer.estimatedPrice);
+    final formattedPrice = currencyFormatter.format(offer.finalPrice);
     final cadife = context.cadife;
 
     return CadifeCard(
@@ -30,13 +30,13 @@ class OfferCard extends StatelessWidget {
           Stack(
             children: [
               AspectRatio(
-                aspectRatio: 1.3, // Mais horizontal para caber no widget menor
+                aspectRatio: 1.3,
                 child: Hero(
                   tag: 'offer_hero_${offer.id}',
                   child: ClipRRect(
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                     child: Image.network(
-                      offer.imageUrl,
+                      offer.destinationImageUrl ?? '',
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
                         return Container(
@@ -51,26 +51,69 @@ class OfferCard extends StatelessWidget {
                   ),
                 ),
               ),
+              // Badge de categoria
               Positioned(
-                top: 12,
-                left: 12,
+                top: 8,
+                left: 8,
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: cadife.primary,
-                    borderRadius: BorderRadius.circular(20), // Pill shape
+                    borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    offer.category,
+                    offer.category ?? 'Viagem',
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w800,
-                      fontSize: 11,
+                      fontSize: 10,
                     ),
                   ),
                 ),
               ),
+              // Badge de desconto
+              if (offer.hasDiscount)
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.orange,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      '-${offer.discountPercent.toStringAsFixed(0)}%',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ),
+                ),
+              // Overlay de vagas esgotadas
+              if (!offer.availableSpot)
+                Positioned.fill(
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                    child: Container(
+                      color: Colors.black.withValues(alpha: 0.5),
+                      child: const Center(
+                        child: Text(
+                          'VAGAS\nESGOTADAS',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 12,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
 

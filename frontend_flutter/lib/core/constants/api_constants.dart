@@ -28,6 +28,7 @@ class ApiConstants {
   static String leadById(String id) => '/leads/$id';
   static String leadBriefing(String id) => '/leads/$id/briefing';
   static String leadAyaToggle(String id) => '/leads/$id/aya-toggle';
+  static String leadReassign(String id) => '/leads/$id/reassign';
   static const String leadsManual = '/leads/manual';
 
   // ── Agenda ─────────────────────────────────────────────

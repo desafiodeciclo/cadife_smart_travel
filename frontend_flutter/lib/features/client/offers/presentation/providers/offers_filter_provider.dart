@@ -9,6 +9,8 @@ class OffersFilters extends Equatable {
   final DateTime? startDate;
   final DateTime? endDate;
   final String searchQuery;
+  final int? minDays;
+  final int? maxDays;
 
   const OffersFilters({
     this.destination,
@@ -18,6 +20,8 @@ class OffersFilters extends Equatable {
     this.startDate,
     this.endDate,
     this.searchQuery = '',
+    this.minDays,
+    this.maxDays,
   });
 
   @override
@@ -29,6 +33,8 @@ class OffersFilters extends Equatable {
         startDate,
         endDate,
         searchQuery,
+        minDays,
+        maxDays,
       ];
 
   OffersFilters copyWith({
@@ -39,8 +45,11 @@ class OffersFilters extends Equatable {
     DateTime? startDate,
     DateTime? endDate,
     String? searchQuery,
+    int? minDays,
+    int? maxDays,
     bool clearDestination = false,
     bool clearDates = false,
+    bool clearDuration = false,
   }) {
     return OffersFilters(
       destination: clearDestination ? null : (destination ?? this.destination),
@@ -50,6 +59,8 @@ class OffersFilters extends Equatable {
       startDate: clearDates ? null : (startDate ?? this.startDate),
       endDate: clearDates ? null : (endDate ?? this.endDate),
       searchQuery: searchQuery ?? this.searchQuery,
+      minDays: clearDuration ? null : (minDays ?? this.minDays),
+      maxDays: clearDuration ? null : (maxDays ?? this.maxDays),
     );
   }
 }

@@ -20,6 +20,7 @@ class LeadOrigem(str, Enum):
     rede_social = "rede social"
     outro = "outro"
     manual = "manual"
+    offer_interest = "offer_interest"
 
 
 class LeadStatus(str, Enum):
@@ -140,11 +141,13 @@ class DocumentoCategoria(str, Enum):
 
 
 class OfferStatus(str, Enum):
-    """Offer lifecycle states."""
+    """Offer lifecycle states based on §ETAPA-1-01."""
 
-    rascunho = "rascunho"
-    publicada = "publicada"
-    encerrada = "encerrada"
+    draft = "draft"           # Rascunho
+    published = "published"   # Publicada
+    sold_out = "sold_out"     # Sem vagas
+    expired = "expired"       # Vencida
+    archived = "archived"     # Arquivada
 
 
 class OfferCategoria(str, Enum):
