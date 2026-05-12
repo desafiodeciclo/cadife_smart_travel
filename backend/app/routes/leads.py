@@ -377,6 +377,91 @@ async def get_interacoes(
 
 
 @router.get(
+    "/{lead_id}/score-history",
+    summary="Histórico de evolução do score",
+    description=(
+        "Retorna o histórico auditável de cada recálculo do score de qualificação do lead, "
+        "com critérios detalhados por ponto e motivo do cálculo."
+    ),
+    dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))],
+    responses={
+        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
+        404: {"description": "Lead não encontrado", "model": HTTPErrorResponse},
+    },
+)
+async def get_score_history(
+    lead_id: uuid.UUID,
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    from sqlalchemy import select, func
+    from app.models.lead_score_history import LeadScoreHistory, ScoreHistoryItem, ScoreHistoryResponse
+
+    lead = await lead_service.get_lead_by_id(db, lead_id)
+    if not lead:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead não encontrado")
+
+    count_stmt = select(func.count()).where(LeadScoreHistory.lead_id == lead_id)
+    total: int = (await db.execute(count_stmt)).scalar_one()
+
+    offset = (page - 1) * limit
+    stmt = (
+        select(LeadScoreHistory)
+        .where(LeadScoreHistory.lead_id == lead_id)
+        .order_by(LeadScoreHistory.criado_em.desc())
+        .offset(offset)
+        .limit(limit)
+    )
+    rows = list((await db.execute(stmt)).scalars().all())
+
+    return ScoreHistoryResponse(
+        lead_id=lead_id,
+        total=total,
+        items=[ScoreHistoryItem.model_validate(r) for r in rows],
+    )
+
+
+@router.post(
+    "/{lead_id}/recalculate-score",
+    summary="Recalcular score manualmente",
+    description=(
+        "Força o recálculo do score de qualificação com base no estado atual do briefing. "
+        "Disponível apenas para admin e agência. Persiste o novo score e insere entrada no histórico."
+    ),
+    dependencies=[Depends(RequiresRole("admin", "agencia"))],
+    responses={
+        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
+        403: {"description": "Perfil sem permissão", "model": HTTPErrorResponse},
+        404: {"description": "Lead não encontrado", "model": HTTPErrorResponse},
+    },
+)
+async def recalculate_score(
+    lead_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    from app.services.lead_service import _persist_score
+
+    lead = await lead_service.get_lead_by_id(db, lead_id)
+    if not lead:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead não encontrado")
+
+    await _persist_score(db, lead, motivo="recalculo_admin")
+    await db.commit()
+    await db.refresh(lead)
+
+    logger.info(
+        "lead_score_recalculated_manual",
+        lead_id=str(lead_id),
+        score_numerico=lead.score_numerico,
+        actor=str(current_user.id),
+    )
+    return map_lead_to_detail(lead)
+
+
+@router.get(
     "/{lead_id}/briefing",
     response_model=BriefingResponse,
     summary="Briefing estruturado do lead",
