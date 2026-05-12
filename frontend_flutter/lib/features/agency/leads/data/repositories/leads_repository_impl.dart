@@ -66,7 +66,7 @@ class LeadsRepositoryImpl implements ILeadsRepository {
   Future<Either<Failure, ConversationSummary?>> getConversationSummary(String leadId) async {
     try {
       final result = await _datasource.getConversationSummary(leadId);
-      return Right(result);
+      return Right(result?.toDomain());
     } on Object catch (e) {
       return Left(ServerFailure(e.toString()));
     }

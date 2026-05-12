@@ -84,61 +84,49 @@ class _OffersListPageState extends ConsumerState<OffersListPage> {
                     height: 20,
                     color: context.cadife.cardBorder,
                   ),
-                  onPressed: () async {
-                    final result = await showModalBottomSheet<Map<String, dynamic>>(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.transparent,
-                      builder: (context) => OffersFilterSheet(
-                        initialDestination: filters.destination,
-                        initialCategories: filters.categories,
-                        initialMinPrice: filters.minPrice,
-                        initialMaxPrice: filters.maxPrice,
-                        initialStartDate: filters.startDate,
-                        initialEndDate: filters.endDate,
-                        initialMinDays: filters.minDays,
-                        initialMaxDays: filters.maxDays,
-                      ),
-                      onPressed: () async {
-                        final result =
-                            await showModalBottomSheet<Map<String, dynamic>>(
-                          context: context,
-                          isScrollControlled: true,
-                          backgroundColor: Colors.transparent,
-                          builder: (context) => OffersFilterSheet(
-                            initialDestination: filters.destination,
-                            initialCategories: filters.categories,
-                            initialMinPrice: filters.minPrice,
-                            initialMaxPrice: filters.maxPrice,
-                            initialStartDate: filters.startDate,
-                            initialEndDate: filters.endDate,
-                          ),
-                        );
-
-                    if (result != null) {
-                      final updated = ref.read(offersFilterProvider).copyWith(
-                        destination: result['destination'] as String?,
-                        categories: result['categories'] as List<String>?,
-                        minPrice: result['minPrice'] as double?,
-                        maxPrice: result['maxPrice'] as double?,
-                        startDate: result['startDate'] as DateTime?,
-                        endDate: result['endDate'] as DateTime?,
-                        minDays: result['minDays'] as int?,
-                        maxDays: result['maxDays'] as int?,
-                        clearDestination: result['destination'] == null,
-                        clearDates: result['startDate'] == null,
-                        clearDuration: result['minDays'] == null,
+                  ShadButton.ghost(
+                    child: Icon(LucideIcons.listFilter,
+                        size: 20, color: context.cadife.primary),
+                    onPressed: () async {
+                      final result = await showModalBottomSheet<Map<String, dynamic>>(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (context) => OffersFilterSheet(
+                          initialDestination: filters.destination,
+                          initialCategories: filters.categories,
+                          initialMinPrice: filters.minPrice,
+                          initialMaxPrice: filters.maxPrice,
+                          initialStartDate: filters.startDate,
+                          initialEndDate: filters.endDate,
+                          initialMinDays: filters.minDays,
+                          initialMaxDays: filters.maxDays,
+                        ),
                       );
-                      ref.read(offersFilterProvider.notifier).state = updated;
-                      _syncFilters(updated);
-                    }
-                  },
-                ),
+
+                      if (result != null) {
+                        final updated = ref.read(offersFilterProvider).copyWith(
+                          destination: result['destination'] as String?,
+                          categories: result['categories'] as List<String>?,
+                          minPrice: result['minPrice'] as double?,
+                          maxPrice: result['maxPrice'] as double?,
+                          startDate: result['startDate'] as DateTime?,
+                          endDate: result['endDate'] as DateTime?,
+                          minDays: result['minDays'] as int?,
+                          maxDays: result['maxDays'] as int?,
+                          clearDestination: result['destination'] == null,
+                          clearDates: result['startDate'] == null,
+                          clearDuration: result['minDays'] == null,
+                        );
+                        ref.read(offersFilterProvider.notifier).state = updated;
+                        _syncFilters(updated);
+                      }
+                    },
+                  ),
+                ],
               ),
             ),
           ),
-
-
 
           // Lista / Grid
           Expanded(

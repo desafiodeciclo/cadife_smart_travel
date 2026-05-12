@@ -36,7 +36,7 @@ class OfferCard extends StatelessWidget {
                   child: ClipRRect(
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                     child: Image.network(
-                      offer.destinationImageUrl ?? '',
+                      offer.destinationImageUrl,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
                         return Container(
@@ -62,7 +62,7 @@ class OfferCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    offer.category ?? 'Viagem',
+                    offer.category,
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w800,

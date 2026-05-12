@@ -29,9 +29,7 @@ class OfferDetailScreen extends ConsumerWidget {
                 expandedHeight: 300,
                 pinned: true,
                 flexibleSpace: FlexibleSpaceBar(
-                  background: offer.destinationImageUrl != null
-                      ? Image.network(offer.destinationImageUrl!, fit: BoxFit.cover)
-                      : Container(color: AppColors.zinc200),
+                  background: Image.network(offer.destinationImageUrl, fit: BoxFit.cover),
                 ),
               ),
               SliverToBoxAdapter(
@@ -58,7 +56,7 @@ class OfferDetailScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        offer.description ?? 'Sem descrição disponível.',
+                        offer.description,
                         style: const TextStyle(fontSize: 16, height: 1.5),
                       ),
                       const SizedBox(height: 24),
@@ -67,7 +65,7 @@ class OfferDetailScreen extends ConsumerWidget {
                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                       ),
                       const SizedBox(height: 12),
-                      ...offer.includedServices?.map((s) => Padding(
+                      ...offer.includedServices.map((s) => Padding(
                         padding: const EdgeInsets.only(bottom: 8),
                         child: Row(
                           children: [
@@ -76,7 +74,7 @@ class OfferDetailScreen extends ConsumerWidget {
                             Text(s, style: const TextStyle(fontSize: 16)),
                           ],
                         ),
-                      )).toList() ?? [const Text('Consulte a agência.')],
+                      )),
                       
                       const SizedBox(height: 40),
                       Container(

@@ -2,7 +2,7 @@ import 'package:cadife_smart_travel/features/client/home/domain/entities/client_
 import 'package:cadife_smart_travel/features/client/home/domain/entities/client_trip.dart';
 import 'package:cadife_smart_travel/features/client/home/domain/entities/consultant_info.dart';
 import 'package:cadife_smart_travel/features/client/itinerary/domain/entities/itinerary_item.dart';
-
+import 'package:cadife_smart_travel/features/client/offers/domain/entities/date_range.dart';
 import 'package:cadife_smart_travel/features/client/offers/domain/entities/offer.dart';
 
 class ClientHomeMocks {
@@ -97,20 +97,23 @@ class ClientHomeMocks {
           category: 'Cultura',
           description: 'Moda, cultura e gastronomia no coração da Itália',
           basePrice: 5500.0,
-          finalPrice: 5200.0,
+          price: 5200.0,
           currency: 'BRL',
-          departureDate: DateTime(2026, 9, 10),
-          returnDate: DateTime(2026, 9, 17),
-          durationDays: 7,
+          dates: DateRange(
+            start: DateTime(2026, 9, 10),
+            end: DateTime(2026, 9, 17),
+          ),
+          daysCount: 7,
+          rating: 4.8,
           travelers: 2,
           availableSpots: 10,
           spotsReserved: 2,
-          status: 'active',
-          highlights: ['Moda', 'Gastronomia', 'Cultura'],
-          amenities: ['Voo incluso', 'Hotel 4 estrelas'],
+          status: 'published',
+          highlights: const ['Moda', 'Gastronomia', 'Cultura'],
+          amenities: const ['Voo incluso', 'Hotel 4 estrelas'],
           views: 120,
           interests: 45,
-          destinationImageUrl: 'https://images.unsplash.com/photo-1520923179278-ee25e24e467e?auto=format&fit=crop&q=80&w=800',
+          imageUrl: 'https://images.unsplash.com/photo-1520923179278-ee25e24e467e?auto=format&fit=crop&q=80&w=800',
         ),
         Offer(
           id: 'rec-002',
@@ -119,20 +122,23 @@ class ClientHomeMocks {
           category: 'História',
           description: 'A Cidade Dourada com arquitetura medieval incomparável',
           basePrice: 4500.0,
-          finalPrice: 4100.0,
+          price: 4100.0,
           currency: 'BRL',
-          departureDate: DateTime(2026, 10, 5),
-          returnDate: DateTime(2026, 10, 10),
-          durationDays: 5,
+          dates: DateRange(
+            start: DateTime(2026, 10, 5),
+            end: DateTime(2026, 10, 10),
+          ),
+          daysCount: 5,
+          rating: 4.7,
           travelers: 2,
           availableSpots: 8,
           spotsReserved: 3,
-          status: 'active',
-          highlights: ['História', 'Arquitetura', 'Cerveja Artesanal'],
-          amenities: ['Voo incluso', 'Guia em português'],
+          status: 'published',
+          highlights: const ['História', 'Arquitetura', 'Cerveja Artesanal'],
+          amenities: const ['Voo incluso', 'Guia em português'],
           views: 85,
           interests: 22,
-          destinationImageUrl: 'https://images.unsplash.com/photo-1519677100203-a0e668c92439?auto=format&fit=crop&q=80&w=800',
+          imageUrl: 'https://images.unsplash.com/photo-1519677100203-a0e668c92439?auto=format&fit=crop&q=80&w=800',
         ),
         Offer(
           id: 'rec-003',
@@ -141,22 +147,26 @@ class ClientHomeMocks {
           category: 'Romântico',
           description: 'Vistas deslumbrantes do pôr do sol e águas cristalinas',
           basePrice: 7000.0,
-          finalPrice: 6500.0,
+          price: 6500.0,
           currency: 'BRL',
-          departureDate: DateTime(2026, 8, 20),
-          returnDate: DateTime(2026, 8, 26),
-          durationDays: 6,
+          dates: DateRange(
+            start: DateTime(2026, 8, 20),
+            end: DateTime(2026, 8, 26),
+          ),
+          daysCount: 6,
+          rating: 4.9,
           travelers: 2,
           availableSpots: 6,
           spotsReserved: 4,
-          status: 'active',
-          highlights: ['Pôr do Sol', 'Mar Egeu', 'Romantismo'],
-          amenities: ['Hotel Boutique', 'Café da manhã incluso'],
+          status: 'published',
+          highlights: const ['Pôr do Sol', 'Mar Egeu', 'Romantismo'],
+          amenities: const ['Hotel Boutique', 'Café da manhã incluso'],
           views: 210,
           interests: 88,
-          destinationImageUrl: 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?auto=format&fit=crop&q=80&w=800',
+          imageUrl: 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?auto=format&fit=crop&q=80&w=800',
         ),
       ];
+
 
   static List<ItineraryItem> mockItineraryItems(String leadId) => [
         ItineraryItem(

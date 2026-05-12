@@ -1,6 +1,7 @@
 import 'package:cadife_smart_travel/core/cache/isar_cache_manager.dart';
 import 'package:cadife_smart_travel/core/cache/isar_schemas/isar_schemas.dart';
 
+import 'package:cadife_smart_travel/features/client/offers/domain/entities/date_range.dart';
 import 'package:cadife_smart_travel/features/client/offers/domain/entities/offer.dart';
 import 'package:cadife_smart_travel/features/client/offers/domain/repositories/i_offer_repository.dart';
 
@@ -31,18 +32,21 @@ class MockOfferRepository implements IOfferRepository {
         category: c.category,
         description: c.description,
         basePrice: c.estimatedPrice,
-        finalPrice: c.estimatedPrice,
+        price: c.estimatedPrice,
         currency: 'BRL',
-        destinationImageUrl: c.imageUrl,
-        departureDate: DateTime.now(),
-        returnDate: DateTime.now().add(const Duration(days: 7)),
-        durationDays: 7,
+        imageUrl: c.imageUrl,
+        dates: DateRange(
+          start: DateTime.now(),
+          end: DateTime.now().add(const Duration(days: 7)),
+        ),
+        daysCount: 7,
+        rating: 4.5,
         travelers: 2,
         availableSpots: 10,
         spotsReserved: 0,
-        status: 'active',
-        highlights: [],
-        amenities: [],
+        status: 'published',
+        highlights: const [],
+        amenities: const [],
         views: 0,
         interests: 0,
       )).toList();
@@ -76,10 +80,10 @@ class MockOfferRepository implements IOfferRepository {
         serverId: o.id,
         title: o.title,
         destination: o.destination,
-        category: o.category ?? '',
-        description: o.description ?? '',
+        category: o.category,
+        description: o.description,
         estimatedPrice: o.finalPrice,
-        imageUrl: o.destinationImageUrl ?? '',
+        imageUrl: o.destinationImageUrl,
         updatedAt: DateTime.now(),
       )).toList();
       await _cacheManager.putOffers(isarOffers);
@@ -119,25 +123,28 @@ class MockOfferRepository implements IOfferRepository {
     return List.generate(100, (index) {
       final category = _categories[index % _categories.length];
       final destination = _destinations[index % _destinations.length];
+      final basePrice = 2000.0 + (index * 150) % 15000;
       return Offer(
         id: 'offer-$index',
         title: 'Pacote Especial: $destination',
         destination: destination,
         category: category,
         description: 'Explore o melhor de $destination neste pacote exclusivo de $category. Inclui hospedagem premium, passeios guiados e experiências gastronômicas inesquecíveis.',
-        basePrice: 2000.0 + (index * 150) % 15000,
-        finalPrice: 1500.0 + (index * 150) % 15000,
-        currency: 'BRL',
-        destinationImageUrl: 'https://picsum.photos/seed/offer$index/600/400',
-        departureDate: DateTime.now().add(Duration(days: index * 2)),
-        returnDate: DateTime.now().add(Duration(days: index * 2 + 7)),
-        durationDays: 7,
+        basePrice: basePrice,
+        price: basePrice * 0.9,
+        imageUrl: 'https://picsum.photos/seed/offer$index/600/400',
+        dates: DateRange(
+          start: DateTime.now().add(Duration(days: index * 2)),
+          end: DateTime.now().add(Duration(days: index * 2 + 7)),
+        ),
+        daysCount: 7,
+        rating: 4.5 + (index % 5) / 10,
         travelers: 2,
         availableSpots: 20,
         spotsReserved: index % 10,
-        status: 'active',
-        highlights: ['Highlight 1', 'Highlight 2'],
-        amenities: ['Amenity 1', 'Amenity 2'],
+        status: 'published',
+        highlights: const ['Highlight 1', 'Highlight 2'],
+        amenities: const ['Amenity 1', 'Amenity 2'],
         views: 50 + index,
         interests: 5 + (index % 20),
       );

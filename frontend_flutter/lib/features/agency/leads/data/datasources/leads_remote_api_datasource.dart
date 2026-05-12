@@ -238,4 +238,32 @@ class LeadsRemoteApiDatasource implements ILeadsDatasource {
     await _offlineManager.invalidateByPrefix('$_cacheKeyPrefix:list:');
     return lead;
   }
+
+  @override
+  Future<ConversationSummaryApiModel?> getConversationSummary(String leadId) async {
+    try {
+      final response = await _dio.get(ApiConstants.leadConversationSummary(leadId));
+      final summary = ConversationSummaryApiModel.fromJson(
+        response.data as Map<String, dynamic>,
+      );
+
+      await _offlineManager.saveToCache(
+        'conversation_summary:$leadId',
+        response.data,
+      );
+      return summary;
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return null;
+
+      final cached = _offlineManager.getFromCacheOffline(
+        'conversation_summary:$leadId',
+      );
+      if (cached != null) {
+        return ConversationSummaryApiModel.fromJson(
+          cached as Map<String, dynamic>,
+        );
+      }
+      rethrow;
+    }
+  }
 }

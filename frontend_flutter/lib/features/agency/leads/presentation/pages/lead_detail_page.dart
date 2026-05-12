@@ -1,16 +1,13 @@
-import 'dart:async';
 import 'package:cadife_smart_travel/core/analytics/analytics_service.dart';
 import 'package:cadife_smart_travel/core/di/service_locator.dart';
+import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/providers/lead_detail_provider.dart';
-import 'package:cadife_smart_travel/shared/presentation/widgets/page_scaffold.dart';
+import 'package:cadife_smart_travel/shared/presentation/widgets/empty_state/empty_type.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/state_container.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shadcn_ui/shadcn_ui.dart';
-import 'package:cadife_smart_travel/core/theme/app_colors.dart';
-import 'package:cadife_smart_travel/core/theme/app_theme.dart';
 
 class LeadDetailPage extends ConsumerStatefulWidget {
   final String leadId;
@@ -184,7 +181,7 @@ class _AyaToggleAction extends ConsumerWidget {
           onChanged: (val) {
             ref.read(leadDetailProvider(lead.id).notifier).toggleAya(ativo: val);
           },
-          activeColor: AppColors.white,
+          activeThumbColor: AppColors.white,
           activeTrackColor: AppColors.success.withValues(alpha: 0.5),
         ),
       ],

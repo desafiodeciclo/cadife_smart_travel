@@ -114,26 +114,17 @@ class OffersScreen extends ConsumerWidget {
             // Imagem
             Stack(
               children: [
-                if (offer.destinationImageUrl != null)
-                  Image.network(
-                    offer.destinationImageUrl!,
-                    height: 200,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => Container(
-                      height: 200,
-                      color: AppColors.zinc100,
-                      child: const Center(child: Icon(Icons.image_not_supported, size: 50)),
-                    ),
-                  )
-                else
-                  Container(
+                Image.network(
+                  offer.destinationImageUrl,
+                  height: 200,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => Container(
                     height: 200,
                     color: AppColors.zinc100,
-                    child: const Center(
-                      child: Icon(Icons.image, size: 50, color: AppColors.zinc400),
-                    ),
+                    child: const Center(child: Icon(Icons.image_not_supported, size: 50)),
                   ),
+                ),
 
                 // Desconto badge
                 if (offer.hasDiscount)

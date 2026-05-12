@@ -212,7 +212,7 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
         datasEPassageiros: 'Julho 2026 · 4 pessoas (casal + 2 filhos)',
         orcamento: 'Médio — aprox. R\$ 20.000',
         restricoesEPreferencias: 'Hotel próximo a pontos turísticos, voos diretos preferidos',
-        decisõesTomadas: 'Interesse confirmado, aguardando proposta',
+        decisoesTomadas: 'Interesse confirmado, aguardando proposta',
         proximosPassos: 'Consultor irá enviar proposta de pacote completo',
       ),
       tokensUtilizados: 312,

@@ -618,8 +618,8 @@ class _OfferDetailsPageState extends ConsumerState<OfferDetailsPage> {
       serverId: offer.id,
       title: offer.title,
       destination: offer.destination,
-      category: offer.category ?? 'Geral',
-      description: offer.description ?? '',
+      category: offer.category,
+      description: offer.description,
       estimatedPrice: offer.estimatedPrice,
       imageUrl: offer.imageUrl,
       updatedAt: DateTime.now(),
@@ -650,7 +650,7 @@ class _OfferDetailsPageState extends ConsumerState<OfferDetailsPage> {
           ),
         );
       }
-    } catch (e) {
+    } on Object catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -833,7 +833,7 @@ class _OfferDetailsPageState extends ConsumerState<OfferDetailsPage> {
                   color: AppColors.primary.withValues(alpha: 0.3)),
             ),
             child: Text(
-              offer.category ?? 'Geral',
+              offer.category,
               style: AppTextStyles.labelSmall.copyWith(
                 color: AppColors.primary,
                 fontWeight: FontWeight.w600,
@@ -937,7 +937,7 @@ class _OfferDetailsPageState extends ConsumerState<OfferDetailsPage> {
           const SizedBox(height: 8),
           AnimatedCrossFade(
             firstChild: Text(
-              offer.description ?? '',
+              offer.description,
               style: AppTextStyles.bodyMedium.copyWith(
                 color: textSecondary,
                 height: 1.6,
@@ -946,7 +946,7 @@ class _OfferDetailsPageState extends ConsumerState<OfferDetailsPage> {
               overflow: TextOverflow.ellipsis,
             ),
             secondChild: Text(
-              offer.description ?? '',
+              offer.description,
               style: AppTextStyles.bodyMedium.copyWith(
                 color: textSecondary,
                 height: 1.6,
