@@ -8,12 +8,12 @@
 
 | Campo | Valor |
 |---|---|
-| **Versão** | 1.1.0 — MVP |
+| **Versão** | 1.2.0 — MVP Completo |
 | **Projeto** | Cadife Smart Travel |
 | **Cliente** | Cadife Tour |
 | **Prazo MVP** | 25 dias |
 | **Data** | Maio 2026 |
-| **Status** | **CONCLUÍDO — 19/19 specs entregues** |
+| **Status** | **CONCLUÍDO — 25/25 specs entregues** |
 
 ---
 
@@ -60,16 +60,27 @@ O sistema **NÃO** substitui o consultor humano. A IA atua como pré-atendente, 
 | Assistente IA com RAG (LangChain) | **CRÍTICO** | ✅ **CONCLUÍDO** |
 | Coleta estruturada de briefing | **CRÍTICO** | ✅ **CONCLUÍDO** |
 | Criação automática de leads | **CRÍTICO** | ✅ **CONCLUÍDO** |
-| App Flutter — Perfil Agência (CRM) | **CRÍTICO** | 🔄 **EM ANDAMENTO** (auth/perfil/config restantes) |
+| App Flutter — Perfil Agência (CRM) | **CRÍTICO** | ✅ **CONCLUÍDO** |
 | App Flutter — Perfil Cliente | **ALTA** | ✅ **CONCLUÍDO** |
 | Notificações Push (Firebase FCM) | **ALTA** | ✅ **CONCLUÍDO** |
 | Autenticação (Auth) no App | **ALTA** | ✅ **CONCLUÍDO** |
 | Base de conhecimento RAG da Cadife | **ALTA** | ✅ **CONCLUÍDO** |
 | Score de qualificação de leads | **MÉDIA** | ✅ **CONCLUÍDO** |
 | Agendamento básico de curadoria | **MÉDIA** | ✅ **CONCLUÍDO** |
-| Tratamento de mídias (áudio/imagem) | **MÉDIA** | Fase 4 — Em andamento |
-| Documentação API (Swagger) | **MÉDIA** | Fase 4 — Pendente |
-| Docker / containerização | **BAIXA** | Fase 4 — Pendente |
+| Gestão de documentos da viagem | **MÉDIA** | ✅ **CONCLUÍDO** |
+| Mala de viagem (checklist de itens) | **MÉDIA** | ✅ **CONCLUÍDO** |
+| Diário de viagem (memórias + fotos) | **MÉDIA** | ✅ **CONCLUÍDO** |
+| Perfil do cliente com abas (Perfil/Diários/Mala) | **MÉDIA** | ✅ **CONCLUÍDO** |
+| Defesa contra prompt injection (guardrails IA) | **ALTA** | ✅ **CONCLUÍDO** |
+| Cache Redis para listagem de leads | **MÉDIA** | ✅ **CONCLUÍDO** |
+| Roteamento multimodal de IA (texto/imagem/áudio) | **MÉDIA** | ✅ **CONCLUÍDO** |
+| Proteção IDOR + DTOs de mapeamento de leads | **ALTA** | ✅ **CONCLUÍDO** |
+| Fila de notificações com Dead Letter Queue | **ALTA** | ✅ **CONCLUÍDO** |
+| Lifecycle de propostas + expiração automática | **ALTA** | ✅ **CONCLUÍDO** |
+| Tratamento de mídias (áudio/imagem) | **MÉDIA** | ⚠️ **PARCIAL** (roteamento implementado; transcrição Whisper pendente) |
+| Documentação API (Swagger) | **MÉDIA** | ✅ **CONCLUÍDO** |
+| Docker / containerização | **BAIXA** | ✅ **CONCLUÍDO** |
+| Suite de testes E2E | **BAIXA** | 🔄 **PENDENTE** pós-MVP |
 
 ### 2.2 Fora do Escopo — MVP
 
@@ -201,7 +212,28 @@ Fluxo principal de ponta a ponta (WhatsApp → App):
 | `tipo_mensagem` | Enum | **Sim** | `texto` \| `audio` \| `imagem` \| `documento` |
 | `timestamp` | DateTime | **Sim** | Momento da interação |
 
-### 4.4 Entidade: AGENDAMENTO
+### 4.4 Entidade: DOCUMENTO
+
+| Campo | Tipo | Obrigatório | Descrição |
+|---|---|---|---|
+| `id` | UUID | **Sim** | Identificador único |
+| `lead_id` | UUID (FK) | **Sim** | Referência ao lead |
+| `nome` | String | **Sim** | Nome do arquivo (roteiro, voucher, comprovante) |
+| `tipo` | Enum | **Sim** | `roteiro` \| `voucher` \| `comprovante` \| `outro` |
+| `url` | String | **Sim** | URL de acesso ao documento armazenado |
+| `criado_em` | DateTime | **Sim** | Data de upload do documento |
+
+### 4.5 Entidade: MALA DE VIAGEM (Suitcase)
+
+| Campo | Tipo | Obrigatório | Descrição |
+|---|---|---|---|
+| `id` | UUID | **Sim** | Identificador único |
+| `lead_id` | UUID (FK) | **Sim** | Referência ao lead/viagem |
+| `itens` | JSON | **Sim** | Lista de itens com nome, categoria e estado (embalado/pendente) |
+| `criado_em` | DateTime | **Sim** | Data de criação da lista |
+| `atualizado_em` | DateTime | **Sim** | Data da última modificação |
+
+### 4.6 Entidade: AGENDAMENTO
 
 | Campo | Tipo | Obrigatório | Descrição |
 |---|---|---|---|
@@ -213,7 +245,7 @@ Fluxo principal de ponta a ponta (WhatsApp → App):
 | `tipo` | Enum | **Sim** | `online` \| `presencial` |
 | `consultor_id` | UUID (FK) | Não | Consultor responsável pelo atendimento |
 
-### 4.5 Entidade: PROPOSTA
+### 4.7 Entidade: PROPOSTA
 
 | Campo | Tipo | Obrigatório | Descrição |
 |---|---|---|---|
@@ -277,7 +309,17 @@ Fluxo principal de ponta a ponta (WhatsApp → App):
 | **GET** | `/propostas/{id}` | Detalhe da proposta | Propostas |
 | **PUT** | `/propostas/{id}` | Atualiza proposta ou status | Propostas |
 
-### 5.6 Autenticação e Usuários
+### 5.6 Documentos e Mala de Viagem
+
+| Método | Endpoint | Descrição | Módulo |
+|---|---|---|---|
+| **GET** | `/leads/{id}/documentos` | Lista documentos vinculados ao lead | Documentos |
+| **POST** | `/leads/{id}/documentos` | Faz upload de documento para o lead | Documentos |
+| **DELETE** | `/leads/{id}/documentos/{doc_id}` | Remove documento do lead | Documentos |
+| **GET** | `/leads/{id}/mala` | Retorna checklist da mala de viagem | Suitcase |
+| **POST** | `/leads/{id}/mala` | Cria ou atualiza itens da mala | Suitcase |
+
+### 5.7 Autenticação e Usuários
 
 | Método | Endpoint | Descrição | Módulo |
 |---|---|---|---|
@@ -286,6 +328,12 @@ Fluxo principal de ponta a ponta (WhatsApp → App):
 | **GET** | `/users/me` | Retorna perfil do usuário autenticado | Auth |
 | **PATCH** | `/users/me` | Atualiza perfil do usuário autenticado | Auth |
 | **POST** | `/users/fcm-token` | Registra token FCM do dispositivo | Auth |
+
+### 5.8 Health Check
+
+| Método | Endpoint | Descrição | Módulo |
+|---|---|---|---|
+| **GET** | `/health` | Status da API e dependências (DB, Redis, ChromaDB) | Core |
 
 ---
 
@@ -426,10 +474,25 @@ Documentos indexados no Vector Database:
 #### Documentos
 
 - Área para visualizar documentos enviados pela agência: roteiros, vouchers, comprovantes
+- Seleção por viagem, ícones por tipo de documento, estado vazio e skeleton loader
 
-#### Perfil e Cadastro
+#### Perfil e Cadastro (com abas)
 
+Tela de perfil do cliente estruturada em 3 abas:
+
+**Aba 1 — Perfil**
 - Dados pessoais, preferências de viagem e informações de contato
+- Header com estatísticas: total de viagens, países visitados, anos como cliente
+
+**Aba 2 — Diários de Viagem**
+- Cards de viagens passadas com destino, datas e galeria de fotos
+- Visualização detalhada por viagem com memórias e notas
+- Adicionar e editar memórias com fotos (bottom sheet)
+
+**Aba 3 — Mala de Viagem**
+- Checklist interativo de itens para embalar por categoria
+- Marcar item como "embalado" / "pendente"
+- Sugestões automáticas de itens por perfil de viagem (destino/clima)
 
 ### 7.3 Design System — Identidade Visual Cadife Tour
 

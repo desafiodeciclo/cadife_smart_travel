@@ -14,6 +14,12 @@ class LeadOrigem(str, Enum):
     whatsapp = "whatsapp"
     app = "app"
     web = "web"
+    indicacao = "indicação"
+    telefone = "telefone"
+    presencial = "presencial"
+    rede_social = "rede social"
+    outro = "outro"
+    manual = "manual"
 
 
 class LeadStatus(str, Enum):
@@ -99,3 +105,71 @@ class OrcamentoPerfil(str, Enum):
     medio = "médio"
     alto = "alto"
     premium = "premium"
+
+
+class SuitcaseCategory(str, Enum):
+    """Categories for suitcase items (feat/client-suitcase-backend)."""
+
+    documentos = "documentos"
+    roupas = "roupas"
+    higiene = "higiene"
+    eletronicos = "eletrônicos"
+    saude = "saúde"
+    acessorios = "acessórios"
+    outros = "outros"
+
+
+class DestinationType(str, Enum):
+    """Deterministic destination categories for suggestions."""
+
+    praia = "praia"
+    frio = "frio"
+    urbano = "urbano"
+    aventura = "aventura"
+
+
+class DocumentoCategoria(str, Enum):
+    """Document categories for travel management (spec.md §7.2)."""
+
+    passagem = "passagem"
+    voucher = "voucher"
+    transfer = "transfer"
+    seguro = "seguro"
+    itinerario = "itinerario"
+    outros = "outros"
+
+
+class OfferStatus(str, Enum):
+    """Offer lifecycle states."""
+
+    rascunho = "rascunho"
+    publicada = "publicada"
+    encerrada = "encerrada"
+
+
+class OfferCategoria(str, Enum):
+    """Travel offer categories."""
+
+    internacional = "internacional"
+    nacional = "nacional"
+    lua_de_mel = "lua_de_mel"
+    familia = "família"
+    aventura = "aventura"
+    cruzeiro = "cruzeiro"
+    executivo = "executivo"
+    outros = "outros"
+
+
+class ItineraryItemType(str, Enum):
+    """
+    Itinerary item types (mirrors ItineraryItemType enum in Flutter).
+    Values match the JSON strings returned by GET /leads/{id}/itinerary.
+    """
+
+    voo = "voo"
+    hotel_checkin = "hotel_checkin"
+    hotel_checkout = "hotel_checkout"
+    passeio = "passeio"
+    transferencia = "transferencia"
+    refeicao = "refeicao"
+    evento_customizado = "evento_customizado"

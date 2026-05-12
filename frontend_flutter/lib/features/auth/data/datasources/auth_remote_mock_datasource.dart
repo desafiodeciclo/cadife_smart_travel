@@ -11,11 +11,16 @@ class AuthRemoteMockDatasource implements IAuthDatasource {
     await Future.delayed(const Duration(milliseconds: 800));
 
     final role = profileHint ??
-        (email.contains('agencia') ? UserRole.consultor : UserRole.cliente);
+        (email.contains('admin') ? UserRole.admin :
+         email.contains('agencia') ? UserRole.consultor : UserRole.cliente);
 
     final userMap = {
-      'id': 'mock-id-123',
-      'nome': role == UserRole.consultor ? 'Consultor de Teste' : 'Cliente de Teste',
+      'id': email.contains('admin') ? 'mock-admin-001' : 'mock-id-123',
+      'nome': switch (role) {
+        UserRole.admin => 'Administrador Cadife',
+        UserRole.consultor => 'Consultor de Teste',
+        UserRole.cliente => 'Cliente de Teste',
+      },
       'email': email,
       'perfil': role.name,
     };
@@ -65,6 +70,15 @@ class AuthRemoteMockDatasource implements IAuthDatasource {
   @override
   Future<void> forgotPassword(String email) async {
     await Future.delayed(const Duration(milliseconds: 1000));
+  }
+
+  @override
+  Future<void> changePassword(String currentPassword, String newPassword) async {
+    await Future.delayed(const Duration(milliseconds: 1000));
+    // Simulate error if current password is 'error'
+    if (currentPassword == 'error') {
+      throw Exception('Senha atual incorreta');
+    }
   }
 
   String _buildMockJwt(String userId, UserRole role, {int hours = 24}) {

@@ -1,5 +1,6 @@
 import 'package:cadife_smart_travel/core/cache/isar_cache_manager.dart';
 import 'package:cadife_smart_travel/core/cache/isar_schemas/isar_schemas.dart';
+import 'package:cadife_smart_travel/features/client/offers/domain/entities/date_range.dart';
 import 'package:cadife_smart_travel/features/client/offers/domain/entities/offer.dart';
 import 'package:cadife_smart_travel/features/client/offers/domain/repositories/i_offer_repository.dart';
 
@@ -14,6 +15,7 @@ class MockOfferRepository implements IOfferRepository {
     int page = 1,
     int limit = 20,
     String? query,
+    String? destination,
     List<String>? categories,
     double? minPrice,
     double? maxPrice,
@@ -28,11 +30,17 @@ class MockOfferRepository implements IOfferRepository {
         destination: c.destination,
         category: c.category,
         description: c.description,
-        estimatedPrice: c.estimatedPrice,
+        price: c.estimatedPrice,
         imageUrl: c.imageUrl,
+        rating: 4.5, // Default for cached
+        daysCount: 7, // Default for cached
+        dates: DateRange(
+          start: DateTime.now(),
+          end: DateTime.now().add(const Duration(days: 7)),
+        ),
       )).toList();
 
-      filtered = _applyFilters(filtered, query, categories, minPrice, maxPrice);
+      filtered = _applyFilters(filtered, query, destination, categories, minPrice, maxPrice);
 
       // Paginação
       final start = (page - 1) * limit;
@@ -47,7 +55,7 @@ class MockOfferRepository implements IOfferRepository {
     var offers = _generateMockOffers();
     
     // Aplica os mesmos filtros
-    offers = _applyFilters(offers, query, categories, minPrice, maxPrice);
+    offers = _applyFilters(offers, query, destination, categories, minPrice, maxPrice);
 
     // Paginação
     final start = (page - 1) * limit;
@@ -76,6 +84,7 @@ class MockOfferRepository implements IOfferRepository {
   List<Offer> _applyFilters(
     List<Offer> list, 
     String? query, 
+    String? destination,
     List<String>? categories, 
     double? minPrice, 
     double? maxPrice
@@ -86,6 +95,9 @@ class MockOfferRepository implements IOfferRepository {
         if (!o.title.toLowerCase().contains(q) && !o.destination.toLowerCase().contains(q)) {
           return false;
         }
+      }
+      if (destination != null && destination.isNotEmpty) {
+        if (o.destination != destination) return false;
       }
       if (categories != null && categories.isNotEmpty) {
         if (!categories.contains(o.category)) return false;
@@ -106,8 +118,14 @@ class MockOfferRepository implements IOfferRepository {
         destination: destination,
         category: category,
         description: 'Explore o melhor de $destination neste pacote exclusivo de $category. Inclui hospedagem premium, passeios guiados e experiências gastronômicas inesquecíveis.',
-        estimatedPrice: 1500.0 + (index * 150) % 15000,
+        price: 1500.0 + (index * 150) % 15000,
         imageUrl: 'https://picsum.photos/seed/offer$index/600/400',
+        rating: 4.0 + (index % 10) / 10,
+        daysCount: 5 + (index % 5),
+        dates: DateRange(
+          start: DateTime.now().add(Duration(days: index * 2)),
+          end: DateTime.now().add(Duration(days: index * 2 + 7)),
+        ),
       );
     });
   }

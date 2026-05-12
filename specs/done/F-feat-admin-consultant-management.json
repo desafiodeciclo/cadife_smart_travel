@@ -1,0 +1,65 @@
+{
+  "id": "F-feat-admin-consultant-management",
+  "title": "(F) feat/admin-consultant-management",
+  "priority": "high",
+  "assignee": "Otávio Grotto",
+  "sprint": 6,
+  "status": "done",
+  "steps": [
+    {
+      "id": "1.1",
+      "name": "Criar spec JSON e mover para specs/active/",
+      "status": "done"
+    },
+    {
+      "id": "2.1",
+      "name": "Criar mock de usuário admin@cadifetour.com.br no auth_remote_mock_datasource",
+      "status": "done"
+    },
+    {
+      "id": "2.2",
+      "name": "Criar entidades, repositories e providers mockados para admin (consultores, métricas)",
+      "status": "done"
+    },
+    {
+      "id": "3.1",
+      "name": "Criar AdminShell com seção ADM visível apenas para role ADMIN",
+      "status": "done"
+    },
+    {
+      "id": "3.2",
+      "name": "Criar AdminOverviewPage com métricas globais da agência",
+      "status": "done"
+    },
+    {
+      "id": "3.3",
+      "name": "Criar AdminConsultantListPage com foto, leads ativos, taxa de conversão e toggle",
+      "status": "done"
+    },
+    {
+      "id": "3.4",
+      "name": "Criar CreateConsultantPage com formulário e confirmação de e-mail",
+      "status": "done"
+    },
+    {
+      "id": "3.5",
+      "name": "Criar AdminAllLeadsPage com busca, filtros avançados e reatribuição",
+      "status": "done"
+    },
+    {
+      "id": "4.1",
+      "name": "Implementar AdminGuard no GoRouter e proteger rotas /agency/admin/*",
+      "status": "done"
+    },
+    {
+      "id": "4.2",
+      "name": "Adicionar ação de reatribuição no LeadDetailPage quando usuário é ADMIN",
+      "status": "done"
+    },
+    {
+      "id": "5.1",
+      "name": "Code review e validação visual local (mock admin)",
+      "status": "done"
+    }
+  ]
+}

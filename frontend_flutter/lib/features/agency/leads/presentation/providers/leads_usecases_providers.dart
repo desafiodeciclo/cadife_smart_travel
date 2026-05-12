@@ -1,4 +1,5 @@
 import 'package:cadife_smart_travel/features/agency/leads/data/providers/leads_data_providers.dart';
+import 'package:cadife_smart_travel/features/agency/leads/domain/usecases/create_manual_lead_usecase.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/usecases/get_briefing_usecase.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/usecases/get_lead_by_id_usecase.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/usecases/get_leads_usecase.dart';
@@ -19,4 +20,8 @@ final updateLeadStatusUseCaseProvider = Provider<UpdateLeadStatusUseCase>((ref) 
 
 final getBriefingUseCaseProvider = Provider<GetBriefingUseCase>((ref) {
   return GetBriefingUseCase(ref.watch(leadsRepositoryProvider));
+});
+
+final createManualLeadUseCaseProvider = Provider<CreateManualLeadUseCase>((ref) {
+  return CreateManualLeadUseCase(ref.watch(leadsRepositoryProvider));
 });

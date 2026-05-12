@@ -1,6 +1,7 @@
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/client/documentos/presentation/providers/documentos_notifier.dart';
 import 'package:cadife_smart_travel/features/client/documentos/presentation/widgets/widgets.dart';
+import 'package:cadife_smart_travel/features/notifications/presentation/widgets/notification_bell.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/empty_state/app_empty_state.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/empty_state/empty_type.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/state_container.dart';
@@ -25,13 +26,14 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
 
     return PageScaffold(
       title: 'Documentos',
+      actions: const [NotificationBell(), SizedBox(width: 8)],
       body: SingleChildScrollView(
         child: Column(
           children: [
-            const SizedBox(height: 72),
+            const SizedBox(height: kToolbarHeight),
             // Principais Documentos Section
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -39,10 +41,11 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Principais Documentos',
+                        'PRINCIPAIS DOCUMENTOS',
                         style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.2,
                           color: Theme.of(context).textTheme.titleLarge?.color,
                         ),
                       ),
@@ -124,23 +127,29 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
 
                       return Column(
                         children: filteredDocs
-                            .map(
-                              (doc) => CadifeDocumentCard(
-                                document: doc,
-                                onView: () {
-                                  context.push(
-                                    '/client/documentos/viewer',
-                                    extra: doc,
-                                  );
-                                },
-                                onDownload: () {
-                                  // Navigating to viewer also allows download
-                                  context.push(
-                                    '/client/documentos/viewer',
-                                    extra: doc,
-                                  );
-                                },
-                              ),
+                            .asMap()
+                            .entries
+                            .expand(
+                              (entry) => [
+                                CadifeDocumentCard(
+                                  document: entry.value,
+                                  padding: EdgeInsets.zero,
+                                  onView: () {
+                                    context.push(
+                                      '/client/documents/viewer',
+                                      extra: entry.value,
+                                    );
+                                  },
+                                  onDownload: () {
+                                    context.push(
+                                      '/client/documents/viewer',
+                                      extra: entry.value,
+                                    );
+                                  },
+                                ),
+                                if (entry.key < filteredDocs.length - 1)
+                                  const SizedBox(height: 10),
+                              ],
                             )
                             .toList(),
                       );
@@ -152,15 +161,16 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
             const SizedBox(height: 24),
             // Documentos por Viagem Section
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Documentos por Viagem',
+                    'DOCUMENTOS POR VIAGEM',
                     style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.2,
                       color: Theme.of(context).textTheme.titleLarge?.color,
                     ),
                   ),
@@ -178,14 +188,21 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
                     customEmptyType: EmptyType.emptyList,
                     dataBuilder: (trips) => Column(
                       children: trips
+                          .asMap()
+                          .entries
                           .map(
-                            (trip) => TripSelectionCard(
-                              trip: trip,
-                              onTap: () {
-                                context.push(
-                                  '/client/documentos/${trip.id}',
-                                );
-                              },
+                            (entry) => Padding(
+                              padding: EdgeInsets.only(
+                                bottom: entry.key < trips.length - 1 ? 10 : 0,
+                              ),
+                              child: TripSelectionCard(
+                                trip: entry.value,
+                                onTap: () {
+                                  context.push(
+                                    '/client/documents/${entry.value.id}',
+                                  );
+                                },
+                              ),
                             ),
                           )
                           .toList(),

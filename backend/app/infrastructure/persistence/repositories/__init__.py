@@ -20,6 +20,11 @@ from app.infrastructure.persistence.repositories.agendamento_repository import (
 from app.infrastructure.persistence.repositories.proposta_repository import (
     PropostaRepository,
 )
+from app.infrastructure.persistence.repositories.suitcase_repository import SuitcaseRepository
+from app.infrastructure.persistence.repositories.diary_repository import DiaryRepository
+from app.infrastructure.persistence.repositories.documento_repository import (
+    DocumentoRepository,
+)
 
 __all__ = [
     "UserRepository",
@@ -28,4 +33,7 @@ __all__ = [
     "InteracaoRepository",
     "AgendamentoRepository",
     "PropostaRepository",
+    "SuitcaseRepository",
+    "DiaryRepository",
+    "DocumentoRepository",
 ]

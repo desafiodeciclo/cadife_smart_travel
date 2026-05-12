@@ -1,15 +1,17 @@
-import 'dart:ui';
+import 'package:cadife_smart_travel/design_system/tokens/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class CadifeGlassCard extends StatelessWidget {
   final Widget child;
-  final double blur;
-  final double opacity;
   final BorderRadius? borderRadius;
   final EdgeInsetsGeometry? padding;
   final Border? border;
   final double? width;
   final double? height;
+
+  // Kept for API compatibility — no longer applied
+  final double blur;
+  final double opacity;
 
   const CadifeGlassCard({
     required this.child,
@@ -27,26 +29,19 @@ class CadifeGlassCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final effectiveRadius = borderRadius ?? BorderRadius.circular(24);
+    final surface = isDark ? AppColors.cardBackgroundDark : AppColors.cardBackground;
+    final borderCol = isDark ? AppColors.borderColorDark : AppColors.borderColor;
 
-    return ClipRRect(
-      borderRadius: effectiveRadius,
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-        child: Container(
-          width: width,
-          height: height,
-          padding: padding ?? const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: (isDark ? Colors.white : Colors.black).withValues(alpha: opacity),
-            borderRadius: effectiveRadius,
-            border: border ?? Border.all(
-              color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.1),
-              width: 1,
-            ),
-          ),
-          child: child,
-        ),
+    return Container(
+      width: width,
+      height: height,
+      padding: padding ?? const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: surface,
+        borderRadius: effectiveRadius,
+        border: border ?? Border.all(color: borderCol, width: 1),
       ),
+      child: child,
     );
   }
 }

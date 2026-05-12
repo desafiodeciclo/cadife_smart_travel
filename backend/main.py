@@ -13,6 +13,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 # Core / Infra
 from app.infrastructure.config.settings import get_settings
@@ -31,13 +32,14 @@ from app.jobs.proposta_expiration_job import expire_stale_propostas_job
 from app.jobs.notification_worker import NotificationWorker, WORKER_INTERVAL_SECONDS
 
 # Routers
-from app.routes import agenda, auth, ia, leads, propostas, webhook
+from app.routes import admin, agenda, auth, documents, ia, leads, offers, propostas, webhook, suitcase, diary
 
 # Middlewares
 from app.presentation.middlewares.request_id import RequestIdMiddleware
 from app.presentation.middlewares.timeout import TimeoutMiddleware
 from app.presentation.middlewares.audit_trail import AuditTrailMiddleware
 from app.presentation.middlewares.security_headers import SecurityHeadersMiddleware
+from app.presentation.schemas.common_errors import HTTPErrorResponse, HTTPValidationErrorResponse
 
 # -------------------------------------------------------------------
 # Config
@@ -132,11 +134,29 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Cadife Smart Travel API",
-    description="Backend inteligente para turismo via WhatsApp + Flutter.",
+    description=(
+        "Backend inteligente para turismo via WhatsApp + Flutter. "
+        "Orquestra webhooks da Meta, processamento de IA (RAG + LangChain), "
+        "gestão de leads, propostas e agendamentos. "
+        "Documentação completa disponível em /docs (Swagger UI) e /redoc (ReDoc)."
+    ),
     version="1.0.0",
+    contact={
+        "name": "Cadife Tour - Time de Desenvolvimento",
+        "url": "https://cadifetour.com.br",
+        "email": "dev@cadifetour.com.br",
+    },
+    license_info={
+        "name": "Confidencial — Uso Interno do Time de Desenvolvimento",
+    },
     lifespan=lifespan,
-    docs_url="/docs" if settings.APP_ENV != "production" else None,
-    redoc_url="/redoc" if settings.APP_ENV != "production" else None,
+    docs_url="/docs",
+    redoc_url="/redoc",
+    responses={
+        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
+        403: {"description": "Sem permissão", "model": HTTPErrorResponse},
+        422: {"description": "Erro de validação", "model": HTTPValidationErrorResponse},
+    },
 )
 
 # -------------------------------------------------------------------
@@ -152,6 +172,7 @@ app.add_exception_handler(
 # -------------------------------------------------------------------
 # Middlewares
 # -------------------------------------------------------------------
+app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(RequestIdMiddleware)
 app.add_middleware(TimeoutMiddleware)
 app.add_middleware(
@@ -173,13 +194,23 @@ app.include_router(leads.router)
 app.include_router(ia.router)
 app.include_router(agenda.router)
 app.include_router(propostas.router)
+app.include_router(documents.router)
 app.include_router(auth.router)
+app.include_router(admin.router)
+app.include_router(suitcase.router)
+app.include_router(offers.router)
+app.include_router(diary.router)
 
 # -------------------------------------------------------------------
 # Health Check
 # -------------------------------------------------------------------
 
-@app.get("/health", tags=["Health"])
+@app.get(
+    "/health",
+    tags=["Health"],
+    summary="Health Check",
+    description="Endpoint de verificação de saúde da aplicação. Retorna status, versão e ambiente.",
+)
 async def health():
     return {
         "status": "ok",
@@ -187,3 +218,15 @@ async def health():
         "version": app.version,
         "env": settings.APP_ENV,
     }
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(
+        "main:app",
+        host=settings.HOST,
+        port=settings.PORT,
+        reload=settings.DEBUG,
+        log_level="info",
+    )

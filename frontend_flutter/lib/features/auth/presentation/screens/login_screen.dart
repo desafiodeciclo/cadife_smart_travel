@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:cadife_smart_travel/core/constants/assets_constants.dart';
 import 'package:cadife_smart_travel/core/utils/extensions/string_extensions.dart';
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
@@ -59,10 +60,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
     if (_emailState == _EmailState.invalid) return;
 
-    await ref.read(authNotifierProvider.notifier).login(
-          _emailController.text.trim(),
-          _passwordController.text,
-        );
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    debugPrint('LOGIN SCREEN: email="$email", password="$password"');
+
+    await ref.read(authNotifierProvider.notifier).login(email, password);
   }
 
   @override
@@ -367,14 +369,10 @@ class _CadifeLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final asset = isDark
-        ? 'assets/images/cadife_logo_negativo.svg'
-        : 'assets/images/cadife_logo_positivo.svg';
-
     return SvgPicture.asset(
-      asset,
-      width: 200,
-      height: 100,
+      AssetsConstants.logoFull,
+      width: 220,
+      height: 110,
       fit: BoxFit.contain,
     );
   }

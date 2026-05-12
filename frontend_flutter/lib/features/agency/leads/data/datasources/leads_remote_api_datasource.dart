@@ -168,4 +168,32 @@ class LeadsRemoteApiDatasource implements ILeadsDatasource {
       rethrow;
     }
   }
+
+  @override
+  Future<LeadApiModel> createManualLead(ManualLeadCreate request) async {
+    final response = await _dio.post(
+      ApiConstants.leadsManual,
+      data: request.toJson(),
+    );
+    final lead = LeadApiModel.fromJson(response.data as Map<String, dynamic>);
+
+    await _offlineManager.invalidateByPrefix('$_cacheKeyPrefix:list:');
+    return lead;
+  }
+
+  @override
+  Future<LeadApiModel> reassignLead(String id, String consultorNome) async {
+    final response = await _dio.patch(
+      '${ApiConstants.leadById(id)}/reassign',
+      data: {'consultor_nome': consultorNome},
+    );
+    final lead = LeadApiModel.fromJson(response.data as Map<String, dynamic>);
+
+    await _offlineManager.saveToCache(
+      '$_cacheKeyPrefix:detail:$id',
+      response.data,
+    );
+    await _offlineManager.invalidateByPrefix('$_cacheKeyPrefix:list:');
+    return lead;
+  }
 }

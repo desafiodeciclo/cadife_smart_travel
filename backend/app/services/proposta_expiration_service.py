@@ -11,7 +11,7 @@ about each expiration batch.
 """
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import TypedDict
 
 import httpx
@@ -51,7 +51,7 @@ async def expire_stale_propostas(
     Returns a list of dicts with metadata for each expired proposal — used by
     the job layer to dispatch the optional webhook.
     """
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
 
     result = await db.execute(
         select(PropostaModel).where(PropostaModel.status.in_(_EXPIRABLE_STATUSES))
@@ -65,7 +65,7 @@ async def expire_stale_propostas(
         criado_em_aware = (
             proposta.criado_em
             if proposta.criado_em.tzinfo is not None
-            else proposta.criado_em.replace(tzinfo=UTC)
+            else proposta.criado_em.replace(tzinfo=timezone.utc)
         )
         expires_at = criado_em_aware + timedelta(hours=hours)
 
@@ -116,7 +116,7 @@ async def dispatch_expiration_webhook(
 
     payload = {
         "event": "propostas.expiradas",
-        "timestamp": datetime.now(UTC).isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "count": len(expired),
         "propostas": expired,
     }

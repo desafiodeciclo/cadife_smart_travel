@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-class TripDocumentsPage extends ConsumerWidget {
+class TripDocumentsPage extends ConsumerStatefulWidget {
   const TripDocumentsPage({
     required this.tripId,
     super.key,
@@ -14,19 +14,45 @@ class TripDocumentsPage extends ConsumerWidget {
   final String tripId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TripDocumentsPage> createState() => _TripDocumentsPageState();
+}
+
+class _TripDocumentsPageState extends ConsumerState<TripDocumentsPage> {
+  bool _isPopping = false;
+
+  void _handleBack() {
+    if (_isPopping) return;
+    
+    if (mounted) {
+      setState(() => _isPopping = true);
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.go('/client/status');
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final tripsAsync = ref.watch(tripsWithDocumentsProvider);
-    final docsAsync = ref.watch(tripDocumentsProvider(tripId));
+    final docsAsync = ref.watch(tripDocumentsProvider(widget.tripId));
 
     return tripsAsync.maybeWhen(
       data: (trips) {
         final trip = trips.firstWhere(
-          (t) => t.id == tripId,
+          (t) => t.id == widget.tripId,
           orElse: () => throw Exception('Trip not found'),
         );
 
-        return Scaffold(
-          body: CustomScrollView(
+        return PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, result) {
+            if (didPop) return;
+            _handleBack();
+          },
+          child: Scaffold(
+            body: CustomScrollView(
             slivers: [
               SliverAppBar(
                 expandedHeight: 200,
@@ -42,7 +68,7 @@ class TripDocumentsPage extends ConsumerWidget {
                   ),
                   background: trip.imageUrl != null
                       ? Hero(
-                          tag: 'trip_image_${trip.id}',
+                          tag: 'trip_banner_${trip.id}',
                           child: Image.network(
                             trip.imageUrl!,
                             fit: BoxFit.cover,
@@ -52,12 +78,12 @@ class TripDocumentsPage extends ConsumerWidget {
                 ),
                 leading: IconButton(
                   icon: const Icon(Icons.arrow_back, color: Colors.white),
-                  onPressed: () => context.pop(),
+                  onPressed: _handleBack,
                 ),
               ),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -127,15 +153,22 @@ class TripDocumentsPage extends ConsumerWidget {
 
                           return Column(
                             children: docs
+                                .asMap()
+                                .entries
                                 .map(
-                                  (doc) => CadifeDocumentCard(
-                                    document: doc,
-                                    onView: () {
-                                      context.push('/client/documentos/viewer', extra: doc);
-                                    },
-                                    onDownload: () {
-                                      context.push('/client/documentos/viewer', extra: doc);
-                                    },
+                                  (entry) => Padding(
+                                    padding: EdgeInsets.only(
+                                      bottom: entry.key < docs.length - 1 ? 12 : 0,
+                                    ),
+                                    child: CadifeDocumentCard(
+                                      document: entry.value,
+                                      onView: () {
+                                        context.push('/client/documents/viewer', extra: entry.value);
+                                      },
+                                      onDownload: () {
+                                        context.push('/client/documents/viewer', extra: entry.value);
+                                      },
+                                    ),
                                   ),
                                 )
                                 .toList(),
@@ -149,8 +182,9 @@ class TripDocumentsPage extends ConsumerWidget {
               const SliverToBoxAdapter(child: SizedBox(height: 24)),
             ],
           ),
-        );
-      },
+        ),
+      );
+    },
       orElse: () => const PageScaffold(
         body: Center(
           child: CircularProgressIndicator(),

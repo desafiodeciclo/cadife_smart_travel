@@ -1,0 +1,1988 @@
+{
+  "info": {
+    "_postman_id": "098a9806-175d-4e4a-a4bf-229fa43b9486",
+    "name": "Cadife Smart Travel API",
+    "description": "Backend inteligente para turismo via WhatsApp + Flutter. Orquestra webhooks da Meta, processamento de IA (RAG + LangChain), gestão de leads, propostas e agendamentos. Documentação completa disponível em /docs (Swagger UI) e /redoc (ReDoc).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Webhook",
+      "item": [
+        {
+          "name": "Verificação do webhook WhatsApp (Meta Challenge)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/webhook/whatsapp",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "webhook",
+                "whatsapp"
+              ]
+            },
+            "description": "Endpoint utilizado pelo painel da Meta App para verificar a URL do webhook. Deve retornar o valor do parâmetro `hub.challenge` quando o token de verificação coincidir."
+          },
+          "response": []
+        },
+        {
+          "name": "Recebimento de mensagens do WhatsApp",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/webhook/whatsapp",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "webhook",
+                "whatsapp"
+              ]
+            },
+            "description": "Recebe payloads de eventos de mensagens da Meta WhatsApp Cloud API. A assinatura HMAC (X-Hub-Signature-256) é validada antes do processamento. O processamento da IA ocorre de forma assíncrona via BackgroundTasks para garantir resposta HTTP 200 em ≤ 5 segundos, conforme exigência da Meta.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"object\": \"whatsapp_business_account\",\n  \"entry\": [\n    {\n      \"id\": \"123456789\",\n      \"changes\": [\n        {\n          \"value\": {\n            \"messaging_product\": \"whatsapp\",\n            \"metadata\": {\n              \"display_phone_number\": \"5511999999999\",\n              \"phone_number_id\": \"987654321\"\n            },\n            \"contacts\": [\n              {\n                \"profile\": {\n                  \"name\": \"Maria Silva\"\n                },\n                \"wa_id\": \"5511988888888\"\n              }\n            ],\n            \"messages\": [\n              {\n                \"from\": \"5511988888888\",\n                \"id\": \"wamid.abc123\",\n                \"timestamp\": \"1715160000\",\n                \"type\": \"text\",\n                \"text\": {\n                  \"body\": \"Olá, quero planejar uma viagem para o Japão em setembro!\"\n                }\n              }\n            ]\n          },\n          \"field\": \"messages\"\n        }\n      ]\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Exemplo Webhook",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/webhook/whatsapp",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "webhook",
+                    "whatsapp"
+                  ]
+                },
+                "description": "Recebe payloads de eventos de mensagens da Meta WhatsApp Cloud API. A assinatura HMAC (X-Hub-Signature-256) é validada antes do processamento. O processamento da IA ocorre de forma assíncrona via BackgroundTasks para garantir resposta HTTP 200 em ≤ 5 segundos, conforme exigência da Meta.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"object\": \"whatsapp_business_account\",\n  \"entry\": [\n    {\n      \"id\": \"123456789\",\n      \"changes\": [\n        {\n          \"value\": {\n            \"messaging_product\": \"whatsapp\",\n            \"metadata\": {\n              \"display_phone_number\": \"5511999999999\",\n              \"phone_number_id\": \"987654321\"\n            },\n            \"contacts\": [\n              {\n                \"profile\": {\n                  \"name\": \"Maria Silva\"\n                },\n                \"wa_id\": \"5511988888888\"\n              }\n            ],\n            \"messages\": [\n              {\n                \"from\": \"5511988888888\",\n                \"id\": \"wamid.abc123\",\n                \"timestamp\": \"1715160000\",\n                \"type\": \"text\",\n                \"text\": {\n                  \"body\": \"Olá, quero planejar uma viagem para o Japão em setembro!\"\n                }\n              }\n            ]\n          },\n          \"field\": \"messages\"\n        }\n      ]\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"status\": \"received\"\n}",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Leads",
+      "item": [
+        {
+          "name": "Listar leads",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "",
+                  "description": "Filtro por status do lead"
+                },
+                {
+                  "key": "score",
+                  "value": "",
+                  "description": "Filtro por score (quente, morno, frio)"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "description": "Busca textual em nome ou telefone"
+                },
+                {
+                  "key": "page",
+                  "value": "",
+                  "description": "Número da página"
+                },
+                {
+                  "key": "limit",
+                  "value": "",
+                  "description": "Itens por página (máx. 100)"
+                }
+              ]
+            },
+            "description": "Retorna leads paginados com suporte a filtros por status, score e busca textual. Consultores visualizam apenas seus próprios leads; admin e agência visualizam todos."
+          },
+          "response": [
+            {
+              "name": "Exemplo LeadsList",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/leads",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "leads"
+                  ],
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "",
+                      "description": "Filtro por status do lead"
+                    },
+                    {
+                      "key": "score",
+                      "value": "",
+                      "description": "Filtro por score (quente, morno, frio)"
+                    },
+                    {
+                      "key": "search",
+                      "value": "",
+                      "description": "Busca textual em nome ou telefone"
+                    },
+                    {
+                      "key": "page",
+                      "value": "",
+                      "description": "Número da página"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "",
+                      "description": "Itens por página (máx. 100)"
+                    }
+                  ]
+                },
+                "description": "Retorna leads paginados com suporte a filtros por status, score e busca textual. Consultores visualizam apenas seus próprios leads; admin e agência visualizam todos."
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"items\": [\n    {\n      \"id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"nome\": \"João Pereira\",\n      \"telefone_mascarado\": \"55119****7777\",\n      \"origem\": \"whatsapp\",\n      \"status\": \"novo\",\n      \"score\": null,\n      \"criado_em\": \"2025-06-01T10:00:00Z\",\n      \"atualizado_em\": \"2025-06-01T10:00:00Z\",\n      \"completude_pct\": 0\n    }\n  ],\n  \"total\": 1,\n  \"page\": 1,\n  \"limit\": 20,\n  \"pages\": 1\n}",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Criar lead",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads"
+              ]
+            },
+            "description": "Cria um novo lead manualmente. Caso o telefone já exista, retorna 409 Conflict.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"João Pereira\",\n  \"telefone\": \"5511977777777\",\n  \"origem\": \"whatsapp\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Exemplo Leads",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/leads",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "leads"
+                  ]
+                },
+                "description": "Cria um novo lead manualmente. Caso o telefone já exista, retorna 409 Conflict.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nome\": \"João Pereira\",\n  \"telefone\": \"5511977777777\",\n  \"origem\": \"whatsapp\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 201,
+              "body": "{\n  \"id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n  \"nome\": \"João Pereira\",\n  \"telefone\": \"5511977777777\",\n  \"origem\": \"whatsapp\",\n  \"status\": \"novo\",\n  \"score\": null,\n  \"consultor_id\": null,\n  \"consultor_nome\": null,\n  \"consultor_avatar\": null,\n  \"is_archived\": false,\n  \"criado_em\": \"2025-06-01T10:00:00Z\",\n  \"atualizado_em\": \"2025-06-01T10:00:00Z\",\n  \"propostas\": []\n}",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Métricas do dashboard de leads",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads/metrics",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "metrics"
+              ]
+            },
+            "description": "Retorna contagens agregadas de leads por status para o dashboard administrativo. Cache de 60s."
+          },
+          "response": []
+        },
+        {
+          "name": "Lead ativo do cliente logado",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads/my-active",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "my-active"
+              ]
+            },
+            "description": "Retorna o lead associado ao telefone do usuário autenticado (perfil cliente). Se não existir, cria automaticamente um novo lead."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Manual Lead",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads/manual",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "manual"
+              ]
+            },
+            "description": "Criação manual de lead via App Agência.\nPermite preenchimento de briefing inicial e atribuição de consultor.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Detalhes de um lead",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads/{lead_id}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "{lead_id}"
+              ]
+            },
+            "description": "Retorna os dados completos de um lead específico, incluindo propostas vinculadas."
+          },
+          "response": []
+        },
+        {
+          "name": "Atualizar lead",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads/{lead_id}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "{lead_id}"
+              ]
+            },
+            "description": "Atualiza dados ou status de um lead. Transições de status são validadas pela máquina de estados. Ao atingir 'qualificado', o score é recalculado automaticamente com base no briefing.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Arquivar lead (soft delete)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads/{lead_id}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "{lead_id}"
+              ]
+            },
+            "description": "Marca um lead como arquivado (soft delete). O registro permanece no banco para auditoria."
+          },
+          "response": []
+        },
+        {
+          "name": "Histórico de interações do lead",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads/{lead_id}/interacoes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "{lead_id}",
+                "interacoes"
+              ]
+            },
+            "description": "Retorna todas as mensagens trocadas entre o cliente e a IA para um lead específico."
+          },
+          "response": []
+        },
+        {
+          "name": "Briefing estruturado do lead",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads/{lead_id}/briefing",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "{lead_id}",
+                "briefing"
+              ]
+            },
+            "description": "Retorna os dados do briefing coletados automaticamente pela IA durante as conversas."
+          },
+          "response": []
+        },
+        {
+          "name": "Atualizar briefing",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads/{lead_id}/briefing",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "{lead_id}",
+                "briefing"
+              ]
+            },
+            "description": "Permite ao consultor editar manualmente campos do briefing e recalcula o percentual de completude.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "IA",
+      "item": [
+        {
+          "name": "Processar mensagem via IA",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ia/processar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ia",
+                "processar"
+              ]
+            },
+            "description": "Recebe uma mensagem do cliente, extrai o briefing automaticamente e gera uma resposta contextualizada pela IA. Aplica validação de domínio e retorna métricas de completude do briefing.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Extrair briefing de conversa",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ia/extrair-briefing",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ia",
+                "extrair-briefing"
+              ]
+            },
+            "description": "Recebe uma conversa completa e retorna os dados estruturados do briefing com validação de domínio.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Status do serviço de IA",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ia/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ia",
+                "status"
+              ]
+            },
+            "description": "Health check do módulo de IA retornando modelo ativo, contagem de documentos RAG e status do validador."
+          },
+          "response": []
+        },
+        {
+          "name": "Reindexar base de conhecimento",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/ia/reindexar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ia",
+                "reindexar"
+              ]
+            },
+            "description": "Dispara uma re-ingestão completa da base de conhecimento RAG em background. force=false: apenas documentos novos/alterados são reindexados. force=true: toda a base é apagada e reconstruída do zero. Retorna HTTP 202 imediatamente; o processamento ocorre de forma assíncrona.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Status da ingestão",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/ia/ingestion-status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ia",
+                "ingestion-status"
+              ]
+            },
+            "description": "Retorna o resumo do cache de ingestão atual (documentos indexados + contagem de chunks)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Agenda",
+      "item": [
+        {
+          "name": "Consultar disponibilidade de horários",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/agenda/disponibilidade",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agenda",
+                "disponibilidade"
+              ],
+              "query": [
+                {
+                  "key": "data",
+                  "value": "",
+                  "description": "Data para consulta (YYYY-MM-DD)"
+                }
+              ]
+            },
+            "description": "Retorna os slots de horário disponíveis para agendamento de curadoria em uma data específica."
+          },
+          "response": []
+        },
+        {
+          "name": "Criar agendamento",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/agenda",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agenda"
+              ]
+            },
+            "description": "Cria um agendamento de curadoria com validação de conflitos, trava de concorrência (pg_advisory_xact_lock) e verificação de capacidade diária. Apenas dias úteis e horários entre 09:00–15:00 são permitidos.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Detalhes de um agendamento",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/agenda/{agendamento_id}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agenda",
+                "{agendamento_id}"
+              ]
+            },
+            "description": "Retorna os dados de um agendamento específico, com verificação de acesso ao lead vinculado."
+          },
+          "response": []
+        },
+        {
+          "name": "Atualizar agendamento",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/agenda/{agendamento_id}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agenda",
+                "{agendamento_id}"
+              ]
+            },
+            "description": "Atualiza o status de um agendamento existente.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Propostas",
+      "item": [
+        {
+          "name": "Criar proposta",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/propostas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "propostas"
+              ]
+            },
+            "description": "Cria uma nova proposta vinculada a um lead. O lead deve estar nos status qualificado, agendado ou proposta. Consultores só podem criar propostas para seus próprios leads.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lead_id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n  \"descricao\": \"Pacote premium Japão 10 dias — Tokyo, Kyoto e Osaka. Inclui passagem aérea, hospedagem 4★ e passeios guiados.\",\n  \"valor_estimado\": 18500.0,\n  \"expiration_hours\": 72\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Exemplo Propostas",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/propostas",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "propostas"
+                  ]
+                },
+                "description": "Cria uma nova proposta vinculada a um lead. O lead deve estar nos status qualificado, agendado ou proposta. Consultores só podem criar propostas para seus próprios leads.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"lead_id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n  \"descricao\": \"Pacote premium Japão 10 dias — Tokyo, Kyoto e Osaka. Inclui passagem aérea, hospedagem 4★ e passeios guiados.\",\n  \"valor_estimado\": 18500.0,\n  \"expiration_hours\": 72\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"id\": \"b2c3d4e5-f6a7-8901-bcde-f23456789012\",\n  \"lead_id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n  \"descricao\": \"Pacote premium Japão 10 dias — Tokyo, Kyoto e Osaka. Inclui passagem aérea, hospedagem 4★ e passeios guiados.\",\n  \"valor_estimado\": 18500.0,\n  \"status\": \"rascunho\",\n  \"consultor_id\": \"c3d4e5f6-a7b8-9012-cdef-345678901234\",\n  \"expiration_hours\": 72,\n  \"criado_em\": \"2025-06-01T14:30:00Z\"\n}",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "List Propostas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/propostas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "propostas"
+              ],
+              "query": [
+                {
+                  "key": "lead_id",
+                  "value": "",
+                  "description": ""
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Detalhes de uma proposta",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/propostas/{proposta_id}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "propostas",
+                "{proposta_id}"
+              ]
+            },
+            "description": "Retorna os dados completos de uma proposta, com verificação de acesso via lead associado."
+          },
+          "response": []
+        },
+        {
+          "name": "Atualizar proposta",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/propostas/{proposta_id}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "propostas",
+                "{proposta_id}"
+              ]
+            },
+            "description": "Atualiza dados ou status de uma proposta. Aprovação (aprovada) propaga o lead para fechado; recusa (recusada) retorna o lead para proposta.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Documentos",
+      "item": [
+        {
+          "name": "Upload Document",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads/{lead_id}/documents",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "{lead_id}",
+                "documents"
+              ]
+            },
+            "description": "Uploads a travel document (PDF/Image) for a specific lead.\nRestricted to agency staff (consultants/admins) and the lead owner."
+          },
+          "response": []
+        },
+        {
+          "name": "List Documents",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads/{lead_id}/documents",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "{lead_id}",
+                "documents"
+              ]
+            },
+            "description": "Lists all active documents for a lead.\nIncludes temporary signed URLs for secure access."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Document",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads/{lead_id}/documents/{documento_id}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "{lead_id}",
+                "documents",
+                "{documento_id}"
+              ]
+            },
+            "description": "Soft deletes a document. Only consultants or admins can perform this."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Autenticação de usuário",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Autentica um usuário com e-mail e senha, retornando um par de tokens JWT (access + refresh).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"consultor@cadifetour.com.br\",\n  \"password\": \"SenhaSegura123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Exemplo Auth",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                },
+                "description": "Autentica um usuário com e-mail e senha, retornando um par de tokens JWT (access + refresh).",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"consultor@cadifetour.com.br\",\n  \"password\": \"SenhaSegura123!\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"access_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"refresh_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"token_type\": \"bearer\",\n  \"expires_in\": 3600\n}",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Renovação de token JWT",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "refresh"
+              ]
+            },
+            "description": "Recebe um refresh token válido e retorna um novo par de tokens JWT.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Perfil do usuário autenticado",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me"
+              ]
+            },
+            "description": "Retorna os dados do usuário logado com base no JWT enviado no header Authorization."
+          },
+          "response": []
+        },
+        {
+          "name": "Atualização de perfil",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me"
+              ]
+            },
+            "description": "Atualiza campos editáveis do perfil do usuário autenticado.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Registro de token FCM",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/fcm-token",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "fcm-token"
+              ]
+            },
+            "description": "Registra ou atualiza o token Firebase Cloud Messaging do dispositivo para notificações push.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Listar consultores",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "users"
+              ]
+            },
+            "description": "Lista todos os consultores com status (ativo/inativo) e métricas resumidas."
+          },
+          "response": []
+        },
+        {
+          "name": "Criar consultor",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "users"
+              ]
+            },
+            "description": "Cria um novo consultor com senha temporária e envia e-mail de boas-vindas.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Editar consultor",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/users/{user_id}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "users",
+                "{user_id}"
+              ]
+            },
+            "description": "Edita dados do consultor ou desativa a conta (is_active = false).",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Desativar consultor (soft delete)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/users/{user_id}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "users",
+                "{user_id}"
+              ],
+              "query": [
+                {
+                  "key": "reassign_to",
+                  "value": "",
+                  "description": "ID do consultor para reatribuir leads ativos"
+                }
+              ]
+            },
+            "description": "Desativa a conta do consultor. Pode reatribuir leads ativos para outro consultor via query param."
+          },
+          "response": []
+        },
+        {
+          "name": "Reatribuir lead",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/leads/{lead_id}/reassign",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "leads",
+                "{lead_id}",
+                "reassign"
+              ]
+            },
+            "description": "Reatribui um lead para outro consultor com notificação push para ambos.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Suitcase",
+      "item": [
+        {
+          "name": "Get Suitcase",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads/{lead_id}/suitcase",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "{lead_id}",
+                "suitcase"
+              ]
+            },
+            "description": "Returns all items in the suitcase grouped by category."
+          },
+          "response": []
+        },
+        {
+          "name": "Add Suitcase Item",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads/{lead_id}/suitcase/items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "{lead_id}",
+                "suitcase",
+                "items"
+              ]
+            },
+            "description": "Adds a new item to the suitcase.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Suitcase Item",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads/{lead_id}/suitcase/items/{item_id}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "{lead_id}",
+                "suitcase",
+                "items",
+                "{item_id}"
+              ]
+            },
+            "description": "Updates an existing item (e.g., marks as packed).",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Suitcase Item",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads/{lead_id}/suitcase/items/{item_id}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "{lead_id}",
+                "suitcase",
+                "items",
+                "{item_id}"
+              ]
+            },
+            "description": "Removes an item from the suitcase."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Suitcase Suggestions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads/{lead_id}/suitcase/suggestions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "{lead_id}",
+                "suitcase",
+                "suggestions"
+              ],
+              "query": [
+                {
+                  "key": "tipo_destino",
+                  "value": "",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "Returns suggested items based on destination type.\nIf tipo_destino is not provided, tries to infer from lead briefing."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Offers",
+      "item": [
+        {
+          "name": "Create Offer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/offers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "offers"
+              ]
+            },
+            "description": "Create a new travel offer with optional image uploads."
+          },
+          "response": []
+        },
+        {
+          "name": "List Offers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/offers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "offers"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "",
+                  "description": ""
+                },
+                {
+                  "key": "categoria",
+                  "value": "",
+                  "description": ""
+                },
+                {
+                  "key": "preco_min",
+                  "value": "",
+                  "description": ""
+                },
+                {
+                  "key": "preco_max",
+                  "value": "",
+                  "description": ""
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "description": "Busca por título ou destino"
+                },
+                {
+                  "key": "page",
+                  "value": "",
+                  "description": ""
+                },
+                {
+                  "key": "limit",
+                  "value": "",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "List offers with filters and pagination."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Offer",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/offers/{offer_id}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "offers",
+                "{offer_id}"
+              ]
+            },
+            "description": "Get a single offer by ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Offer",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/offers/{offer_id}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "offers",
+                "{offer_id}"
+              ]
+            },
+            "description": "Update an offer. RBAC: creator or admin only."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Offer",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/offers/{offer_id}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "offers",
+                "{offer_id}"
+              ]
+            },
+            "description": "Soft-delete an offer. RBAC: creator or admin only."
+          },
+          "response": []
+        },
+        {
+          "name": "Toggle Publish",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/offers/{offer_id}/publish",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "offers",
+                "{offer_id}",
+                "publish"
+              ],
+              "query": [
+                {
+                  "key": "publish",
+                  "value": "",
+                  "description": "True to publish, False to unpublish"
+                }
+              ]
+            },
+            "description": "Publish or unpublish an offer. RBAC: creator or admin only."
+          },
+          "response": []
+        },
+        {
+          "name": "Express Interest",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/offers/{offer_id}/interest",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "offers",
+                "{offer_id}",
+                "interest"
+              ]
+            },
+            "description": "Client expresses interest in an offer → auto-creates a lead."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Diário de Viagem",
+      "item": [
+        {
+          "name": "Create Diary Entry",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads/{lead_id}/diary/entries",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "{lead_id}",
+                "diary",
+                "entries"
+              ]
+            },
+            "description": "Cria uma nova entrada no diário de viagem (foto + nota).\nApenas o dono da viagem pode adicionar memórias."
+          },
+          "response": []
+        },
+        {
+          "name": "List Diary Entries",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads/{lead_id}/diary/entries",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "{lead_id}",
+                "diary",
+                "entries"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "",
+                  "description": ""
+                },
+                {
+                  "key": "limit",
+                  "value": "",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "Lista as memórias de uma viagem específica de forma paginada."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Diary Entry",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads/{lead_id}/diary/entries/{entry_id}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "{lead_id}",
+                "diary",
+                "entries",
+                "{entry_id}"
+              ]
+            },
+            "description": "Remove uma memória do diário. Valida se o usuário é o dono da entrada."
+          },
+          "response": []
+        },
+        {
+          "name": "List My Diary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/diary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "diary"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "",
+                  "description": ""
+                },
+                {
+                  "key": "limit",
+                  "value": "",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "Retorna a linha do tempo completa de todas as viagens do usuário logado."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": "Endpoint de verificação de saúde da aplicação. Retorna status, versão e ambiente."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

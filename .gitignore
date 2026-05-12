@@ -102,9 +102,11 @@ backend/**/settings_local.py
 # Android específico
 **/android/.gradle/
 **/android/local.properties
+**/android/app/.cxx/
 **/android/app/debug/
 **/android/app/profile/
 **/android/app/release/
+**/android/app/.cxx/
 **/android/sdk_snapshot/
 **/android/app/src/main/java/**/GeneratedPluginRegistrant.java
 
@@ -121,6 +123,7 @@ backend/**/settings_local.py
 **/.symlinks/
 userdata
 xcuserdata
+**/android/app/.cxx/
 
 # Web/Desktop
 **/linux/flutter/ephemeral/

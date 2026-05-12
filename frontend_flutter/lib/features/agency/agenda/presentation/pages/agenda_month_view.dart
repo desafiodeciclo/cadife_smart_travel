@@ -3,7 +3,7 @@ part of 'agenda_page.dart';
 // ─── Monthly view ─────────────────────────────────────────────────────────────
 
 class _MonthView extends ConsumerWidget {
-  const _MonthView({required this.items});
+  const _MonthView({required this.items, super.key});
   final List<Agendamento> items;
 
   @override

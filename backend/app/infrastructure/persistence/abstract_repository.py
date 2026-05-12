@@ -71,6 +71,10 @@ class AbstractRepository(Generic[ModelT]):
         await self._session.delete(instance)
         await self._session.flush()
 
+    async def commit(self) -> None:
+        """Commit the current transaction."""
+        await self._session.commit()
+
     # ── Hook — subclasses must implement ────────────────────────────────────
 
     @abstractmethod

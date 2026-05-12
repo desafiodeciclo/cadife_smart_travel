@@ -66,9 +66,9 @@ O **Cadife Smart Travel** automatiza o primeiro atendimento da Cadife Tour mante
 
 | Módulo | Descrição | Funcionalidades Principais |
 | :--- | :--- | :--- |
-| **Agência** | Painel do Consultor | Dashboard com métricas, pipeline Kanban de leads, agenda de curadorias, gestão de propostas |
-| **Cliente** | Companion de Viagem | Status em tempo real da viagem, documentos, timeline de interações, chat com AYA |
-| **AYA (IA)** | Motor de Atendimento | Coleta de briefing via WhatsApp, RAG sobre destinos, scoring automático de leads |
+| **Agência** | Painel do Consultor | Dashboard com métricas, pipeline Kanban de leads, agenda de curadorias, gestão de propostas, perfil do consultor |
+| **Cliente** | Companion de Viagem | Status em tempo real, documentos, timeline de interações, itinerário, ofertas, diário de viagem, mala de viagem |
+| **AYA (IA)** | Motor de Atendimento | Coleta de briefing via WhatsApp, RAG sobre destinos, scoring automático de leads, roteamento multimodal, guardrails anti-injeção |
 
 ---
 
@@ -303,28 +303,37 @@ cadife_smart_travel/
 
 ## Status Atual
 
-**Versão:** 1.1.0 MVP — Estável
+**Versão:** 1.2.0 MVP Completo — Estável
 
-Todas as 19 specs do MVP foram concluídas. O projeto encontra-se em estado estável com Clean Architecture implementada em ambas as camadas.
+Todas as 25 specs do MVP foram concluídas. O projeto encontra-se em estado estável com Clean Architecture implementada em ambas as camadas.
 
 | Feature | Status |
 | :--- | :--- |
-| Webhook WhatsApp + validação de assinatura | Concluído |
+| Webhook WhatsApp + validação de assinatura HMAC | Concluído |
 | Assistente AYA (LangChain + Gemini + RAG) | Concluído |
 | Guardrails de prompt injection e IA | Concluído |
+| Busca híbrida RAG + Langfuse observabilidade | Concluído |
+| Roteamento multimodal de IA (texto/imagem/áudio) | Concluído |
 | Máquina de estados do lead | Concluído |
 | Score de qualificação automático | Concluído |
-| API de leads, propostas, agenda e auth | Concluído |
+| Proteção IDOR + DTOs de mapeamento de leads | Concluído |
+| Cache Redis para listagem paginada de leads | Concluído |
+| API de leads, propostas, agenda, documentos e auth | Concluído |
+| Lifecycle de propostas com expiração automática (APScheduler) | Concluído |
+| Fila de notificações com Dead Letter Queue + throttle | Concluído |
 | Flutter — Clean Architecture consolidada | Concluído |
-| Flutter — CRM da agência (dashboard, leads, agenda) | Concluído |
-| Flutter — Portal do cliente (status, documentos, histórico) | Concluído |
-| Cache Isar com PII criptografado | Concluído |
+| Flutter — CRM da agência (dashboard, leads, agenda, propostas, perfil) | Concluído |
+| Flutter — Portal do cliente (status, documentos, histórico, itinerário, ofertas) | Concluído |
+| Flutter — Perfil do cliente com abas (Perfil / Diários / Mala de viagem) | Concluído |
+| Cache Isar com PII criptografado (AES-256) | Concluído |
 | Offline-first com sincronização ao reconectar | Concluído |
+| Certificate pinning + biometria + flutter_secure_storage | Concluído |
 | Notificações FCM em tempo real | Concluído |
-| Docker Compose completo (PostgreSQL + Redis + ChromaDB) | Concluído |
+| Docker Compose completo (PostgreSQL 16 + Redis 7 + ChromaDB) | Concluído |
 | RAG — ingestão e validação da base de conhecimento | Concluído |
-| Suite de testes end-to-end | Pendente |
-| Tratamento completo de mídia (áudio/imagem) | Parcial |
+| Documentação API (Swagger/OpenAPI + Postman collection) | Concluído |
+| Tratamento de mídia (roteamento multimodal implementado) | Parcial — transcrição Whisper pós-MVP |
+| Suite de testes end-to-end | Pendente pós-MVP |
 
 > Para o histórico técnico detalhado de bloqueadores resolvidos, consulte [docs/STATUS_E_ROADMAP.md](./docs/STATUS_E_ROADMAP.md).
 

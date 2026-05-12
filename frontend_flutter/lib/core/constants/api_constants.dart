@@ -9,7 +9,9 @@ class ApiConstants {
   // Recupera a URL base dinamicamente do AppConfig registrado no Service Locator.
   static String get baseUrl => GetIt.I<AppConfig>().apiBaseUrl;
 
-  static const String baseUrlDev = 'http://10.0.2.2:8000';
+  // Para testar no celular físico via USB, use o IP da máquina (WiFi)
+  // Substitua pelo seu IP local: ipconfig → Endereço IPv4
+  static const String baseUrlDev = 'http://192.168.1.113:8080';
   static const String baseUrlStaging = 'https://api-staging.cadife.com';
   static const String baseUrlProd = 'https://api.cadife.com';
 
@@ -19,11 +21,13 @@ class ApiConstants {
   static const String registerFcmToken = '/users/fcm-token';
   static const String me = '/users/me';
   static const String forgotPassword = '/auth/forgot-password';
+  static const String changePassword = '/auth/change-password';
 
   // ── Leads ──────────────────────────────────────────────
   static const String leads = '/leads';
   static String leadById(String id) => '/leads/$id';
   static String leadBriefing(String id) => '/leads/$id/briefing';
+  static const String leadsManual = '/leads/manual';
 
   // ── Agenda ─────────────────────────────────────────────
   static const String agenda = '/agenda';
@@ -32,6 +36,12 @@ class ApiConstants {
   // ── Propostas ──────────────────────────────────────────
   static const String proposals = '/propostas';
   static String proposalById(String id) => '/propostas/$id';
+  static String proposalSend(String id) => '/propostas/$id/enviar';
+  static String proposalVersions(String id) => '/propostas/$id/versoes';
+
+  // ── Itinerário ─────────────────────────────────────────
+  static String leadItinerary(String id) => '/leads/$id/itinerary';
+  static String leadNote(String id, String date) => '/leads/$id/notes/$date';
 
   // ── IA ─────────────────────────────────────────────────
   static const String iaProcessar = '/ia/processar';

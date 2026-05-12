@@ -2,8 +2,8 @@ import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:flutter/material.dart';
 
 /// Scaffold padrão do Cadife com suporte a AppBar configurável,
-/// body com padding consistente e efeitos de fundo modernos.
-class PageScaffold extends StatelessWidget {
+/// body com padding consistente e gradiente animado de fundo.
+class PageScaffold extends StatefulWidget {
   final String? title;
   final Widget body;
   final List<Widget>? actions;
@@ -15,7 +15,6 @@ class PageScaffold extends StatelessWidget {
   final PreferredSizeWidget? appBar;
   final bool showBackgroundEffects;
   final bool extendBodyBehindAppBar;
-
   final bool showProfile;
 
   const PageScaffold({
@@ -35,65 +34,42 @@ class PageScaffold extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  State<PageScaffold> createState() => _PageScaffoldState();
+}
 
-    final effectiveAppBar = appBar ??
-        (title != null
+class _PageScaffoldState extends State<PageScaffold>
+    with SingleTickerProviderStateMixin {
+
+  @override
+  Widget build(BuildContext context) {
+    final cadife = context.cadife;
+
+    final effectiveAppBar = widget.appBar ??
+        (widget.title != null
             ? CadifeAppBar(
-                title: title!,
-                actions: actions,
-                showProfile: showProfile,
+                title: widget.title!,
+                actions: widget.actions,
+                showProfile: widget.showProfile,
               )
             : null);
 
     Widget content = Padding(
-      padding: padding ?? EdgeInsets.zero,
-      child: body,
+      padding: widget.padding ?? EdgeInsets.zero,
+      child: widget.body,
     );
 
-    if (useSafeArea) {
+    if (widget.useSafeArea) {
       content = SafeArea(child: content);
     }
 
     return Scaffold(
-      backgroundColor: backgroundColor ?? context.cadife.background,
+      backgroundColor: widget.backgroundColor ?? cadife.background,
       extendBody: true,
-      extendBodyBehindAppBar: extendBodyBehindAppBar,
+      extendBodyBehindAppBar: widget.extendBodyBehindAppBar,
       appBar: effectiveAppBar,
-      body: Stack(
-        children: [
-          if (showBackgroundEffects && isDark) ...[
-            Positioned(
-              top: -100,
-              right: -50,
-              child: Container(
-                width: 300,
-                height: 300,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.primary.withValues(alpha: 0.15),
-                ),
-              ).animate().fadeIn(duration: 800.ms).scale(begin: const Offset(0.8, 0.8)),
-            ),
-            Positioned(
-              bottom: 100,
-              left: -100,
-              child: Container(
-                width: 400,
-                height: 400,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.blue.withValues(alpha: 0.05),
-                ),
-              ).animate().fadeIn(duration: 1200.ms).scale(begin: const Offset(0.5, 0.5)),
-            ),
-          ],
-          content,
-        ],
-      ),
-      floatingActionButton: floatingActionButton,
-      bottomNavigationBar: bottomNavigationBar,
+      body: content,
+      floatingActionButton: widget.floatingActionButton,
+      bottomNavigationBar: widget.bottomNavigationBar,
     );
   }
 }

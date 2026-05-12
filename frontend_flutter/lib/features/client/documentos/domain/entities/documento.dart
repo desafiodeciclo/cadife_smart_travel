@@ -26,6 +26,7 @@ class Documento extends Equatable {
   final String? category;
 
   String get sizeFormatted {
+    if (size <= 0) return '—';
     if (size < 1024) return '$size B';
     if (size < 1024 * 1024) return '${(size / 1024).toStringAsFixed(1)} KB';
     return '${(size / (1024 * 1024)).toStringAsFixed(1)} MB';

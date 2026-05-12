@@ -22,6 +22,22 @@ from app.infrastructure.persistence.models.agendamento_model import (
 from app.infrastructure.persistence.models.proposta_model import (
     PropostaModel,
 )  # noqa: F401
+from app.infrastructure.persistence.models.suitcase_model import (
+    SuitcaseItemModel,
+    SuitcaseSuggestionModel,
+)  # noqa: F401
+from app.infrastructure.persistence.models.travel_diary_model import (
+    TravelDiaryEntryModel,
+)  # noqa: F401
+from app.infrastructure.persistence.models.documento_model import (
+    Documento,
+)  # noqa: F401
+from app.infrastructure.persistence.models.offer_model import (
+    OfferModel,
+)  # noqa: F401
+from app.infrastructure.persistence.models.itinerary_model import (
+    ItineraryItemModel,
+)  # noqa: F401
 
 # Notification queue models (side-effect imports to register metadata)
 from app.models.notification_queue import NotificationQueue  # noqa: F401
@@ -34,6 +50,12 @@ __all__ = [
     "InteracaoModel",
     "AgendamentoModel",
     "PropostaModel",
+    "SuitcaseItemModel",
+    "SuitcaseSuggestionModel",
+    "TravelDiaryEntryModel",
+    "Documento",
+    "OfferModel",
+    "ItineraryItemModel",
     "NotificationQueue",
     "DeadLetterQueue",
 ]

@@ -20,12 +20,13 @@ import 'package:cadife_smart_travel/core/offline/process_offline_queue_usecase.d
 import 'package:cadife_smart_travel/core/security/secure_config.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/data/datasources/mock_agenda_repository.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/domain/repositories/i_agenda_repository.dart';
-import 'package:cadife_smart_travel/features/agency/leads/data/datasources/leads_remote_mock_datasource.dart';
+import 'package:cadife_smart_travel/features/agency/leads/data/datasources/i_leads_datasource.dart';
+import 'package:cadife_smart_travel/features/agency/leads/data/datasources/leads_remote_api_datasource.dart';
 import 'package:cadife_smart_travel/features/agency/leads/data/repositories/leads_repository_impl.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/repositories/i_leads_repository.dart';
 import 'package:cadife_smart_travel/features/agency/perfil/data/datasources/mock_consultor_repository.dart';
 import 'package:cadife_smart_travel/features/agency/perfil/domain/repositories/i_consultor_repository.dart';
-import 'package:cadife_smart_travel/features/agency/propostas/data/repositories/proposal_repository_impl.dart';
+import 'package:cadife_smart_travel/features/agency/propostas/data/repositories/mock_proposals_repository.dart';
 import 'package:cadife_smart_travel/features/agency/propostas/domain/repositories/i_proposals_repository.dart';
 import 'package:cadife_smart_travel/features/agency/settings/data/datasources/mock_agency_settings_repository.dart';
 import 'package:cadife_smart_travel/features/agency/settings/domain/repositories/i_agency_settings_repository.dart';
@@ -33,6 +34,7 @@ import 'package:cadife_smart_travel/features/auth/data/datasources/auth_remote_m
 import 'package:cadife_smart_travel/features/auth/data/datasources/i_auth_datasource.dart';
 import 'package:cadife_smart_travel/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:cadife_smart_travel/features/auth/domain/repositories/i_auth_repository.dart';
+import 'package:cadife_smart_travel/features/client/itinerary/data/services/itinerary_service.dart';
 import 'package:cadife_smart_travel/features/client/notifications/data/repositories/notifications_repository_impl.dart';
 import 'package:cadife_smart_travel/features/client/notifications/domain/repositories/i_notifications_repository.dart';
 import 'package:cadife_smart_travel/features/client/profile/data/datasources/mock_profile_repository.dart';
@@ -60,6 +62,7 @@ Future<void> setupServiceLocator({
   List<String>? backupCertificates,
   VoidCallback? onTokenExpired,
 }) async {
+  debugPrint('DEBUG: setupServiceLocator started');
   // Registrar o AppConfig no Service Locator para uso global
   final config = appConfig ?? AppConfig.dev;
   sl.registerSingleton<AppConfig>(config);
@@ -67,7 +70,7 @@ Future<void> setupServiceLocator({
   sl.registerSingleton<AnalyticsService>(AnalyticsService());
 
   // ── 1. Infra Layer (singletons — performance-critical) ──
-
+  debugPrint('DEBUG: Registering Infra Layer...');
   sl.registerLazySingleton<NetworkInfo>(NetworkInfo.new);
   sl.registerLazySingleton<SecureConfig>(SecureConfig.new);
   sl.registerLazySingleton<OfflineManager>(
@@ -87,7 +90,7 @@ Future<void> setupServiceLocator({
   );
 
   // ── 2. Network Layer ─────────────────────────────────
-
+  debugPrint('DEBUG: Registering Network Layer...');
   sl.registerLazySingleton<Dio>(
     () => DioClientFactory.createForRefresh(
       pinnedSha256: pinnedCertificates ?? [],
@@ -111,6 +114,7 @@ Future<void> setupServiceLocator({
   );
 
   sl.registerLazySingleton<Dio>(() {
+    debugPrint('DEBUG: Dio instance being created (Lazy)...');
     const isRelease = bool.fromEnvironment('dart.vm.product');
     if (isRelease) {
       if (pinnedCertificates == null || pinnedCertificates.isEmpty) {
@@ -139,22 +143,33 @@ Future<void> setupServiceLocator({
   });
 
   // ── 3. Ports (interfaces) → Implementations ──────────
-
+  debugPrint('DEBUG: Registering Modules...');
   _registerAuthModule();
   _registerLeadModule();
   _registerAgendaModule();
+  _registerItineraryModule();
   _registerProposalModule();
   _registerProfileModule();
   _registerNotificationsModule();
   _registerInAppNotificationsModule();
   _registerSettingsModule();
   _registerStatusModule();
+  debugPrint('DEBUG: setupServiceLocator complete');
 }
 
 void _registerStatusModule() {
   sl.registerLazySingleton<IStatusDatasource>(StatusMockDatasource.new);
   sl.registerLazySingleton<IStatusRepository>(
     () => StatusRepositoryImpl(sl<IStatusDatasource>()),
+  );
+}
+
+void _registerItineraryModule() {
+  sl.registerLazySingleton<ItineraryService>(
+    () => ItineraryService(
+      dio: sl<Dio>(),
+      prefs: sl<SharedPreferences>(),
+    ),
   );
 }
 
@@ -172,9 +187,16 @@ void _registerAuthModule() {
 }
 
 void _registerLeadModule() {
+  sl.registerLazySingleton<ILeadsDatasource>(
+    () => LeadsRemoteApiDatasource(
+      dio: sl<Dio>(),
+      offlineManager: sl<OfflineManager>(),
+    ),
+  );
+
   sl.registerLazySingleton<ILeadsRepository>(
     () => LeadsRepositoryImpl(
-      remoteDatasource: LeadsRemoteMockDatasource(),
+      remoteDatasource: sl<ILeadsDatasource>(),
     ),
   );
 }
@@ -184,12 +206,8 @@ void _registerAgendaModule() {
 }
 
 void _registerProposalModule() {
-  sl.registerLazySingleton<IProposalsRepository>(
-    () => ProposalRepositoryImpl(
-      dio: sl<Dio>(),
-      offlineManager: sl<OfflineManager>(),
-    ),
-  );
+  // Criando um Mock temporário para destravar a UI
+  sl.registerLazySingleton<IProposalsRepository>(MockProposalsRepository.new);
 }
 
 void _registerProfileModule() {
@@ -216,48 +234,78 @@ void _registerSettingsModule() {
 }
 
 Future<void> initDependencies() async {
+  debugPrint('DEBUG: initDependencies started');
   final env = sl<AppConfig>().environment;
 
   FirebaseOptions? options;
-  if (env == AppEnvironment.staging) {
+  if (env == AppEnvironment.staging || env == AppEnvironment.dev) {
     options = StagingFirebaseOptions.currentPlatform;
   } else if (env == AppEnvironment.prod) {
     options = ProdFirebaseOptions.currentPlatform;
   }
 
-  // No Web, só inicializamos se tivermos options explícitas
+  // No Web, só inicializamos se tivermos options explícitas.
+  // No Mobile, tentamos inicializar (seja com options ou com o arquivo de config padrão).
   if (!kIsWeb || options != null) {
     try {
-      await Firebase.initializeApp(options: options);
+      debugPrint('DEBUG: Initializing Firebase...');
+      if (Firebase.apps.isEmpty) {
+        await Firebase.initializeApp(options: options);
+        debugPrint('DEBUG: Firebase initialized');
+      } else {
+        debugPrint('Firebase: Already initialized');
+      }
+    } on FirebaseException catch (e) {
+      if (e.code == 'duplicate-app') {
+        debugPrint('Firebase: Duplicate app detected, skipping init');
+      } else {
+        debugPrint('Firebase initialization failed: $e');
+      }
     } on Exception catch (e) {
-      debugPrint('Firebase initialization failed: $e');
+      debugPrint('Firebase initialization failed (generic): $e');
     }
   }
 
+  debugPrint('DEBUG: Initializing OfflineManager...');
   await sl<OfflineManager>().initialize();
+  debugPrint('DEBUG: Initializing IsarCacheManager...');
   await sl<IsarCacheManager>().initialize();
+  debugPrint('DEBUG: Initializing OfflineSyncQueue...');
   await sl<OfflineSyncQueue>().initialize();
 
   // Analytics e Notifications podem falhar no Web se não configurados
   try {
+    debugPrint('DEBUG: Initializing Analytics...');
     await sl<AnalyticsService>().init();
+    debugPrint('DEBUG: Analytics initialized');
   } on Exception catch (e) {
     debugPrint('Analytics initialization failed: $e');
   }
 
   if (!kIsWeb) {
     try {
-      await LocalNotificationManager.init();
-      await FCMManager.init();
+      // Só inicializamos se o Firebase estiver disponível
+      if (Firebase.apps.isNotEmpty) {
+        debugPrint('DEBUG: Initializing LocalNotificationManager...');
+        await LocalNotificationManager.init();
+        debugPrint('DEBUG: Initializing FCMManager...');
+        await FCMManager.init();
+        debugPrint('DEBUG: Notifications initialized');
+      } else {
+        debugPrint('Notification managers skipped: Firebase not initialized');
+      }
     } on Exception catch (e) {
       debugPrint('Notification managers initialization failed: $e');
     }
   }
   
+  debugPrint('DEBUG: Getting SharedPreferences...');
   final prefs = await SharedPreferences.getInstance();
   sl.registerSingleton<SharedPreferences>(prefs);
+  debugPrint('DEBUG: SharedPreferences ready');
 
   ConnectivityService.init();
+  debugPrint('DEBUG: initDependencies complete');
 }
 
 Future<void> resetDependencies() async {
