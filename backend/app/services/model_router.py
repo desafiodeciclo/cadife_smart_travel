@@ -190,11 +190,13 @@ async def route_media_message(
     Orchestrates: download → transcribe/analyze → return plain text.
     Returns None (caller should use graceful fallback) on any failure.
     """
-    from app.services.whatsapp_service import download_whatsapp_media
+    from app.services.whatsapp_service import download_media
 
     try:
-        media_bytes, detected_mime = await download_whatsapp_media(media_id)
-        effective_mime = mime_type or detected_mime
+        media_bytes = await download_media(media_id)
+        if media_bytes is None:
+            return None
+        effective_mime = mime_type
 
         if msg_type in _AUDIO_TYPES:
             return await transcribe_audio(media_bytes, effective_mime)
