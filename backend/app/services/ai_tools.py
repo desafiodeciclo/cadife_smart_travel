@@ -101,8 +101,8 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
                         "description": (
                             "Campos do briefing a atualizar. Campos suportados: "
                             "destino (str), data_ida (YYYY-MM-DD), data_volta (YYYY-MM-DD), "
-                            "qtd_pessoas (int), perfil (casal|família|solo|grupo|amigos), "
-                            "orcamento (baixo|médio|alto|premium), tem_passaporte (bool), "
+                            "qtd_pessoas (int), perfil (casal|familia|solo|grupo|amigos), "
+                            "orcamento (baixo|medio|alto|premium), tem_passaporte (bool), "
                             "observacoes (str)."
                         ),
                         "additionalProperties": True,
