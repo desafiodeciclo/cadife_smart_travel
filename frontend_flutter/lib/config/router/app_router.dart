@@ -3,14 +3,16 @@ import 'package:cadife_smart_travel/config/router/agency_shell.dart';
 import 'package:cadife_smart_travel/config/router/client_shell.dart';
 import 'package:cadife_smart_travel/config/router/transitions/custom_page_route.dart';
 import 'package:cadife_smart_travel/core/analytics/analytics_navigation_observer.dart';
+import 'package:cadife_smart_travel/features/admin/presentation/pages/admin_all_leads_page.dart';
+import 'package:cadife_smart_travel/features/admin/presentation/pages/admin_consultant_list_page.dart';
+import 'package:cadife_smart_travel/features/admin/presentation/pages/admin_overview_page.dart';
+import 'package:cadife_smart_travel/features/admin/presentation/pages/create_consultant_page.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/presentation/pages/agenda_page.dart';
 import 'package:cadife_smart_travel/features/agency/dashboard/dashboard_screen.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/pages/lead_detail_page.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/pages/leads_page.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/pages/manual_lead_create_page.dart';
-import 'package:cadife_smart_travel/features/agency/perfil/presentation/pages/profile_page.dart';
 import 'package:cadife_smart_travel/features/agency/propostas/presentation/pages/proposal_create_page.dart';
-import 'package:cadife_smart_travel/features/agency/settings/presentation/pages/settings_page.dart' as agency_settings;
 import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/screens/forgot_password_screen.dart';
@@ -31,7 +33,9 @@ import 'package:cadife_smart_travel/features/client/offers/presentation/screens/
 import 'package:cadife_smart_travel/features/client/profile/presentation/pages/profile_page.dart' as client_profile;
 import 'package:cadife_smart_travel/features/client/profile/presentation/pages/travel_journal_detail_screen.dart';
 import 'package:cadife_smart_travel/features/notifications/presentation/screens/notification_center_screen.dart';
-import 'package:cadife_smart_travel/features/settings/presentation/screens/settings_page.dart';
+import 'package:cadife_smart_travel/screens/consultant/lead_detail_screen.dart';
+import 'package:cadife_smart_travel/screens/consultant/profile_screen.dart';
+import 'package:cadife_smart_travel/screens/settings_screen.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -57,18 +61,22 @@ final routerProvider = Provider<GoRouter>((ref) {
           if (user == null) return isLoggingIn ? null : '/auth/login';
 
           if (isLoggingIn || state.matchedLocation == '/splash') {
-            return user.role == UserRole.consultor
+            return (user.role == UserRole.consultor || user.role == UserRole.admin)
                 ? '/agency/dashboard'
                 : '/client/status';
           }
 
           final isAgencyRoute = state.matchedLocation.startsWith('/agency');
           final isClientRoute = state.matchedLocation.startsWith('/client');
+          final isAdminRoute = state.matchedLocation.startsWith('/agency/admin');
 
-          if (isAgencyRoute && user.role != UserRole.consultor) {
+          if (isAdminRoute && user.role != UserRole.admin) {
+            return '/agency/dashboard';
+          }
+          if (isAgencyRoute && user.role != UserRole.consultor && user.role != UserRole.admin) {
             return '/client/status';
           }
-          if (isClientRoute && user.role == UserRole.consultor) {
+          if (isClientRoute && (user.role == UserRole.consultor || user.role == UserRole.admin)) {
             return '/agency/dashboard';
           }
 
@@ -103,6 +111,21 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) => SlideTransitionPage(
           name: state.name,
           child: const NotificationCenterScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/settings',
+        name: 'settings',
+        pageBuilder: (context, state) => SlideTransitionPage(
+          name: state.name,
+          child: const SettingsScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/consultant/leads/:leadId',
+        name: 'leadDetail',
+        builder: (context, state) => LeadDetailScreen(
+          leadId: state.pathParameters['leadId']!,
         ),
       ),
 
@@ -182,7 +205,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             name: 'agency_profile',
             pageBuilder: (context, state) => SlideTransitionPage(
               name: state.name,
-              child: const ConsultorProfileScreen(),
+              child: const ProfileScreen(),
             ),
           ),
           GoRoute(
@@ -190,7 +213,47 @@ final routerProvider = Provider<GoRouter>((ref) {
             name: 'agency_settings',
             pageBuilder: (context, state) => SlideTransitionPage(
               name: state.name,
-              child: const agency_settings.SettingsScreen(),
+              child: const SettingsScreen(),
+            ),
+          ),
+          // Admin routes (protected by AdminGuard redirect above)
+          GoRoute(
+            path: '/agency/admin',
+            name: 'agency_admin',
+            redirect: (context, state) => '/agency/admin/overview',
+          ),
+          GoRoute(
+            path: '/agency/admin/overview',
+            name: 'agency_admin_overview',
+            pageBuilder: (context, state) => SlideTransitionPage(
+              name: state.name,
+              child: const AdminOverviewPage(),
+            ),
+          ),
+          GoRoute(
+            path: '/agency/admin/consultants',
+            name: 'agency_admin_consultants',
+            pageBuilder: (context, state) => SlideTransitionPage(
+              name: state.name,
+              child: const AdminConsultantListPage(),
+            ),
+            routes: [
+              GoRoute(
+                path: 'new',
+                name: 'agency_admin_consultant_new',
+                pageBuilder: (context, state) => SlideTransitionPage(
+                  name: state.name,
+                  child: const CreateConsultantPage(),
+                ),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: '/agency/admin/leads',
+            name: 'agency_admin_leads',
+            pageBuilder: (context, state) => SlideTransitionPage(
+              name: state.name,
+              child: const AdminAllLeadsPage(),
             ),
           ),
         ],
@@ -298,7 +361,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             name: 'client_settings',
             pageBuilder: (context, state) => SlideTransitionPage(
               name: state.name,
-              child: const SettingsPage(),
+              child: const SettingsScreen(),
             ),
           ),
         ],

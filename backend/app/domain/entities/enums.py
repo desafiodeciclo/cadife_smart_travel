@@ -158,3 +158,18 @@ class OfferCategoria(str, Enum):
     cruzeiro = "cruzeiro"
     executivo = "executivo"
     outros = "outros"
+
+
+class ItineraryItemType(str, Enum):
+    """
+    Itinerary item types (mirrors ItineraryItemType enum in Flutter).
+    Values match the JSON strings returned by GET /leads/{id}/itinerary.
+    """
+
+    voo = "voo"
+    hotel_checkin = "hotel_checkin"
+    hotel_checkout = "hotel_checkout"
+    passeio = "passeio"
+    transferencia = "transferencia"
+    refeicao = "refeicao"
+    evento_customizado = "evento_customizado"

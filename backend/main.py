@@ -13,6 +13,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 # Core / Infra
 from app.infrastructure.config.settings import get_settings
@@ -32,7 +33,7 @@ from app.jobs.notification_worker import NotificationWorker, WORKER_INTERVAL_SEC
 from app.jobs.aya_alert_job import alert_aya_disabled_leads
 
 # Routers
-from app.routes import agenda, auth, documents, ia, leads, offers, propostas, webhook, suitcase, diary
+from app.routes import admin, agenda, auth, documents, ia, leads, offers, propostas, webhook, suitcase, diary
 
 # Middlewares
 from app.presentation.middlewares.request_id import RequestIdMiddleware
@@ -181,6 +182,7 @@ app.add_exception_handler(
 # -------------------------------------------------------------------
 # Middlewares
 # -------------------------------------------------------------------
+app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(RequestIdMiddleware)
 app.add_middleware(TimeoutMiddleware)
 app.add_middleware(
@@ -204,6 +206,7 @@ app.include_router(agenda.router)
 app.include_router(propostas.router)
 app.include_router(documents.router)
 app.include_router(auth.router)
+app.include_router(admin.router)
 app.include_router(suitcase.router)
 app.include_router(offers.router)
 app.include_router(diary.router)
@@ -225,3 +228,15 @@ async def health():
         "version": app.version,
         "env": settings.APP_ENV,
     }
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(
+        "main:app",
+        host=settings.HOST,
+        port=settings.PORT,
+        reload=settings.DEBUG,
+        log_level="info",
+    )

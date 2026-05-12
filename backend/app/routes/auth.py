@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import get_current_user, get_db
@@ -23,6 +23,7 @@ from app.services.user_service import (
     update_fcm_token,
     update_user_profile,
 )
+from app.infrastructure.security.rate_limiter import limiter
 
 router = APIRouter(tags=["Auth"])
 
@@ -35,9 +36,11 @@ router = APIRouter(tags=["Auth"])
     responses={
         401: {"description": "Credenciais inválidas ou usuário inativo", "model": HTTPErrorResponse},
         422: {"description": "Erro de validação no body", "model": HTTPErrorResponse},
+        429: {"description": "Too Many Requests - Rate Limit excedido"},
     },
 )
-async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
+@limiter.limit("3/minute")
+async def login(request: Request, response: Response, body: LoginRequest, db: AsyncSession = Depends(get_db)):
     user = await get_user_by_email(db, body.email)
     if not user or not verify_password(body.password, user.hashed_password):
         raise HTTPException(

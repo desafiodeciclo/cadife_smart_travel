@@ -2052,7 +2052,7 @@
           "Documentos"
         ],
         "summary": "Upload Document",
-        "description": "Uploads a travel document (PDF/Image) for a specific lead.\nRestricted to agency staff (consultants/admins).",
+        "description": "Uploads a travel document (PDF/Image) for a specific lead.\nRestricted to agency staff (consultants/admins) and the lead owner.",
         "operationId": "upload_document_leads__lead_id__documents_post",
         "security": [
           {
@@ -2579,14 +2579,324 @@
         ]
       }
     },
-    "/leads/{lead_id}/suitcase": {
+    "/admin/users": {
       "get": {
         "tags": [
-          "Suitcase"
+          "Admin"
         ],
-        "summary": "Get Suitcase",
-        "description": "Returns all items in the suitcase grouped by category.",
-        "operationId": "get_suitcase_leads__lead_id__suitcase_get",
+        "summary": "Listar consultores",
+        "description": "Lista todos os consultores com status (ativo/inativo) e métricas resumidas.",
+        "operationId": "list_users_admin_users_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Erro de validação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Criar consultor",
+        "description": "Cria um novo consultor com senha temporária e envia e-mail de boas-vindas.",
+        "operationId": "create_user_admin_users_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminUserCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Erro de validação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "E-mail já cadastrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/admin/users/{user_id}": {
+      "patch": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Editar consultor",
+        "description": "Edita dados do consultor ou desativa a conta (is_active = false).",
+        "operationId": "update_user_admin_users__user_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminUserUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Erro de validação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Consultor não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Desativar consultor (soft delete)",
+        "description": "Desativa a conta do consultor. Pode reatribuir leads ativos para outro consultor via query param.",
+        "operationId": "delete_user_admin_users__user_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          },
+          {
+            "name": "reassign_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "ID do consultor para reatribuir leads ativos",
+              "title": "Reassign To"
+            },
+            "description": "ID do consultor para reatribuir leads ativos"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Não autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Consultor de destino inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Consultor não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/leads/{lead_id}/reassign": {
+      "patch": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Reatribuir lead",
+        "description": "Reatribui um lead para outro consultor com notificação push para ambos.",
+        "operationId": "reassign_lead_admin_leads__lead_id__reassign_patch",
         "security": [
           {
             "HTTPBearer": []
@@ -2604,13 +2914,100 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminLeadReassignRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SuitcaseGroupedResponse"
+                  "$ref": "#/components/schemas/AdminLeadReassignResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Erro de validação (mesmo consultor ou destino inválido)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Lead não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/offers": {
+      "post": {
+        "tags": [
+          "Offers"
+        ],
+        "summary": "Create Offer",
+        "description": "Create a new travel offer with optional image uploads.",
+        "operationId": "create_offer_offers_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_create_offer_offers_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfferResponse"
                 }
               }
             }
@@ -2651,11 +3048,11 @@
     "/leads/{lead_id}/suitcase/items": {
       "post": {
         "tags": [
-          "Suitcase"
+          "Offers"
         ],
-        "summary": "Add Suitcase Item",
-        "description": "Adds a new item to the suitcase.",
-        "operationId": "add_suitcase_item_leads__lead_id__suitcase_items_post",
+        "summary": "List Offers",
+        "description": "List offers with filters and pagination.",
+        "operationId": "list_offers_offers_get",
         "security": [
           {
             "HTTPBearer": []
@@ -2663,13 +3060,118 @@
         ],
         "parameters": [
           {
-            "name": "lead_id",
-            "in": "path",
-            "required": true,
+            "name": "status",
+            "in": "query",
+            "required": false,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Lead Id"
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/OfferStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "categoria",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/OfferCategoria"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Categoria"
+            }
+          },
+          {
+            "name": "preco_min",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0.0
+                },
+                {
+                  "type": "string",
+                  "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Preco Min"
+            }
+          },
+          {
+            "name": "preco_max",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0.0
+                },
+                {
+                  "type": "string",
+                  "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Preco Max"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Busca por título ou destino",
+              "title": "Search"
+            },
+            "description": "Busca por título ou destino"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
             }
           }
         ],
@@ -2689,7 +3191,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SuitcaseItemResponse"
+                  "$ref": "#/components/schemas/OfferListResponse"
                 }
               }
             }
@@ -2727,14 +3229,14 @@
         }
       }
     },
-    "/leads/{lead_id}/suitcase/items/{item_id}": {
-      "patch": {
+    "/offers/{offer_id}": {
+      "get": {
         "tags": [
-          "Suitcase"
+          "Offers"
         ],
-        "summary": "Update Suitcase Item",
-        "description": "Updates an existing item (e.g., marks as packed).",
-        "operationId": "update_suitcase_item_leads__lead_id__suitcase_items__item_id__patch",
+        "summary": "Get Offer",
+        "description": "Get a single offer by ID.",
+        "operationId": "get_offer_offers__offer_id__get",
         "security": [
           {
             "HTTPBearer": []
@@ -2742,32 +3244,88 @@
         ],
         "parameters": [
           {
-            "name": "lead_id",
+            "name": "offer_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
-              "title": "Lead Id"
+              "title": "Offer Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfferResponse"
+                }
+              }
             }
           },
+          "401": {
+            "description": "Não autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Erro de validação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Offers"
+        ],
+        "summary": "Update Offer",
+        "description": "Update an offer. RBAC: creator or admin only.",
+        "operationId": "update_offer_offers__offer_id__patch",
+        "security": [
           {
-            "name": "item_id",
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "offer_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
-              "title": "Item Id"
+              "title": "Offer Id"
             }
           }
         ],
         "requestBody": {
-          "required": true,
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/SuitcaseItemUpdate"
+                "$ref": "#/components/schemas/Body_update_offer_offers__offer_id__patch"
               }
             }
           }
@@ -2778,7 +3336,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SuitcaseItemResponse"
+                  "$ref": "#/components/schemas/OfferResponse"
                 }
               }
             }
@@ -2817,11 +3375,11 @@
       },
       "delete": {
         "tags": [
-          "Suitcase"
+          "Offers"
         ],
-        "summary": "Delete Suitcase Item",
-        "description": "Removes an item from the suitcase.",
-        "operationId": "delete_suitcase_item_leads__lead_id__suitcase_items__item_id__delete",
+        "summary": "Delete Offer",
+        "description": "Soft-delete an offer. RBAC: creator or admin only.",
+        "operationId": "delete_offer_offers__offer_id__delete",
         "security": [
           {
             "HTTPBearer": []
@@ -2829,23 +3387,13 @@
         ],
         "parameters": [
           {
-            "name": "lead_id",
+            "name": "offer_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
-              "title": "Lead Id"
-            }
-          },
-          {
-            "name": "item_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Item Id"
+              "title": "Offer Id"
             }
           }
         ],
@@ -2886,14 +3434,240 @@
         }
       }
     },
-    "/leads/{lead_id}/suitcase/suggestions": {
+    "/offers/{offer_id}/publish": {
+      "patch": {
+        "tags": [
+          "Offers"
+        ],
+        "summary": "Toggle Publish",
+        "description": "Publish or unpublish an offer. RBAC: creator or admin only.",
+        "operationId": "toggle_publish_offers__offer_id__publish_patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "offer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Offer Id"
+            }
+          },
+          {
+            "name": "publish",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "boolean",
+              "description": "True to publish, False to unpublish",
+              "title": "Publish"
+            },
+            "description": "True to publish, False to unpublish"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfferResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Erro de validação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/offers/{offer_id}/interest": {
+      "post": {
+        "tags": [
+          "Offers"
+        ],
+        "summary": "Express Interest",
+        "description": "Client expresses interest in an offer → auto-creates a lead.",
+        "operationId": "express_interest_offers__offer_id__interest_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "offer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Offer Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfferInterestResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Erro de validação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/leads/{lead_id}/diary/entries": {
+      "post": {
+        "tags": [
+          "Diário de Viagem"
+        ],
+        "summary": "Create Diary Entry",
+        "description": "Cria uma nova entrada no diário de viagem (foto + nota).\nApenas o dono da viagem pode adicionar memórias.",
+        "operationId": "create_diary_entry_leads__lead_id__diary_entries_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "lead_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Lead Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_create_diary_entry_leads__lead_id__diary_entries_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiaryEntryRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Erro de validação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
       "get": {
         "tags": [
-          "Suitcase"
+          "Diário de Viagem"
         ],
-        "summary": "Get Suitcase Suggestions",
-        "description": "Returns suggested items based on destination type.\nIf tipo_destino is not provided, tries to infer from lead briefing.",
-        "operationId": "get_suitcase_suggestions_leads__lead_id__suitcase_suggestions_get",
+        "summary": "List Diary Entries",
+        "description": "Lista as memórias de uma viagem específica de forma paginada.",
+        "operationId": "list_diary_entries_leads__lead_id__diary_entries_get",
         "security": [
           {
             "HTTPBearer": []
@@ -2911,19 +3685,26 @@
             }
           },
           {
-            "name": "tipo_destino",
+            "name": "page",
             "in": "query",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "$ref": "#/components/schemas/DestinationType"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Tipo Destino"
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
             }
           }
         ],
@@ -2933,11 +3714,161 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/SuitcaseSuggestionResponse"
-                  },
-                  "title": "Response Get Suitcase Suggestions Leads  Lead Id  Suitcase Suggestions Get"
+                  "$ref": "#/components/schemas/DiaryEntryList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Erro de validação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/leads/{lead_id}/diary/entries/{entry_id}": {
+      "delete": {
+        "tags": [
+          "Diário de Viagem"
+        ],
+        "summary": "Delete Diary Entry",
+        "description": "Remove uma memória do diário. Valida se o usuário é o dono da entrada.",
+        "operationId": "delete_diary_entry_leads__lead_id__diary_entries__entry_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "lead_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Lead Id"
+            }
+          },
+          {
+            "name": "entry_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Entry Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Não autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Erro de validação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/me/diary": {
+      "get": {
+        "tags": [
+          "Diário de Viagem"
+        ],
+        "summary": "List My Diary",
+        "description": "Retorna a linha do tempo completa de todas as viagens do usuário logado.",
+        "operationId": "list_my_diary_users_me_diary_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiaryEntryList"
                 }
               }
             }
@@ -3944,6 +4875,263 @@
   },
   "components": {
     "schemas": {
+      "AdminLeadReassignRequest": {
+        "properties": {
+          "new_consultor_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "New Consultor Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "new_consultor_id"
+        ],
+        "title": "AdminLeadReassignRequest",
+        "description": "Payload for reassigning a lead to another consultant."
+      },
+      "AdminLeadReassignResponse": {
+        "properties": {
+          "lead_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Lead Id"
+          },
+          "old_consultor_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Old Consultor Id"
+          },
+          "new_consultor_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "New Consultor Id"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "Lead reatribuído com sucesso"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "lead_id",
+          "old_consultor_id",
+          "new_consultor_id"
+        ],
+        "title": "AdminLeadReassignResponse",
+        "description": "Response after reassigning a lead."
+      },
+      "AdminUserCreate": {
+        "properties": {
+          "nome": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 2,
+            "title": "Nome"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "telefone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefone"
+          },
+          "role": {
+            "$ref": "#/components/schemas/UserPerfil",
+            "default": "consultor"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "nome",
+          "email"
+        ],
+        "title": "AdminUserCreate",
+        "description": "Payload for creating a new consultant by admin."
+      },
+      "AdminUserListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AdminUserResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "AdminUserListResponse",
+        "description": "Paginated list of consultants."
+      },
+      "AdminUserMetrics": {
+        "properties": {
+          "total_leads": {
+            "type": "integer",
+            "title": "Total Leads",
+            "default": 0
+          },
+          "active_leads": {
+            "type": "integer",
+            "title": "Active Leads",
+            "default": 0
+          },
+          "closed_leads": {
+            "type": "integer",
+            "title": "Closed Leads",
+            "default": 0
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "AdminUserMetrics",
+        "description": "Aggregated metrics for a consultant."
+      },
+      "AdminUserResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "telefone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefone"
+          },
+          "perfil": {
+            "$ref": "#/components/schemas/UserPerfil"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          },
+          "criado_em": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Criado Em"
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/AdminUserMetrics",
+            "default": {
+              "total_leads": 0,
+              "active_leads": 0,
+              "closed_leads": 0
+            }
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nome",
+          "email",
+          "telefone",
+          "perfil",
+          "is_active",
+          "criado_em"
+        ],
+        "title": "AdminUserResponse",
+        "description": "Consultant detail returned by admin endpoints."
+      },
+      "AdminUserUpdate": {
+        "properties": {
+          "nome": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255,
+                "minLength": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nome"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "email"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "telefone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefone"
+          },
+          "is_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Active"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "AdminUserUpdate",
+        "description": "Payload for updating a consultant by admin."
+      },
       "AgendamentoCreate": {
         "properties": {
           "lead_id": {

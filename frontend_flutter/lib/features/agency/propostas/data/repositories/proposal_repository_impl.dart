@@ -1,4 +1,5 @@
 import 'package:cadife_smart_travel/core/constants/api_constants.dart';
+
 import 'package:cadife_smart_travel/core/error/failures.dart';
 import 'package:cadife_smart_travel/core/offline/offline_manager.dart';
 import 'package:cadife_smart_travel/features/agency/propostas/domain/entities/proposta.dart';
@@ -135,6 +136,26 @@ class ProposalRepositoryImpl implements IProposalsRepository {
       await _offlineManager.removeFromCache('$_cacheKeyPrefix:detail:$id');
       await _offlineManager.invalidateByPrefix('$_cacheKeyPrefix:list:');
       return const Right(null);
+    } on DioException catch (e) {
+      return Left(_handleDioError(e));
+    } on Exception catch (e) {
+      return Left(GenericFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Proposta>> sendProposal(String id) async {
+    try {
+      final response = await _dio.post(ApiConstants.proposalSend(id));
+      final proposal = Proposta.fromJson(
+        response.data as Map<String, dynamic>,
+      );
+      await _offlineManager.invalidateByPrefix('$_cacheKeyPrefix:list:');
+      await _offlineManager.saveToCache(
+        '$_cacheKeyPrefix:detail:$id',
+        response.data,
+      );
+      return Right(proposal);
     } on DioException catch (e) {
       return Left(_handleDioError(e));
     } on Exception catch (e) {

@@ -14,4 +14,5 @@ abstract class IProposalsRepository {
     UpdateProposalRequest request,
   );
   Future<Either<Failure, void>> deleteProposal(String id);
+  Future<Either<Failure, Proposta>> sendProposal(String id);
 }

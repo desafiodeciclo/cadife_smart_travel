@@ -65,6 +65,7 @@ class DiaryService:
     async def create_entry(
         self,
         user_id: uuid.UUID,
+        user_phone: str,
         lead_id: uuid.UUID,
         photo: UploadFile,
         nota: Optional[str] = None,
@@ -80,6 +81,19 @@ class DiaryService:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Lead não encontrado"
+            )
+
+        # 1.1 Ownership validation (§1.3 of updated claude_local.md)
+        from app.infrastructure.security.pii_encryption import hmac_hash
+        if lead.telefone_hash != hmac_hash(user_phone):
+            logger.warning(
+                "diary_create_ownership_violation",
+                lead_id=str(lead_id),
+                user_id=str(user_id),
+            )
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Acesso negado: esta viagem não pertence a você."
             )
 
         # 2. Validation: Size (max 5MB)

@@ -21,13 +21,36 @@ class AuthRepositoryImpl implements IAuthRepository {
     try {
       final data = await _remoteDatasource.login(email, password, profileHint: profileHint);
 
-      final tokenData = data['token'] as Map<String, dynamic>;
+      // Mock format: {user: {...}, token: {access_token, refresh_token}}
+      final tokenData = data['token'] as Map<String, dynamic>?;
+      if (tokenData == null) {
+        return const Left(ServerFailure('Resposta de login inválida.'));
+      }
+
+      final accessToken = tokenData['access_token']?.toString();
+      final refreshToken = tokenData['refresh_token']?.toString();
+      if (accessToken == null || refreshToken == null) {
+        return const Left(ServerFailure('Token ausente na resposta.'));
+      }
+
       await _secureConfig.saveTokens(
-        accessToken: tokenData['access_token'] as String,
-        refreshToken: tokenData['refresh_token'] as String,
+        accessToken: accessToken,
+        refreshToken: refreshToken,
       );
 
-      return Right(AuthUser.fromJson(data['user'] as Map<String, dynamic>));
+      // Try to get user from login response first (mock format)
+      final userData = data['user'] as Map<String, dynamic>?;
+      if (userData != null) {
+        return Right(AuthUser.fromJson(userData));
+      }
+      
+      // Fallback: try /users/me endpoint
+      final currentUserData = await _remoteDatasource.getCurrentUser();
+      if (currentUserData != null) {
+        return Right(AuthUser.fromJson(currentUserData));
+      }
+      
+      return const Left(ServerFailure('Dados do usuário ausentes.'));
     } on Exception catch (e) {
       return Left(Failure.fromException(e));
     }

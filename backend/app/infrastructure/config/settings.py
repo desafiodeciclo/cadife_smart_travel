@@ -37,6 +37,8 @@ class Settings(BaseSettings):
         description="Current environment — controls secret loading strategy",
     )
     DEBUG: bool = Field(default=False)
+    HOST: str = Field(default="0.0.0.0")
+    PORT: int = Field(default=8000)
 
     # ── WhatsApp Cloud API (spec.md §15) ──────────────────────────────────
     WHATSAPP_TOKEN: str = Field(default="", description="Meta WhatsApp access token")

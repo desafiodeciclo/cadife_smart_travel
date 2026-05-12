@@ -31,6 +31,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.domain.entities.enums import LeadOrigem, LeadScore, LeadStatus
 from app.infrastructure.persistence.database import Base
+from app.infrastructure.security.pii_encryption import EncryptedString
 
 if TYPE_CHECKING:
     from app.infrastructure.persistence.models.briefing_model import BriefingModel
@@ -81,9 +82,9 @@ class LeadModel(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    nome: Mapped[Optional[str]] = mapped_column(String(512))
+    nome: Mapped[Optional[str]] = mapped_column(EncryptedString(512))
     telefone: Mapped[str] = mapped_column(
-        String(512), unique=True, nullable=False, index=True
+        EncryptedString(512), unique=True, nullable=False, index=True
     )
     telefone_hash: Mapped[Optional[str]] = mapped_column(
         String(64), nullable=True, index=True
