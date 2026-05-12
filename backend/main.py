@@ -9,7 +9,8 @@ from contextlib import asynccontextmanager
 
 import structlog
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -168,6 +169,22 @@ app.add_exception_handler(
     RateLimitExceeded,
     _rate_limit_exceeded_handler,
 )
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """
+    Captura qualquer erro não tratado e retorna uma resposta limpa (404/500).
+    Evita vazamento de stack traces em produção.
+    """
+    logger.error("unhandled_exception", error=str(exc), path=request.url.path)
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": "Ocorreu um erro interno no servidor. Por favor, tente novamente mais tarde.",
+            "error_code": "INTERNAL_SERVER_ERROR",
+        },
+    )
 
 # -------------------------------------------------------------------
 # Middlewares
