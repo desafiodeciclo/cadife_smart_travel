@@ -7,7 +7,7 @@ import 'package:cadife_smart_travel/features/agency/agenda/presentation/widgets/
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/providers/lead_detail_provider.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/providers/leads_notifier.dart';
-import 'package:cadife_smart_travel/features/agency/propostas/presentation/widgets/proposal_form_tab.dart';
+import 'package:cadife_smart_travel/features/agency/propostas/presentation/widgets/proposals_history_tab.dart';
 import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/animated_tab_content.dart';
@@ -41,7 +41,9 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
     super.dispose();
   }
 
-  void _goToProposalTab() => _tabController.animateTo(2);
+  void _navigateToCreateProposal() {
+    context.push('/agency/proposals/${widget.leadId}/new');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -101,9 +103,25 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
                       : Container(color: context.cadife.primary),
                 ),
                 actions: [
-                  IconButton(
+                  PopupMenuButton<String>(
                     icon: const Icon(Icons.more_vert, color: AppColors.white),
-                    onPressed: () {},
+                    onSelected: (value) {
+                      if (value == 'edit') {
+                        context.push('/agency/leads/${widget.leadId}/edit');
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            Icon(Icons.edit_outlined, size: 20),
+                            SizedBox(width: 8),
+                            Text('Editar Lead'),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -117,7 +135,7 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
                         const SizedBox(height: 16),
                         _ActionButtons(
                           lead: lead,
-                          onCreateProposal: _goToProposalTab,
+                          onCreateProposal: _navigateToCreateProposal,
                         ),
                       ],
                     ),
@@ -130,7 +148,7 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
                     tabs: const [
                       Tab(text: 'Briefing'),
                       Tab(text: 'Timeline'),
-                      Tab(text: 'Proposta'),
+                      Tab(text: 'Propostas'),
                     ],
                   ),
                   SizedBox(
@@ -148,7 +166,7 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
                         ),
                         AnimatedTabContent(
                           tabIndex: 2,
-                          child: ProposalFormTab(lead: lead),
+                          child: ProposalsHistoryTab(lead: lead),
                         ),
                       ],
                     ),

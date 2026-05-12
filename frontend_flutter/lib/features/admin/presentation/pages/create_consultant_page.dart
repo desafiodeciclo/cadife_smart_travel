@@ -15,16 +15,20 @@ class _CreateConsultantPageState extends ConsumerState<CreateConsultantPage> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _obscurePassword = true;
   String? _nameError;
   String? _emailError;
   String? _phoneError;
+  String? _passwordError;
 
   @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
@@ -33,12 +37,14 @@ class _CreateConsultantPageState extends ConsumerState<CreateConsultantPage> {
       _nameError = null;
       _emailError = null;
       _phoneError = null;
+      _passwordError = null;
     });
 
     var isValid = true;
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();
     final phone = _phoneController.text.trim();
+    final password = _passwordController.text.trim();
 
     if (name.isEmpty) {
       _nameError = 'Informe o nome';
@@ -67,6 +73,14 @@ class _CreateConsultantPageState extends ConsumerState<CreateConsultantPage> {
       isValid = false;
     }
 
+    if (password.isEmpty) {
+      _passwordError = 'Informe a senha';
+      isValid = false;
+    } else if (password.length < 6) {
+      _passwordError = 'A senha deve ter pelo menos 6 caracteres';
+      isValid = false;
+    }
+
     setState(() {});
     return isValid;
   }
@@ -80,6 +94,7 @@ class _CreateConsultantPageState extends ConsumerState<CreateConsultantPage> {
       name: _nameController.text.trim(),
       email: _emailController.text.trim(),
       phone: _phoneController.text.trim(),
+      password: _passwordController.text.trim(),
     );
 
     setState(() => _isLoading = false);
@@ -87,7 +102,7 @@ class _CreateConsultantPageState extends ConsumerState<CreateConsultantPage> {
     if (mounted) {
       ShadToaster.of(context).show(
         const ShadToast(
-          description: Text('Consultor criado com sucesso! E-mail de acesso enviado.'),
+          description: Text('Consultor criado com sucesso!'),
         ),
       );
       context.pop();
@@ -99,7 +114,7 @@ class _CreateConsultantPageState extends ConsumerState<CreateConsultantPage> {
     return PageScaffold(
       appBar: const CadifeAppBar(
         title: 'Criar Consultor',
-        showProfile: false,
+        showProfile: true,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -116,7 +131,7 @@ class _CreateConsultantPageState extends ConsumerState<CreateConsultantPage> {
             ),
             const SizedBox(height: 4),
             Text(
-              'Preencha os dados abaixo. Um e-mail de acesso será enviado automaticamente.',
+              'Preencha os dados abaixo para cadastrar o novo consultor no sistema.',
               style: TextStyle(
                 fontSize: 13,
                 color: context.cadife.textSecondary,
@@ -175,12 +190,38 @@ class _CreateConsultantPageState extends ConsumerState<CreateConsultantPage> {
                   style: const TextStyle(color: AppColors.error, fontSize: 12),
                 ),
               ),
+            const SizedBox(height: 16),
+            ShadInput(
+              controller: _passwordController,
+              placeholder: const Text('Senha de acesso'),
+              obscureText: _obscurePassword,
+              leading: const Padding(
+                padding: EdgeInsets.only(right: 8),
+                child: Icon(LucideIcons.lock, size: 18),
+              ),
+              trailing: IconButton(
+                icon: Icon(
+                  _obscurePassword ? LucideIcons.eyeOff : LucideIcons.eye,
+                  size: 18,
+                  color: context.cadife.textSecondary,
+                ),
+                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+              ),
+            ),
+            if (_passwordError != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 6, left: 4),
+                child: Text(
+                  _passwordError!,
+                  style: const TextStyle(color: AppColors.error, fontSize: 12),
+                ),
+              ),
             const SizedBox(height: 32),
             SizedBox(
               width: double.infinity,
               child: CadifeButton(
-                text: 'Criar e Enviar Acesso',
-                icon: LucideIcons.send,
+                text: 'Criar Consultor',
+                icon: LucideIcons.userPlus,
                 analyticsLabel: 'admin_create_consultor',
                 onPressed: _isLoading ? null : _submit,
               ),

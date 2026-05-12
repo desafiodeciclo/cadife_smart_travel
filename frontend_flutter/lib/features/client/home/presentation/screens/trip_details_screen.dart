@@ -1,198 +1,267 @@
 import 'package:cadife_smart_travel/design_system/design_system.dart';
+import 'package:cadife_smart_travel/features/client/documentos/domain/entities/trip_summary.dart';
+import 'package:cadife_smart_travel/features/client/documentos/presentation/providers/documentos_notifier.dart';
+import 'package:cadife_smart_travel/features/client/documentos/presentation/widgets/documents_section.dart';
+import 'package:cadife_smart_travel/features/client/historico/presentation/providers/historico_notifier.dart';
+import 'package:cadife_smart_travel/features/client/home/domain/entities/client_trip.dart';
 import 'package:cadife_smart_travel/features/client/home/infrastructure/mocks/client_home_mocks.dart';
+import 'package:cadife_smart_travel/features/client/itinerary/domain/entities/itinerary_day.dart';
 import 'package:cadife_smart_travel/features/client/itinerary/presentation/providers/itinerary_provider.dart';
-import 'package:cadife_smart_travel/features/client/itinerary/presentation/widgets/itinerary_card.dart';
-import 'package:cadife_smart_travel/features/client/presentation/widgets/documents_section.dart';
 import 'package:cadife_smart_travel/features/client/presentation/widgets/trip_status_section.dart';
+import 'package:cadife_smart_travel/shared/presentation/widgets/itinerary_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-class TripDetailsScreen extends ConsumerStatefulWidget {
-  final String tripId;
+// ─────────────────────────────────────────────────────────────────────────────
+// Local view-model — normalises ClientTrip / TripSummary into one shape
+// ─────────────────────────────────────────────────────────────────────────────
 
-  const TripDetailsScreen({required this.tripId, super.key});
+class _VM {
+  const _VM({
+    required this.id,
+    this.name,
+    this.destination,
+    this.destinationCountry,
+    this.flag,
+    this.startDate,
+    this.endDate,
+    this.coverImageUrl,
+    this.status,
+    this.progressPercentage,
+    this.checkpoints,
+    this.roteiro,
+  });
 
-  @override
-  ConsumerState<TripDetailsScreen> createState() => _TripDetailsScreenState();
+  final String id;
+  final String? name;
+  final String? destination;
+  final String? destinationCountry;
+  final String? flag;
+  final DateTime? startDate;
+  final DateTime? endDate;
+  final String? coverImageUrl;
+  final String? status;
+  final double? progressPercentage;
+  final List<TripCheckpoint>? checkpoints;
+  final String? roteiro;
+
+  String get displayTitle => flag != null && destination != null
+      ? '$flag $destination'
+      : name ?? destination ?? 'Viagem';
+
+  factory _VM.fromClientTrip(ClientTrip t) => _VM(
+        id: t.id,
+        name: t.destination,
+        destination: t.destination,
+        destinationCountry: t.destinationCountry,
+        flag: t.destinationFlag,
+        startDate: t.startDate,
+        endDate: t.endDate,
+        coverImageUrl: t.coverImageUrl,
+        status: t.status,
+        progressPercentage: t.progressPercentage,
+        checkpoints: t.checkpoints,
+        roteiro: t.roteiro,
+      );
+
+  factory _VM.fromSummary(TripSummary t) => _VM(
+        id: t.id,
+        name: t.name,
+        destination: t.destino,
+        startDate: t.dataIda,
+        endDate: t.dataVolta,
+        coverImageUrl: t.imageUrl,
+        status: 'concluido',
+        roteiro: t.roteiro,
+      );
 }
 
-class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
-  bool _isPopping = false;
+// ─────────────────────────────────────────────────────────────────────────────
+// Public entry-point — resolves which data source to use
+// ─────────────────────────────────────────────────────────────────────────────
 
-  void _handleBack() {
-    if (_isPopping) return;
-    
-    if (mounted) {
-      setState(() => _isPopping = true);
-      // Garantimos que o "direcionamento" seja para a tela principal de status
-      context.go('/client/status');
-    }
-  }
+class TripDetailsScreen extends ConsumerWidget {
+  const TripDetailsScreen({required this.tripId, super.key});
+
+  final String tripId;
 
   @override
-  Widget build(BuildContext context) {
-    final cadife = context.cadife;
-    final itineraryState = ref.watch(itineraryProvider(widget.tripId));
-    // Em um cenário real, buscaríamos a viagem pelo ID
-    final trip = ClientHomeMocks.mockCurrentTrip();
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Current trip is a mock — resolve synchronously with no loading state
+    final currentTrip = ClientHomeMocks.mockCurrentTrip();
+    if (currentTrip.id == tripId) {
+      return _DetailView(
+        vm: _VM.fromClientTrip(currentTrip),
+        clientTrip: currentTrip,
+      );
+    }
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        _handleBack();
+    // Otherwise look up in the travel history provider
+    return ref.watch(travelHistoryProvider).when(
+      loading: () => const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      ),
+      error: (e, _) => Scaffold(
+        appBar: AppBar(),
+        body: Center(child: Text('Erro ao carregar: $e')),
+      ),
+      data: (trips) {
+        final summary = trips.where((t) => t.id == tripId).firstOrNull;
+        if (summary == null) {
+          return Scaffold(
+            appBar: AppBar(),
+            body: const Center(child: Text('Viagem não encontrada')),
+          );
+        }
+        return _DetailView(vm: _VM.fromSummary(summary));
       },
-      child: Scaffold(
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Unified detail view — renders the same layout for both trip types
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _DetailView extends ConsumerWidget {
+  const _DetailView({required this.vm, this.clientTrip});
+
+  final _VM vm;
+
+  // Non-null only when viewing the active trip (enables full status section)
+  final ClientTrip? clientTrip;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cadife = context.cadife;
+    final itState = ref.watch(itineraryProvider(vm.id));
+    final docsAsync = ref.watch(tripDocumentsProvider(vm.id));
+
+    final days = itState.itemsByDay.entries
+        .map((e) => ItineraryDay(data: e.key, itens: e.value))
+        .toList()
+      ..sort((a, b) => a.data.compareTo(b.data));
+
+    final fmt = DateFormat('dd/MM/yy', 'pt_BR');
+    final dateRange = vm.startDate != null && vm.endDate != null
+        ? '${fmt.format(vm.startDate!)} → ${fmt.format(vm.endDate!)}'
+        : '—';
+    final durationDays = vm.startDate != null && vm.endDate != null
+        ? vm.endDate!.difference(vm.startDate!).inDays
+        : null;
+
+    return Scaffold(
         backgroundColor: cadife.background,
-      body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          // Header com imagem e Hero
-          SliverAppBar(
-            expandedHeight: 350,
-            pinned: true,
-            stretch: true,
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            leading: Padding(
-              padding: const EdgeInsets.all(8),
-              child: CircleAvatar(
-                backgroundColor: AppColors.overlayMedium,
-                child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: AppColors.white, size: 20),
-                  onPressed: _handleBack,
-                  tooltip: 'Voltar',
+        body: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            // ── [A] Hero cover image ──────────────────────────────────────
+            SliverAppBar(
+              expandedHeight: 320,
+              pinned: true,
+              stretch: true,
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              leading: Padding(
+                padding: const EdgeInsets.all(8),
+                child: CircleAvatar(
+                  backgroundColor: AppColors.overlayMedium,
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back, color: AppColors.white, size: 20),
+                    onPressed: () {
+                      if (context.canPop()) {
+                        context.pop();
+                      } else {
+                        context.go('/client/status');
+                      }
+                    },
+                  ),
                 ),
               ),
-            ),
-            flexibleSpace: FlexibleSpaceBar(
-              stretchModes: const [
-                StretchMode.zoomBackground,
-                StretchMode.blurBackground,
-              ],
-              background: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Hero(
-                    tag: 'trip_banner_${trip.id}',
-                    child: Image.network(
-                      trip.coverImageUrl,
-                      fit: BoxFit.cover,
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return Container(
-                          color: AppColors.zinc800,
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              color: AppColors.white.withValues(alpha: 0.24),
-                              strokeWidth: 2,
-                            ),
-                          ),
-                        );
-                      },
-                      errorBuilder: (_, _, _) => Container(
-                        color: AppColors.zinc800,
-                        child: Center(
-                          child: Icon(
-                            Icons.landscape,
-                            size: 64,
-                            color: AppColors.white.withValues(alpha: 0.24),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  // Removido gradiente para padronização CDS
-
-                  Positioned(
-                    bottom: 20,
-                    left: 20,
-                    right: 20,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              trip.destinationFlag,
-                              style: const TextStyle(fontSize: 32),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    trip.destination,
-                                    style: const TextStyle(
-                                      color: AppColors.white,
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: -0.5,
-                                    ),
-                                  ),
-                                  Text(
-                                    trip.destinationCountry,
-                                    style: const TextStyle(
-                                      color: AppColors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
+              flexibleSpace: FlexibleSpaceBar(
+                stretchModes: const [
+                  StretchMode.zoomBackground,
+                  StretchMode.blurBackground,
                 ],
+                background: _CoverImage(vm: vm),
               ),
             ),
-          ),
 
-          // Conteúdo
-          SliverToBoxAdapter(
-            child: Container(
-              decoration: BoxDecoration(
-                color: cadife.background,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
+            // ── [B] Content ───────────────────────────────────────────────
+            SliverToBoxAdapter(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: cadife.background,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                ),
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 100),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 10),
-                    // Datas e Duração
+                    // Destination title
+                    Text(
+                      vm.displayTitle,
+                      style: AppTextStyles.h2.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: cadife.textPrimary,
+                      ),
+                    ),
+                    if (vm.destinationCountry != null) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(LucideIcons.mapPin, size: 13, color: cadife.textSecondary),
+                          const SizedBox(width: 4),
+                          Text(
+                            vm.destinationCountry!,
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: cadife.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    const SizedBox(height: 20),
+
+                    // ── [1] Dates + Duration ──────────────────────────────
                     Row(
                       children: [
-                        _buildInfoBadge(
-                          context,
-                          Icons.calendar_month_outlined,
-                          '${trip.startDate.day}/${trip.startDate.month} - ${trip.endDate.day}/${trip.endDate.month}',
-                          'Data da Viagem',
-                          onTap: () => context.pushNamed('client_travel_calendar', pathParameters: {'tripId': widget.tripId}),
+                        Expanded(
+                          child: _InfoBadge(
+                            icon: LucideIcons.calendar,
+                            label: 'Período',
+                            value: dateRange,
+                            onTap: () => context.pushNamed(
+                              'client_travel_calendar',
+                              pathParameters: {'tripId': vm.id},
+                            ),
+                          ),
                         ),
-                        const SizedBox(width: 12),
-                        _buildInfoBadge(
-                          context,
-                          Icons.timer_outlined,
-                          '${trip.endDate.difference(trip.startDate).inDays} dias',
-                          'Duração',
-                        ),
+                        if (durationDays != null) ...[
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _InfoBadge(
+                              icon: LucideIcons.clock,
+                              label: 'Duração',
+                              value: '$durationDays dias',
+                            ),
+                          ),
+                        ],
                       ],
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 28),
 
-                    // Seção de Status
-                    TripStatusSection(trip: trip),
+                    // ── [2] Status section ────────────────────────────────
+                    if (clientTrip != null) ...[
+                      TripStatusSection(trip: clientTrip!),
+                      const SizedBox(height: 28),
+                    ] else ...[
+                      _SimpleStatusRow(status: vm.status ?? 'concluido'),
+                      const SizedBox(height: 28),
+                    ],
 
-                    const SizedBox(height: 32),
-
-                    // Itinerário da Viagem (NOVA SEÇÃO)
+                    // ── [3] Full itinerary ────────────────────────────────
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -200,18 +269,62 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
                           'ITINERÁRIO',
                           style: TextStyle(
                             color: cadife.textPrimary,
-                            fontSize: 14,
+                            fontSize: 13,
                             fontWeight: FontWeight.w800,
                             letterSpacing: 1.2,
                           ),
                         ),
                         TextButton(
-                          onPressed: () => context.pushNamed('client_travel_calendar', pathParameters: {'tripId': widget.tripId}),
+                          onPressed: () => context.pushNamed(
+                            'client_travel_calendar',
+                            pathParameters: {'tripId': vm.id},
+                          ),
                           child: Text(
-                            'Ver tudo',
+                            'Ver calendário',
                             style: TextStyle(
                               color: cadife.primary,
-                              fontSize: 14,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    if (itState.isLoading)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 24),
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    else if (days.isEmpty)
+                      const _EmptyCard(label: 'Itinerário ainda não disponível')
+                    else
+                      ItineraryWidget(days: days, isCompact: false),
+                    const SizedBox(height: 32),
+
+                    // ── [4] Documents ─────────────────────────────────────
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'DOCUMENTOS',
+                          style: TextStyle(
+                            color: cadife.textPrimary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () => context.pushNamed(
+                            'client_trip_documents',
+                            pathParameters: {'tripId': vm.id},
+                          ),
+                          child: Text(
+                            'Ver todos',
+                            style: TextStyle(
+                              color: cadife.primary,
+                              fontSize: 13,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -219,75 +332,364 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    
-                    if (itineraryState.isLoading)
-                      const Center(child: CircularProgressIndicator())
-                    else if (itineraryState.items.isEmpty)
-                      CadifeCard(
-                        padding: const EdgeInsets.all(20),
-                        child: Center(
-                          child: Text(
-                            'Itinerário ainda não disponível',
-                            style: TextStyle(color: cadife.textSecondary),
-                          ),
-                        ),
-                      )
-                    else
-                      ...itineraryState.items.take(3).map((item) => ItineraryCard(
-                        key: ValueKey('itinerary_item_${item.id}'),
-                        item: item,
-                      )),
-
+                    docsAsync.when(
+                      data: (docs) => docs.isEmpty
+                          ? const _EmptyCard(label: 'Nenhum documento disponível')
+                          : DocumentsSection(documents: docs),
+                      loading: () => const Center(child: CircularProgressIndicator()),
+                      error: (_, _) => const SizedBox.shrink(),
+                    ),
                     const SizedBox(height: 32),
 
-                    // Documentos dessa viagem
-                    DocumentsSection(documents: ClientHomeMocks.mockDocuments()),
-
-                    const SizedBox(height: 100),
+                    // ── [5] Quick access — Diary + Suitcase ───────────────
+                    Text(
+                      'ACESSO RÁPIDO',
+                      style: TextStyle(
+                        color: cadife.textPrimary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _QuickAccessCard(
+                            icon: LucideIcons.bookOpen,
+                            label: 'Diário de\nViagem',
+                            accentColor: const Color(0xFF4F46E5),
+                            onTap: () => context.pushNamed(
+                              'client_diary_detail',
+                              pathParameters: {'tripId': vm.id},
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _QuickAccessCard(
+                            icon: LucideIcons.briefcase,
+                            label: 'Minha\nMala',
+                            accentColor: const Color(0xFF0D9488),
+                            onTap: () => context.pushNamed('client_profile'),
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
             ),
+          ],
+        ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helper widgets
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _CoverImage extends StatelessWidget {
+  const _CoverImage({required this.vm});
+
+  final _VM vm;
+
+  @override
+  Widget build(BuildContext context) {
+    final cadife = context.cadife;
+
+    Widget image;
+    if (vm.coverImageUrl != null) {
+      image = Hero(
+        tag: 'trip_banner_${vm.id}',
+        child: Image.network(
+          vm.coverImageUrl!,
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: double.infinity,
+          loadingBuilder: (context, child, progress) {
+            if (progress == null) return child;
+            return Container(
+              color: AppColors.zinc800,
+              child: Center(
+                child: CircularProgressIndicator(
+                  color: AppColors.white.withValues(alpha: 0.3),
+                  strokeWidth: 2,
+                ),
+              ),
+            );
+          },
+          errorBuilder: (_, _, _) => _PlaceholderCover(cadife: cadife),
+        ),
+      );
+    } else {
+      image = _PlaceholderCover(cadife: cadife);
+    }
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        image,
+        // Gradient overlay so back button stays visible
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.black.withValues(alpha: 0.35),
+                Colors.transparent,
+                Colors.black.withValues(alpha: 0.55),
+              ],
+              stops: const [0.0, 0.4, 1.0],
+            ),
           ),
-        ],
+        ),
+      ],
+    );
+  }
+}
+
+class _PlaceholderCover extends StatelessWidget {
+  const _PlaceholderCover({required this.cadife});
+
+  final CadifeThemeExtension cadife;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: AppColors.zinc800,
+      child: Center(
+        child: Icon(
+          LucideIcons.plane,
+          size: 64,
+          color: AppColors.white.withValues(alpha: 0.25),
         ),
       ),
     );
   }
+}
 
-  Widget _buildInfoBadge(BuildContext context, IconData icon, String value, String label, {VoidCallback? onTap}) {
+class _InfoBadge extends StatelessWidget {
+  const _InfoBadge({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
     final cadife = context.cadife;
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: CadifeCard(
-          padding: const EdgeInsets.all(12),
-          borderRadius: 16,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return GestureDetector(
+      onTap: onTap,
+      child: CadifeCard(
+        padding: const EdgeInsets.all(14),
+        borderRadius: 16,
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: cadife.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, size: 18, color: cadife.primary),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: AppTextStyles.caption.copyWith(
+                      color: cadife.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    value,
+                    style: AppTextStyles.labelSmall.copyWith(
+                      color: cadife.textPrimary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    maxLines: 2,
+                    softWrap: true,
+                  ),
+                ],
+              ),
+            ),
+            if (onTap != null)
+              Icon(Icons.chevron_right, size: 16, color: cadife.textSecondary),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SimpleStatusRow extends StatelessWidget {
+  const _SimpleStatusRow({required this.status});
+
+  final String status;
+
+  String get _label => switch (status) {
+        'planejando' => 'Planejando',
+        'confirmado' => 'Confirmado',
+        'em_andamento' => 'Em Andamento',
+        'concluido' => 'Concluída',
+        _ => status,
+      };
+
+  Color get _color => switch (status) {
+        'planejando' => Colors.blue,
+        'confirmado' => AppColors.success,
+        'em_andamento' => AppColors.warning,
+        'concluido' => Colors.purple,
+        _ => AppColors.zinc500,
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    final cadife = context.cadife;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          'STATUS DA VIAGEM',
+          style: TextStyle(
+            color: cadife.textPrimary,
+            fontSize: 13,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.2,
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          decoration: BoxDecoration(
+            color: _color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: _color.withValues(alpha: 0.35)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 18, color: cadife.primary),
-              const SizedBox(height: 8),
-              Text(
-                value,
-                style: TextStyle(
-                  color: cadife.textPrimary,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
+              Container(
+                width: 7,
+                height: 7,
+                decoration: BoxDecoration(
+                  color: _color,
+                  shape: BoxShape.circle,
                 ),
               ),
+              const SizedBox(width: 6),
               Text(
-                label,
+                _label,
                 style: TextStyle(
-                  color: cadife.textSecondary,
-                  fontSize: 11,
+                  color: _color,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ],
           ),
         ),
+      ],
+    );
+  }
+}
+
+class _EmptyCard extends StatelessWidget {
+  const _EmptyCard({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final cadife = context.cadife;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: cadife.muted,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: cadife.cardBorder),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: cadife.textSecondary,
+          fontSize: 13,
+          fontStyle: FontStyle.italic,
+        ),
       ),
     );
   }
+}
 
+class _QuickAccessCard extends StatelessWidget {
+  const _QuickAccessCard({
+    required this.icon,
+    required this.label,
+    required this.accentColor,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color accentColor;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cadife = context.cadife;
+    return CadifeCard(
+      onTap: onTap,
+      padding: const EdgeInsets.all(18),
+      borderRadius: 18,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: accentColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, size: 22, color: accentColor),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            label,
+            style: AppTextStyles.labelSmall.copyWith(
+              color: cadife.textPrimary,
+              fontWeight: FontWeight.w700,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Text(
+                'Acessar',
+                style: AppTextStyles.caption.copyWith(color: accentColor),
+              ),
+              const SizedBox(width: 2),
+              Icon(Icons.arrow_forward, size: 11, color: accentColor),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }

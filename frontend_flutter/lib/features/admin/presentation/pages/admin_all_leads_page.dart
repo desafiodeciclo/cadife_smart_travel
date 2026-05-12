@@ -1,6 +1,5 @@
 import 'package:cadife_smart_travel/core/utils/extensions/extensions.dart';
 import 'package:cadife_smart_travel/design_system/design_system.dart';
-import 'package:cadife_smart_travel/features/admin/domain/entities/admin_entities.dart';
 import 'package:cadife_smart_travel/features/admin/presentation/providers/admin_providers.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/providers/leads_notifier.dart';
@@ -80,7 +79,12 @@ class _AdminAllLeadsPageState extends ConsumerState<AdminAllLeadsPage> {
     return PageScaffold(
       appBar: const CadifeAppBar(
         title: 'Todos os Leads',
-        showProfile: false,
+        showProfile: true,
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => context.push('/agency/leads/new'),
+        backgroundColor: AppColors.primary,
+        child: const Center(child: Icon(Icons.add, color: Colors.white)),
       ),
       body: Column(
         children: [
@@ -88,16 +92,14 @@ class _AdminAllLeadsPageState extends ConsumerState<AdminAllLeadsPage> {
             controller: _searchController,
             onChanged: (v) => ref.read(_adminSearchQueryProvider.notifier).state = v,
             onClear: _clearFilters,
+            onFilterPressed: () => _showFilterOptions(context, ref),
+            hasActiveFilters: activeStatus != null || activeConsultor != null,
           ),
           _AdminStatsRow(
             totalCount: totalCount,
             filteredCount: filteredCount,
             isFiltered: isFiltered,
             onClear: _clearFilters,
-          ),
-          _AdminFilterStrip(
-            activeStatus: activeStatus,
-            activeConsultor: activeConsultor,
           ),
           Divider(height: 1, thickness: 1, color: context.cadife.cardBorder),
           Expanded(
@@ -128,24 +130,162 @@ class _AdminAllLeadsPageState extends ConsumerState<AdminAllLeadsPage> {
       ),
     );
   }
+  void _showFilterOptions(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => _AdminFilterSheet(
+        activeStatus: ref.watch(_adminStatusFilterProvider),
+        activeConsultor: ref.watch(_adminConsultorFilterProvider),
+        onClear: _clearFilters,
+      ),
+    );
+  }
+}
+
+class _AdminFilterSheet extends ConsumerWidget {
+  const _AdminFilterSheet({
+    required this.activeStatus,
+    required this.activeConsultor,
+    required this.onClear,
+  });
+
+  final LeadStatus? activeStatus;
+  final String? activeConsultor;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cadife = context.cadife;
+    final consultoresAsync = ref.watch(adminConsultoresProvider);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: cadife.background,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: cadife.cardBorder,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Filtros', style: AppTextStyles.h4),
+              TextButton(
+                onPressed: () {
+                  onClear();
+                  context.pop();
+                },
+                child: const Text('Limpar'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Text('Status do Lead', style: AppTextStyles.labelLarge),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              null,
+              ...LeadStatus.values,
+            ].map((s) {
+              final isActive = activeStatus == s;
+              final label = s == null ? 'Todos' : s.name.sentenceCase;
+              return ChoiceChip(
+                label: Text(label),
+                selected: isActive,
+                onSelected: (val) {
+                  if (val) ref.read(_adminStatusFilterProvider.notifier).state = s;
+                },
+                selectedColor: AppColors.primary.withValues(alpha: 0.15),
+                checkmarkColor: AppColors.primary,
+                labelStyle: TextStyle(
+                  color: isActive ? AppColors.primary : cadife.textSecondary,
+                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 24),
+          Text('Consultor', style: AppTextStyles.labelLarge),
+          const SizedBox(height: 12),
+          consultoresAsync.when(
+            data: (consultores) {
+              final allConsultores = [null, ...consultores];
+              return Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: allConsultores.map((c) {
+                  final label = c?.name ?? 'Todos';
+                  final value = c?.name;
+                  final isActive = activeConsultor == value;
+                  return ChoiceChip(
+                    label: Text(label),
+                    selected: isActive,
+                    onSelected: (val) {
+                      if (val) ref.read(_adminConsultorFilterProvider.notifier).state = value;
+                    },
+                    selectedColor: AppColors.info.withValues(alpha: 0.15),
+                    checkmarkColor: AppColors.info,
+                    labelStyle: TextStyle(
+                      color: isActive ? AppColors.info : cadife.textSecondary,
+                      fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                    ),
+                  );
+                }).toList(),
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (_, _) => const Text('Erro ao carregar consultores'),
+          ),
+          const SizedBox(height: 32),
+          ShadButton(
+            onPressed: () => context.pop(),
+            width: double.infinity,
+            child: const Text('Aplicar Filtros'),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _AdminSearchBar extends StatelessWidget {
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
   final VoidCallback onClear;
+  final VoidCallback onFilterPressed;
+  final bool hasActiveFilters;
 
   const _AdminSearchBar({
     required this.controller,
     required this.onChanged,
     required this.onClear,
+    required this.onFilterPressed,
+    required this.hasActiveFilters,
   });
 
   @override
   Widget build(BuildContext context) {
     final isDark = context.isDark;
+    final cadife = context.cadife;
     return Container(
-      color: context.cadife.background,
+      color: cadife.background,
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
       child: ShadInput(
         controller: controller,
@@ -153,21 +293,46 @@ class _AdminSearchBar extends StatelessWidget {
         leading: Padding(
           padding: const EdgeInsets.only(right: 8),
           child: Icon(
-            Icons.search,
-            color: isDark ? Colors.white60 : context.cadife.textSecondary,
-            size: 20,
+            LucideIcons.search,
+            color: isDark ? Colors.white60 : cadife.textSecondary,
+            size: 18,
           ),
         ),
-        trailing: controller.text.isNotEmpty
-            ? IconButton(
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (controller.text.isNotEmpty) ...[
+              ShadIconButton.ghost(
                 icon: Icon(
-                  Icons.close,
-                  color: isDark ? Colors.white60 : context.cadife.textSecondary,
-                  size: 18,
+                  LucideIcons.x,
+                  color: isDark ? Colors.white60 : cadife.textSecondary,
+                  size: 16,
                 ),
+                width: 32,
+                height: 32,
+                padding: EdgeInsets.zero,
                 onPressed: onClear,
-              )
-            : null,
+              ),
+              const SizedBox(width: 4),
+            ],
+            Container(width: 1, height: 20, color: cadife.cardBorder),
+            const SizedBox(width: 4),
+            ShadIconButton.ghost(
+              icon: Icon(
+                LucideIcons.slidersHorizontal,
+                color: hasActiveFilters
+                    ? AppColors.primary
+                    : (isDark ? Colors.white60 : cadife.textSecondary),
+                size: 18,
+              ),
+              width: 32,
+              height: 32,
+              padding: EdgeInsets.zero,
+              onPressed: onFilterPressed,
+            ),
+            const SizedBox(width: 4),
+          ],
+        ),
         onChanged: onChanged,
       ),
     );
@@ -225,150 +390,7 @@ class _AdminStatsRow extends StatelessWidget {
   }
 }
 
-class _AdminFilterStrip extends ConsumerWidget {
-  final LeadStatus? activeStatus;
-  final String? activeConsultor;
 
-  const _AdminFilterStrip({
-    required this.activeStatus,
-    required this.activeConsultor,
-  });
-
-  static const _statuses = [null, ...LeadStatus.values];
-
-  String _statusLabel(LeadStatus? s) {
-    if (s == null) return 'Todos';
-    return switch (s) {
-      LeadStatus.novo => 'Novo',
-      LeadStatus.emAtendimento => 'Em Atend.',
-      LeadStatus.qualificado => 'Qualificado',
-      LeadStatus.agendado => 'Agendado',
-      LeadStatus.proposta => 'Proposta',
-      LeadStatus.fechado => 'Fechado',
-      LeadStatus.perdido => 'Perdido',
-    };
-  }
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final consultoresAsync = ref.watch(adminConsultoresProvider);
-
-    return Container(
-      color: context.cadife.background,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Status filter chips
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.fromLTRB(16, 8, 40, 6),
-            child: Row(
-              children: [
-                ..._statuses.map((s) {
-                  final isActive = activeStatus == s;
-                  final color = s == null ? AppColors.primary : AppColors.statusColor(s.name);
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: _AdminFilterChip(
-                      label: _statusLabel(s),
-                      isActive: isActive,
-                      activeColor: color,
-                      onTap: () => ref.read(_adminStatusFilterProvider.notifier).state = s,
-                    ),
-                  );
-                }),
-              ],
-            ),
-          ),
-          // Consultant filter chips
-          consultoresAsync.when(
-            data: (consultores) {
-              if (consultores.isEmpty) return const SizedBox.shrink();
-              final List<ConsultorAdmin?> allConsultores = [null, ...consultores];
-              return SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.fromLTRB(16, 0, 40, 10),
-                child: Row(
-                  children: [
-                    ...allConsultores.map((c) {
-                      final label = c?.name ?? 'Todos';
-                      final value = c?.name;
-                      final isActive = activeConsultor == value;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: _AdminFilterChip(
-                          label: label,
-                          isActive: isActive,
-                          activeColor: AppColors.info,
-                          onTap: () => ref.read(_adminConsultorFilterProvider.notifier).state = value,
-                        ),
-                      );
-                    }),
-                  ],
-                ),
-              );
-            },
-            loading: () => const SizedBox.shrink(),
-            error: (error, stackTrace) => const SizedBox.shrink(),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AdminFilterChip extends StatelessWidget {
-  final String label;
-  final bool isActive;
-  final Color activeColor;
-  final VoidCallback onTap;
-
-  const _AdminFilterChip({
-    required this.label,
-    required this.isActive,
-    required this.activeColor,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    if (isActive) {
-      return ShadButton(
-        onPressed: onTap,
-        size: ShadButtonSize.sm,
-        backgroundColor: activeColor.withValues(alpha: 0.12),
-        foregroundColor: activeColor,
-        decoration: ShadDecoration(
-          border: ShadBorder.all(color: activeColor, width: 1.5),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: Text(
-          label,
-          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-        ),
-      );
-    }
-
-    return ShadButton.outline(
-      onPressed: onTap,
-      size: ShadButtonSize.sm,
-      backgroundColor: Colors.transparent,
-      foregroundColor: context.cadife.textSecondary,
-      decoration: ShadDecoration(
-        border: ShadBorder.all(
-          color: context.cadife.cardBorder,
-          width: 1,
-          radius: BorderRadius.circular(20),
-        ),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: Text(
-        label,
-        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-      ),
-    );
-  }
-}
 
 class _AdminLeadCard extends StatelessWidget {
   final Lead lead;

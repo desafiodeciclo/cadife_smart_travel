@@ -27,6 +27,7 @@ class ClientTrip {
   final String status;
   final double progressPercentage;
   final List<TripCheckpoint> checkpoints;
+  final String? roteiro;
 
   const ClientTrip({
     required this.id,
@@ -39,5 +40,6 @@ class ClientTrip {
     required this.status,
     required this.progressPercentage,
     required this.checkpoints,
+    this.roteiro,
   });
 }

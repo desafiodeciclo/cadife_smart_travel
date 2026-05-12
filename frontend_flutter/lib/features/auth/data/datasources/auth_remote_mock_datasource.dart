@@ -10,12 +10,13 @@ class AuthRemoteMockDatasource implements IAuthDatasource {
   Future<Map<String, dynamic>> login(String email, String password, {UserRole? profileHint}) async {
     await Future.delayed(const Duration(milliseconds: 800));
 
+    final emailLower = email.toLowerCase();
     final role = profileHint ??
-        (email.contains('admin') ? UserRole.admin :
-         email.contains('agencia') ? UserRole.consultor : UserRole.cliente);
+        ((emailLower.contains('admin') || emailLower.contains('adm')) ? UserRole.admin :
+         (emailLower.contains('agencia') || emailLower.contains('consultor') || emailLower.contains('agency')) ? UserRole.consultor : UserRole.cliente);
 
     final userMap = {
-      'id': email.contains('admin') ? 'mock-admin-001' : 'mock-id-123',
+      'id': emailLower.contains('admin') ? 'mock-admin-001' : 'mock-id-123',
       'nome': switch (role) {
         UserRole.admin => 'Administrador Cadife',
         UserRole.consultor => 'Consultor de Teste',

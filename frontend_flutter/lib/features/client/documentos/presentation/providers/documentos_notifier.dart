@@ -6,13 +6,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 final _mockGlobalDocuments = [
   Documento(
     id: 'doc-1',
-    name: 'Roteiro da Viagem',
+    name: 'Itinerário da Viagem',
     type: DocumentType.pdf,
     size: 2048000,
     url: 'https://example.com/roteiro.pdf',
     isGlobal: true,
     createdAt: DateTime.now().subtract(const Duration(days: 5)),
-    category: 'Roteiro',
+    category: 'Itinerário',
   ),
   Documento(
     id: 'doc-2',
@@ -81,7 +81,7 @@ final _mockTripDocuments = {
   'trip-1': [
     Documento(
       id: 'trip1-doc-1',
-      name: 'Roteiro da Viagem',
+      name: 'Itinerário da Viagem',
       type: DocumentType.pdf,
       size: 2048000,
       url: 'https://example.com/paris-roteiro.pdf',
@@ -119,7 +119,7 @@ final _mockTripDocuments = {
   'trip-2': [
     Documento(
       id: 'trip2-doc-1',
-      name: 'Roteiro Maldivas',
+      name: 'Itinerário Maldivas',
       type: DocumentType.pdf,
       size: 1500000,
       url: 'https://example.com/maldivas-roteiro.pdf',
