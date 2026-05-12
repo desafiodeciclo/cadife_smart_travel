@@ -1,14 +1,21 @@
 import asyncio
 import os
+import sys
+
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy import text
 
+
 async def check_db():
-    url = "postgresql+asyncpg://cadife:cadife@localhost:5433/cadife_db"
+    url = os.getenv("DATABASE_URL")
+    if not url:
+        print("ERROR: DATABASE_URL environment variable is not set.", file=sys.stderr)
+        sys.exit(1)
+
     engine = create_async_engine(url)
-    
+
     print("--- DB DIAGNOSTIC START ---")
-    
+
     # Check current version
     async with engine.connect() as conn:
         try:
@@ -19,10 +26,19 @@ async def check_db():
             print("Table 'alembic_version' does not exist.")
 
     # Check if basic tables exist
-    for table in ['leads', 'briefings', 'interacoes', 'propostas', 'users']:
+    tables = ["leads", "briefings", "interacoes", "propostas", "users"]
+    for table in tables:
         async with engine.connect() as conn:
             try:
-                res = await conn.execute(text(f"SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name='{table}')"))
+                res = await conn.execute(
+                    text(
+                        "SELECT EXISTS ("
+                        "  SELECT 1 FROM information_schema.tables "
+                        "  WHERE table_name = :table_name"
+                        ")"
+                    ),
+                    {"table_name": table},
+                )
                 if res.scalar():
                     print(f"Table '{table}' exists")
                 else:
@@ -33,7 +49,13 @@ async def check_db():
     # Check if any enums exist
     async with engine.connect() as conn:
         try:
-            res = await conn.execute(text("SELECT typname FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typtype = 'e'"))
+            res = await conn.execute(
+                text(
+                    "SELECT typname FROM pg_type t "
+                    "JOIN pg_namespace n ON n.oid = t.typnamespace "
+                    "WHERE n.nspname = 'public' AND t.typtype = 'e'"
+                )
+            )
             enums = [r[0] for r in res.fetchall()]
             if enums:
                 print(f"EXISTING ENUMS IN DB: {enums}")
@@ -44,6 +66,7 @@ async def check_db():
 
     print("--- DB DIAGNOSTIC END ---")
     await engine.dispose()
+
 
 if __name__ == "__main__":
     asyncio.run(check_db())
