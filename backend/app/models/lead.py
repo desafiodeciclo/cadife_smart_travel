@@ -9,6 +9,7 @@ if TYPE_CHECKING:
     from app.models.proposta import Proposta
     from app.models.user import User
     from app.models.documento import Documento
+    from app.models.travel_checkpoint import TravelCheckpointRecord
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, String, func
 from sqlalchemy.dialects.postgresql import ENUM as PgEnum, UUID
@@ -79,6 +80,12 @@ class Lead(Base):
         "User",
         primaryjoin="foreign(Lead.consultor_id) == User.id",
         overlaps="consultor",
+    )
+    checkpoints: Mapped[list["TravelCheckpointRecord"]] = relationship(
+        "TravelCheckpointRecord",
+        back_populates="lead",
+        order_by="TravelCheckpointRecord.ativado_em",
+        cascade="all, delete-orphan",
     )
 
 

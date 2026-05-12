@@ -467,6 +467,19 @@ async def update_briefing_from_extraction(
 
     await db.commit()
     await db.refresh(briefing)
+
+    # Trigger BRIEFING_COLETADO: score > 40 AND >= 5 briefing fields filled
+    all_fields = ["destino", "data_ida", "data_volta", "qtd_pessoas", "perfil",
+                  "tipo_viagem", "preferencias", "orcamento", "tem_passaporte"]
+    filled = sum(1 for f in all_fields if getattr(briefing, f, None) not in (None, [], ""))
+    if briefing.completude_pct > 40 and filled >= 5:
+        from app.services.checkpoint_service import activate_checkpoint, SISTEMA
+        from app.domain.entities.enums import TravelCheckpoint
+        import asyncio
+        asyncio.ensure_future(
+            activate_checkpoint(db, lead.id, TravelCheckpoint.briefing_coletado, SISTEMA)
+        )
+
     return briefing
 
 

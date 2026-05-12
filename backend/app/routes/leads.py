@@ -6,6 +6,12 @@ import structlog
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.presentation.schemas.checkpoints import (
+    CheckpointActivateRequest,
+    CheckpointListResponse,
+    CheckpointResponse,
+)
+from app.services import checkpoint_service
 from app.application.dto.lead_mapper import (
     map_counts_to_metrics,
     map_lead_to_detail,
@@ -587,3 +593,71 @@ async def update_briefing(
     await db.commit()
     await db.refresh(briefing)
     return BriefingResponse.model_validate(briefing)
+
+
+# ── GET /leads/{lead_id}/checkpoints ──────────────────────────────────────
+
+
+@router.get(
+    "/{lead_id}/checkpoints",
+    response_model=CheckpointListResponse,
+    summary="Checkpoints do progresso da viagem",
+    description=(
+        "Retorna todos os marcos ativados para o lead, ordenados por data de ativação. "
+        "Acessível por qualquer role autenticada (consultor, admin, cliente)."
+    ),
+    dependencies=[Depends(get_current_user)],
+    responses={
+        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
+        404: {"description": "Lead não encontrado", "model": HTTPErrorResponse},
+    },
+)
+async def list_checkpoints(
+    lead_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    lead = await lead_service.get_lead_by_id(db, lead_id)
+    if not lead:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead não encontrado")
+
+    records = await checkpoint_service.get_checkpoints(db, lead_id)
+    checkpoints = [CheckpointResponse.model_validate(r) for r in records]
+    return CheckpointListResponse(checkpoints=checkpoints, total=len(checkpoints))
+
+
+# ── POST /leads/{lead_id}/checkpoints ─────────────────────────────────────
+
+
+@router.post(
+    "/{lead_id}/checkpoints",
+    response_model=CheckpointResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Ativar checkpoint manualmente",
+    description=(
+        "Permite que consultores e admins ativem um checkpoint manualmente. "
+        "Retorna HTTP 409 se o checkpoint já estiver ativo. "
+        "Roles cliente não têm acesso (HTTP 403)."
+    ),
+    dependencies=[Depends(RequiresRole("consultor", "admin"))],
+    responses={
+        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
+        403: {"description": "Perfil sem permissão (apenas consultor/admin)", "model": HTTPErrorResponse},
+        404: {"description": "Lead não encontrado", "model": HTTPErrorResponse},
+        409: {"description": "Checkpoint já ativado", "model": HTTPErrorResponse},
+    },
+)
+async def activate_checkpoint(
+    lead_id: uuid.UUID,
+    body: CheckpointActivateRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    lead = await lead_service.get_lead_by_id(db, lead_id)
+    if not lead:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead não encontrado")
+
+    record = await checkpoint_service.activate_checkpoint(
+        db, lead_id, body.checkpoint, str(current_user.id)
+    )
+    return CheckpointResponse.model_validate(record)

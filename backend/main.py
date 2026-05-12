@@ -30,6 +30,7 @@ from app.services.ingestion_pipeline import get_ingestion_pipeline
 from app.jobs.lead_expiration_job import expire_stale_leads
 from app.jobs.proposta_expiration_job import expire_stale_propostas_job
 from app.jobs.notification_worker import NotificationWorker, WORKER_INTERVAL_SECONDS
+from app.jobs.checkpoint_cron_job import run_checkpoint_cron
 
 # Routers
 from app.routes import admin, agenda, auth, documents, ia, leads, offers, propostas, webhook, suitcase, diary
@@ -114,10 +115,20 @@ async def lifespan(app: FastAPI):
         replace_existing=True,
     )
 
+    # 4. Travel Checkpoint Cron: Runs daily at 03:00 UTC
+    _scheduler.add_job(
+        run_checkpoint_cron,
+        trigger="cron",
+        hour=3,
+        minute=0,
+        id="checkpoint_cron",
+        replace_existing=True,
+    )
+
     _scheduler.start()
     logger.info(
-        "scheduler_started", 
-        jobs=["lead_expiration", "proposta_expiration", "notification_worker"]
+        "scheduler_started",
+        jobs=["lead_expiration", "proposta_expiration", "notification_worker", "checkpoint_cron"]
     )
 
     logger.info("startup_complete", version="1.0.0")

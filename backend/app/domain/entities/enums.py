@@ -173,3 +173,24 @@ class ItineraryItemType(str, Enum):
     transferencia = "transferencia"
     refeicao = "refeicao"
     evento_customizado = "evento_customizado"
+class TravelCheckpoint(str, Enum):
+    """
+    Ordered milestones of a travel lifecycle (feat/travel-checkpoints-progress-001).
+
+    Activation rules:
+      BRIEFING_COLETADO   — auto: score_numerico > 40 AND briefing >= 5 fields
+      CURADORIA_INICIADA  — manual: consultor via POST /leads/{id}/checkpoints
+      PROPOSTA_ENVIADA    — auto: Proposta.status → enviada
+      PROPOSTA_APROVADA   — manual or auto: consultor or client confirmation
+      VIAGEM_CONFIRMADA   — manual: consultor after lead closes
+      VIAGEM_EM_ANDAMENTO — auto: daily cron on departure date
+      VIAGEM_CONCLUIDA    — auto: daily cron on return date + 1 day
+    """
+
+    briefing_coletado = "BRIEFING_COLETADO"
+    curadoria_iniciada = "CURADORIA_INICIADA"
+    proposta_enviada = "PROPOSTA_ENVIADA"
+    proposta_aprovada = "PROPOSTA_APROVADA"
+    viagem_confirmada = "VIAGEM_CONFIRMADA"
+    viagem_em_andamento = "VIAGEM_EM_ANDAMENTO"
+    viagem_concluida = "VIAGEM_CONCLUIDA"
