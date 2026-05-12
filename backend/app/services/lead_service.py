@@ -1,3 +1,5 @@
+import base64
+import json
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, Optional
@@ -6,8 +8,9 @@ if TYPE_CHECKING:
     from app.presentation.schemas.leads import ManualLeadCreate
 
 import structlog
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, or_, select, tuple_
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from sqlalchemy.exc import IntegrityError, ProgrammingError
 from sqlalchemy.dialects.postgresql import insert
@@ -220,7 +223,14 @@ async def create_manual_lead(db: AsyncSession, data: "ManualLeadCreate") -> Lead
 
 async def get_lead_by_id(db: AsyncSession, lead_id: uuid.UUID) -> Optional[Lead]:
     result = await db.execute(
-        select(Lead).where(Lead.id == lead_id, Lead.is_archived.is_(False))
+        select(Lead)
+        .where(Lead.id == lead_id, Lead.is_archived.is_(False))
+        .options(
+            selectinload(Lead.briefing),
+            selectinload(Lead.consultor),
+            selectinload(Lead.propostas),
+            selectinload(Lead.interacoes),
+        )
     )
     return result.scalar_one_or_none()
 
@@ -243,16 +253,24 @@ async def get_lead_metrics(db: AsyncSession) -> dict[str, int]:
     return metrics
 
 
-async def list_leads(
-    db: AsyncSession,
-    status: Optional[str] = None,
-    score: Optional[str] = None,
-    search: Optional[str] = None,
-    page: int = 1,
-    limit: int = 20,
-    consultor_id: Optional[uuid.UUID] = None,
-) -> tuple[list[Lead], int]:
-    query = select(Lead).where(Lead.is_archived.is_(False))
+_ORDER_FIELDS = {
+    "criado_em": Lead.criado_em,
+    "atualizado_em": Lead.atualizado_em,
+    "score": Lead.score,
+    "status": Lead.status,
+}
+
+
+def _apply_lead_filters(
+    query,
+    status: Optional[str],
+    score: Optional[str],
+    search: Optional[str],
+    consultor_id: Optional[uuid.UUID],
+    data_inicio: Optional[datetime],
+    data_fim: Optional[datetime],
+):
+    """Aplica filtros comuns a uma query de leads já com .where(is_archived=False)."""
     if status:
         query = query.where(Lead.status == status)
     if score:
@@ -261,18 +279,131 @@ async def list_leads(
         query = query.where(Lead.consultor_id == consultor_id)
     if search:
         query = query.where(
-            (Lead.nome.ilike(f"%{search}%")) | (Lead.telefone.ilike(f"%{search}%"))
+            or_(Lead.nome.ilike(f"%{search}%"), Lead.telefone.ilike(f"%{search}%"))
         )
+    if data_inicio:
+        query = query.where(Lead.criado_em >= data_inicio)
+    if data_fim:
+        query = query.where(Lead.criado_em <= data_fim)
+    return query
+
+
+async def list_leads(
+    db: AsyncSession,
+    status: Optional[str] = None,
+    score: Optional[str] = None,
+    search: Optional[str] = None,
+    page: int = 1,
+    limit: int = 20,
+    consultor_id: Optional[uuid.UUID] = None,
+    data_inicio: Optional[datetime] = None,
+    data_fim: Optional[datetime] = None,
+    order_by: str = "criado_em",
+    order_dir: str = "desc",
+) -> tuple[list[Lead], int]:
+    """Offset-based paginated list — backward-compatible default for GET /leads."""
+    query = select(Lead).where(Lead.is_archived.is_(False))
+    query = _apply_lead_filters(
+        query, status, score, search, consultor_id, data_inicio, data_fim
+    )
 
     count_query = select(func.count()).select_from(query.subquery())
-    total_result = await db.execute(count_query)
-    total = total_result.scalar_one()
+    total = (await db.execute(count_query)).scalar_one()
 
+    col = _ORDER_FIELDS.get(order_by, Lead.criado_em)
+    order_expr = col.desc() if order_dir == "desc" else col.asc()
     query = (
-        query.order_by(Lead.criado_em.desc()).offset((page - 1) * limit).limit(limit)
+        query.options(selectinload(Lead.briefing))
+        .order_by(order_expr, Lead.id.desc())
+        .offset((page - 1) * limit)
+        .limit(limit)
     )
     result = await db.execute(query)
     return list(result.scalars().all()), total
+
+
+def _encode_cursor(criado_em: datetime, lead_id: uuid.UUID) -> str:
+    payload = json.dumps(
+        {"ts": criado_em.isoformat(), "id": str(lead_id)}, separators=(",", ":")
+    )
+    return base64.urlsafe_b64encode(payload.encode()).decode()
+
+
+def _decode_cursor(cursor: str) -> tuple[datetime, uuid.UUID]:
+    try:
+        payload = json.loads(base64.urlsafe_b64decode(cursor.encode()).decode())
+        ts = datetime.fromisoformat(payload["ts"])
+        lead_id = uuid.UUID(payload["id"])
+        return ts, lead_id
+    except Exception as exc:
+        raise ValueError(f"Cursor inválido: {exc}") from exc
+
+
+async def list_leads_cursor(
+    db: AsyncSession,
+    limit: int = 20,
+    cursor: Optional[str] = None,
+    status: Optional[str] = None,
+    score: Optional[str] = None,
+    search: Optional[str] = None,
+    consultor_id: Optional[uuid.UUID] = None,
+    data_inicio: Optional[datetime] = None,
+    data_fim: Optional[datetime] = None,
+    order_by: str = "criado_em",
+    order_dir: str = "desc",
+) -> tuple[list[Lead], Optional[str]]:
+    """Cursor-based paginated list for GET /leads?cursor=...
+
+    Returns (items, next_cursor). next_cursor is None when no more pages exist.
+    The cursor encodes (criado_em, id) of the last returned item so the query
+    uses a keyset rather than OFFSET, avoiding page-drift on inserts.
+    """
+    query = select(Lead).where(Lead.is_archived.is_(False))
+    query = _apply_lead_filters(
+        query, status, score, search, consultor_id, data_inicio, data_fim
+    )
+
+    col = _ORDER_FIELDS.get(order_by, Lead.criado_em)
+
+    if cursor:
+        cursor_ts, cursor_id = _decode_cursor(cursor)
+        if order_dir == "desc":
+            # (col, id) < (cursor_ts, cursor_id) in desc order
+            query = query.where(
+                or_(
+                    col < cursor_ts,
+                    and_(col == cursor_ts, Lead.id < cursor_id),
+                )
+            )
+        else:
+            query = query.where(
+                or_(
+                    col > cursor_ts,
+                    and_(col == cursor_ts, Lead.id > cursor_id),
+                )
+            )
+
+    order_expr = col.desc() if order_dir == "desc" else col.asc()
+    id_order = Lead.id.desc() if order_dir == "desc" else Lead.id.asc()
+    # Fetch limit+1 to detect if there's a next page
+    query = (
+        query.options(selectinload(Lead.briefing))
+        .order_by(order_expr, id_order)
+        .limit(limit + 1)
+    )
+
+    result = await db.execute(query)
+    rows = list(result.scalars().all())
+
+    has_more = len(rows) > limit
+    items = rows[:limit]
+
+    next_cursor: Optional[str] = None
+    if has_more and items:
+        last = items[-1]
+        next_cursor = _encode_cursor(last.criado_em, last.id)
+
+    return items, next_cursor
 
 
 async def update_lead_status(
@@ -305,6 +436,7 @@ async def update_lead_status(
 
 async def soft_delete(db: AsyncSession, lead: Lead) -> None:
     lead.is_archived = True
+    lead.deletado_em = datetime.now(timezone.utc)
     await db.commit()
 
 
