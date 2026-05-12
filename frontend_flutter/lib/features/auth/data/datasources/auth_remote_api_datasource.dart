@@ -50,7 +50,7 @@ class AuthRemoteApiDatasource implements IAuthDatasource {
 
   @override
   Future<Map<String, dynamic>?> getCurrentUser() async {
-    final response = await _dio.get('/users/me');
+    final response = await _dio.get(ApiConstants.me);
     return response.data as Map<String, dynamic>;
   }
 
