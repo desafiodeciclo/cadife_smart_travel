@@ -48,8 +48,7 @@ class LeadDetailScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('DETALHE DO LEAD'),
         elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+
         actions: [
           // Menu (3 pontinhos) para editar
           PopupMenuButton(
@@ -133,23 +132,31 @@ class LeadDetailScreen extends ConsumerWidget {
             const SizedBox(height: 24),
 
             // Informações (cards)
-            _buildInfoCard('Destino', destination, Icons.location_on),
+            _buildInfoCard(context, 'Destino', destination, Icons.location_on),
+            const SizedBox(height: 12),
             _buildInfoCard(
+              context,
               'Data da Viagem',
               '$startDateStr a $endDateStr',
               Icons.calendar_today,
             ),
+            const SizedBox(height: 12),
             _buildInfoCard(
+              context,
               'Orçamento',
               budgetStr,
               Icons.attach_money,
             ),
+            const SizedBox(height: 12),
             _buildInfoCard(
+              context,
               'Passageiros',
               '$passengers pessoas',
               Icons.people,
             ),
+            const SizedBox(height: 12),
             _buildInfoCard(
+              context,
               'Score de Completude',
               '${score.toStringAsFixed(0)}%',
               Icons.trending_up,
@@ -171,17 +178,15 @@ class LeadDetailScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              Container(
-                width: double.infinity,
+              CadifeCard(
                 padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.cardBackground,
-                  border: Border.all(color: AppColors.borderColor),
-                  borderRadius: BorderRadius.circular(12),
-                ),
                 child: Text(
                   briefing,
-                  style: const TextStyle(fontSize: 13, height: 1.6),
+                  style: TextStyle(
+                    fontSize: 13,
+                    height: 1.6,
+                    color: context.cadife.textPrimary,
+                  ),
                 ),
               ),
             ],
@@ -211,15 +216,10 @@ class LeadDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildInfoCard(String label, String value, IconData icon) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+  Widget _buildInfoCard(BuildContext context, String label, String value, IconData icon) {
+    return CadifeCard(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: AppColors.borderColor),
-        borderRadius: BorderRadius.circular(12),
-      ),
+      borderRadius: 16,
       child: Row(
         children: [
           Container(
@@ -237,18 +237,19 @@ class LeadDetailScreen extends ConsumerWidget {
               children: [
                 Text(
                   label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
+                    color: context.cadife.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   value,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
+                    color: context.cadife.textPrimary,
                   ),
                 ),
               ],

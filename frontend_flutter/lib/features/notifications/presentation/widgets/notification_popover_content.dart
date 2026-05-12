@@ -3,6 +3,7 @@ import 'package:cadife_smart_travel/features/notifications/application/providers
 import 'package:cadife_smart_travel/features/notifications/presentation/widgets/notification_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 class NotificationPopoverContent extends ConsumerWidget {
   final VoidCallback onClose;
@@ -134,21 +135,51 @@ class NotificationPopoverContent extends ConsumerWidget {
           ),
           // Footer
           const Divider(height: 1, thickness: 0.5),
-          InkWell(
-            onTap: onClose,
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              alignment: Alignment.center,
-              child: Text(
-                'Fechar',
-                style: TextStyle(
-                  color: theme.textSecondary,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+          Row(
+            children: [
+              Expanded(
+                child: InkWell(
+                  onTap: () {
+                    onClose();
+                    context.push('/notifications');
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    alignment: Alignment.center,
+                    child: Text(
+                      'Ver todas',
+                      style: TextStyle(
+                        color: theme.primary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                 ),
               ),
-            ),
+              Container(
+                width: 1,
+                height: 20,
+                color: theme.divider.withValues(alpha: 0.5),
+              ),
+              Expanded(
+                child: InkWell(
+                  onTap: onClose,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    alignment: Alignment.center,
+                    child: Text(
+                      'Fechar',
+                      style: TextStyle(
+                        color: theme.textSecondary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),

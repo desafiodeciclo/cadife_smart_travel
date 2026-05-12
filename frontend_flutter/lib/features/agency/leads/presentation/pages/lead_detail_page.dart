@@ -7,7 +7,7 @@ import 'package:cadife_smart_travel/features/agency/agenda/presentation/widgets/
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/providers/lead_detail_provider.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/providers/leads_notifier.dart';
-import 'package:cadife_smart_travel/features/agency/propostas/presentation/widgets/proposal_form_tab.dart';
+import 'package:cadife_smart_travel/features/agency/propostas/presentation/widgets/proposals_history_tab.dart';
 import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/animated_tab_content.dart';
@@ -16,6 +16,7 @@ import 'package:cadife_smart_travel/shared/presentation/widgets/state_container.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 class LeadDetailPage extends ConsumerStatefulWidget {
   final String leadId;
@@ -41,7 +42,9 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
     super.dispose();
   }
 
-  void _goToProposalTab() => _tabController.animateTo(2);
+  void _navigateToCreateProposal() {
+    context.push('/agency/proposals/${widget.leadId}/new');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -101,10 +104,28 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
                       : Container(color: context.cadife.primary),
                 ),
                 actions: [
+                  // Botão de Toggle da AYA
                   _AyaToggleAction(lead: lead),
-                  IconButton(
+                  // Menu de Opções
+                  PopupMenuButton<String>(
                     icon: const Icon(Icons.more_vert, color: AppColors.white),
-                    onPressed: () {},
+                    onSelected: (value) {
+                      if (value == 'edit') {
+                        context.push('/agency/leads/${widget.leadId}/edit');
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            Icon(Icons.edit_outlined, size: 20),
+                            SizedBox(width: 8),
+                            Text('Editar Lead'),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -118,7 +139,7 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
                         const SizedBox(height: 16),
                         _ActionButtons(
                           lead: lead,
-                          onCreateProposal: _goToProposalTab,
+                          onCreateProposal: _navigateToCreateProposal,
                         ),
                       ],
                     ),
@@ -131,7 +152,7 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
                     tabs: const [
                       Tab(text: 'Briefing'),
                       Tab(text: 'Timeline'),
-                      Tab(text: 'Proposta'),
+                      Tab(text: 'Propostas'),
                     ],
                   ),
                   SizedBox(
@@ -149,7 +170,7 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
                         ),
                         AnimatedTabContent(
                           tabIndex: 2,
-                          child: ProposalFormTab(lead: lead),
+                          child: ProposalsHistoryTab(lead: lead),
                         ),
                       ],
                     ),
@@ -163,7 +184,6 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
     );
   }
 }
-
 
 class _InfoCard extends StatelessWidget {
   final Lead lead;
@@ -576,6 +596,7 @@ class _TimelineItem extends StatelessWidget {
     );
   }
 }
+
 class _AyaToggleAction extends ConsumerWidget {
   final Lead lead;
   const _AyaToggleAction({required this.lead});
@@ -615,9 +636,8 @@ class _AyaToggleAction extends ConsumerWidget {
 
   Future<void> _handleToggle(BuildContext context, WidgetRef ref, bool newValue) async {
     if (!newValue) {
-      // Confirm desactivation
       final motivoController = TextEditingController();
-      final confirm = await showDialog<bool>(
+      final confirm = await showShadDialog<bool>(
         context: context,
         builder: (context) => ShadDialog(
           title: const Text('Desativar AYA?'),
@@ -660,7 +680,6 @@ class _AyaToggleAction extends ConsumerWidget {
         }
       }
     } else {
-      // Reactivate
       await ref.read(leadDetailProvider(lead.id).notifier).toggleAya(ativo: true);
       if (context.mounted) {
         ShadToaster.of(context).show(

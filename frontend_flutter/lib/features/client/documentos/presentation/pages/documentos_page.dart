@@ -1,4 +1,5 @@
 import 'package:cadife_smart_travel/design_system/design_system.dart';
+import 'package:cadife_smart_travel/features/client/documentos/domain/entities/documento.dart';
 import 'package:cadife_smart_travel/features/client/documentos/presentation/providers/documentos_notifier.dart';
 import 'package:cadife_smart_travel/features/client/documentos/presentation/widgets/widgets.dart';
 import 'package:cadife_smart_travel/features/notifications/presentation/widgets/notification_bell.dart';
@@ -16,13 +17,82 @@ class DocumentosPage extends ConsumerStatefulWidget {
 }
 
 class _DocumentosPageState extends ConsumerState<DocumentosPage> {
-  String _selectedCategory = 'Todos';
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<Documento> _applyFilters(List<Documento> docs) {
+    if (_searchQuery.isEmpty) return docs;
+    final q = _searchQuery.toLowerCase();
+    return docs.where((d) => d.name.toLowerCase().contains(q)).toList();
+  }
+
+  void _showFilterOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: context.cadife.background,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: context.cadife.cardBorder,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Filtros', style: AppTextStyles.h4),
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _searchController.clear();
+                      _searchQuery = '';
+                    });
+                    context.pop();
+                  },
+                  child: const Text('Limpar'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            Text('Em breve, mais opções de filtros...',
+                style: TextStyle(color: context.cadife.textSecondary)),
+            const SizedBox(height: 32),
+            ShadButton(
+              onPressed: () => context.pop(),
+              width: double.infinity,
+              child: const Text('Aplicar Filtros'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final globalDocsAsync = ref.watch(globalDocumentsProvider);
     final tripsWithDocsAsync = ref.watch(tripsWithDocumentsProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return PageScaffold(
       title: 'Documentos',
@@ -30,10 +100,61 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            const SizedBox(height: kToolbarHeight),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: ShadInput(
+                controller: _searchController,
+                placeholder: const Text('Buscar documento...'),
+                onChanged: (v) => setState(() => _searchQuery = v),
+                leading: const Padding(
+                  padding: EdgeInsets.all(12.0),
+                  child: Icon(LucideIcons.search, size: 16),
+                ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_searchController.text.isNotEmpty) ...[
+                      ShadIconButton.ghost(
+                        icon: Icon(
+                          LucideIcons.x,
+                          color: context.isDark ? Colors.white60 : context.cadife.textSecondary,
+                          size: 16,
+                        ),
+                        width: 32,
+                        height: 32,
+                        padding: EdgeInsets.zero,
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() => _searchQuery = '');
+                        },
+                      ),
+                      const SizedBox(width: 4),
+                    ],
+                    Container(
+                      width: 1,
+                      height: 20,
+                      color: context.cadife.cardBorder,
+                    ),
+                    const SizedBox(width: 4),
+                    ShadIconButton.ghost(
+                      icon: const Icon(
+                        LucideIcons.slidersHorizontal,
+                        color: AppColors.primary,
+                        size: 18,
+                      ),
+                      width: 32,
+                      height: 32,
+                      padding: EdgeInsets.zero,
+                      onPressed: () => _showFilterOptions(context),
+                    ),
+                    const SizedBox(width: 4),
+                  ],
+                ),
+              ),
+            ),
             // Principais Documentos Section
             Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -52,57 +173,6 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  // Filter bar
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        'Todos',
-                        'Roteiro',
-                        'Voucher',
-                        'Seguro',
-                        'Passagens',
-                        'Geral',
-                      ].map((category) {
-                        final isSelected = _selectedCategory == category;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: isSelected
-                              ? ShadButton(
-                                  onPressed: () {
-                                    setState(() => _selectedCategory = category);
-                                  },
-                                  size: ShadButtonSize.sm,
-                                  backgroundColor: isDark ? Colors.white : Colors.black,
-                                  foregroundColor: isDark ? Colors.black : Colors.white,
-                                  decoration: ShadDecoration(
-                                    border: ShadBorder.all(
-                                      color: isDark ? Colors.white : Colors.black,
-                                      radius: BorderRadius.circular(12),
-                                    ),
-                                  ),
-                                  child: Text(category),
-                                )
-                              : ShadButton.outline(
-                                  onPressed: () {
-                                    setState(() => _selectedCategory = category);
-                                  },
-                                  size: ShadButtonSize.sm,
-                                  backgroundColor: Colors.transparent,
-                                  foregroundColor: isDark ? Colors.white70 : Colors.black87,
-                                  decoration: ShadDecoration(
-                                    border: ShadBorder.all(
-                                      color: isDark ? Colors.white24 : Colors.black12,
-                                      radius: BorderRadius.circular(12),
-                                    ),
-                                  ),
-                                  child: Text(category),
-                                ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
                   StateContainer(
                     state: globalDocsAsync,
                     onRetry: () => ref.refresh(globalDocumentsProvider),
@@ -115,13 +185,9 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
                     isEmpty: globalDocsAsync.valueOrNull?.isEmpty ?? false,
                     customEmptyType: EmptyType.noDocuments,
                     dataBuilder: (docs) {
-                      final filteredDocs = _selectedCategory == 'Todos'
-                          ? docs
-                          : docs
-                                .where((d) => d.category == _selectedCategory)
-                                .toList();
+                      final filteredDocs = _applyFilters(docs);
 
-                      if (filteredDocs.isEmpty && _selectedCategory != 'Todos') {
+                      if (filteredDocs.isEmpty) {
                         return const AppEmptyState(type: EmptyType.emptySearch);
                       }
 

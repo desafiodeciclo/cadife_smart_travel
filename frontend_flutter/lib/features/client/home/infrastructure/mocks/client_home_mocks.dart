@@ -44,6 +44,7 @@ class ClientHomeMocks {
             isCurrent: false,
           ),
         ],
+        roteiro: 'Uma jornada inesquecível por Paris, a Cidade Luz. Exploraremos os principais monumentos, como a Torre Eiffel e o Museu do Louvre, além de caminhadas charmosas pelo bairro de Le Marais e jantares em bistrôs típicos franceses.',
       );
 
   static ConsultantInfo mockConsultant() => const ConsultantInfo(

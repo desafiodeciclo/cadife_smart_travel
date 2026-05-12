@@ -192,4 +192,33 @@ class LeadsRemoteApiDatasource implements ILeadsDatasource {
     );
     await _offlineManager.invalidateByPrefix('$_cacheKeyPrefix:detail:$leadId');
   }
+
+  @override
+  Future<LeadApiModel> updateLead({
+    required String id,
+    String? name,
+    String? phone,
+    String? email,
+    LeadStatus? status,
+    LeadScore? score,
+  }) async {
+    final response = await _dio.patch(
+      ApiConstants.leadById(id),
+      data: {
+        'name': name,
+        'phone': phone,
+        'email': email,
+        'status': status?.name,
+        'score': score?.name,
+      }..removeWhere((_, v) => v == null),
+    );
+    final lead = LeadApiModel.fromJson(response.data as Map<String, dynamic>);
+
+    await _offlineManager.saveToCache(
+      '$_cacheKeyPrefix:detail:$id',
+      response.data,
+    );
+    await _offlineManager.invalidateByPrefix('$_cacheKeyPrefix:list:');
+    return lead;
+  }
 }

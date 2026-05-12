@@ -296,18 +296,15 @@ async def process_message(
 
         # 3. Se houver erros de validação, injeta instrução corretiva no prompt
         if validation_errors:
-            errors_text = "\n".join(f"- {e}" for e in validation_errors)
+            errors_summary = "; ".join(validation_errors)
             system_prompt += f"""
 
-ATENÇÃO — INSTRUÇÃO CORRETIVA OBRIGATÓRIA:
-O sistema de validação detectou que os dados informados pelo cliente contêm inconsistências:
-{errors_text}
-
-Você DEVE:
-1. Informar o cliente de forma educada e natural que a proposta atual não é viável
-2. Explicar brevemente o motivo (sem mencionar valores específicos)
-3. Pedir que ele forneça novos dados coerentes para que possamos montar uma proposta adequada
-4. Manter o tom consultivo e acolhedor — nunca culpar o cliente"""
+NOTA INTERNA — DADOS INCONSISTENTES:
+Os dados coletados apresentam inconsistência: {errors_summary}.
+Informe o cliente de forma natural e empática que precisa revisar uma informação —
+sem linguagem técnica, sem listas, sem culpar o cliente.
+Faça UMA pergunta de esclarecimento para corrigir o ponto específico.
+Mantenha o tom consultivo e acolhedor."""
 
             logger.info(
                 "validation_correction_injected",

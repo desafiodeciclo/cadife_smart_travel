@@ -5,6 +5,7 @@ import 'package:cadife_smart_travel/features/agency/leads/domain/usecases/get_le
 import 'package:cadife_smart_travel/features/agency/leads/domain/usecases/get_leads_usecase.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/usecases/toggle_aya_usecase.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/usecases/update_lead_status_usecase.dart';
+import 'package:cadife_smart_travel/features/agency/leads/domain/usecases/update_lead_usecase.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final getLeadsUseCaseProvider = Provider<GetLeadsUseCase>((ref) {
@@ -17,6 +18,10 @@ final getLeadByIdUseCaseProvider = Provider<GetLeadByIdUseCase>((ref) {
 
 final updateLeadStatusUseCaseProvider = Provider<UpdateLeadStatusUseCase>((ref) {
   return UpdateLeadStatusUseCase(ref.watch(leadsRepositoryProvider));
+});
+
+final updateLeadUseCaseProvider = Provider<UpdateLeadUseCase>((ref) {
+  return UpdateLeadUseCase(ref.watch(leadsRepositoryProvider));
 });
 
 final getBriefingUseCaseProvider = Provider<GetBriefingUseCase>((ref) {

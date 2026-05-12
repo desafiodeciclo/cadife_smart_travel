@@ -146,7 +146,7 @@ class _ManualLeadCreatePageState extends ConsumerState<ManualLeadCreatePage> {
     return PageScaffold(
       appBar: const CadifeAppBar(
         title: 'Novo Lead Manual',
-        showProfile: false,
+        showProfile: true,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),

@@ -3,12 +3,31 @@ from datetime import date
 from typing import TYPE_CHECKING, Optional, Any
 from sqlalchemy import Boolean, Date, Enum as SAEnum, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from pydantic import BaseModel, Field, field_validator
+# RESOLUÇÃO: Usando ConfigDict da developer
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.infrastructure.persistence.types import GUID, StringArray
 
 from app.core.database import Base
 from app.domain.entities.enums import PerfilViagem, OrcamentoPerfil as OrcamentoNivel
+
+# Aliases the LLM commonly returns (without accent or in English).
+# Used as pre-validators so both the extraction and tool paths are covered.
+_PERFIL_ALIASES: dict[str, str] = {
+    "familia": "família",
+    "famíla": "família",
+    "group": "grupo",
+    "couple": "casal",
+    "alone": "solo",
+    "friends": "amigos",
+    "grupo de amigos": "amigos",
+}
+_ORCAMENTO_ALIASES: dict[str, str] = {
+    "medio": "médio",
+    "medium": "médio",
+    "low": "baixo",
+    "high": "alto",
+}
 
 if TYPE_CHECKING:
     from app.models.lead import Lead
@@ -42,13 +61,23 @@ class Briefing(Base):
     duracao_dias: Mapped[Optional[int]] = mapped_column(Integer)
     qtd_pessoas: Mapped[Optional[int]] = mapped_column(Integer)
     perfil: Mapped[Optional[PerfilViagem]] = mapped_column(
-        SAEnum(PerfilViagem, name="perfil_viagem_enum", create_type=False),
+        SAEnum(
+            PerfilViagem,
+            name="perfil_viagem_enum",
+            create_type=False,
+            values_callable=lambda obj: [e.value for e in obj],
+        ),
         nullable=True,
     )
     tipo_viagem: Mapped[Optional[list[str]]] = mapped_column(StringArray())
     preferencias: Mapped[Optional[list[str]]] = mapped_column(StringArray())
     orcamento: Mapped[Optional[OrcamentoNivel]] = mapped_column(
-        SAEnum(OrcamentoNivel, name="orcamento_perfil_enum", create_type=False),
+        SAEnum(
+            OrcamentoNivel,
+            name="orcamento_perfil_enum",
+            create_type=False,
+            values_callable=lambda obj: [e.value for e in obj],
+        ),
         nullable=True,
     )
     tem_passaporte: Mapped[Optional[bool]] = mapped_column(Boolean)
@@ -69,10 +98,7 @@ OPTIONAL_FIELDS = [
 
 
 def calculate_completude(briefing_data: dict) -> int:
-    """
-    Calcula o percentual de completude do briefing.
-    Campos obrigatórios (destino, data, orçamento, perfil) têm peso maior.
-    """
+    """Calcula o percentual de completude do briefing."""
     total_required = len(REQUIRED_FIELDS)
     filled_required = sum(
         1
@@ -80,8 +106,6 @@ def calculate_completude(briefing_data: dict) -> int:
         if briefing_data.get(field) not in (None, [], "", 0)
     )
 
-    # Se todos os obrigatórios estiverem preenchidos, temos pelo menos 80%
-    # Os outros 20% vêm dos campos opcionais
     base_pct = (filled_required / total_required) * 80
 
     total_optional = len(OPTIONAL_FIELDS)
@@ -98,9 +122,10 @@ def calculate_completude(briefing_data: dict) -> int:
 
 # Pydantic schemas
 
-
 class BriefingExtracted(BaseModel):
     """Schema para Structured Outputs API — extração automática pela IA."""
+
+    model_config = ConfigDict(extra="forbid")
 
     destino: Optional[str] = Field(
         None,
@@ -146,20 +171,18 @@ class BriefingExtracted(BaseModel):
 
     @field_validator("perfil", mode="before")
     @classmethod
-    def normalize_perfil(cls, v: Any) -> Any:
+    def _normalize_perfil(cls, v: object) -> object:
+        # RESOLUÇÃO: Mantendo a lógica de aliases da developer
         if isinstance(v, str):
-            v = v.lower().strip()
-            if v == "família":
-                return "familia"
+            return _PERFIL_ALIASES.get(v.lower().strip(), v)
         return v
 
     @field_validator("orcamento", mode="before")
     @classmethod
-    def normalize_orcamento(cls, v: Any) -> Any:
+    def _normalize_orcamento(cls, v: object) -> object:
+        # RESOLUÇÃO: Mantendo a lógica de aliases da developer
         if isinstance(v, str):
-            v = v.lower().strip()
-            if v == "médio":
-                return "medio"
+            return _ORCAMENTO_ALIASES.get(v.lower().strip(), v)
         return v
 
 
@@ -193,4 +216,4 @@ class BriefingResponse(BaseModel):
     observacoes: Optional[str]
     completude_pct: int
 
-    model_config = {"from_attributes": True}
+    model_config = ConfigDict(from_attributes=True)

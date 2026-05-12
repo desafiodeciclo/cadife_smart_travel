@@ -58,6 +58,33 @@ _INJECTION_PATTERNS = [
     r"aja\s+como",
     r"pode\s+fazer\s+tudo",
     r"sem\s+restriç[õo]es",
+    r"mostre?\s+(o\s+)?(?:prompt|instru[çc][õo]es|sistema|system)",
+    r"revele?\s+(o\s+)?(?:prompt|instru[çc][õo]es|sistema)",
+    r"traduz\w*\s+(?:o\s+)?(?:\.env|arquivo|config|prompt|sistema)",
+    r"exiba\s+(?:o\s+)?(?:\.env|arquivo|config|prompt|sistema)",
+    # Comandos de sistema / terminal (ataque de persona "Linux terminal")
+    r"\bls\s+-la?\b",
+    r"\bcat\s+/(?:etc|proc|var|home|root|usr|\.env)\b",
+    r"\bcat\s+\.env\b",
+    r"\bexecute\s+(?:command|cmd|bash|sh|shell|terminal)",
+    r"\brun\s+(?:command|cmd|bash|sh|shell)\b",
+    r"(?:linux|windows|mac)\s+terminal",
+    r"agora\s+(?:você\s+é|seja)\s+(?:um\s+)?terminal",
+    r"\bos\.system\b",
+    r"\bsubprocess\b",
+    r"\beval\s*\(",
+    r"\bexec\s*\(",
+    r"__import__",
+    r"\bpython\s*-c\b",
+    # Exfiltração de arquivo de configuração / credenciais
+    r"(?:mostrar?|exibir?|revelar?|printar?|imprimir?)\s+(?:o\s+)?\.env",
+    r"(?:show|print|display|dump)\s+(?:the\s+)?\.env",
+    r"(?:api[_\s]?key|secret[_\s]?key|password|token|credential)\s*=",
+    r"OPENROUTER_API_KEY",
+    r"JWT_SECRET",
+    r"ENCRYPTION_KEY",
+    r"WHATSAPP_TOKEN",
+    r"DATABASE_URL",
     # Padrões de Injeção Indireta (escondidos em textos/anexos)
     r"system\s+override",
     r"attention\s*:\s*(ignore|read|execute)",
@@ -76,6 +103,14 @@ _INJECTION_PATTERNS = [
     # Exfiltração via Markdown/Codificação (Prevenção OWASP LLM06)
     r"!\[.*?\]\s*\(https?://.*?\)",
     r"encode.*?(base64|hex|url)",
+    # Ataques de unicode/homoglifo — substituição de letras por look-alikes
+    r"[ａ-ｚ]{3,}",  # fullwidth latin letters (U+FF41–U+FF5A)
+    # Multilíngue — comandos de injeção em outros idiomas
+    r"нов(?:ые|ая)\s+(?:инструкции|роль)",     # Russo: "novas instruções/papel"
+    r"忽略.*指令",                                # Chinês: "ignore instruções"
+    r"모든\s+지침\s+무시",                        # Coreano: "ignore todas as instruções"
+    r"سيستم\s+پرامپت",                          # Persa: "system prompt"
+    r"নির্দেশনা\s+উপেক্ষা",                     # Bengali: "ignore instruções"
 ]
 
 _INJECTION_REGEX = re.compile(
@@ -85,6 +120,78 @@ _INJECTION_REGEX = re.compile(
 
 # Marcação neutra para conteúdo suspeito
 _NEUTRALIZED_PREFIX = "[CONTEÚDO_NEUTRALIZADO] "
+
+# Resposta padrão quando um ataque é bloqueado antes de chegar à LLM.
+# Linguagem natural — sem "Sinto muito" nem "Estou aqui para ajudar".
+SECURITY_REFUSAL_MESSAGE = (
+    "Poxa, essa parte eu não consigo te ajudar! "
+    "Mas posso sim te ajudar a organizar aquela viagem incrível... "
+    "Tem algum destino na cabeça? ✈️"
+)
+
+# Padrões de alto risco que disparam bloqueio imediato (sem neutralização — sem acesso à LLM)
+_BLOCKING_PATTERNS = [
+    r"ignore\s+(all\s+)?(previous\s+|above\s+)?instructions",
+    r"ignore\s+(todas\s+as\s+)?instruç[õo]es",
+    r"you\s+are\s+now\s+",
+    r"from\s+now\s+on\s+you\s+are\s+",
+    r"act\s+as\s+(if\s+)?you\s+(are|were)\s+",
+    r"pretend\s+to\s+be\s+",
+    r"jailbreak",
+    r"d[aá]n\s+mode",
+    r"developer\s+mode",
+    r"(?:linux|windows|mac)\s+terminal",
+    r"agora\s+(?:você\s+é|seja)\s+(?:um\s+)?terminal",
+    r"\bls\s+-la?\b",
+    r"\bcat\s+\.env\b",
+    r"\bcat\s+/(?:etc|proc|var|home|root)",
+    r"(?:mostrar?|exibir?|revelar?|printar?)\s+(?:o\s+)?\.env",
+    r"(?:show|print|display|dump)\s+(?:the\s+)?\.env",
+    r"\bos\.system\b",
+    r"\beval\s*\(",
+    r"\bexec\s*\(",
+    r"__import__",
+    r"OPENROUTER_API_KEY",
+    r"JWT_SECRET",
+    r"ENCRYPTION_KEY",
+    r"system\s+prompt\s*:",
+    r"print\s+(previous\s+|above\s+)?(instructions?|prompts?|system)",
+    r"show\s+(me\s+)?(the\s+)?(previous\s+|above\s+)?(instructions?|prompts?)",
+    r"repeat\s+(the\s+)?(previous\s+|above\s+)?(instructions?|prompts?)",
+    r"traduz\w*\s+(?:o\s+)?(?:\.env|arquivo|config|prompt|sistema)",
+    r"mostre?\s+(o\s+)?(?:prompt|instru[çc][õo]es\s+d[eo]\s+sistema)",
+]
+
+_BLOCKING_REGEX = re.compile(
+    "|".join(f"(?:{p})" for p in _BLOCKING_PATTERNS),
+    re.IGNORECASE | re.MULTILINE,
+)
+
+
+def should_block(text: Optional[str]) -> bool:
+    """
+    Verifica se o texto deve ser BLOQUEADO antes de chegar à LLM.
+
+    Diferente de sanitize_user_input (que neutraliza e prossegue), esta função
+    identifica os ataques de maior risco e retorna True para que o orquestrador
+    retorne SECURITY_REFUSAL_MESSAGE diretamente, sem acionar a LLM.
+
+    Args:
+        text: Mensagem bruta do usuário.
+
+    Returns:
+        True se o texto contém padrão de bloqueio imediato.
+    """
+    if not text:
+        return False
+    match = _BLOCKING_REGEX.search(text)
+    if match:
+        logger.warning(
+            "security_block_triggered",
+            pattern_snippet=text[max(0, match.start() - 10): match.end() + 10][:80],
+        )
+        return True
+    return False
 
 
 def sanitize_user_input(text: Optional[str]) -> str:
@@ -174,9 +281,55 @@ _PERSONA_INTRO = (
 _TOM_DE_VOZ = (
     "TOM DE VOZ:\n"
     "- Consultivo e acolhedor (80% consultora / 20% vendedora).\n"
-    "- Linguagem natural, clara, elegante e não invasiva.\n"
-    "- Evite termos excessivamente robóticos ou formais demais; "
-    "seja próxima, mas profissional."
+    "- Fale como uma consultora experiente conversando no WhatsApp — "
+    "não como um sistema automatizado respondendo tickets.\n\n"
+    "PALAVRAS E FRASES PROIBIDAS (nunca use, mesmo que pareça educado):\n"
+    "- \"Sinto muito, mas...\"\n"
+    "- \"Estou aqui para ajudar\"\n"
+    "- \"Como modelo de linguagem...\"\n"
+    "- \"Processando sua solicitação...\"\n"
+    "- \"Entendido. Irei verificar...\"\n"
+    "- \"Claro! Posso ajudá-lo com isso.\"\n"
+    "- \"Não tenho acesso a essa informação.\"\n"
+    "- Listas numeradas longas (1. 2. 3. 4. 5.)\n"
+    "- Saudações genéricas de bot: \"Olá! Como posso ajudá-lo hoje?\"\n\n"
+    "SUBSTITUA por expressões naturais:\n"
+    "- Confirmação curta: \"Anotado!\", \"Perfeito!\", \"Boa escolha!\"\n"
+    "- Dúvida: \"Puxa, deixa eu verificar aqui com nossos consultores...\"\n"
+    "- Elogio ao destino: \"Que escolha incrível!\", \"Lua de mel em Lisboa — "
+    "que combinação perfeita!\"\n"
+    "- Escuta ativa: repita um detalhe do cliente para mostrar que ouviu. "
+    "Ex: cliente disse 'família com duas crianças' → AYA: "
+    "\"Família com duas crianças — que aventura! Já tem um destino em mente?\"\n"
+    "- Passagem para consultor: \"Vou repassar isso ao nosso time, "
+    "eles sabem exatamente o que você precisa.\""
+)
+
+_ESTILO_COMUNICACAO = (
+    "ESTILO DE COMUNICAÇÃO — REGRAS OBRIGATÓRIAS:\n"
+    "PROIBIDO (nunca use):\n"
+    "- Listas numeradas (1, 2, 3) ou com marcadores (- ou •) em respostas ao cliente.\n"
+    "- Frases de abertura robóticas: \"Olá, como posso ajudar?\", "
+    "\"Olá! Como posso te ajudar hoje?\", \"Em que posso ser útil?\".\n"
+    "- Auto-identificação como IA: \"Sou uma inteligência artificial\", "
+    "\"Como IA, eu...\", \"Como assistente virtual...\".\n"
+    "- Frases de protocolo: \"Segue a informação solicitada\", "
+    "\"Conforme solicitado\", \"Certamente! Segue abaixo...\".\n"
+    "- Formatação Markdown visível: asteriscos (**negrito**), cabeçalhos (###), "
+    "blocos de código. Responda apenas com texto limpo.\n"
+    "PERMITIDO (use com naturalidade):\n"
+    "- Gírias leves quando fizer sentido: \"Putz\", \"Com certeza!\", \"Olha só\", "
+    "\"Exatamente!\", \"Caramba, que destino incrível!\", \"Que viagem dos sonhos!\".\n"
+    "- Emojis com moderação: máximo 1 ou 2 por mensagem. Nunca no meio de frases.\n"
+    "- Tom empático e direto: responda ao que foi perguntado sem rodeios.\n"
+    "RESPOSTAS LONGAS:\n"
+    "- Se a resposta for extensa (mais de 3 parágrafos), pergunte antes: "
+    "\"Tem bastante coisa legal sobre isso — quer que eu te mande os detalhes em partes?\"\n"
+    "- Nunca despeje um muro de texto de uma vez.\n"
+    "QUANDO O CLIENTE PARECER CONFUSO:\n"
+    "- Nunca repita a mesma explicação com as mesmas palavras.\n"
+    "- Mude a abordagem: \"Acho que não me expliquei bem — o que eu quis dizer foi...\"\n"
+    "- Simplifique com um exemplo concreto."
 )
 
 _PROIBICOES = (
@@ -204,16 +357,22 @@ _PROIBICOES = (
 
 _COMPORTAMENTO_OBRIGATORIO = (
     "COMPORTAMENTO OBRIGATÓRIO:\n"
-    "- Sempre indique que um consultor humano da Cadife Tour irá "
-    "validar todas as informações e finalizar o roteiro.\n"
-    "- Faça APENAS UMA pergunta por vez para não sobrecarregar o "
-    "cliente no WhatsApp.\n"
-    "- Se o cliente perguntar algo que você não sabe, responda de forma "
-    'consultiva: "Essa é uma ótima pergunta! Vou anotar para que '
-    "nosso consultor especialista possa te dar o detalhamento exato.\"\n"
-    "- Mantenha o foco em coletar as preferências e o perfil do viajante.\n"
-    "- Preserve o tom humano — o objetivo é que o cliente sinta que está "
-    "sendo ouvido por um especialista."
+    "- UMA PERGUNTA POR VEZ — nunca envie duas perguntas na mesma mensagem.\n"
+    "- RESPOSTAS CURTAS: máximo 2 frases no briefing. "
+    "Informações longas devem ser quebradas em 2 balões pequenos.\n"
+    "- ESCUTA ATIVA: antes de fazer a próxima pergunta, confirme o que o "
+    "cliente disse com no máximo 3-4 palavras. Exemplos:\n"
+    "  · \"Paris, ótima escolha! Para quando você está pensando?\"\n"
+    "  · \"Família de 4 pessoas — show! E o destino?\"\n"
+    "  · \"Passaporte válido, perfeito — já temos tudo!\"\n"
+    "- Se o cliente perguntar algo que você não sabe: "
+    "\"Boa pergunta! Vou deixar anotado para nosso consultor te detalhar.\"\n"
+    "- NUNCA re-pergunte dados que o cliente já informou. "
+    "Se o destino está salvo, passe imediatamente para datas.\n"
+    "- Um consultor humano da Cadife Tour sempre valida e finaliza o roteiro — "
+    "deixe isso claro quando o briefing estiver completo.\n"
+    "- Preserve o tom humano — o cliente deve sentir que está sendo ouvido "
+    "por um especialista, não respondendo a um formulário."
 )
 
 _DEFESA_MANIPULACAO = (
@@ -250,6 +409,7 @@ PARAMETRIZED_SYSTEM_PROMPT_TEMPLATE = (
     f"{INSTRUCTIONS_START}\n"
     f"{_PERSONA_INTRO}\n\n"
     f"{_TOM_DE_VOZ}\n\n"
+    f"{_ESTILO_COMUNICACAO}\n\n"
     f"{_PROIBICOES}\n\n"
     f"{_COMPORTAMENTO_OBRIGATORIO}\n\n"
     f"{_DEFESA_MANIPULACAO}\n\n"

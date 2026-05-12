@@ -17,7 +17,7 @@ class AppTheme {
       brightness: brightness,
       colorScheme: isDark 
         ? const ShadZincColorScheme.dark(
-            background: Color(0xFF1C1B1F), // Deep Black Surface
+            background: AppColors.cardBackgroundDark, // Matches Cadife Card Background
             primary: Color(0xFFDD0B0E),    // Red Cadife
           )
         : const ShadZincColorScheme.light(
@@ -25,6 +25,13 @@ class AppTheme {
             primary: Color(0xFFDD0B0E),    // Red Cadife
           ),
       textTheme: ShadTextTheme.fromGoogleFont(GoogleFonts.inter),
+      primaryButtonTheme: const ShadButtonTheme(
+        foregroundColor: Colors.white,
+        textStyle: TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
     );
   }
 
@@ -75,7 +82,7 @@ class AppTheme {
           foregroundColor: AppColors.white,
           minimumSize: const Size.fromHeight(56),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          textStyle: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600),
+          textStyle: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold),
           elevation: 0,
         ),
       ),
