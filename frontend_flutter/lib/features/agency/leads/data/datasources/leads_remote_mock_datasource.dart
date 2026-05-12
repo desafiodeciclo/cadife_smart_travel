@@ -262,4 +262,10 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
     _mockLeads.insert(0, newLead);
     return newLead;
   }
+
+  @override
+  Future<void> toggleAya(String leadId, {required bool ativo, String? motivo}) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    // In mock, we don't really have a state for AYA, but we can simulate success.
+  }
 }
