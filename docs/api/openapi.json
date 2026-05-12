@@ -843,6 +843,183 @@
         }
       }
     },
+    "/leads/{lead_id}/score-history": {
+      "get": {
+        "tags": [
+          "Leads"
+        ],
+        "summary": "Histórico de evolução do score",
+        "description": "Retorna o histórico auditável de cada recálculo do score de qualificação do lead, com critérios detalhados por ponto e motivo do cálculo.",
+        "operationId": "get_score_history_leads__lead_id__score_history_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "lead_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Lead Id"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Erro de validação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Lead não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/leads/{lead_id}/recalculate-score": {
+      "post": {
+        "tags": [
+          "Leads"
+        ],
+        "summary": "Recalcular score manualmente",
+        "description": "Força o recálculo do score de qualificação com base no estado atual do briefing. Disponível apenas para admin e agência. Persiste o novo score e insere entrada no histórico.",
+        "operationId": "recalculate_score_leads__lead_id__recalculate_score_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "lead_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Lead Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Perfil sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Erro de validação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Lead não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/leads/{lead_id}/briefing": {
       "get": {
         "tags": [
@@ -2886,6 +3063,599 @@
         }
       }
     },
+    "/offers": {
+      "post": {
+        "tags": [
+          "Offers"
+        ],
+        "summary": "Create Offer",
+        "description": "Create a new travel offer with optional image uploads.",
+        "operationId": "create_offer_offers_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_create_offer_offers_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfferResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Erro de validação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Offers"
+        ],
+        "summary": "List Offers",
+        "description": "List offers with filters and pagination.",
+        "operationId": "list_offers_offers_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/OfferStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "categoria",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/OfferCategoria"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Categoria"
+            }
+          },
+          {
+            "name": "preco_min",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0.0
+                },
+                {
+                  "type": "string",
+                  "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Preco Min"
+            }
+          },
+          {
+            "name": "preco_max",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0.0
+                },
+                {
+                  "type": "string",
+                  "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Preco Max"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Busca por título ou destino",
+              "title": "Search"
+            },
+            "description": "Busca por título ou destino"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfferListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Erro de validação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/offers/{offer_id}": {
+      "get": {
+        "tags": [
+          "Offers"
+        ],
+        "summary": "Get Offer",
+        "description": "Get a single offer by ID.",
+        "operationId": "get_offer_offers__offer_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "offer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Offer Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfferResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Erro de validação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Offers"
+        ],
+        "summary": "Update Offer",
+        "description": "Update an offer. RBAC: creator or admin only.",
+        "operationId": "update_offer_offers__offer_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "offer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Offer Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_update_offer_offers__offer_id__patch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfferResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Erro de validação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Offers"
+        ],
+        "summary": "Delete Offer",
+        "description": "Soft-delete an offer. RBAC: creator or admin only.",
+        "operationId": "delete_offer_offers__offer_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "offer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Offer Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Não autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Erro de validação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/offers/{offer_id}/publish": {
+      "patch": {
+        "tags": [
+          "Offers"
+        ],
+        "summary": "Toggle Publish",
+        "description": "Publish or unpublish an offer. RBAC: creator or admin only.",
+        "operationId": "toggle_publish_offers__offer_id__publish_patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "offer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Offer Id"
+            }
+          },
+          {
+            "name": "publish",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "boolean",
+              "description": "True to publish, False to unpublish",
+              "title": "Publish"
+            },
+            "description": "True to publish, False to unpublish"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfferResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Erro de validação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/offers/{offer_id}/interest": {
+      "post": {
+        "tags": [
+          "Offers"
+        ],
+        "summary": "Express Interest",
+        "description": "Client expresses interest in an offer → auto-creates a lead.",
+        "operationId": "express_interest_offers__offer_id__interest_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "offer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Offer Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfferInterestResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Erro de validação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/leads/{lead_id}/diary/entries": {
       "post": {
         "tags": [
@@ -3433,6 +4203,215 @@
           "file"
         ],
         "title": "Body_create_diary_entry_leads__lead_id__diary_entries_post"
+      },
+      "Body_create_offer_offers_post": {
+        "properties": {
+          "images": {
+            "items": {
+              "type": "string",
+              "contentMediaType": "application/octet-stream"
+            },
+            "type": "array",
+            "title": "Images"
+          },
+          "titulo": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 3,
+            "title": "Titulo"
+          },
+          "destino": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 2,
+            "title": "Destino"
+          },
+          "descricao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descricao"
+          },
+          "categoria": {
+            "$ref": "#/components/schemas/OfferCategoria",
+            "default": "outros"
+          },
+          "preco_base": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preco Base"
+          },
+          "servicos_inclusos": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Servicos Inclusos"
+          },
+          "data_saida_sugerida": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Saida Sugerida"
+          },
+          "duracao_dias": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duracao Dias"
+          }
+        },
+        "type": "object",
+        "required": [
+          "titulo",
+          "destino"
+        ],
+        "title": "Body_create_offer_offers_post"
+      },
+      "Body_update_offer_offers__offer_id__patch": {
+        "properties": {
+          "images": {
+            "items": {
+              "type": "string",
+              "contentMediaType": "application/octet-stream"
+            },
+            "type": "array",
+            "title": "Images"
+          },
+          "titulo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Titulo"
+          },
+          "destino": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Destino"
+          },
+          "descricao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descricao"
+          },
+          "categoria": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OfferCategoria"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "preco_base": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preco Base"
+          },
+          "servicos_inclusos": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Servicos Inclusos"
+          },
+          "imagens": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imagens"
+          },
+          "data_saida_sugerida": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Saida Sugerida"
+          },
+          "duracao_dias": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duracao Dias"
+          }
+        },
+        "type": "object",
+        "title": "Body_update_offer_offers__offer_id__patch"
       },
       "Body_upload_document_leads__lead_id__documents_post": {
         "properties": {
@@ -4248,6 +5227,29 @@
               }
             ]
           },
+          "score_numerico": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score Numerico"
+          },
+          "score_calculado_em": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score Calculado Em"
+          },
           "consultor_id": {
             "anyOf": [
               {
@@ -4362,6 +5364,17 @@
                 "type": "null"
               }
             ]
+          },
+          "score_numerico": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score Numerico"
           },
           "criado_em": {
             "type": "string",
@@ -4691,6 +5704,271 @@
         ],
         "title": "ManualLeadCreate",
         "description": "Schema for manual lead creation via agency app."
+      },
+      "OfferCategoria": {
+        "type": "string",
+        "enum": [
+          "internacional",
+          "nacional",
+          "lua_de_mel",
+          "família",
+          "aventura",
+          "cruzeiro",
+          "executivo",
+          "outros"
+        ],
+        "title": "OfferCategoria",
+        "description": "Travel offer categories."
+      },
+      "OfferInterestResponse": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "lead_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Lead Id"
+          },
+          "offer_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Offer Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "message",
+          "lead_id",
+          "offer_id"
+        ],
+        "title": "OfferInterestResponse"
+      },
+      "OfferListItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "titulo": {
+            "type": "string",
+            "title": "Titulo"
+          },
+          "destino": {
+            "type": "string",
+            "title": "Destino"
+          },
+          "categoria": {
+            "$ref": "#/components/schemas/OfferCategoria"
+          },
+          "preco_base": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preco Base"
+          },
+          "imagens": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Imagens"
+          },
+          "status": {
+            "$ref": "#/components/schemas/OfferStatus"
+          },
+          "criado_em": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Criado Em"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "titulo",
+          "destino",
+          "categoria",
+          "preco_base",
+          "imagens",
+          "status",
+          "criado_em"
+        ],
+        "title": "OfferListItem"
+      },
+      "OfferListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OfferListItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "pages": {
+            "type": "integer",
+            "title": "Pages"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit",
+          "pages"
+        ],
+        "title": "OfferListResponse"
+      },
+      "OfferResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "titulo": {
+            "type": "string",
+            "title": "Titulo"
+          },
+          "destino": {
+            "type": "string",
+            "title": "Destino"
+          },
+          "descricao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descricao"
+          },
+          "categoria": {
+            "$ref": "#/components/schemas/OfferCategoria"
+          },
+          "preco_base": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preco Base"
+          },
+          "servicos_inclusos": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Servicos Inclusos"
+          },
+          "imagens": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Imagens"
+          },
+          "data_saida_sugerida": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Saida Sugerida"
+          },
+          "duracao_dias": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duracao Dias"
+          },
+          "status": {
+            "$ref": "#/components/schemas/OfferStatus"
+          },
+          "criado_por": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Criado Por"
+          },
+          "criado_em": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Criado Em"
+          },
+          "atualizado_em": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Atualizado Em"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "titulo",
+          "destino",
+          "descricao",
+          "categoria",
+          "preco_base",
+          "servicos_inclusos",
+          "imagens",
+          "data_saida_sugerida",
+          "duracao_dias",
+          "status",
+          "criado_por",
+          "criado_em",
+          "atualizado_em"
+        ],
+        "title": "OfferResponse"
+      },
+      "OfferStatus": {
+        "type": "string",
+        "enum": [
+          "rascunho",
+          "publicada",
+          "encerrada"
+        ],
+        "title": "OfferStatus",
+        "description": "Offer lifecycle states."
       },
       "OrcamentoPerfil": {
         "type": "string",
