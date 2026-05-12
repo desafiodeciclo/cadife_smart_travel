@@ -22,6 +22,16 @@ from app.application.use_cases import process_whatsapp_message
 from app.domain.entities.enums import LeadStatus
 from app.services.whatsapp_service import SendResult
 
+@pytest.fixture(autouse=True)
+def patch_notifications():
+    with (
+        patch("app.application.use_cases.process_whatsapp_message._enqueue_qualified_notification", new=AsyncMock()),
+        patch("app.application.use_cases.process_whatsapp_message._enqueue_message_received_notification", new=AsyncMock()),
+        patch("app.application.use_cases.process_whatsapp_message._enqueue_aya_disabled_notification", new=AsyncMock()),
+        patch("app.application.use_cases.process_whatsapp_message._notify_new_lead_creation", new=AsyncMock()),
+    ):
+        yield
+
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
 
@@ -321,6 +331,12 @@ async def test_lead_qualified_receives_curadoria_offer():
             "app.application.use_cases.process_whatsapp_message._enqueue_qualified_notification",
             new=AsyncMock(),
         ),
+        patch(
+            "app.application.use_cases.process_whatsapp_message._enqueue_message_received_notification"
+        ),
+        patch(
+            "app.application.use_cases.process_whatsapp_message._enqueue_aya_disabled_notification"
+        ),
     ):
         mock_ls.upsert_lead_with_resilience = AsyncMock(return_value=lead)
         mock_ls.update_lead_status = AsyncMock(return_value=lead)
@@ -560,3 +576,58 @@ async def test_memory_preloaded_from_db():
         "5584999990001", recent_interacoes
     )
     mock_ai.process_message.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_new_lead_triggers_fcm_notification():
+    """Lead NOVO → EM_ATENDIMENTO deve disparar notificação FCM ao consultor designado ou round-robin."""
+    db = AsyncMock()
+    lead = _fake_lead()
+    lead.status = LeadStatus.novo
+    interacao = _fake_interacao()
+    send_result = SendResult(
+        success=True, wamid="wamid.ok", retries_used=0, latency_ms=120
+    )
+
+    with (
+        patch(
+            "app.application.use_cases.process_whatsapp_message.lead_service"
+        ) as mock_ls,
+        patch(
+            "app.application.use_cases.process_whatsapp_message.ai_service"
+        ) as mock_ai,
+        patch(
+            "app.application.use_cases.process_whatsapp_message.whatsapp_service"
+        ) as mock_ws,
+    ):
+        mock_ls.upsert_lead_with_resilience = AsyncMock(return_value=lead)
+        mock_ls.update_lead_status = AsyncMock(return_value=lead)
+        mock_ls.update_briefing_from_extraction = AsyncMock(
+            return_value=MagicMock(completude_pct=30, destino=None)
+        )
+        mock_ls.save_interacao = AsyncMock(return_value=interacao)
+        mock_ls.update_interacao_send_result = AsyncMock()
+        mock_ls.get_recent_interacoes = AsyncMock(return_value=[])
+
+        mock_ai.process_message = AsyncMock(
+            return_value="Olá! Conte mais sobre sua viagem."
+        )
+        mock_ai.extract_briefing = AsyncMock(return_value=MagicMock())
+
+        mock_ws.extract_message_from_payload = MagicMock(
+            return_value={
+                "phone": "5584999990001",
+                "text": "Quero ir a Paris",
+                "type": "text",
+                "name": "Maria",
+                "message_id": "wamid.test",
+            }
+        )
+        mock_ws.send_message = AsyncMock(return_value=send_result)
+
+        await process_whatsapp_message.execute(_text_payload(), db)
+
+    # Verifica que a notificação FCM de novo lead foi disparada exatamente uma vez
+    process_whatsapp_message._notify_new_lead_creation.assert_awaited_once()
+    call_args = process_whatsapp_message._notify_new_lead_creation.call_args
+    assert call_args[0][1] == lead  # segundo argumento é o lead

@@ -39,45 +39,63 @@ class OffersListPage extends ConsumerWidget {
                 padding: EdgeInsets.all(12.0),
                 child: Icon(LucideIcons.search, size: 16),
               ),
-              trailing: Padding(
-                padding: const EdgeInsets.only(right: 8.0),
-                child: ShadIconButton.ghost(
-                  icon: Icon(
-                    LucideIcons.slidersHorizontal,
-                    size: 16,
-                    color: filters != const OffersFilters() ? context.cadife.primary : null,
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 1,
+                    height: 20,
+                    color: context.cadife.cardBorder,
                   ),
-                  onPressed: () async {
-                    final result = await showModalBottomSheet<Map<String, dynamic>>(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.transparent,
-                      builder: (context) => OffersFilterSheet(
-                        initialDestination: filters.destination,
-                        initialCategories: filters.categories,
-                        initialMinPrice: filters.minPrice,
-                        initialMaxPrice: filters.maxPrice,
-                        initialStartDate: filters.startDate,
-                        initialEndDate: filters.endDate,
+                  const SizedBox(width: 4),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 4.0),
+                    child: ShadIconButton.ghost(
+                      width: 32,
+                      height: 32,
+                      padding: EdgeInsets.zero,
+                      icon: Icon(
+                        LucideIcons.slidersHorizontal,
+                        size: 16,
+                        color: filters != const OffersFilters()
+                            ? context.cadife.primary
+                            : null,
                       ),
-                    );
+                      onPressed: () async {
+                        final result =
+                            await showModalBottomSheet<Map<String, dynamic>>(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (context) => OffersFilterSheet(
+                            initialDestination: filters.destination,
+                            initialCategories: filters.categories,
+                            initialMinPrice: filters.minPrice,
+                            initialMaxPrice: filters.maxPrice,
+                            initialStartDate: filters.startDate,
+                            initialEndDate: filters.endDate,
+                          ),
+                        );
 
-                    if (result != null) {
-                      ref.read(offersFilterProvider.notifier).update(
-                        (state) => state.copyWith(
-                          destination: result['destination'],
-                          categories: result['categories'],
-                          minPrice: result['minPrice'],
-                          maxPrice: result['maxPrice'],
-                          startDate: result['startDate'],
-                          endDate: result['endDate'],
-                          clearDestination: result['destination'] == null,
-                          clearDates: result['startDate'] == null,
-                        ),
-                      );
-                    }
-                  },
-                ),
+                        if (result != null) {
+                          ref.read(offersFilterProvider.notifier).update(
+                                (state) => state.copyWith(
+                                  destination: result['destination'],
+                                  categories: result['categories'],
+                                  minPrice: result['minPrice'],
+                                  maxPrice: result['maxPrice'],
+                                  startDate: result['startDate'],
+                                  endDate: result['endDate'],
+                                  clearDestination:
+                                      result['destination'] == null,
+                                  clearDates: result['startDate'] == null,
+                                ),
+                              );
+                        }
+                      },
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

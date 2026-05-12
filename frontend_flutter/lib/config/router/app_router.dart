@@ -413,23 +413,13 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/client/profile',
             name: 'client_profile',
-            pageBuilder: (context, state) => SlideTransitionPage(
-              name: state.name,
-              child: const client_profile.ProfileScreen(),
-            ),
-            routes: [
-              GoRoute(
-                path: 'diary/:tripId',
-                name: 'client_diary_detail',
-                pageBuilder: (context, state) {
-                  final tripId = state.pathParameters['tripId']!;
-                  return SlideTransitionPage(
-                    name: state.name,
-                    child: TravelJournalDetailScreen(tripId: tripId),
-                  );
-                },
-              ),
-            ],
+            pageBuilder: (context, state) {
+              final tab = int.tryParse(state.uri.queryParameters['tab'] ?? '0') ?? 0;
+              return SlideTransitionPage(
+                name: state.name,
+                child: client_profile.ProfileScreen(initialTabIndex: tab),
+              );
+            },
           ),
           GoRoute(
             path: '/client/settings',
@@ -440,6 +430,19 @@ final routerProvider = Provider<GoRouter>((ref) {
             ),
           ),
         ],
+      ),
+
+      // Diary detail — full-screen (no bottom nav), pushable from outside ShellRoute
+      GoRoute(
+        path: '/client/profile/diary/:tripId',
+        name: 'client_diary_detail',
+        pageBuilder: (context, state) {
+          final tripId = state.pathParameters['tripId']!;
+          return SlideTransitionPage(
+            name: state.name,
+            child: TravelJournalDetailScreen(tripId: tripId),
+          );
+        },
       ),
 
       // Travel Details & Calendar — full-screen detail (no bottom nav)

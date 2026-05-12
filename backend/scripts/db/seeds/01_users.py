@@ -1,5 +1,5 @@
 """
-01_users — Consultor demo + 3 clientes com preferências de viagem completas.
+01_users — 4 consultores demo + 3 clientes com preferências de viagem completas.
 """
 from __future__ import annotations
 
@@ -19,6 +19,7 @@ from shared import get_or_create_user
 
 
 async def run(session: AsyncSession) -> None:
+    # ── Consultores ───────────────────────────────────────────────────────────
     await get_or_create_user(
         session,
         email="daniela.costa@cadifetoure.com.br",
@@ -26,6 +27,28 @@ async def run(session: AsyncSession) -> None:
         perfil=UserPerfil.consultor,
         telefone="+5511977777777",
     )
+    await get_or_create_user(
+        session,
+        email="jakeline.lima@cadifetoure.com.br",
+        nome="Jakeline Lima",
+        perfil=UserPerfil.consultor,
+        telefone="+5511999991111",
+    )
+    await get_or_create_user(
+        session,
+        email="diego.costa@cadifetoure.com.br",
+        nome="Diego Costa",
+        perfil=UserPerfil.consultor,
+        telefone="+5511988882222",
+    )
+    await get_or_create_user(
+        session,
+        email="marcos.andrade@cadifetoure.com.br",
+        nome="Marcos Andrade",
+        perfil=UserPerfil.consultor,
+        telefone="+5511977773333",
+    )
+    # ── Clientes ──────────────────────────────────────────────────────────────
     await get_or_create_user(
         session,
         email="otavio.grotto@gmail.com",

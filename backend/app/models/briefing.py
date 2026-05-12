@@ -1,9 +1,9 @@
 import uuid
 from datetime import date
-from typing import TYPE_CHECKING, Optional
-
+from typing import TYPE_CHECKING, Optional, Any
 from sqlalchemy import Boolean, Date, Enum as SAEnum, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+# RESOLUÇÃO: Usando ConfigDict da developer
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.infrastructure.persistence.types import GUID, StringArray
@@ -98,10 +98,7 @@ OPTIONAL_FIELDS = [
 
 
 def calculate_completude(briefing_data: dict) -> int:
-    """
-    Calcula o percentual de completude do briefing.
-    Campos obrigatórios (destino, data, orçamento, perfil) têm peso maior.
-    """
+    """Calcula o percentual de completude do briefing."""
     total_required = len(REQUIRED_FIELDS)
     filled_required = sum(
         1
@@ -109,8 +106,6 @@ def calculate_completude(briefing_data: dict) -> int:
         if briefing_data.get(field) not in (None, [], "", 0)
     )
 
-    # Se todos os obrigatórios estiverem preenchidos, temos pelo menos 80%
-    # Os outros 20% vêm dos campos opcionais
     base_pct = (filled_required / total_required) * 80
 
     total_optional = len(OPTIONAL_FIELDS)
@@ -126,7 +121,6 @@ def calculate_completude(briefing_data: dict) -> int:
 
 
 # Pydantic schemas
-
 
 class BriefingExtracted(BaseModel):
     """Schema para Structured Outputs API — extração automática pela IA."""
@@ -152,7 +146,7 @@ class BriefingExtracted(BaseModel):
         None, description="Número total de passageiros (adultos + crianças)."
     )
     perfil: Optional[PerfilViagem] = Field(
-        None, description="Composição do grupo: casal, família, solo, grupo ou amigos."
+        None, description="Composição do grupo: casal, familia, solo, grupo ou amigos."
     )
     tipo_viagem: list[str] = Field(
         default_factory=list,
@@ -164,7 +158,7 @@ class BriefingExtracted(BaseModel):
     )
     orcamento: Optional[OrcamentoNivel] = Field(
         None,
-        description="Nível de investimento: baixo (econômico), médio (padrão), alto (conforto) ou premium (luxo).",
+        description="Nível de investimento: baixo (econômico), medio (padrão), alto (conforto) ou premium (luxo).",
     )
     tem_passaporte: Optional[bool] = Field(
         None,
@@ -174,19 +168,29 @@ class BriefingExtracted(BaseModel):
         None,
         description="Notas adicionais, restrições alimentares, celebrações ou pedidos especiais.",
     )
+    campos_inferidos: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Lista de campos cujo valor foi inferido pelo contexto, "
+            "não mencionados explicitamente pelo cliente. "
+            "Não afeta o score — apenas rastreabilidade."
+        ),
+    )
 
     @field_validator("perfil", mode="before")
     @classmethod
     def _normalize_perfil(cls, v: object) -> object:
+        # RESOLUÇÃO: Mantendo a lógica de aliases da developer
         if isinstance(v, str):
-            return _PERFIL_ALIASES.get(v.lower(), v)
+            return _PERFIL_ALIASES.get(v.lower().strip(), v)
         return v
 
     @field_validator("orcamento", mode="before")
     @classmethod
     def _normalize_orcamento(cls, v: object) -> object:
+        # RESOLUÇÃO: Mantendo a lógica de aliases da developer
         if isinstance(v, str):
-            return _ORCAMENTO_ALIASES.get(v.lower(), v)
+            return _ORCAMENTO_ALIASES.get(v.lower().strip(), v)
         return v
 
 
@@ -220,4 +224,4 @@ class BriefingResponse(BaseModel):
     observacoes: Optional[str]
     completude_pct: int
 
-    model_config = {"from_attributes": True}
+    model_config = ConfigDict(from_attributes=True)

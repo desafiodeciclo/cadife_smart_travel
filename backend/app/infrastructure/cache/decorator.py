@@ -24,10 +24,13 @@ from typing import Any, Callable, TypeVar
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
 
+import structlog
+
 from app.infrastructure.cache.redis_client import get_redis
 from app.infrastructure.config.settings import get_settings
 
 _settings = get_settings()
+logger = structlog.get_logger()
 
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -87,17 +90,15 @@ def cached(ttl: int | None = None) -> Callable[[F], F]:
                 cached_raw = await redis.get(key)
                 if cached_raw is not None:
                     return _deserialize(cached_raw)
-            except Exception:
-                # Redis down or error — degrade gracefully to direct execution
-                pass
+            except Exception as exc:
+                logger.warning("cache_get_failed", key=key, error=str(exc))
 
             result = await func(*args, **kwargs)
 
             try:
                 await redis.setex(key, ttl, _serialize(result))
-            except Exception:
-                # Best-effort cache write
-                pass
+            except Exception as exc:
+                logger.warning("cache_set_failed", key=key, error=str(exc))
 
             return result
 
@@ -120,8 +121,8 @@ async def _invalidate(func_name: str, **kwargs: Any) -> None:
     key = _make_cache_key(func_name, (), kwargs)
     try:
         await redis.delete(key)
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.warning("cache_invalidate_failed", key=key, error=str(exc))
 
 
 async def invalidate_pattern(pattern: str) -> int:
@@ -138,6 +139,6 @@ async def invalidate_pattern(pattern: str) -> int:
             keys.append(k)
         if keys:
             return await redis.delete(*keys)
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.warning("cache_scan_failed", pattern=full_pattern, error=str(exc))
     return 0

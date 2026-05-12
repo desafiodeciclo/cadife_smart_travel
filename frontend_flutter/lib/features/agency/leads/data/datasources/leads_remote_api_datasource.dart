@@ -1,10 +1,11 @@
 import 'package:cadife_smart_travel/core/constants/api_constants.dart';
 import 'package:cadife_smart_travel/core/offline/offline_manager.dart';
 import 'package:cadife_smart_travel/features/agency/leads/data/datasources/i_leads_datasource.dart';
+import 'package:cadife_smart_travel/features/agency/leads/data/models/conversation_summary_api_model.dart';
 import 'package:cadife_smart_travel/features/agency/leads/data/models/lead_api_model.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/briefing.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
-import 'package:cadife_smart_travel/features/client/historico/domain/entities/interacao.dart';
+import 'package:cadife_smart_travel/shared/domain/entities/interacao.dart';
 import 'package:dio/dio.dart';
 
 class LeadsRemoteApiDatasource implements ILeadsDatasource {
@@ -77,7 +78,7 @@ class LeadsRemoteApiDatasource implements ILeadsDatasource {
   Future<LeadApiModel> updateLeadStatus(String id, LeadStatus newStatus) async {
     final response = await _dio.patch(
       ApiConstants.leadById(id),
-      data: {'status': newStatus.name},
+      data: {'status': newStatus.toSnakeCase()},
     );
     final lead = LeadApiModel.fromJson(response.data as Map<String, dynamic>);
 
@@ -182,19 +183,15 @@ class LeadsRemoteApiDatasource implements ILeadsDatasource {
   }
 
   @override
-  Future<LeadApiModel> reassignLead(String id, String consultorNome) async {
-    final response = await _dio.patch(
-      '${ApiConstants.leadById(id)}/reassign',
-      data: {'consultor_nome': consultorNome},
+  Future<void> toggleAya(String leadId, {required bool ativo, String? motivo}) async {
+    await _dio.patch(
+      ApiConstants.leadAyaToggle(leadId),
+      data: {
+        'ativo': ativo,
+        'motivo': motivo,
+      },
     );
-    final lead = LeadApiModel.fromJson(response.data as Map<String, dynamic>);
-
-    await _offlineManager.saveToCache(
-      '$_cacheKeyPrefix:detail:$id',
-      response.data,
-    );
-    await _offlineManager.invalidateByPrefix('$_cacheKeyPrefix:list:');
-    return lead;
+    await _offlineManager.invalidateByPrefix('$_cacheKeyPrefix:detail:$leadId');
   }
 
   @override
@@ -224,5 +221,17 @@ class LeadsRemoteApiDatasource implements ILeadsDatasource {
     );
     await _offlineManager.invalidateByPrefix('$_cacheKeyPrefix:list:');
     return lead;
+  }
+
+  @override
+  Future<ConversationSummaryApiModel?> getConversationSummary(String leadId) async {
+    try {
+      final response = await _dio.get(ApiConstants.leadConversationSummary(leadId));
+      return ConversationSummaryApiModel.fromJson(
+          response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return null;
+      rethrow;
+    }
   }
 }

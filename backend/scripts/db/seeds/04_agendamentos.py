@@ -1,5 +1,10 @@
 """
-04_agendamentos — 2 realizados (Paris, Tóquio) + 1 confirmado (Nova York).
+04_agendamentos — 2 realizados (Paris/Otávio e Tóquio/Camila) + 2 confirmados (Rafael e Ana Luiza).
+
+Distribuição por consultor:
+  Daniela Costa → Otávio (realizado 2026-02-14), Camila (realizado 2026-04-22)
+  Jakeline Lima → Rafael (confirmado 2026-06-02)
+  Marcos Andrade → Ana Luiza (confirmado 2026-07-10)
 """
 from __future__ import annotations
 
@@ -24,11 +29,17 @@ from shared import get_admin, get_lead_by_phone, get_user_by_email
 async def run(session: AsyncSession) -> None:
     admin = await get_admin(session)
     daniela = await get_user_by_email(session, "daniela.costa@cadifetoure.com.br")
-    consultor_id = daniela.id if daniela else admin.id
+    jakeline = await get_user_by_email(session, "jakeline.lima@cadifetoure.com.br")
+    marcos = await get_user_by_email(session, "marcos.andrade@cadifetoure.com.br")
+
+    daniela_id = daniela.id if daniela else admin.id
+    jakeline_id = jakeline.id if jakeline else admin.id
+    marcos_id = marcos.id if marcos else admin.id
 
     otavio = await get_lead_by_phone(session, "+5511966666666")
     camila = await get_lead_by_phone(session, "+5511955555555")
     rafael = await get_lead_by_phone(session, "+5511944444444")
+    ana_luiza = await get_lead_by_phone(session, "+5511866666666")
 
     rows = [
         dict(
@@ -37,7 +48,7 @@ async def run(session: AsyncSession) -> None:
             hora=time(10, 0),
             status=AgendamentoStatus.realizado,
             tipo=AgendamentoTipo.online,
-            consultor_id=consultor_id,
+            consultor_id=daniela_id,
         ),
         dict(
             lead_id=camila.id if camila else None,
@@ -45,7 +56,7 @@ async def run(session: AsyncSession) -> None:
             hora=time(14, 0),
             status=AgendamentoStatus.realizado,
             tipo=AgendamentoTipo.online,
-            consultor_id=consultor_id,
+            consultor_id=daniela_id,
         ),
         dict(
             lead_id=rafael.id if rafael else None,
@@ -53,7 +64,15 @@ async def run(session: AsyncSession) -> None:
             hora=time(11, 0),
             status=AgendamentoStatus.confirmado,
             tipo=AgendamentoTipo.online,
-            consultor_id=admin.id,
+            consultor_id=jakeline_id,
+        ),
+        dict(
+            lead_id=ana_luiza.id if ana_luiza else None,
+            data=date(2026, 7, 10),
+            hora=time(15, 0),
+            status=AgendamentoStatus.confirmado,
+            tipo=AgendamentoTipo.online,
+            consultor_id=marcos_id,
         ),
     ]
 

@@ -25,7 +25,7 @@ from app.application.use_cases.process_whatsapp_message import (
     AUDIO_FALLBACK_REPLY,
     MEDIA_FALLBACK_REPLY,
 )
-from app.domain.entities.enums import LeadStatus, TipoMensagem
+from app.domain.entities.enums import LeadStatus
 from app.services.whatsapp_service import SendResult, download_media
 
 
@@ -144,7 +144,7 @@ async def test_audio_message_calls_download_media():
         patch("app.application.use_cases.process_whatsapp_message.lead_service") as mock_ls,
         patch("app.application.use_cases.process_whatsapp_message.ai_service"),
         patch("app.application.use_cases.process_whatsapp_message.whatsapp_service") as mock_ws,
-        patch("app.application.use_cases.process_whatsapp_message.fcm_service"),
+        patch("app.application.use_cases.process_whatsapp_message._enqueue_message_received_notification"),
     ):
         mock_ls.upsert_lead_with_resilience = AsyncMock(return_value=lead)
         mock_ls.update_lead_status = AsyncMock(return_value=lead)
@@ -180,7 +180,7 @@ async def test_audio_message_sends_audio_fallback_reply():
         patch("app.application.use_cases.process_whatsapp_message.lead_service") as mock_ls,
         patch("app.application.use_cases.process_whatsapp_message.ai_service"),
         patch("app.application.use_cases.process_whatsapp_message.whatsapp_service") as mock_ws,
-        patch("app.application.use_cases.process_whatsapp_message.fcm_service"),
+        patch("app.application.use_cases.process_whatsapp_message._enqueue_message_received_notification"),
     ):
         mock_ls.upsert_lead_with_resilience = AsyncMock(return_value=lead)
         mock_ls.update_lead_status = AsyncMock(return_value=lead)
@@ -219,7 +219,7 @@ async def test_audio_message_no_media_id_skips_download():
         patch("app.application.use_cases.process_whatsapp_message.lead_service") as mock_ls,
         patch("app.application.use_cases.process_whatsapp_message.ai_service"),
         patch("app.application.use_cases.process_whatsapp_message.whatsapp_service") as mock_ws,
-        patch("app.application.use_cases.process_whatsapp_message.fcm_service"),
+        patch("app.application.use_cases.process_whatsapp_message._enqueue_message_received_notification"),
     ):
         mock_ls.upsert_lead_with_resilience = AsyncMock(return_value=lead)
         mock_ls.update_lead_status = AsyncMock(return_value=lead)
@@ -257,7 +257,7 @@ async def test_audio_download_failure_reply_still_sent():
         patch("app.application.use_cases.process_whatsapp_message.lead_service") as mock_ls,
         patch("app.application.use_cases.process_whatsapp_message.ai_service"),
         patch("app.application.use_cases.process_whatsapp_message.whatsapp_service") as mock_ws,
-        patch("app.application.use_cases.process_whatsapp_message.fcm_service"),
+        patch("app.application.use_cases.process_whatsapp_message._enqueue_message_received_notification"),
     ):
         mock_ls.upsert_lead_with_resilience = AsyncMock(return_value=lead)
         mock_ls.update_lead_status = AsyncMock(return_value=lead)
@@ -294,7 +294,7 @@ async def test_image_message_uses_generic_fallback_not_audio_reply():
         patch("app.application.use_cases.process_whatsapp_message.lead_service") as mock_ls,
         patch("app.application.use_cases.process_whatsapp_message.ai_service"),
         patch("app.application.use_cases.process_whatsapp_message.whatsapp_service") as mock_ws,
-        patch("app.application.use_cases.process_whatsapp_message.fcm_service"),
+        patch("app.application.use_cases.process_whatsapp_message._enqueue_message_received_notification"),
     ):
         mock_ls.upsert_lead_with_resilience = AsyncMock(return_value=lead)
         mock_ls.update_lead_status = AsyncMock(return_value=lead)
@@ -334,7 +334,7 @@ async def test_text_message_unaffected_by_audio_changes():
         patch("app.application.use_cases.process_whatsapp_message.lead_service") as mock_ls,
         patch("app.application.use_cases.process_whatsapp_message.ai_service") as mock_ai,
         patch("app.application.use_cases.process_whatsapp_message.whatsapp_service") as mock_ws,
-        patch("app.application.use_cases.process_whatsapp_message.fcm_service"),
+        patch("app.application.use_cases.process_whatsapp_message._enqueue_message_received_notification"),
         patch("app.application.use_cases.process_whatsapp_message.curadoria_service") as mock_cs,
     ):
         mock_ls.upsert_lead_with_resilience = AsyncMock(return_value=lead)
@@ -379,7 +379,7 @@ async def test_download_media_success(monkeypatch):
 
     audio_bytes = b"FAKE_AUDIO_DATA"
 
-    async def mock_get(url, **kwargs):
+    async def mock_get(self, url, **kwargs):
         resp = MagicMock()
         if "graph.facebook" in url:
             resp.status_code = 200
@@ -400,7 +400,7 @@ async def test_download_media_step1_http_error_returns_none(monkeypatch):
     """Step-1 (URL resolution) HTTP error → returns None without raising."""
     monkeypatch.setattr("app.services.whatsapp_service.settings.WHATSAPP_TOKEN", "tok")
 
-    async def mock_get(url, **kwargs):
+    async def mock_get(self, url, **kwargs):
         resp = MagicMock()
         resp.status_code = 404
         resp.json.return_value = {}
@@ -419,7 +419,7 @@ async def test_download_media_step2_http_error_returns_none(monkeypatch):
 
     call_count = 0
 
-    async def mock_get(url, **kwargs):
+    async def mock_get(self, url, **kwargs):
         nonlocal call_count
         call_count += 1
         resp = MagicMock()
@@ -442,7 +442,7 @@ async def test_download_media_network_error_returns_none(monkeypatch):
     """Network/connection error during step-1 → returns None without raising."""
     monkeypatch.setattr("app.services.whatsapp_service.settings.WHATSAPP_TOKEN", "tok")
 
-    async def mock_get(url, **kwargs):
+    async def mock_get(self, url, **kwargs):
         raise httpx.ConnectError("Connection refused")
 
     with patch("httpx.AsyncClient.get", new=mock_get):
@@ -456,7 +456,7 @@ async def test_download_media_missing_url_in_response_returns_none(monkeypatch):
     """Step-1 returns 200 but no `url` key → returns None."""
     monkeypatch.setattr("app.services.whatsapp_service.settings.WHATSAPP_TOKEN", "tok")
 
-    async def mock_get(url, **kwargs):
+    async def mock_get(self, url, **kwargs):
         resp = MagicMock()
         resp.status_code = 200
         resp.json.return_value = {"id": "media_001"}  # missing "url"

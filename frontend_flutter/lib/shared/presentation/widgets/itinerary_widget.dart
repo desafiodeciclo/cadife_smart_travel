@@ -61,11 +61,12 @@ class _ItineraryDayCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dateFmt = DateFormat('EEE, dd/MM', 'pt_BR');
+    final cadife = context.cadife;
 
-    return ShadCard(
+    return CadifeCard(
       padding: const EdgeInsets.all(14),
-      radius: BorderRadius.circular(14),
-      border: ShadBorder.all(color: context.cadife.cardBorder),
+      borderRadius: 14,
+      color: cadife.cardBackground,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -90,7 +91,7 @@ class _ItineraryDayCard extends StatelessWidget {
               Text(
                 dateFmt.format(day.data),
                 style: AppTextStyles.bodySmall.copyWith(
-                  color: context.cadife.textSecondary,
+                  color: cadife.textSecondary,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -124,13 +125,13 @@ class _ItemRow extends StatelessWidget {
         children: [
           // Type icon
           Container(
-            width: 32,
-            height: 32,
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
-              color: item.tipo.color.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
+              color: item.tipo.color.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(item.tipo.icon, color: item.tipo.color, size: 16),
+            child: Icon(item.tipo.icon, color: item.tipo.color, size: 20),
           ),
           const SizedBox(width: 10),
 
