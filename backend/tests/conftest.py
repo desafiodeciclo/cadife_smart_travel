@@ -1,18 +1,3 @@
-"""
-Test Configuration — Pytest fixtures for database, auth, and client setup.
-========================================================================
-This file configures the test suite to use an in-memory SQLite database
-(via aiosqlite) instead of PostgreSQL, allowing for fast, isolated tests.
-
-pytest_plugins = ["pytest_asyncio"]
-
-Key design decisions:
-  - Overrides FastAPI's `get_db` dependency to use the test DB session.
-  - Overrides `get_current_user` to simulate authenticated requests.
-  - Creates all tables via `Base.metadata.create_all` (bypassing Alembic).
-  - Automatically cleans up the DB session and tables after each test.
-"""
-
 import asyncio
 import os
 import uuid
@@ -26,7 +11,6 @@ from jose import jwt
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 # ── Environment Setup ────────────────────────────────────────────────────
-# Must be set BEFORE importing app modules to avoid real PostgreSQL/WhatsApp
 os.environ["WHATSAPP_TOKEN"] = "test_token"
 os.environ["PHONE_NUMBER_ID"] = "test_id"
 os.environ["GEMINI_API_KEY"] = "test_key"
@@ -38,42 +22,38 @@ os.environ["JWT_ALGORITHM"] = "HS256"
 os.environ["ACCESS_TOKEN_EXPIRE_MINUTES"] = "15"
 os.environ["REFRESH_TOKEN_EXPIRE_DAYS"] = "7"
 os.environ["ENCRYPTION_KEY"] = "858iXm1S2iXN5sH3W6V-q7W_U8U7z6T5S4R3Q2P1O0N="
-os.environ["HASH_KEY"] = (
-    "f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7"
-)
+os.environ["HASH_KEY"] = "f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7"
 os.environ["REDIS_PREFIX"] = "CACHE"
 
-# Eagerly import all ORM models so SQLAlchemy mapper configuration is complete
-# before any test instantiates a model class. This avoids "failed to locate a name"
-# errors when dependent models (e.g. Agendamento, Proposta) are referenced by
-# string in relationship() definitions but not yet imported.
-import app.models.lead  # noqa: F401
-import app.models.briefing  # noqa: F401
-import app.models.interacao  # noqa: F401
-import app.models.agendamento  # noqa: F401
-import app.models.proposta  # noqa: F401
-import app.models.user  # noqa: F401
-import app.models.offer  # noqa: F401
-import app.models.notification_queue  # noqa: F401
-import app.models.dead_letter_queue  # noqa: F401
-import app.models.lead_score_history  # noqa: F401
-
-# Import SQLAlchemy persistence models so Base.metadata knows all tables
+# ── Import ALL models to avoid 'name not defined' errors ────────────────
+# Import infrastructure models (Clean Architecture)
+import app.infrastructure.persistence.models.user_model  # noqa: F401
 import app.infrastructure.persistence.models.lead_model  # noqa: F401
 import app.infrastructure.persistence.models.briefing_model  # noqa: F401
 import app.infrastructure.persistence.models.interacao_model  # noqa: F401
 import app.infrastructure.persistence.models.agendamento_model  # noqa: F401
 import app.infrastructure.persistence.models.proposta_model  # noqa: F401
-import app.infrastructure.persistence.models.user_model  # noqa: F401
 import app.infrastructure.persistence.models.documento_model  # noqa: F401
 import app.infrastructure.persistence.models.suitcase_model  # noqa: F401
 import app.infrastructure.persistence.models.offer_model  # noqa: F401
 import app.infrastructure.persistence.models.travel_diary_model  # noqa: F401
 import app.infrastructure.persistence.models.conversation_summary_model  # noqa: F401
+import app.infrastructure.persistence.models.itinerary_model  # noqa: F401
+import app.infrastructure.persistence.models.aya_toggle_history_model  # noqa: F401
+import app.infrastructure.persistence.models.lead_score_history_model  # noqa: F401
 
-# Now import the app and models AFTER setting env vars
+# Import legacy models (Core)
+import app.models.lead  # noqa: F401
+import app.models.user  # noqa: F401
+import app.models.briefing  # noqa: F401
+import app.models.interacao  # noqa: F401
+import app.models.agendamento  # noqa: F401
+import app.models.proposta  # noqa: F401
+import app.models.offer  # noqa: F401
+
 from main import app
-from app.infrastructure.persistence.database import Base
+from app.infrastructure.persistence.database import Base as InfraBase
+from app.core.database import Base as CoreBase
 from app.core.dependencies import get_db
 from app.infrastructure.security.dependencies import get_current_user
 from app.infrastructure.security.jwt import create_access_token
@@ -81,146 +61,98 @@ from app.infrastructure.config.settings import get_settings
 
 settings = get_settings()
 
-# ── Test Database Engine ────────────────────────────────────────────────
-# We create a new engine and sessionmaker specifically for testing.
-test_engine = create_async_engine(
-    settings.DATABASE_URL,
-    echo=False,
-    future=True,
-)
-
-# Session factory for tests
-TestSessionLocal = async_sessionmaker(
-    test_engine,
-    class_=AsyncSession,
-    expire_on_commit=False,
-    autocommit=False,
-    autoflush=False,
-)
-
+test_engine = create_async_engine(settings.DATABASE_URL, echo=False, future=True)
+TestSessionLocal = async_sessionmaker(test_engine, class_=AsyncSession, expire_on_commit=False)
 
 @pytest.fixture(scope="session")
 def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
-    """Create an instance of the default event loop for the test session."""
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
     loop.close()
 
-
 @pytest.fixture(scope="function")
 def setup_database(event_loop) -> None:
-    """
-    Create all tables in the test database before each test and drop them afterwards.
-
-    This keeps each test isolated without relying on savepoint rollback semantics.
-    """
-
     async def _setup() -> None:
         async with test_engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
+            # Create tables from InfraBase first (primary)
+            await conn.run_sync(InfraBase.metadata.create_all)
+            # Try to create tables from CoreBase, but ignore duplicates
+            # because they likely overlap with InfraBase
+            for table in CoreBase.metadata.sorted_tables:
+                try:
+                    async with test_engine.begin() as conn2:
+                        await conn2.run_sync(table.create)
+                except Exception:
+                    pass # Table/Index likely already exists from InfraBase
 
     event_loop.run_until_complete(_setup())
     yield
-
     async def _teardown() -> None:
         async with test_engine.begin() as conn:
-            await conn.run_sync(Base.metadata.drop_all)
-
+            await conn.run_sync(InfraBase.metadata.drop_all)
+            try:
+                await conn.run_sync(CoreBase.metadata.drop_all)
+            except Exception:
+                pass
     event_loop.run_until_complete(_teardown())
-
 
 @pytest.fixture()
 async def db_session(setup_database) -> AsyncGenerator[AsyncSession, None]:
-    """
-    Create a new database session for a test.
-    """
     async with TestSessionLocal() as session:
         yield session
         await session.rollback()
 
-
-# ── FastAPI Dependency Overrides ───────────────────────────────────────
 @pytest.fixture()
 def override_get_db(db_session: AsyncSession):
-    """Override the `get_db` dependency to use the test session."""
-
     async def _get_db():
         yield db_session
-
     app.dependency_overrides[get_db] = _get_db
     yield
     app.dependency_overrides.pop(get_db, None)
 
-
 @pytest.fixture()
 def override_get_current_user():
-    """Override the `get_current_user` dependency with a mock user."""
     from app.infrastructure.persistence.models.user_model import UserModel
-
-    # Create a mock user object
     mock_user = UserModel(
         id=uuid.UUID("deadeade-dead-dead-dead-deadeadeadea"),
         nome="Test User",
         email="test@example.com",
         hashed_password="hashed_password_here",
         telefone="+5511999999999",
-        perfil="admin",  # Default to admin for full access in tests
+        perfil="admin",
         is_active=True,
         criado_em=datetime.now(timezone.utc),
     )
-
     async def _get_current_user():
         return mock_user
-
     app.dependency_overrides[get_current_user] = _get_current_user
     yield mock_user
     app.dependency_overrides.pop(get_current_user, None)
 
-
-# ── Test Client ─────────────────────────────────────────────────────────
 @pytest.fixture()
 def client(override_get_db, override_get_current_user) -> TestClient:
-    """Return a TestClient configured with the test dependencies."""
     return TestClient(app)
 
-
 @pytest.fixture()
-async def async_client(
-    override_get_db, override_get_current_user
-) -> AsyncGenerator[AsyncClient, None]:
-    """Return an AsyncClient for testing async endpoints."""
+async def async_client(override_get_db, override_get_current_user) -> AsyncGenerator[AsyncClient, None]:
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
 
-
-# ── JWT Fixtures ────────────────────────────────────────────────────────
 @pytest.fixture()
 def valid_jwt_token() -> str:
-    """Generate a valid JWT access token for the mock user."""
-    user_id = "deadeade-dead-dead-dead-deadeadeadea"
-    return create_access_token(user_id)
-
+    return create_access_token("deadeade-dead-dead-dead-deadeadeadea")
 
 @pytest.fixture()
 def expired_jwt_token() -> str:
-    """Generate an expired JWT access token."""
     payload = {
         "sub": "deadeade-dead-dead-dead-deadeadeadea",
         "type": "access",
         "exp": datetime.now(timezone.utc) - timedelta(hours=1),
     }
-    return jwt.encode(
-        payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM
-    )
-
+    return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
 
 @pytest.fixture()
 def invalid_jwt_token() -> str:
-    """Generate an invalid JWT token (wrong signature)."""
-    payload = {
-        "sub": "deadeade-dead-dead-dead-deadeadeadea",
-        "type": "access",
-    }
-    # Use a different secret to simulate a bad signature
+    payload = {"sub": "deadeade-dead-dead-dead-deadeadeadea", "type": "access"}
     return jwt.encode(payload, "wrong-secret-key", algorithm=settings.JWT_ALGORITHM)
