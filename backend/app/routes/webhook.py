@@ -24,7 +24,7 @@ async def require_meta_signature(
         logger.error("webhook_security_critical_failure", reason="META_APP_SECRET not set")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Configuração de segurança incompleta",
+            detail="Configuração de segurança incompleta"
         )
     signature = request.headers.get("X-Hub-Signature-256", "")
     if not whatsapp_service.verify_signature(body, signature):

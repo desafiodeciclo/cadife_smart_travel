@@ -8,6 +8,7 @@ import structlog
 from fastapi import UploadFile, HTTPException, status
 
 from app.domain.entities.enums import DocumentoCategoria
+from app.domain.interfaces.repositories import ILeadRepository
 from app.infrastructure.adapters.storage.s3_adapter import S3StorageAdapter
 from app.infrastructure.persistence.repositories.documento_repository import DocumentoRepository
 from app.models.documento import Documento
@@ -66,9 +67,11 @@ class DocumentoService:
     def __init__(
         self,
         repository: DocumentoRepository,
+        lead_repo: ILeadRepository,
         storage_adapter: S3StorageAdapter
     ):
         self.repository = repository
+        self.lead_repo = lead_repo
         self.storage_adapter = storage_adapter
 
     async def upload_document(
@@ -76,12 +79,27 @@ class DocumentoService:
         lead_id: uuid.UUID,
         file: UploadFile,
         categoria: DocumentoCategoria,
-        enviado_por: uuid.UUID
+        enviado_por: uuid.UUID,
+        user_role: str,
+        user_phone: Optional[str] = None
     ) -> Documento:
         """
         Uploads a document to S3 and records metadata in DB.
-        Includes validations for file type, magic bytes and size (§1.2).
+        Includes ownership validation and security checks (§1.2).
         """
+        # 0. Ownership Validation
+        lead = await self.lead_repo.get_by_id(lead_id)
+        if not lead:
+            raise HTTPException(status_code=404, detail="Lead não encontrado")
+
+        if user_role == "cliente":
+            from app.infrastructure.security.pii_encryption import hmac_hash
+            if not user_phone or lead.telefone_hash != hmac_hash(user_phone):
+                raise HTTPException(status_code=403, detail="Acesso negado: esta viagem não é sua.")
+        elif user_role == "consultor":
+            if lead.consultor_id != enviado_por:
+                raise HTTPException(status_code=403, detail="Acesso negado: você não é o consultor deste lead.")
+        
         # 1. Validation: Size (max 10MB)
         content = await file.read()
         size = len(content)
@@ -155,10 +173,30 @@ class DocumentoService:
                 detail="Erro ao registrar metadados do documento."
             )
 
-    async def list_documents(self, lead_id: uuid.UUID) -> List[Documento]:
+    async def list_documents(
+        self, 
+        lead_id: uuid.UUID,
+        user_id: uuid.UUID,
+        user_role: str,
+        user_phone: Optional[str] = None
+    ) -> List[Documento]:
         """
         Lists documents with freshly generated signed URLs (1h expiration).
+        Includes ownership validation.
         """
+        # Ownership Validation
+        lead = await self.lead_repo.get_by_id(lead_id)
+        if not lead:
+            raise HTTPException(status_code=404, detail="Lead não encontrado")
+
+        if user_role == "cliente":
+            from app.infrastructure.security.pii_encryption import hmac_hash
+            if not user_phone or lead.telefone_hash != hmac_hash(user_phone):
+                raise HTTPException(status_code=403, detail="Acesso negado: esta viagem não é sua.")
+        elif user_role == "consultor":
+            if lead.consultor_id != user_id:
+                raise HTTPException(status_code=403, detail="Acesso negado: você não é o consultor deste lead.")
+
         documentos = await self.repository.list_by_lead(lead_id)
 
         # Hydrate with signed URLs
@@ -169,13 +207,13 @@ class DocumentoService:
 
     async def delete_document(self, documento_id: uuid.UUID, user_id: uuid.UUID, user_role: str):
         """
-        Soft deletes a document if RBAC rules are met.
+        Soft deletes a document if RBAC and Ownership rules are met.
         """
         # RBAC Check (§12.2 of updated claude_local.md)
-        if user_role not in ["consultor", "admin"]:
+        if user_role not in ["consultor", "admin", "agencia"]:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Apenas consultores ou administradores podem deletar documentos."
+                detail="Apenas a agência pode deletar documentos."
             )
 
         documento = await self.repository.get_by_id(documento_id)
@@ -184,6 +222,11 @@ class DocumentoService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Documento não encontrado."
             )
+
+        # Ownership Validation
+        lead = await self.lead_repo.get_by_id(documento.lead_id)
+        if user_role == "consultor" and lead.consultor_id != user_id:
+             raise HTTPException(status_code=403, detail="Acesso negado: você não é o consultor deste lead.")
 
         await self.repository.soft_delete(documento_id)
         logger.info("document_soft_deleted", documento_id=str(documento_id), user_id=str(user_id))

@@ -14,6 +14,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 # Core / Infra
 from app.infrastructure.config.settings import get_settings
@@ -188,6 +189,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 # -------------------------------------------------------------------
 # Middlewares
 # -------------------------------------------------------------------
+app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(RequestIdMiddleware)
 app.add_middleware(TimeoutMiddleware)
 app.add_middleware(
@@ -233,3 +235,15 @@ async def health():
         "version": app.version,
         "env": settings.APP_ENV,
     }
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(
+        "main:app",
+        host=settings.HOST,
+        port=settings.PORT,
+        reload=settings.DEBUG,
+        log_level="info",
+    )

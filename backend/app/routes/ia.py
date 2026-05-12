@@ -1,7 +1,7 @@
 from typing import Optional
 import uuid
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, Request, Response
 from pydantic import BaseModel
 
 from app.infrastructure.security.dependencies import get_current_user
@@ -75,7 +75,7 @@ class ReindexarRequest(BaseModel):
     },
 )
 @limiter.limit(settings.RATE_LIMIT_IA)
-async def processar_mensagem(request: Request, body: ProcessarRequest):
+async def processar_mensagem(request: Request, response: Response, body: ProcessarRequest):
     # 1. Extrair briefing
     extracted = await ai_service.extract_briefing(
         [{"role": "user", "content": body.message}]
@@ -115,7 +115,7 @@ async def processar_mensagem(request: Request, body: ProcessarRequest):
     },
 )
 @limiter.limit(settings.RATE_LIMIT_IA)
-async def extrair_briefing(request: Request, body: ExtrairBriefingRequest):
+async def extrair_briefing(request: Request, response: Response, body: ExtrairBriefingRequest):
     conversation = [{"role": m.role, "content": m.content} for m in body.conversation]
     briefing = await ai_service.extract_briefing(conversation)
     completude = calculate_completude(briefing.model_dump())

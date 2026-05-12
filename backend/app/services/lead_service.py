@@ -346,14 +346,15 @@ async def save_interacao(
     tipo: TipoMensagem = TipoMensagem.texto,
     whatsapp_message_id: Optional[str] = None,
 ) -> Interacao:
-    # Evita duplicidade (Idempotência)
+    # 1. Check for replay attack if message ID is provided
     if whatsapp_message_id:
         existing = await db.execute(
             select(Interacao).where(Interacao.whatsapp_message_id == whatsapp_message_id)
         )
-        if existing.scalar_one_or_none():
-            logger.info("skip_duplicate_message", message_id=whatsapp_message_id)
-            return None
+        duplicate = existing.scalar_one_or_none()
+        if duplicate:
+            logger.warning("webhook_replay_detected", message_id=whatsapp_message_id, lead_id=str(lead_id))
+            return duplicate
 
     interacao = Interacao(
         lead_id=lead_id,
