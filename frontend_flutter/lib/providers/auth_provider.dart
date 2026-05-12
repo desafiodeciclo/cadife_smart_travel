@@ -51,3 +51,8 @@ class CurrentUserNotifier extends AsyncNotifier<User> {
     state = const AsyncValue.loading(); // Reset state
   }
 }
+
+// Provider
+final currentUserProvider = AsyncNotifierProvider<CurrentUserNotifier, User>(
+  () => CurrentUserNotifier(),
+);
