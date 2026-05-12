@@ -188,6 +188,18 @@ class Settings(BaseSettings):
         description="Global toggle for response caching via Redis",
     )
 
+    # ── AYA Toggle Feature ────────────────────────────────────────────────
+    AYA_CONTEXT_MSGS: int = Field(
+        default=10,
+        ge=1,
+        description="Number of recent messages injected as context when AYA is reactivated",
+    )
+    AYA_ALERT_HOURS: int = Field(
+        default=48,
+        ge=1,
+        description="Hours before alerting consultant that AYA has been disabled for too long",
+    )
+
     # ── Business Rules (spec.md §8.4) ─────────────────────────────────────
     LEAD_EXPIRATION_DAYS: int = Field(
         default=30,
