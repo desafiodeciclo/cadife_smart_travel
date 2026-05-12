@@ -11,7 +11,7 @@ async def test_get_me_unauthorized(async_client: AsyncClient):
     """Should return 401 if no token is provided."""
     # We use the raw client to ensure we are testing the middleware, 
     # as the async_client fixture might have overrides.
-    response = await async_client.get("/me")
+    response = await async_client.get("/users/me")
     assert response.status_code == 401
     # FastAPI HTTPBearer returns "Not authenticated" when token is missing
     assert response.json()["detail"] == "Not authenticated"
@@ -20,7 +20,7 @@ async def test_get_me_unauthorized(async_client: AsyncClient):
 async def test_get_me_invalid_token(async_client: AsyncClient, invalid_jwt_token: str):
     """Should return 401 if token is invalid."""
     headers = {"Authorization": f"Bearer {invalid_jwt_token}"}
-    response = await async_client.get("/me", headers=headers)
+    response = await async_client.get("/users/me", headers=headers)
     assert response.status_code == 401
     assert response.json()["detail"] == "Invalid token"
 
@@ -28,7 +28,7 @@ async def test_get_me_invalid_token(async_client: AsyncClient, invalid_jwt_token
 async def test_get_me_expired_token(async_client: AsyncClient, expired_jwt_token: str):
     """Should return 401 if token is expired."""
     headers = {"Authorization": f"Bearer {expired_jwt_token}"}
-    response = await async_client.get("/me", headers=headers)
+    response = await async_client.get("/users/me", headers=headers)
     assert response.status_code == 401
     assert response.json()["detail"] == "Invalid token"
 
@@ -54,7 +54,7 @@ async def test_get_me_success(async_client: AsyncClient, db_session: AsyncSessio
 
     # 3. Request /me
     headers = {"Authorization": f"Bearer {token}"}
-    response = await async_client.get("/me", headers=headers)
+    response = await async_client.get("/users/me", headers=headers)
 
     assert response.status_code == 200
     data = response.json()
