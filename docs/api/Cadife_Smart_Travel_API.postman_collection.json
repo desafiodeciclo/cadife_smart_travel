@@ -1,6 +1,6 @@
 {
   "info": {
-    "_postman_id": "098a9806-175d-4e4a-a4bf-229fa43b9486",
+    "_postman_id": "baac01ef-6019-4449-a018-93316a291c62",
     "name": "Cadife Smart Travel API",
     "description": "Backend inteligente para turismo via WhatsApp + Flutter. Orquestra webhooks da Meta, processamento de IA (RAG + LangChain), gestão de leads, propostas e agendamentos. Documentação completa disponível em /docs (Swagger UI) e /redoc (ReDoc).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -475,6 +475,70 @@
               ]
             },
             "description": "Retorna todas as mensagens trocadas entre o cliente e a IA para um lead específico."
+          },
+          "response": []
+        },
+        {
+          "name": "Histórico de evolução do score",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads/{lead_id}/score-history",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "{lead_id}",
+                "score-history"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "",
+                  "description": ""
+                },
+                {
+                  "key": "limit",
+                  "value": "",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "Retorna o histórico auditável de cada recálculo do score de qualificação do lead, com critérios detalhados por ponto e motivo do cálculo."
+          },
+          "response": []
+        },
+        {
+          "name": "Recalcular score manualmente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads/{lead_id}/recalculate-score",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "{lead_id}",
+                "recalculate-score"
+              ]
+            },
+            "description": "Força o recálculo do score de qualificação com base no estado atual do briefing. Disponível apenas para admin e agência. Persiste o novo score e insere entrada no histórico."
           },
           "response": []
         },
