@@ -6,6 +6,8 @@ controle de acesso (ownership).
 """
 
 import uuid
+from unittest.mock import patch
+
 import pytest
 from datetime import datetime, timezone, timedelta
 
@@ -13,6 +15,7 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.persistence.models.travel_model import TravelModel
+from app.models.documento import Documento
 
 
 @pytest.mark.asyncio
@@ -167,5 +170,125 @@ class TestTravelsRoutes:
     ):
         """GET /travels/{id} com ID mal formatado retorna 400."""
         resp = await async_client.get("/travels/invalid-uuid")
+        assert resp.status_code == 400
+        assert resp.json()["detail"] == "Invalid travel ID format"
+
+    # ──────────────────────────────────────────────────────────────────
+    # GET /travels/{travel_id}/documents
+    # ──────────────────────────────────────────────────────────────────
+
+    async def test_get_travel_documents_success(
+        self,
+        async_client: AsyncClient,
+        db_session: AsyncSession,
+        override_get_current_user,
+    ):
+        """GET /travels/{id}/documents retorna documentos com URLs assinadas."""
+        user_id = override_get_current_user.id
+
+        travel = TravelModel(
+            id=uuid.uuid4(),
+            user_id=user_id,
+            destination="Barcelona",
+            start_date=datetime(2026, 6, 1, tzinfo=timezone.utc),
+            end_date=datetime(2026, 6, 10, tzinfo=timezone.utc),
+            status="upcoming",
+        )
+        db_session.add(travel)
+        await db_session.commit()
+
+        doc = Documento(
+            id=uuid.uuid4(),
+            lead_id=uuid.uuid4(),
+            travel_id=travel.id,
+            nome="passagem.pdf",
+            s3_key="documents/test/passagem.pdf",
+            categoria="passagem",
+            tamanho_bytes=2048,
+            mimetype="application/pdf",
+        )
+        db_session.add(doc)
+        await db_session.commit()
+
+        with patch(
+            "app.infrastructure.adapters.storage.s3_adapter.S3StorageAdapter.generate_presigned_url",
+            return_value="https://s3.example.com/signed-passagem.pdf",
+        ):
+            resp = await async_client.get(f"/travels/{travel.id}/documents")
+
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["count"] == 1
+        assert len(data["documents"]) == 1
+        assert data["documents"][0]["name"] == "passagem.pdf"
+        assert data["documents"][0]["type"] == "pdf"
+        assert data["documents"][0]["size_kb"] == 2
+        assert data["documents"][0]["url"] == "https://s3.example.com/signed-passagem.pdf"
+        assert data["documents"][0]["travel_id"] == str(travel.id)
+
+    async def test_get_travel_documents_empty(
+        self,
+        async_client: AsyncClient,
+        db_session: AsyncSession,
+        override_get_current_user,
+    ):
+        """GET /travels/{id}/documents sem documentos retorna lista vazia."""
+        user_id = override_get_current_user.id
+
+        travel = TravelModel(
+            id=uuid.uuid4(),
+            user_id=user_id,
+            destination="Lisboa",
+            start_date=datetime(2026, 7, 1, tzinfo=timezone.utc),
+            end_date=datetime(2026, 7, 10, tzinfo=timezone.utc),
+            status="upcoming",
+        )
+        db_session.add(travel)
+        await db_session.commit()
+
+        resp = await async_client.get(f"/travels/{travel.id}/documents")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["count"] == 0
+        assert data["documents"] == []
+
+    async def test_get_travel_documents_not_found(
+        self,
+        async_client: AsyncClient,
+    ):
+        """GET /travels/{id}/documents para viagem inexistente retorna 404."""
+        fake_id = uuid.uuid4()
+        resp = await async_client.get(f"/travels/{fake_id}/documents")
+        assert resp.status_code == 404
+        assert resp.json()["detail"] == "Travel not found"
+
+    async def test_get_travel_documents_forbidden_other_user(
+        self,
+        async_client: AsyncClient,
+        db_session: AsyncSession,
+    ):
+        """Usuário não pode ver documentos de viagem de outro usuário."""
+        other_user_id = uuid.uuid4()
+
+        travel = TravelModel(
+            id=uuid.uuid4(),
+            user_id=other_user_id,
+            destination="Madri",
+            start_date=datetime(2026, 8, 1, tzinfo=timezone.utc),
+            end_date=datetime(2026, 8, 10, tzinfo=timezone.utc),
+            status="upcoming",
+        )
+        db_session.add(travel)
+        await db_session.commit()
+
+        resp = await async_client.get(f"/travels/{travel.id}/documents")
+        assert resp.status_code == 404
+
+    async def test_get_travel_documents_invalid_id_format(
+        self,
+        async_client: AsyncClient,
+    ):
+        """GET /travels/{id}/documents com ID mal formatado retorna 400."""
+        resp = await async_client.get("/travels/invalid-uuid/documents")
         assert resp.status_code == 400
         assert resp.json()["detail"] == "Invalid travel ID format"

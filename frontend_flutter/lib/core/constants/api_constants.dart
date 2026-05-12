@@ -47,6 +47,9 @@ class ApiConstants {
   static const String iaProcessar = '/ia/processar';
   static const String iaExtrairBriefing = '/ia/extrair-briefing';
 
+  // ── Travels ────────────────────────────────────────────
+  static String travelDocuments(String travelId) => '/travels/$travelId/documents';
+
   // ── Webhook (para health check) ────────────────────────
   static const String webhookHealth = '/health';
 }
