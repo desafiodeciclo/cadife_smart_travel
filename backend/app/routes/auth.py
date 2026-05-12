@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import get_current_user, get_db
+from app.middleware.auth import verify_jwt
 from app.core.security import (
     create_access_token,
     create_refresh_token,
@@ -101,6 +102,26 @@ async def refresh_token(body: RefreshRequest, db: AsyncSession = Depends(get_db)
 )
 async def get_me(current_user=Depends(get_current_user)):
     return UserResponse.model_validate(current_user)
+
+
+@router.get(
+    "/me",
+    response_model=UserResponse,
+    summary="Perfil do usuário (Novo Middleware)",
+    description="Retorna os dados do usuário autenticado usando o middleware verify_jwt.",
+    responses={
+        401: {"description": "Token inválido ou expirado", "model": HTTPErrorResponse},
+    },
+)
+async def get_me_v2(
+    db: AsyncSession = Depends(get_db),
+    user_id: str = Depends(verify_jwt)
+):
+    from app.services.user_service import get_user_by_id
+    user = await get_user_by_id(db, user_id)
+    if not user:
+        raise HTTPException(status_code=401, detail="Usuário não encontrado")
+    return UserResponse.model_validate(user)
 
 
 @router.patch(
