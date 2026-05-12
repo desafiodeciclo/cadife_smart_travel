@@ -1,11 +1,13 @@
 import 'dart:async';
 
 import 'package:cadife_smart_travel/core/constants/assets_constants.dart';
+import 'package:cadife_smart_travel/core/constants/legal_constants.dart';
 import 'package:cadife_smart_travel/core/utils/extensions/string_extensions.dart';
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:cadife_smart_travel/features/settings/application/theme_notifier.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -31,6 +33,24 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   Timer? _emailDebounce;
   bool _acceptedTerms = false;
 
+  late TapGestureRecognizer _termsRecognizer;
+  late TapGestureRecognizer _privacyRecognizer;
+
+  @override
+  void initState() {
+    super.initState();
+    _termsRecognizer = TapGestureRecognizer()
+      ..onTap = () => _showLegalModal(
+            LegalConstants.termsOfUseTitle,
+            LegalConstants.termsOfUseContent,
+          );
+    _privacyRecognizer = TapGestureRecognizer()
+      ..onTap = () => _showLegalModal(
+            LegalConstants.privacyPolicyTitle,
+            LegalConstants.privacyPolicyContent,
+          );
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -39,6 +59,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _emailDebounce?.cancel();
+    _termsRecognizer.dispose();
+    _privacyRecognizer.dispose();
     super.dispose();
   }
 
@@ -89,6 +111,51 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           _emailController.text.trim(),
           _passwordController.text,
         );
+  }
+
+  void _showLegalModal(String title, String content) {
+    showShadDialog(
+      context: context,
+      builder: (context) {
+        final cadife = context.cadife;
+        return ShadDialog(
+          title: Text(title, style: AppTextStyles.h3),
+          description: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Text(
+                  'Última atualização: Maio 2026',
+                  style: AppTextStyles.labelSmall.copyWith(color: cadife.textSecondary),
+                ),
+              ),
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.5,
+                ),
+                child: SingleChildScrollView(
+                  child: Text(
+                    content,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: cadife.textSecondary,
+                      height: 1.5,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            ShadButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('FECHAR'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -287,6 +354,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                           text: 'Li e aceito os '),
                                       TextSpan(
                                         text: 'Termos de Uso',
+                                        recognizer: _termsRecognizer,
                                         style: AppTextStyles.bodySmall
                                             .copyWith(
                                           color: cadife.primary,
@@ -299,6 +367,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                       const TextSpan(text: ' e a '),
                                       TextSpan(
                                         text: 'Política de Privacidade',
+                                        recognizer: _privacyRecognizer,
                                         style: AppTextStyles.bodySmall
                                             .copyWith(
                                           color: cadife.primary,

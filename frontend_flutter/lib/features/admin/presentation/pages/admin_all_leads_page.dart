@@ -84,7 +84,7 @@ class _AdminAllLeadsPageState extends ConsumerState<AdminAllLeadsPage> {
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.push('/agency/leads/new'),
         backgroundColor: AppColors.primary,
-        child: const Icon(Icons.add, color: Colors.white),
+        child: const Center(child: Icon(Icons.add, color: Colors.white)),
       ),
       body: Column(
         children: [

@@ -77,7 +77,7 @@ class _AdminConsultantListPageState extends ConsumerState<AdminConsultantListPag
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.push('/agency/admin/consultants/new'),
         backgroundColor: AppColors.primary,
-        child: const Icon(LucideIcons.plus, color: Colors.white, size: 24),
+        child: const Center(child: Icon(LucideIcons.plus, color: Colors.white, size: 24)),
       ),
       body: Column(
         children: [
