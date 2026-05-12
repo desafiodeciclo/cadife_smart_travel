@@ -23,5 +23,5 @@ final leadsDatasourceProvider = Provider<ILeadsDatasource>((ref) {
 
 final leadsRepositoryProvider = Provider<ILeadsRepository>((ref) {
   final datasource = ref.watch(leadsDatasourceProvider);
-  return LeadsRepositoryImpl(remoteDatasource: datasource);
+  return LeadsRepositoryImpl(datasource: datasource);
 });

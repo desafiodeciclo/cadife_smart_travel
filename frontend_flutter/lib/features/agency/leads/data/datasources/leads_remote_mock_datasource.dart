@@ -81,7 +81,10 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
   @override
   Future<LeadApiModel> getLeadById(String id) async {
     await Future.delayed(const Duration(milliseconds: 300));
-    return _mockLeads.firstWhere((l) => l.id == id);
+    return _mockLeads.firstWhere(
+      (l) => l.id == id,
+      orElse: () => throw Exception('Lead não encontrado: $id'),
+    );
   }
 
   @override
@@ -183,8 +186,7 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
   @override
   Future<void> toggleAya(String leadId, {required bool ativo, String? motivo}) async {
     await Future.delayed(const Duration(milliseconds: 300));
-    // Simulação de alteração de estado da IA
-    print('AYA ${ativo ? 'ativada' : 'desativada'} para lead $leadId. Motivo: $motivo');
+    // Simulação de alteração de estado da IA concluída
   }
 
   @override

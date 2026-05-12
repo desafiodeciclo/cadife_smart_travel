@@ -8,7 +8,6 @@ if TYPE_CHECKING:
     from app.models.agendamento import Agendamento
     from app.models.proposta import Proposta
     from app.models.user import User
-    from app.models.documento import Documento
     from app.models.lead_score_history import LeadScoreHistory
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, func
