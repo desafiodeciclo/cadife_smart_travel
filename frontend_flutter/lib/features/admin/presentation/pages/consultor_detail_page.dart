@@ -88,7 +88,7 @@ class _ConsultorDetailPageState extends ConsumerState<ConsultorDetailPage>
                           fit: BoxFit.cover,
                           color: Colors.black45,
                           colorBlendMode: BlendMode.darken,
-                          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                          errorBuilder: (_, _, _) => const SizedBox.shrink(),
                         ),
                       // Avatar circular centralizado
                       Center(
@@ -569,7 +569,7 @@ class _NotesTab extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Icon(LucideIcons.stickyNote, size: 14, color: AppColors.primary),
+                  const Icon(LucideIcons.stickyNote, size: 14, color: AppColors.primary),
                   const SizedBox(width: 8),
                   Text(
                     'Nota — 01/05/2026',

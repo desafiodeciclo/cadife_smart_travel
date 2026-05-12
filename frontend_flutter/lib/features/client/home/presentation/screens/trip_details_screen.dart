@@ -151,18 +151,7 @@ class _DetailView extends ConsumerWidget {
         ? vm.endDate!.difference(vm.startDate!).inDays
         : null;
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) {
-          if (context.canPop()) {
-            context.pop();
-          } else {
-            context.go('/client/status');
-          }
-        }
-      },
-      child: Scaffold(
+    return Scaffold(
         backgroundColor: cadife.background,
         body: CustomScrollView(
           physics: const BouncingScrollPhysics(),
@@ -393,7 +382,6 @@ class _DetailView extends ConsumerWidget {
             ),
           ],
         ),
-      ),
     );
   }
 }
@@ -456,41 +444,6 @@ class _CoverImage extends StatelessWidget {
               ],
               stops: const [0.0, 0.4, 1.0],
             ),
-          ),
-        ),
-        // Destination label at the bottom of the cover
-        Positioned(
-          bottom: 20,
-          left: 20,
-          right: 20,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (vm.flag != null)
-                Text(vm.flag!, style: const TextStyle(fontSize: 30)),
-              Text(
-                vm.displayTitle,
-                style: const TextStyle(
-                  color: AppColors.white,
-                  fontSize: 26,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.5,
-                  shadows: [
-                    Shadow(color: Colors.black45, blurRadius: 8),
-                  ],
-                ),
-              ),
-              if (vm.destinationCountry != null)
-                Text(
-                  vm.destinationCountry!,
-                  style: TextStyle(
-                    color: AppColors.white.withValues(alpha: 0.85),
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-            ],
           ),
         ),
       ],
@@ -568,7 +521,8 @@ class _InfoBadge extends StatelessWidget {
                       color: cadife.textPrimary,
                       fontWeight: FontWeight.w700,
                     ),
-                    overflow: TextOverflow.ellipsis,
+                    maxLines: 2,
+                    softWrap: true,
                   ),
                 ],
               ),
@@ -698,45 +652,43 @@ class _QuickAccessCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cadife = context.cadife;
-    return GestureDetector(
+    return CadifeCard(
       onTap: onTap,
-      child: CadifeCard(
-        padding: const EdgeInsets.all(18),
-        borderRadius: 18,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: accentColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(12),
+      padding: const EdgeInsets.all(18),
+      borderRadius: 18,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: accentColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, size: 22, color: accentColor),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            label,
+            style: AppTextStyles.labelSmall.copyWith(
+              color: cadife.textPrimary,
+              fontWeight: FontWeight.w700,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Text(
+                'Acessar',
+                style: AppTextStyles.caption.copyWith(color: accentColor),
               ),
-              child: Icon(icon, size: 22, color: accentColor),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              label,
-              style: AppTextStyles.labelSmall.copyWith(
-                color: cadife.textPrimary,
-                fontWeight: FontWeight.w700,
-                height: 1.4,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                Text(
-                  'Acessar',
-                  style: AppTextStyles.caption.copyWith(color: accentColor),
-                ),
-                const SizedBox(width: 2),
-                Icon(Icons.arrow_forward, size: 11, color: accentColor),
-              ],
-            ),
-          ],
-        ),
+              const SizedBox(width: 2),
+              Icon(Icons.arrow_forward, size: 11, color: accentColor),
+            ],
+          ),
+        ],
       ),
     );
   }

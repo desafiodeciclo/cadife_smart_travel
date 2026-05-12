@@ -1,6 +1,5 @@
 import 'package:cadife_smart_travel/core/utils/extensions/extensions.dart';
 import 'package:cadife_smart_travel/design_system/design_system.dart';
-import 'package:cadife_smart_travel/features/admin/domain/entities/admin_entities.dart';
 import 'package:cadife_smart_travel/features/admin/presentation/providers/admin_providers.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/providers/leads_notifier.dart';
@@ -80,7 +79,12 @@ class _AdminAllLeadsPageState extends ConsumerState<AdminAllLeadsPage> {
     return PageScaffold(
       appBar: const CadifeAppBar(
         title: 'Todos os Leads',
-        showProfile: false,
+        showProfile: true,
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => context.push('/agency/leads/new'),
+        backgroundColor: AppColors.primary,
+        child: const Icon(Icons.add, color: Colors.white),
       ),
       body: Column(
         children: [
@@ -247,7 +251,7 @@ class _AdminFilterSheet extends ConsumerWidget {
               );
             },
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, __) => const Text('Erro ao carregar consultores'),
+            error: (_, _) => const Text('Erro ao carregar consultores'),
           ),
           const SizedBox(height: 32),
           ShadButton(

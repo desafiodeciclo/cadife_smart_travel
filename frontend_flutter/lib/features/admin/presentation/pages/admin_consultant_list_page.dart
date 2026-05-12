@@ -70,28 +70,14 @@ class _AdminConsultantListPageState extends ConsumerState<AdminConsultantListPag
         activeStatusFilter != null || ref.watch(_consultorSearchProvider).isNotEmpty;
 
     return PageScaffold(
-      appBar: CadifeAppBar(
+      appBar: const CadifeAppBar(
         title: 'Consultores',
-        showProfile: false,
-        actions: [
-          IconButton(
-            icon: const Icon(LucideIcons.plus),
-            onPressed: () => context.push('/agency/admin/consultants/new'),
-          ),
-        ],
+        showProfile: true,
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
         onPressed: () => context.push('/agency/admin/consultants/new'),
         backgroundColor: AppColors.primary,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text(
-          'NOVO CONSULTOR',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.5,
-          ),
-        ),
+        child: const Icon(LucideIcons.plus, color: Colors.white, size: 24),
       ),
       body: Column(
         children: [
@@ -203,7 +189,13 @@ class _ConsultorFilterSheet extends StatelessWidget {
           ShadButton(
             onPressed: () => context.pop(),
             width: double.infinity,
-            child: const Text('Aplicar Filtros'),
+            child: const Text(
+              'Aplicar Filtros',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),

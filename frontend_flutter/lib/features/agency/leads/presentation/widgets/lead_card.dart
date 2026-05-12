@@ -30,7 +30,7 @@ class LeadCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           child: InkWell(
             borderRadius: BorderRadius.circular(12),
-            onTap: () => context.push('/agency/leads/${lead.id}'),
+            onTap: () => context.go('/agency/leads/${lead.id}'),
             child: Stack(
               children: [
                 // Borda lateral colorida por status

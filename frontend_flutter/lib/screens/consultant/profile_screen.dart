@@ -111,35 +111,6 @@ class ProfileScreen extends ConsumerWidget {
                 else
                   _ConsultantMetricsGrid(user: user),
 
-                const SizedBox(height: 32),
-
-                // Bio
-                if (user.role != UserRole.admin) ...[
-                  const Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'SOBRE VOCÊ',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  CadifeCard(
-                    padding: const EdgeInsets.all(14),
-                    child: Text(
-                      user.bio ?? 'Nenhuma bio preenchida',
-                      style: TextStyle(
-                        fontSize: 13,
-                        height: 1.6,
-                        color: context.cadife.textPrimary,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                ],
 
                 const SizedBox(height: 16),
               ],

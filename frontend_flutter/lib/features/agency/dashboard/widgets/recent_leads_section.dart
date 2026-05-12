@@ -52,14 +52,13 @@ class _LeadRow extends StatelessWidget {
     final timeAgo = _timeAgo(lead.createdAt);
 
     return GestureDetector(
-      onTap: () => context.pushNamed(
+      onTap: () => context.goNamed(
         'agency_lead_details',
         pathParameters: {'leadId': lead.id},
       ),
-      child: ShadCard(
+      child: CadifeCard(
         padding: const EdgeInsets.all(12),
-        radius: BorderRadius.circular(12),
-        border: ShadBorder.all(color: context.cadife.cardBorder),
+        borderRadius: 12,
         child: Row(
           children: [
             // Avatar

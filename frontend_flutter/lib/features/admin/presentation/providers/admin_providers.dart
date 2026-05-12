@@ -68,11 +68,17 @@ class AdminConsultoresNotifier extends AsyncNotifier<List<ConsultorAdmin>> {
     required String name,
     required String email,
     required String phone,
+    required String password,
   }) async {
     state = const AsyncValue.loading();
     final repo = ref.read(mockAdminRepositoryProvider);
     try {
-      await repo.createConsultor(name: name, email: email, phone: phone);
+      await repo.createConsultor(
+        name: name,
+        email: email,
+        phone: phone,
+        password: password,
+      );
       state = AsyncValue.data(await repo.getConsultores());
     } on Exception catch (e, st) {
       state = AsyncValue.error(e, st);

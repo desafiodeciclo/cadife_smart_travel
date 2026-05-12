@@ -32,6 +32,63 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
     return docs.where((d) => d.name.toLowerCase().contains(q)).toList();
   }
 
+  void _showFilterOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: context.cadife.background,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: context.cadife.cardBorder,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Filtros', style: AppTextStyles.h4),
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _searchController.clear();
+                      _searchQuery = '';
+                    });
+                    context.pop();
+                  },
+                  child: const Text('Limpar'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            Text('Em breve, mais opções de filtros...',
+                style: TextStyle(color: context.cadife.textSecondary)),
+            const SizedBox(height: 32),
+            ShadButton(
+              onPressed: () => context.pop(),
+              width: double.infinity,
+              child: const Text('Aplicar Filtros'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final globalDocsAsync = ref.watch(globalDocumentsProvider);
@@ -53,6 +110,46 @@ class _DocumentosPageState extends ConsumerState<DocumentosPage> {
                 leading: const Padding(
                   padding: EdgeInsets.all(12.0),
                   child: Icon(LucideIcons.search, size: 16),
+                ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_searchController.text.isNotEmpty) ...[
+                      ShadIconButton.ghost(
+                        icon: Icon(
+                          LucideIcons.x,
+                          color: context.isDark ? Colors.white60 : context.cadife.textSecondary,
+                          size: 16,
+                        ),
+                        width: 32,
+                        height: 32,
+                        padding: EdgeInsets.zero,
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() => _searchQuery = '');
+                        },
+                      ),
+                      const SizedBox(width: 4),
+                    ],
+                    Container(
+                      width: 1,
+                      height: 20,
+                      color: context.cadife.cardBorder,
+                    ),
+                    const SizedBox(width: 4),
+                    ShadIconButton.ghost(
+                      icon: Icon(
+                        LucideIcons.slidersHorizontal,
+                        color: context.isDark ? Colors.white60 : context.cadife.textSecondary,
+                        size: 18,
+                      ),
+                      width: 32,
+                      height: 32,
+                      padding: EdgeInsets.zero,
+                      onPressed: () => _showFilterOptions(context),
+                    ),
+                    const SizedBox(width: 4),
+                  ],
                 ),
               ),
             ),

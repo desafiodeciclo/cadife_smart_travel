@@ -67,10 +67,9 @@ class _PipelineRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ShadCard(
+    return CadifeCard(
       padding: EdgeInsets.zero,
-      radius: BorderRadius.circular(12),
-      border: ShadBorder.all(color: context.cadife.cardBorder),
+      borderRadius: 12,
       child: Material(
         color: Colors.transparent,
         child: InkWell(

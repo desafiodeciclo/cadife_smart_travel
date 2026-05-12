@@ -79,6 +79,7 @@ class MockAdminRepository {
     required String name,
     required String email,
     required String phone,
+    required String password,
   }) async {
     await Future.delayed(const Duration(milliseconds: 800));
     final newConsultor = ConsultorAdmin(

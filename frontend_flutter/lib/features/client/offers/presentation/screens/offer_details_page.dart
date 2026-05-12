@@ -1547,14 +1547,18 @@ class _OfferDetailsPageState extends ConsumerState<OfferDetailsPage> {
                     flex: 2,
                     child: FilledButton(
                       style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.primary),
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white),
                       onPressed: () async {
                         Navigator.pop(ctx);
                         await _submitInterest(offer);
                       },
                       child: const Text(
                         'Confirmar interesse',
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),

@@ -24,7 +24,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _notifNewMeeting = true;
   bool _notifAutoDeactivate = false;
   TimeOfDay _deactivateTime = const TimeOfDay(hour: 22, minute: 0);
-  String _selectedCurrency = 'BRL (R\$)';
 
   @override
   Widget build(BuildContext context) {
@@ -124,33 +123,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ],
                 ),
 
-
-                // SEÇÃO: Preferências (apenas cliente)
-                if (user.role == UserRole.cliente) ...[
-                  _buildSection(
-                    context,
-                    title: 'PREFERÊNCIAS',
-                    children: [
-                      _buildSettingButton(
-                        context,
-                        label: 'Estilo de Viagem',
-                        onTap: () {
-                          ShadToaster.of(context).show(
-                            const ShadToast(description: Text('Configuração de estilo em breve')),
-                          );
-                        },
-                      ),
-                      _buildSettingOption(
-                        context,
-                        label: 'Moeda Preferencial',
-                        options: ['BRL (R\$)', 'USD (\$)', 'EUR (€)'],
-                        value: _selectedCurrency,
-                        onChanged: (value) => setState(() => _selectedCurrency = value),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                ],
 
                 // SEÇÃO: Aparência
                 _buildSection(
@@ -369,60 +341,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  Widget _buildSettingOption(
-    BuildContext context, {
-    required String label,
-    required List<String> options,
-    required String value,
-    required ValueChanged<String> onChanged,
-  }) {
-    final cadife = context.cadife;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: GoogleFonts.inter(
-              fontWeight: FontWeight.w700,
-              fontSize: 14,
-              color: cadife.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              color: cadife.background,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: cadife.cardBorder),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: value,
-                isExpanded: true,
-                dropdownColor: cadife.surface,
-                icon: Icon(LucideIcons.chevronDown, size: 16, color: cadife.textSecondary),
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: cadife.textPrimary,
-                ),
-                items: options
-                    .map((e) => DropdownMenuItem(
-                          value: e,
-                          child: Text(e),
-                        ))
-                    .toList(),
-                onChanged: (val) => onChanged(val!),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildSettingButton(
     BuildContext context, {
@@ -509,7 +428,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       const ShadToast(description: Text('Senha alterada com sucesso')),
                     );
                   },
-                  child: const Text('Salvar'),
+                  child: const Text(
+                    'Salvar',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
             ],

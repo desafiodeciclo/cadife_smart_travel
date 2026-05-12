@@ -370,15 +370,10 @@ class _CadifeLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SvgPicture.asset(
-      AssetsConstants.logoFull,
+      isDark ? AssetsConstants.logoSvgNegativo : AssetsConstants.logoSvgPositivo,
       width: 220,
       height: 110,
       fit: BoxFit.contain,
-      // No modo escuro, aplicamos um filtro branco para que a logomarca seja visível.
-      // No modo claro, mantemos as cores originais (texto escuro e detalhes em vermelho).
-      colorFilter: isDark
-          ? const ColorFilter.mode(Colors.white, BlendMode.srcIn)
-          : null,
     );
   }
 }

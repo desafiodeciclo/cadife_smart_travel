@@ -26,14 +26,6 @@ class ItineraryWidget extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Itinerário',
-          style: AppTextStyles.h4.copyWith(
-            fontWeight: FontWeight.w700,
-            color: context.cadife.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 12),
         ...visible.asMap().entries.map((e) {
           return Padding(
             padding: const EdgeInsets.only(bottom: 10),
@@ -149,7 +141,7 @@ class _ItemRow extends StatelessWidget {
               children: [
                 Text(
                   item.titulo,
-                  style: AppTextStyles.bodySmall.copyWith(
+                  style: AppTextStyles.bodyMedium.copyWith(
                     fontWeight: FontWeight.w600,
                     color: context.cadife.textPrimary,
                   ),
@@ -159,21 +151,21 @@ class _ItemRow extends StatelessWidget {
                   children: [
                     Text(
                       timeFmt.format(item.dataHora),
-                      style: AppTextStyles.caption.copyWith(
+                      style: AppTextStyles.bodySmall.copyWith(
                         color: context.cadife.textSecondary,
                       ),
                     ),
                     if (item.local != null) ...[
                       Text(
                         ' · ',
-                        style: AppTextStyles.caption.copyWith(
+                        style: AppTextStyles.bodySmall.copyWith(
                           color: context.cadife.textSecondary,
                         ),
                       ),
                       Flexible(
                         child: Text(
                           item.local!,
-                          style: AppTextStyles.caption.copyWith(
+                          style: AppTextStyles.bodySmall.copyWith(
                             color: context.cadife.textSecondary,
                           ),
                           overflow: TextOverflow.ellipsis,

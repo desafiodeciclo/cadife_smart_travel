@@ -216,7 +216,7 @@ class _LeadsStatusDrawer extends StatelessWidget {
     return Container(
       height: MediaQuery.of(context).size.height * 0.75,
       decoration: BoxDecoration(
-        color: cadife.background,
+        color: cadife.cardBackground,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         boxShadow: [
           BoxShadow(

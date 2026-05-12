@@ -145,9 +145,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         // ── Logo ──────────────────────────────────────────
                         Center(
                           child: SvgPicture.asset(
-                            AssetsConstants.logoFull,
-                            width: 180,
-                            height: 90,
+                            isDark ? AssetsConstants.logoSvgNegativo : AssetsConstants.logoSvgPositivo,
+                            width: 220,
+                            height: 110,
                             fit: BoxFit.contain,
                           ),
                         ),

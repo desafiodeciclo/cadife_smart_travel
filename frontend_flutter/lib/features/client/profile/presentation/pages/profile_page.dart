@@ -31,7 +31,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   bool _hasSynced = false;
 
   final List<String> _tipoViagemSelected = [];
-  final List<String> _preferenciasSelected = [];
   bool? _temPassaporte;
 
   static const _tipoViagemOptions = [
@@ -42,14 +41,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     'negócios',
   ];
 
-  static const _preferenciasOptions = [
-    'frio',
-    'calor',
-    'praia',
-    'cidade',
-    'luxo',
-    'econômico',
-  ];
 
   @override
   void initState() {
@@ -74,9 +65,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     _tipoViagemSelected
       ..clear()
       ..addAll(user.tipoViagem ?? []);
-    _preferenciasSelected
-      ..clear()
-      ..addAll(user.preferencias ?? []);
     _temPassaporte = user.temPassaporte;
     _hasSynced = true;
   }
@@ -88,7 +76,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
           bio: _bioController.text.trim(),
           phone: _phoneController.text.trim(),
           tipoViagem: List<String>.from(_tipoViagemSelected),
-          preferencias: List<String>.from(_preferenciasSelected),
           temPassaporte: _temPassaporte,
         );
     if (mounted) {
@@ -291,9 +278,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                   bioController: _bioController,
                   phoneController: _phoneController,
                   tipoViagemSelected: _tipoViagemSelected,
-                  preferenciasSelected: _preferenciasSelected,
                   tipoViagemOptions: _tipoViagemOptions,
-                  preferenciasOptions: _preferenciasOptions,
                   temPassaporte: _temPassaporte,
                   themePreference: themePref.maybeWhen(
                     data: (p) => p,
@@ -304,13 +289,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                       _tipoViagemSelected.remove(val);
                     } else {
                       _tipoViagemSelected.add(val);
-                    }
-                  }),
-                  onTogglePreferencia: (val) => setState(() {
-                    if (_preferenciasSelected.contains(val)) {
-                      _preferenciasSelected.remove(val);
-                    } else {
-                      _preferenciasSelected.add(val);
                     }
                   }),
                   onTogglePassaporte: () => setState(
@@ -566,13 +544,10 @@ class _ProfileInfoTab extends StatelessWidget {
     required this.bioController,
     required this.phoneController,
     required this.tipoViagemSelected,
-    required this.preferenciasSelected,
     required this.tipoViagemOptions,
-    required this.preferenciasOptions,
     required this.temPassaporte,
     required this.themePreference,
     required this.onToggleTipoViagem,
-    required this.onTogglePreferencia,
     required this.onTogglePassaporte,
     required this.onSave,
     required this.onCancel,
@@ -591,13 +566,10 @@ class _ProfileInfoTab extends StatelessWidget {
   final TextEditingController bioController;
   final TextEditingController phoneController;
   final List<String> tipoViagemSelected;
-  final List<String> preferenciasSelected;
   final List<String> tipoViagemOptions;
-  final List<String> preferenciasOptions;
   final bool? temPassaporte;
   final ThemePreference themePreference;
   final ValueChanged<String> onToggleTipoViagem;
-  final ValueChanged<String> onTogglePreferencia;
   final VoidCallback onTogglePassaporte;
   final VoidCallback onSave;
   final VoidCallback onCancel;
@@ -676,13 +648,6 @@ class _ProfileInfoTab extends StatelessWidget {
                 options: tipoViagemOptions,
                 selected: tipoViagemSelected,
                 onTap: isEditing ? onToggleTipoViagem : null,
-              ),
-              const SizedBox(height: 20),
-              ProfileChipGroup(
-                label: 'Preferências',
-                options: preferenciasOptions,
-                selected: preferenciasSelected,
-                onTap: isEditing ? onTogglePreferencia : null,
               ),
             ],
           ),
