@@ -167,14 +167,14 @@ async def test_analyze_image_includes_caption_in_prompt():
 async def test_route_media_audio_calls_transcribe():
     with (
         patch(
-            "app.services.whatsapp_service.download_whatsapp_media",
+            "app.services.whatsapp_service.download_media",
             new_callable=AsyncMock,
         ) as mock_dl,
         patch(
             "app.services.model_router.transcribe_audio", new_callable=AsyncMock
         ) as mock_tr,
     ):
-        mock_dl.return_value = (b"audio_bytes", "audio/ogg")
+        mock_dl.return_value = b"audio_bytes"
         mock_tr.return_value = "Quero ir para Lisboa"
 
         result = await model_router.route_media_message(
@@ -191,14 +191,14 @@ async def test_route_media_audio_calls_transcribe():
 async def test_route_media_image_calls_analyze():
     with (
         patch(
-            "app.services.whatsapp_service.download_whatsapp_media",
+            "app.services.whatsapp_service.download_media",
             new_callable=AsyncMock,
         ) as mock_dl,
         patch(
             "app.services.model_router.analyze_image", new_callable=AsyncMock
         ) as mock_an,
     ):
-        mock_dl.return_value = (b"img_bytes", "image/jpeg")
+        mock_dl.return_value = b"img_bytes"
         mock_an.return_value = "Passaporte brasileiro"
 
         result = await model_router.route_media_message(
@@ -217,7 +217,7 @@ async def test_route_media_returns_none_on_download_error():
     import httpx
 
     with patch(
-        "app.services.whatsapp_service.download_whatsapp_media",
+        "app.services.whatsapp_service.download_media",
         new_callable=AsyncMock,
         side_effect=httpx.TimeoutException("timeout"),
     ):
@@ -233,9 +233,9 @@ async def test_route_media_returns_none_on_download_error():
 @pytest.mark.asyncio
 async def test_route_media_unsupported_type_returns_none():
     with patch(
-        "app.services.whatsapp_service.download_whatsapp_media",
+        "app.services.whatsapp_service.download_media",
         new_callable=AsyncMock,
-        return_value=(b"data", "video/mp4"),
+        return_value=b"data",
     ):
         result = await model_router.route_media_message(
             msg_type="video",
