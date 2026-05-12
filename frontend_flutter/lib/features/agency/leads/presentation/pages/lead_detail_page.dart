@@ -16,6 +16,7 @@ import 'package:cadife_smart_travel/shared/presentation/widgets/state_container.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 class LeadDetailPage extends ConsumerStatefulWidget {
   final String leadId;
@@ -103,6 +104,9 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
                       : Container(color: context.cadife.primary),
                 ),
                 actions: [
+                  // Botão de Toggle da AYA
+                  _AyaToggleAction(lead: lead),
+                  // Menu de Opções
                   PopupMenuButton<String>(
                     icon: const Icon(Icons.more_vert, color: AppColors.white),
                     onSelected: (value) {
@@ -180,7 +184,6 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
     );
   }
 }
-
 
 class _InfoCard extends StatelessWidget {
   final Lead lead;
@@ -591,5 +594,98 @@ class _TimelineItem extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _AyaToggleAction extends ConsumerWidget {
+  final Lead lead;
+  const _AyaToggleAction({required this.lead});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Row(
+      children: [
+        Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text(
+              'AYA',
+              style: TextStyle(
+                color: AppColors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(
+              height: 24,
+              child: Switch(
+                value: lead.ayaAtivo,
+                activeThumbColor: AppColors.white,
+                activeTrackColor: Colors.green.shade400,
+                inactiveThumbColor: AppColors.white,
+                inactiveTrackColor: Colors.grey.shade400,
+                onChanged: (value) => _handleToggle(context, ref, value),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(width: 8),
+      ],
+    );
+  }
+
+  Future<void> _handleToggle(BuildContext context, WidgetRef ref, bool newValue) async {
+    if (!newValue) {
+      final motivoController = TextEditingController();
+      final confirm = await showShadDialog<bool>(
+        context: context,
+        builder: (context) => ShadDialog(
+          title: const Text('Desativar AYA?'),
+          description: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Ao desativar a AYA, você assume o atendimento manual deste cliente. A IA não responderá mais automaticamente.',
+              ),
+              const SizedBox(height: 16),
+              ShadInput(
+                controller: motivoController,
+                placeholder: const Text('Motivo (ex: Atendimento manual)'),
+              ),
+            ],
+          ),
+          actions: [
+            ShadButton.ghost(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            ShadButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Desativar'),
+            ),
+          ],
+        ),
+      );
+
+      if (confirm == true) {
+        await ref.read(leadDetailProvider(lead.id).notifier).toggleAya(
+              ativo: false,
+              motivo: motivoController.text.isNotEmpty ? motivoController.text : 'Atendimento manual',
+            );
+        if (context.mounted) {
+          ShadToaster.of(context).show(
+            const ShadToast(description: Text('AYA desativada para esta conversa.')),
+          );
+        }
+      }
+    } else {
+      await ref.read(leadDetailProvider(lead.id).notifier).toggleAya(ativo: true);
+      if (context.mounted) {
+        ShadToaster.of(context).show(
+          const ShadToast(description: Text('AYA reativada. O contexto foi preservado.')),
+        );
+      }
+    }
   }
 }

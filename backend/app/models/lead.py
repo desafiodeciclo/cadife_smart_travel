@@ -9,8 +9,9 @@ if TYPE_CHECKING:
     from app.models.proposta import Proposta
     from app.models.user import User
     from app.models.documento import Documento
+    from app.models.lead_score_history import LeadScoreHistory
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, String, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, func
 from sqlalchemy.dialects.postgresql import ENUM as PgEnum, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from pydantic import BaseModel
@@ -48,10 +49,15 @@ class Lead(Base):
     score: Mapped[Optional[LeadScore]] = mapped_column(
         PgEnum(LeadScore, name="lead_score_enum", create_type=False)
     )
+    score_numerico: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    score_calculado_em: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     consultor_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id")
     )
+    aya_ativo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_archived: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     criado_em: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
@@ -76,6 +82,12 @@ class Lead(Base):
         "User",
         primaryjoin="foreign(Lead.consultor_id) == User.id",
         overlaps="consultor",
+    )
+    score_history: Mapped[list["LeadScoreHistory"]] = relationship(
+        "LeadScoreHistory",
+        back_populates="lead",
+        lazy="select",
+        order_by="LeadScoreHistory.criado_em.desc()",
     )
 
 
