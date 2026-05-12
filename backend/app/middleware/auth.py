@@ -1,12 +1,12 @@
 from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthCredentials
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt, JWTError
 from app.infrastructure.config.settings import get_settings
 
 settings = get_settings()
 security = HTTPBearer()
 
-async def verify_jwt(credentials: HTTPAuthCredentials = Depends(security)):
+async def verify_jwt(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """
     Middleware dependency to validate JWT tokens.
     Returns the user_id (sub) if valid, otherwise raises 401.

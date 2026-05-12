@@ -3,7 +3,7 @@ import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart
 import 'package:fpdart/fpdart.dart';
 
 abstract class IProfileRepository {
-  Future<Either<Failure, AuthUser>> getCurrentUser();
+  Future<Either<Failure, AuthUser>> getUserProfile();
   Future<Either<Failure, AuthUser>> updateProfile({
     String? name,
     List<String>? tipoViagem,
