@@ -75,13 +75,15 @@ async def execute(payload: dict, db: AsyncSession) -> None:
     lead: Lead = await lead_service.upsert_lead_with_resilience(db, lead_data)
 
     # ── Step 2: Advance status NOVO → EM_ATENDIMENTO ─────────────────────
-    if lead.status == LeadStatus.novo:
+    is_new_lead = lead.status == LeadStatus.novo
+    if is_new_lead:
         await lead_service.update_lead_status(db, lead, LeadStatus.em_atendimento)
         logger.info(
             "lead_status_updated",
             lead_id=str(lead.id),
             new_status=LeadStatus.em_atendimento,
         )
+        await _notify_new_lead_creation(db, lead)
 
     # ── Step 2.5: Ensure conversation memory is loaded (restart-resilient) ─
     interacoes_list = await lead_service.get_recent_interacoes(db, lead.id, limit=20)
@@ -176,6 +178,62 @@ async def execute(payload: dict, db: AsyncSession) -> None:
         latency_ms=send_result.latency_ms,
         retries=send_result.retries_used,
     )
+
+
+async def _notify_new_lead_creation(db: AsyncSession, lead: Lead) -> None:
+    """Send FCM push to the assigned consultor or next in round-robin queue.
+
+    Round-robin: increments a Redis counter and picks consultores[idx % count].
+    Falls back to the first available consultor when Redis is unavailable.
+    """
+    from sqlalchemy import select
+
+    # Honour explicit assignment first
+    target_token: str | None = None
+    if lead.consultor_id:
+        result = await db.execute(
+            select(User).where(User.id == lead.consultor_id, User.fcm_token.isnot(None))
+        )
+        consultor = result.scalar_one_or_none()
+        if consultor:
+            target_token = consultor.fcm_token
+
+    if not target_token:
+        # Round-robin across active consultores with FCM tokens
+        result = await db.execute(
+            select(User)
+            .where(
+                User.perfil == "consultor",
+                User.fcm_token.isnot(None),
+                User.is_active.is_(True),
+            )
+            .order_by(User.criado_em)
+        )
+        consultores = result.scalars().all()
+        if consultores:
+            try:
+                from app.infrastructure.cache.redis_client import get_redis
+
+                redis = await get_redis()
+                idx = await redis.incr("rr:consultor:new_lead")
+                chosen = consultores[(idx - 1) % len(consultores)]
+            except Exception:
+                chosen = consultores[0]
+            target_token = chosen.fcm_token
+
+    if not target_token:
+        logger.warning("no_consultor_token_for_new_lead", lead_id=str(lead.id))
+        return
+
+    from app.services.fcm_service import send_push_notification
+
+    await send_push_notification(
+        fcm_token=target_token,
+        title="Novo lead recebido",
+        body=f"Novo contato via WhatsApp: {lead.nome or lead.telefone}",
+        data={"type": "new_lead", "lead_id": str(lead.id)},
+    )
+    logger.info("fcm_new_lead_sent", lead_id=str(lead.id))
 
 
 async def _enqueue_qualified_notification(
