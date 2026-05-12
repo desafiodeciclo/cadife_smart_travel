@@ -22,6 +22,15 @@ from app.application.use_cases import process_whatsapp_message
 from app.domain.entities.enums import LeadStatus
 from app.services.whatsapp_service import SendResult
 
+@pytest.fixture(autouse=True)
+def patch_notifications():
+    with (
+        patch("app.application.use_cases.process_whatsapp_message._enqueue_qualified_notification", new=AsyncMock()),
+        patch("app.application.use_cases.process_whatsapp_message._enqueue_message_received_notification", new=AsyncMock()),
+        patch("app.application.use_cases.process_whatsapp_message._enqueue_aya_disabled_notification", new=AsyncMock()),
+    ):
+        yield
+
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
 
@@ -320,6 +329,12 @@ async def test_lead_qualified_receives_curadoria_offer():
         patch(
             "app.application.use_cases.process_whatsapp_message._enqueue_qualified_notification",
             new=AsyncMock(),
+        ),
+        patch(
+            "app.application.use_cases.process_whatsapp_message._enqueue_message_received_notification"
+        ),
+        patch(
+            "app.application.use_cases.process_whatsapp_message._enqueue_aya_disabled_notification"
         ),
     ):
         mock_ls.upsert_lead_with_resilience = AsyncMock(return_value=lead)
