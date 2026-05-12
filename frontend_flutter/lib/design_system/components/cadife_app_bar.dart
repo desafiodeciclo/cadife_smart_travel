@@ -1,5 +1,7 @@
 import 'dart:ui';
 import 'package:cadife_smart_travel/design_system/design_system.dart';
+import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
+import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -58,14 +60,32 @@ class CadifeAppBar extends ConsumerWidget implements PreferredSizeWidget {
               ? Padding(
                   padding: const EdgeInsets.all(8),
                   child: GestureDetector(
-                    onTap: () => context.go('/client/profile'),
-                    child: CircleAvatar(
-                      backgroundColor: theme.textPrimary.withValues(alpha: 0.1),
-                      child: Icon(
-                        LucideIcons.user, 
-                        color: theme.textPrimary, 
-                        size: 18
-                      ),
+                    onTap: () {
+                      final user = ref.read(authNotifierProvider).valueOrNull;
+                      if (user?.role == UserRole.consultor ||
+                          user?.role == UserRole.admin) {
+                        context.go('/agency/profile');
+                      } else {
+                        context.go('/client/profile');
+                      }
+                    },
+                    child: Builder(
+                      builder: (context) {
+                        final user = ref.watch(authNotifierProvider).valueOrNull;
+                        return CircleAvatar(
+                          backgroundColor: theme.textPrimary.withValues(alpha: 0.1),
+                          backgroundImage: user?.avatarUrl != null
+                              ? NetworkImage(user!.avatarUrl!)
+                              : null,
+                          child: user?.avatarUrl == null
+                              ? Icon(
+                                  LucideIcons.user,
+                                  color: theme.textPrimary,
+                                  size: 18,
+                                )
+                              : null,
+                        );
+                      },
                     ),
                   ),
                 )

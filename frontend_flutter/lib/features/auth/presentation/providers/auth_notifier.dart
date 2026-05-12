@@ -40,6 +40,15 @@ class AuthNotifier extends AsyncNotifier<AuthUser?> {
     state = const AsyncValue.data(null);
   }
 
+  Future<void> register(String name, String email, String password) async {
+    state = const AsyncValue.loading();
+    final result = await _repository.register(name, email, password);
+    state = result.fold(
+      (failure) => AsyncValue.error(failure.message, StackTrace.current),
+      AsyncValue.data,
+    );
+  }
+
   Future<Either<Failure, void>> forgotPassword(String email) {
     return _repository.forgotPassword(email);
   }

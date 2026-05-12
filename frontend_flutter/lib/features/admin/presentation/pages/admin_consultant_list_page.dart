@@ -1,20 +1,73 @@
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/admin/domain/entities/admin_entities.dart';
 import 'package:cadife_smart_travel/features/admin/presentation/providers/admin_providers.dart';
-import 'package:cadife_smart_travel/shared/presentation/widgets/empty_state/app_empty_state.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/empty_state/empty_type.dart';
-import 'package:cadife_smart_travel/shared/presentation/widgets/error_state/app_error_state.dart';
-import 'package:cadife_smart_travel/shared/presentation/widgets/error_state/error_type.dart';
+import 'package:cadife_smart_travel/shared/presentation/widgets/state_container.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-class AdminConsultantListPage extends ConsumerWidget {
+// ─── File-private providers para estado de filtro local da tela ──────────────
+
+final _consultorSearchProvider = StateProvider<String>((ref) => '');
+final _consultorStatusFilterProvider = StateProvider<bool?>((ref) => null);
+
+final _filteredConsultoresProvider = Provider<AsyncValue<List<ConsultorAdmin>>>((ref) {
+  final consultoresAsync = ref.watch(adminConsultoresNotifierProvider);
+  final query = ref.watch(_consultorSearchProvider).toLowerCase().trim();
+  final statusFilter = ref.watch(_consultorStatusFilterProvider);
+
+  return consultoresAsync.whenData((consultores) => consultores.where((c) {
+        if (statusFilter != null && c.isActive != statusFilter) return false;
+        if (query.isNotEmpty) {
+          return c.name.toLowerCase().contains(query) ||
+              c.email.toLowerCase().contains(query) ||
+              c.phone.contains(query);
+        }
+        return true;
+      }).toList());
+});
+
+// ─── Page ────────────────────────────────────────────────────────────────────
+
+class AdminConsultantListPage extends ConsumerStatefulWidget {
   const AdminConsultantListPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final consultoresAsync = ref.watch(adminConsultoresNotifierProvider);
+  ConsumerState<AdminConsultantListPage> createState() => _AdminConsultantListPageState();
+}
+
+class _AdminConsultantListPageState extends ConsumerState<AdminConsultantListPage> {
+  late final TextEditingController _searchController;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _clearFilters() {
+    _searchController.clear();
+    ref.read(_consultorSearchProvider.notifier).state = '';
+    ref.read(_consultorStatusFilterProvider.notifier).state = null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final filteredAsync = ref.watch(_filteredConsultoresProvider);
+    final totalAsync = ref.watch(adminConsultoresNotifierProvider);
+    final activeStatusFilter = ref.watch(_consultorStatusFilterProvider);
+
+    final totalCount = totalAsync.valueOrNull?.length ?? 0;
+    final filteredCount = filteredAsync.valueOrNull?.length ?? 0;
+    final isFiltered =
+        activeStatusFilter != null || ref.watch(_consultorSearchProvider).isNotEmpty;
 
     return PageScaffold(
       appBar: CadifeAppBar(
@@ -40,31 +93,271 @@ class AdminConsultantListPage extends ConsumerWidget {
           ),
         ),
       ),
-      body: consultoresAsync.when(
-        data: (consultores) {
-          if (consultores.isEmpty) {
-            return const AppEmptyState(type: EmptyType.emptySearch);
-          }
-          return RefreshIndicator(
-            onRefresh: () async => ref.read(adminConsultoresNotifierProvider.notifier).refresh(),
-            child: ListView.builder(
+      body: Column(
+        children: [
+          _SearchBar(
+            controller: _searchController,
+            onChanged: (v) => ref.read(_consultorSearchProvider.notifier).state = v,
+            onClear: _clearFilters,
+            onFilterPressed: () => _showFilterSheet(context, ref),
+            hasActiveFilters: activeStatusFilter != null,
+          ),
+          _StatsRow(
+            totalCount: totalCount,
+            filteredCount: filteredCount,
+            isFiltered: isFiltered,
+            onClear: _clearFilters,
+          ),
+          Divider(height: 1, thickness: 1, color: context.cadife.cardBorder),
+          Expanded(
+            child: StateListView<ConsultorAdmin>(
+              state: filteredAsync,
+              itemBuilder: (consultor, _) => _ConsultorCard(consultor: consultor),
+              onRetry: () => ref.read(adminConsultoresNotifierProvider.notifier).refresh(),
+              emptyType: EmptyType.emptySearch,
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-              itemCount: consultores.length,
-              itemBuilder: (context, index) => _ConsultorCard(
-                consultor: consultores[index],
-              ),
             ),
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => AppErrorState(
-          type: ErrorType.genericError,
-          onRetry: () => ref.read(adminConsultoresNotifierProvider.notifier).refresh(),
-        ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showFilterSheet(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => _ConsultorFilterSheet(
+        activeStatus: ref.watch(_consultorStatusFilterProvider),
+        onStatusChanged: (s) => ref.read(_consultorStatusFilterProvider.notifier).state = s,
+        onClear: _clearFilters,
       ),
     );
   }
 }
+
+// ─── Filter sheet ─────────────────────────────────────────────────────────────
+
+class _ConsultorFilterSheet extends StatelessWidget {
+  const _ConsultorFilterSheet({
+    required this.activeStatus,
+    required this.onStatusChanged,
+    required this.onClear,
+  });
+
+  final bool? activeStatus;
+  final ValueChanged<bool?> onStatusChanged;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final cadife = context.cadife;
+    return Container(
+      decoration: BoxDecoration(
+        color: cadife.background,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: cadife.cardBorder,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Filtros', style: AppTextStyles.h4),
+              TextButton(
+                onPressed: () {
+                  onClear();
+                  context.pop();
+                },
+                child: const Text('Limpar'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Text('Status', style: AppTextStyles.labelLarge),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _filterOption(context, null, 'Todos'),
+              _filterOption(context, true, 'Ativos'),
+              _filterOption(context, false, 'Inativos'),
+            ],
+          ),
+          const SizedBox(height: 32),
+          ShadButton(
+            onPressed: () => context.pop(),
+            width: double.infinity,
+            child: const Text('Aplicar Filtros'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _filterOption(BuildContext context, bool? value, String label) {
+    final isActive = activeStatus == value;
+    return ChoiceChip(
+      label: Text(label),
+      selected: isActive,
+      onSelected: (val) {
+        if (val) onStatusChanged(value);
+      },
+      selectedColor: AppColors.primary.withValues(alpha: 0.15),
+      checkmarkColor: AppColors.primary,
+      labelStyle: TextStyle(
+        color: isActive ? AppColors.primary : context.cadife.textSecondary,
+        fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+      ),
+    );
+  }
+}
+
+// ─── Search bar ───────────────────────────────────────────────────────────────
+
+class _SearchBar extends StatelessWidget {
+  const _SearchBar({
+    required this.controller,
+    required this.onChanged,
+    required this.onClear,
+    required this.onFilterPressed,
+    required this.hasActiveFilters,
+  });
+
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+  final VoidCallback onClear;
+  final VoidCallback onFilterPressed;
+  final bool hasActiveFilters;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = context.isDark;
+    final cadife = context.cadife;
+    return Container(
+      color: cadife.background,
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+      child: ShadInput(
+        controller: controller,
+        placeholder: const Text('Buscar por nome, e-mail ou telefone...'),
+        leading: Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: Icon(
+            LucideIcons.search,
+            color: isDark ? Colors.white60 : cadife.textSecondary,
+            size: 18,
+          ),
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (controller.text.isNotEmpty) ...[
+              ShadIconButton.ghost(
+                icon: Icon(
+                  LucideIcons.x,
+                  color: isDark ? Colors.white60 : cadife.textSecondary,
+                  size: 16,
+                ),
+                width: 32,
+                height: 32,
+                padding: EdgeInsets.zero,
+                onPressed: onClear,
+              ),
+              const SizedBox(width: 4),
+            ],
+            Container(width: 1, height: 20, color: cadife.cardBorder),
+            const SizedBox(width: 4),
+            ShadIconButton.ghost(
+              icon: Icon(
+                LucideIcons.slidersHorizontal,
+                color: hasActiveFilters
+                    ? AppColors.primary
+                    : (isDark ? Colors.white60 : cadife.textSecondary),
+                size: 18,
+              ),
+              width: 32,
+              height: 32,
+              padding: EdgeInsets.zero,
+              onPressed: onFilterPressed,
+            ),
+            const SizedBox(width: 4),
+          ],
+        ),
+        onChanged: onChanged,
+      ),
+    );
+  }
+}
+
+// ─── Stats row ────────────────────────────────────────────────────────────────
+
+class _StatsRow extends StatelessWidget {
+  const _StatsRow({
+    required this.totalCount,
+    required this.filteredCount,
+    required this.isFiltered,
+    required this.onClear,
+  });
+
+  final int totalCount;
+  final int filteredCount;
+  final bool isFiltered;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = isFiltered
+        ? '$filteredCount de $totalCount consultores'
+        : '$totalCount consultores';
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+      child: Row(
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              color: context.cadife.textSecondary,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          if (isFiltered) ...[
+            const SizedBox(width: 6),
+            GestureDetector(
+              onTap: onClear,
+              child: const Text(
+                '· Limpar filtros',
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Consultor Card ───────────────────────────────────────────────────────────
 
 class _ConsultorCard extends ConsumerWidget {
   final ConsultorAdmin consultor;
@@ -74,85 +367,134 @@ class _ConsultorCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = context.isDark;
     final borderColor = isDark ? Colors.white10 : context.cadife.cardBorder;
+    final dividerColor = isDark ? Colors.white10 : context.cadife.cardBorder;
+    final statusColor = consultor.isActive ? AppColors.success : AppColors.zinc400;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
-      child: GestureDetector(
-        onLongPress: () => _showOptionsModal(context, ref, consultor),
-        child: ShadCard(
-          padding: EdgeInsets.zero,
-          backgroundColor: context.cadife.cardBackground,
-          radius: BorderRadius.circular(12),
-          border: ShadBorder.all(color: borderColor, width: 1),
-          child: Column(
-            children: [
-              ListTile(
-                contentPadding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                leading: CircleAvatar(
-                  radius: 24,
-                  backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                  backgroundImage: consultor.avatarUrl != null
-                      ? NetworkImage(consultor.avatarUrl!)
-                      : null,
-                  child: consultor.avatarUrl == null
-                      ? const Icon(LucideIcons.user, color: AppColors.primary)
-                      : null,
-                ),
-                title: Text(
-                  consultor.name,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                subtitle: Text(
-                  consultor.email,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: context.cadife.textSecondary,
-                  ),
-                ),
-                trailing: _StatusToggle(
-                  isActive: consultor.isActive,
-                  onToggle: () => ref.read(adminConsultoresNotifierProvider.notifier).toggleStatus(consultor.id),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                child: Row(
-                  children: [
-                    _StatChip(
-                      icon: LucideIcons.users,
-                      label: '${consultor.leadsAtivos} ativos',
-                      color: AppColors.primary,
-                    ),
-                    const SizedBox(width: 8),
-                    _StatChip(
-                      icon: LucideIcons.trendingUp,
-                      label: '${(consultor.taxaConversao * 100).toStringAsFixed(0)}% conversão',
-                      color: AppColors.success,
-                    ),
-                    const Spacer(),
-                    if (consultor.receitaGerada != null)
-                      Text(
-                        'R\$ ${(consultor.receitaGerada! / 1000).toStringAsFixed(0)}k',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: context.cadife.textSecondary,
-                        ),
+      child: ShadCard(
+        padding: EdgeInsets.zero,
+        backgroundColor: context.cadife.cardBackground,
+        radius: BorderRadius.circular(12),
+        border: ShadBorder.all(color: borderColor, width: 1),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () => context.push('/agency/admin/consultants/${consultor.id}'),
+            onLongPress: () => _showOptionsModal(context, ref),
+            child: Stack(
+              children: [
+                // Borda lateral colorida por status
+                Positioned(
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  child: Container(
+                    width: 4,
+                    decoration: BoxDecoration(
+                      color: statusColor,
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(12),
+                        bottomLeft: Radius.circular(12),
                       ),
-                  ],
+                    ),
+                  ),
                 ),
-              ),
-            ],
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 20,
+                            backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                            backgroundImage: consultor.avatarUrl != null
+                                ? NetworkImage(consultor.avatarUrl!)
+                                : null,
+                            child: consultor.avatarUrl == null
+                                ? const Icon(LucideIcons.user, color: AppColors.primary, size: 18)
+                                : null,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  consultor.name,
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  consultor.email,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: context.cadife.textSecondary,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          ShadBadge(
+                            backgroundColor: statusColor.withValues(alpha: 0.12),
+                            foregroundColor: statusColor,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              side: BorderSide(color: statusColor.withValues(alpha: 0.25)),
+                            ),
+                            child: Text(consultor.isActive ? 'Ativo' : 'Inativo'),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Divider(height: 1, color: dividerColor),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Icon(LucideIcons.phone, size: 13, color: context.cadife.textSecondary),
+                          const SizedBox(width: 4),
+                          Text(
+                            consultor.phone,
+                            style: TextStyle(fontSize: 12, color: context.cadife.textSecondary),
+                          ),
+                          const Spacer(),
+                          _StatChip(
+                            icon: LucideIcons.users,
+                            label: '${consultor.leadsAtivos} ativos',
+                            color: AppColors.primary,
+                          ),
+                          const SizedBox(width: 8),
+                          _StatChip(
+                            icon: LucideIcons.trendingUp,
+                            label: '${(consultor.taxaConversao * 100).toStringAsFixed(0)}%',
+                            color: AppColors.success,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  void _showOptionsModal(BuildContext context, WidgetRef ref, ConsultorAdmin consultor) {
+  void _showOptionsModal(BuildContext context, WidgetRef ref) {
     showModalBottomSheet(
       context: context,
       backgroundColor: context.cadife.cardBackground,
@@ -166,19 +508,41 @@ class _ConsultorCard extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
+                leading: const Icon(LucideIcons.eye, color: AppColors.primary),
+                title: const Text('Ver Detalhes'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  context.push('/agency/admin/consultants/${consultor.id}');
+                },
+              ),
+              ListTile(
                 leading: const Icon(LucideIcons.pencil, color: AppColors.primary),
                 title: const Text('Editar Consultor'),
                 onTap: () {
                   Navigator.of(context).pop();
-                  _showEditModal(context, ref, consultor);
+                  context.push('/agency/admin/consultants/${consultor.id}/edit');
+                },
+              ),
+              ListTile(
+                leading: Icon(
+                  consultor.isActive ? LucideIcons.userX : LucideIcons.userCheck,
+                  color: consultor.isActive ? AppColors.warning : AppColors.success,
+                ),
+                title: Text(consultor.isActive ? 'Desativar Consultor' : 'Ativar Consultor'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  ref.read(adminConsultoresNotifierProvider.notifier).toggleStatus(consultor.id);
                 },
               ),
               ListTile(
                 leading: const Icon(LucideIcons.trash2, color: AppColors.error),
-                title: const Text('Excluir Consultor', style: TextStyle(color: AppColors.error)),
+                title: const Text(
+                  'Excluir Consultor',
+                  style: TextStyle(color: AppColors.error),
+                ),
                 onTap: () {
                   Navigator.of(context).pop();
-                  _confirmDelete(context, ref, consultor);
+                  _confirmDelete(context, ref);
                 },
               ),
             ],
@@ -188,84 +552,14 @@ class _ConsultorCard extends ConsumerWidget {
     );
   }
 
-  void _showEditModal(BuildContext context, WidgetRef ref, ConsultorAdmin consultor) {
-    final nameController = TextEditingController(text: consultor.name);
-    final emailController = TextEditingController(text: consultor.email);
-    final phoneController = TextEditingController(text: consultor.phone);
-
-    showShadDialog(
-      context: context,
-      builder: (context) => ShadDialog(
-        title: const Text('Editar Consultor'),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ShadInput(
-                controller: nameController,
-                placeholder: const Text('Nome completo'),
-                leading: const Padding(
-                  padding: EdgeInsets.only(right: 8),
-                  child: Icon(LucideIcons.user, size: 18),
-                ),
-              ),
-              const SizedBox(height: 12),
-              ShadInput(
-                controller: emailController,
-                placeholder: const Text('E-mail corporativo'),
-                leading: const Padding(
-                  padding: EdgeInsets.only(right: 8),
-                  child: Icon(LucideIcons.mail, size: 18),
-                ),
-                keyboardType: TextInputType.emailAddress,
-              ),
-              const SizedBox(height: 12),
-              ShadInput(
-                controller: phoneController,
-                placeholder: const Text('Telefone / WhatsApp'),
-                leading: const Padding(
-                  padding: EdgeInsets.only(right: 8),
-                  child: Icon(LucideIcons.phone, size: 18),
-                ),
-                keyboardType: TextInputType.phone,
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: CadifeButton(
-                  text: 'Salvar Alterações',
-                  icon: LucideIcons.save,
-                  analyticsLabel: 'admin_edit_consultor',
-                  onPressed: () async {
-                    final updated = consultor.copyWith(
-                      name: nameController.text.trim(),
-                      email: emailController.text.trim(),
-                      phone: phoneController.text.trim(),
-                    );
-                    await ref.read(adminConsultoresNotifierProvider.notifier).updateConsultor(updated);
-                    if (context.mounted) {
-                      Navigator.of(context).pop();
-                      ShadToaster.of(context).show(
-                        const ShadToast(description: Text('Consultor atualizado com sucesso!')),
-                      );
-                    }
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _confirmDelete(BuildContext context, WidgetRef ref, ConsultorAdmin consultor) {
+  void _confirmDelete(BuildContext context, WidgetRef ref) {
     showShadDialog(
       context: context,
       builder: (context) => ShadDialog.alert(
         title: const Text('Excluir Consultor'),
-        description: Text('Tem certeza que deseja excluir ${consultor.name}? Esta ação não pode ser desfeita.'),
+        description: Text(
+          'Tem certeza que deseja excluir ${consultor.name}? Esta ação não pode ser desfeita.',
+        ),
         actions: [
           ShadButton.outline(
             onPressed: () => Navigator.of(context).pop(),
@@ -273,7 +567,9 @@ class _ConsultorCard extends ConsumerWidget {
           ),
           ShadButton.destructive(
             onPressed: () async {
-              await ref.read(adminConsultoresNotifierProvider.notifier).deleteConsultor(consultor.id);
+              await ref
+                  .read(adminConsultoresNotifierProvider.notifier)
+                  .deleteConsultor(consultor.id);
               if (context.mounted) {
                 Navigator.of(context).pop();
                 ShadToaster.of(context).show(
@@ -289,42 +585,7 @@ class _ConsultorCard extends ConsumerWidget {
   }
 }
 
-class _StatusToggle extends StatelessWidget {
-  final bool isActive;
-  final VoidCallback onToggle;
-
-  const _StatusToggle({required this.isActive, required this.onToggle});
-
-  @override
-  Widget build(BuildContext context) {
-    return ShadButton.ghost(
-      size: ShadButtonSize.sm,
-      onPressed: onToggle,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: isActive ? AppColors.success : AppColors.zinc400,
-            ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            isActive ? 'Ativo' : 'Inativo',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: isActive ? AppColors.success : AppColors.zinc400,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+// ─── Stat Chip ────────────────────────────────────────────────────────────────
 
 class _StatChip extends StatelessWidget {
   final IconData icon;

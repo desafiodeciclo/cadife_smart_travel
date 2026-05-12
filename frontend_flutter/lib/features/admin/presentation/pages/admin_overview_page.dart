@@ -55,17 +55,7 @@ class AdminOverviewPage extends ConsumerWidget {
                         const SizedBox(height: 16),
                         _MonthlyPerformanceCard(metrics: metrics),
                         const SizedBox(height: 24),
-                        Text(
-                          'Ações Rápidas',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: context.cadife.textPrimary,
-                          ),
-                        ),
                         const SizedBox(height: 16),
-                        _QuickActionsGrid(),
-                        const SizedBox(height: 32),
                       ],
                     ),
                   ),
@@ -266,27 +256,3 @@ class _PerformanceRow extends StatelessWidget {
   }
 }
 
-class _QuickActionsGrid extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Column(
-      children: [
-        CadifeButton(
-          text: 'Gerenciar Consultores',
-          icon: LucideIcons.users,
-          analyticsLabel: 'admin_consultores',
-          onPressed: () => context.push('/agency/admin/consultants'),
-        ),
-        const SizedBox(height: 12),
-        CadifeButton(
-          text: 'Todos os Leads',
-          icon: LucideIcons.clipboardList,
-          variant: ButtonVariant.secondary,
-          isOutline: true,
-          analyticsLabel: 'admin_all_leads',
-          onPressed: () => context.push('/agency/admin/leads'),
-        ),
-      ],
-    );
-  }
-}

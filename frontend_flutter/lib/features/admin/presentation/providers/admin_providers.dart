@@ -2,6 +2,34 @@ import 'package:cadife_smart_travel/features/admin/data/repositories/mock_admin_
 import 'package:cadife_smart_travel/features/admin/domain/entities/admin_entities.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+// ─── Consultor Detail (family — carrega por ID) ──────────────────────────────
+
+final consultorDetailProvider = AsyncNotifierProvider.family<ConsultorDetailNotifier, ConsultorAdmin?, String>(
+  ConsultorDetailNotifier.new,
+);
+
+class ConsultorDetailNotifier extends FamilyAsyncNotifier<ConsultorAdmin?, String> {
+  @override
+  Future<ConsultorAdmin?> build(String arg) async {
+    final repo = ref.watch(mockAdminRepositoryProvider);
+    return repo.getConsultorById(arg);
+  }
+
+  Future<void> toggleStatus() async {
+    final current = state.valueOrNull;
+    if (current == null) return;
+    state = const AsyncValue.loading();
+    final repo = ref.read(mockAdminRepositoryProvider);
+    try {
+      final updated = await repo.toggleConsultorStatus(current.id);
+      state = AsyncValue.data(updated);
+      ref.invalidate(adminConsultoresNotifierProvider);
+    } on Exception catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+}
+
 final mockAdminRepositoryProvider = Provider<MockAdminRepository>((ref) {
   return MockAdminRepository();
 });

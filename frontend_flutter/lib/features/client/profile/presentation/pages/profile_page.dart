@@ -1,7 +1,6 @@
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_notifier.dart';
-import 'package:cadife_smart_travel/features/client/profile/data/mocks/client_profile_mocks.dart';
 import 'package:cadife_smart_travel/features/client/profile/presentation/providers/profile_provider.dart';
 import 'package:cadife_smart_travel/features/client/profile/presentation/widgets/diary_widgets.dart';
 import 'package:cadife_smart_travel/features/client/profile/presentation/widgets/profile_widgets.dart';
@@ -12,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -25,6 +25,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   late TabController _tabController;
 
   final _nameController = TextEditingController();
+  final _bioController = TextEditingController();
+  final _phoneController = TextEditingController();
   bool _isEditing = false;
   bool _hasSynced = false;
 
@@ -59,12 +61,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   void dispose() {
     _tabController.dispose();
     _nameController.dispose();
+    _bioController.dispose();
+    _phoneController.dispose();
     super.dispose();
   }
 
   void _syncFromUser(AuthUser? user) {
     if (user == null || _hasSynced) return;
     _nameController.text = user.name;
+    _bioController.text = user.bio ?? '';
+    _phoneController.text = user.phone ?? '';
     _tipoViagemSelected
       ..clear()
       ..addAll(user.tipoViagem ?? []);
@@ -79,6 +85,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     if (current == null) return;
     final success = await ref.read(userProfileProvider.notifier).updateProfile(
           name: _nameController.text.trim(),
+          bio: _bioController.text.trim(),
+          phone: _phoneController.text.trim(),
           tipoViagem: List<String>.from(_tipoViagemSelected),
           preferencias: List<String>.from(_preferenciasSelected),
           temPassaporte: _temPassaporte,
@@ -102,6 +110,96 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     }
   }
 
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    
+    final ImageSource? source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: BoxDecoration(
+          color: context.cadife.background,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Alterar foto de perfil',
+              style: GoogleFonts.inter(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: context.cadife.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildPickOption(
+                  icon: LucideIcons.camera,
+                  label: 'Câmera',
+                  onTap: () => Navigator.pop(ctx, ImageSource.camera),
+                ),
+                _buildPickOption(
+                  icon: LucideIcons.image,
+                  label: 'Galeria',
+                  onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+
+    if (source != null) {
+      final image = await picker.pickImage(source: source);
+      if (image != null && mounted) {
+        // Aqui integraria com upload de imagem. Por ora apenas mostra feedback.
+        ShadToaster.of(context).show(
+          const ShadToast(description: Text('Upload de foto em breve')),
+        );
+      }
+    }
+  }
+
+  Widget _buildPickOption({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    final cadife = context.cadife;
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: AppColors.primary, size: 28),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: cadife.textPrimary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+
   @override
   Widget build(BuildContext context) {
     final userAsync = ref.watch(userProfileProvider);
@@ -109,6 +207,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
 
     return Scaffold(
       backgroundColor: cadife.background,
+      appBar: CadifeAppBar(
+        title: 'Meu Perfil',
+        showProfile: false,
+        actions: [
+          IconButton(
+            icon: const Icon(LucideIcons.settings, size: 22),
+            onPressed: () => context.push('/client/settings'),
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
       body: userAsync.when(
         loading: () => const SafeArea(
           child: AppLoadingWidget(message: 'Carregando perfil...'),
@@ -135,15 +244,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     return SafeArea(
       child: Column(
         children: [
-          // ── Header: avatar + greeting + stats ──────────────────────────
+          // ── Header: avatar + greeting ──────────────────────────────────
           _ProfileStatsHeader(
             user: user,
             isEditing: _isEditing,
             nameController: _nameController,
             onToggleEdit: () => setState(() => _isEditing = !_isEditing),
+            onPickImage: _pickImage,
           ),
-
-          const _ProfileMetricsGrid(),
 
           // ── Pinned TabBar ───────────────────────────────────────────────
           Material(
@@ -180,6 +288,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                   isEditing: _isEditing,
                   isSaving: isSaving,
                   nameController: _nameController,
+                  bioController: _bioController,
+                  phoneController: _phoneController,
                   tipoViagemSelected: _tipoViagemSelected,
                   preferenciasSelected: _preferenciasSelected,
                   tipoViagemOptions: _tipoViagemOptions,
@@ -215,6 +325,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                   onDeleteAccount: () => _confirmDeleteAccount(context, ref),
                   onThemeChanged: (pref) =>
                       ref.read(themeNotifierProvider.notifier).setTheme(pref),
+                  onEditBio: () => _showEditBioDialog(context),
+                  onEditPersonalData: () => _showEditPersonalDataDialog(context),
+                  onEditTravelPreferences: () => setState(() => _isEditing = true),
                 ),
                 const DiariesTab(),
                 const SuitcaseTab(),
@@ -224,6 +337,77 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         ],
       ),
     );
+  }
+
+  Future<void> _showEditBioDialog(BuildContext context) async {
+    final confirmed = await showShadDialog<bool>(
+      context: context,
+      builder: (ctx) => ShadDialog(
+        title: const Text('Editar Bio'),
+        description: const Text('Conte um pouco sobre suas experiÃªncias de viagem.'),
+        actions: [
+          ShadButton.outline(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          ShadButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Confirmar'),
+          ),
+        ],
+        child: ShadInput(
+          controller: _bioController,
+          maxLines: 4,
+          placeholder: const Text('Escreva sua bio...'),
+        ),
+      ),
+    );
+
+    if (confirmed == true) {
+      setState(() => _isEditing = true);
+    }
+  }
+
+  Future<void> _showEditPersonalDataDialog(BuildContext context) async {
+    final confirmed = await showShadDialog<bool>(
+      context: context,
+      builder: (ctx) => ShadDialog(
+        title: const Text('Dados Pessoais'),
+        description: const Text('Atualize suas informaÃ§Ãµes de contato.'),
+        actions: [
+          ShadButton.outline(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          ShadButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Confirmar'),
+          ),
+        ],
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ShadInputFormField(
+              id: 'name',
+              controller: _nameController,
+              label: const Text('Nome'),
+              placeholder: const Text('Seu nome completo'),
+            ),
+            const SizedBox(height: 16),
+            ShadInputFormField(
+              id: 'phone',
+              controller: _phoneController,
+              label: const Text('Telefone'),
+              placeholder: const Text('(00) 00000-0000'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed == true) {
+      setState(() => _isEditing = true);
+    }
   }
 }
 
@@ -237,12 +421,14 @@ class _ProfileStatsHeader extends StatelessWidget {
     required this.isEditing,
     required this.nameController,
     required this.onToggleEdit,
+    required this.onPickImage,
   });
 
   final AuthUser? user;
   final bool isEditing;
   final TextEditingController nameController;
   final VoidCallback onToggleEdit;
+  final VoidCallback onPickImage;
 
   static String _greeting() {
     final hour = DateTime.now().hour;
@@ -281,44 +467,58 @@ class _ProfileStatsHeader extends StatelessWidget {
                     width: 2,
                   ),
                 ),
-                child: ShadAvatar(
-                  user?.avatarUrl != null ? user!.avatarUrl! : '',
-                  size: const Size.square(112),
-                  placeholder: Text(
-                    _initials(user?.name ?? '?'),
-                    style: GoogleFonts.inter(
-                      fontSize: 36,
-                      fontWeight: FontWeight.w800,
-                      color: isDark ? Colors.white : AppColors.primary,
-                      letterSpacing: -1,
+                child: InkWell(
+                  onTap: onPickImage,
+                  borderRadius: BorderRadius.circular(60),
+                  child: ShadAvatar(
+                    user?.avatarUrl != null ? user!.avatarUrl! : '',
+                    size: const Size.square(80),
+                    placeholder: Text(
+                      _initials(user?.name ?? '?'),
+                      style: GoogleFonts.inter(
+                        fontSize: 36,
+                        fontWeight: FontWeight.w800,
+                        color: isDark ? Colors.white : AppColors.primary,
+                        letterSpacing: -1,
+                      ),
                     ),
                   ),
                 ),
               ),
               Positioned(
-                bottom: 0,
+                bottom: -2,
+                left: 0,
                 right: 0,
-                child: GestureDetector(
-                  onTap: onToggleEdit,
-                  child: Container(
-                    padding: const EdgeInsets.all(5),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: AppColors.primary,
-                      border: Border.all(color: cadife.background, width: 2),
-                    ),
-                    child: Icon(
-                      isEditing ? LucideIcons.check : LucideIcons.pencil,
-                      size: 12,
-                      color: Colors.white,
+                child: Center(
+                  child: GestureDetector(
+                    onTap: onPickImage,
+                    child: Container(
+                      padding: const EdgeInsets.all(7),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.primary,
+                        border: Border.all(color: cadife.background, width: 2.5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.15),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        LucideIcons.pencil,
+                        size: 14,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(width: 16),
 
+          const SizedBox(width: 12),
           // Greeting + name + country flags
           Expanded(
             child: Column(
@@ -343,153 +543,12 @@ class _ProfileStatsHeader extends StatelessWidget {
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 6),
-                // Country flags
-                const _CountryFlags(isoCodes: ClientProfileMocks.mockCountriesIso),
               ],
             ),
           ),
 
-          // Settings Icon
-          GestureDetector(
-            onTap: () => context.push('/client/settings'),
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: cadife.surface,
-                shape: BoxShape.circle,
-                border: Border.all(color: cadife.cardBorder),
-              ),
-              child: Icon(
-                LucideIcons.settings,
-                size: 20,
-                color: cadife.textSecondary,
-              ),
-            ),
-          ),
         ],
       ),
-    );
-  }
-}
-
-// ─── Metrics Grid (New section for Etapa 4) ───────────────────────────────────
-
-class _ProfileMetricsGrid extends StatelessWidget {
-  const _ProfileMetricsGrid();
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-      child: GridView.count(
-        crossAxisCount: 2,
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 1.45,
-        children: [
-          const _MetricCard(
-            icon: LucideIcons.plane,
-            value: '${ClientProfileMocks.mockTotalTrips}',
-            label: 'Viagens',
-            color: AppColors.primary,
-          ),
-          _MetricCard(
-            icon: LucideIcons.globe,
-            value: '${ClientProfileMocks.mockCountriesIso.length}',
-            label: 'Países',
-            color: AppColors.success,
-          ),
-          const _MetricCard(
-            icon: LucideIcons.mapPin,
-            value: '12',
-            label: 'Desejados',
-            color: AppColors.info,
-          ),
-          const _MetricCard(
-            icon: LucideIcons.calendar,
-            value: '45',
-            label: 'Dias Fora',
-            color: AppColors.warning,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MetricCard extends StatelessWidget {
-  const _MetricCard({
-    required this.icon,
-    required this.value,
-    required this.label,
-    required this.color,
-  });
-
-  final IconData icon;
-  final String value;
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    final cadife = context.cadife;
-    return ShadCard(
-      padding: const EdgeInsets.all(16),
-      radius: BorderRadius.circular(16),
-      backgroundColor: color.withValues(alpha: 0.07),
-      border: ShadBorder.all(color: color.withValues(alpha: 0.15)),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: AppTextStyles.h4.copyWith(color: color),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label.toUpperCase(),
-            style: AppTextStyles.caption.copyWith(
-              color: cadife.textSecondary,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-
-class _CountryFlags extends StatelessWidget {
-  const _CountryFlags({required this.isoCodes});
-
-  final List<String> isoCodes;
-
-  static String _flag(String iso) {
-    final units = iso.toUpperCase().codeUnits;
-    return String.fromCharCode(units[0] + 127397) +
-        String.fromCharCode(units[1] + 127397);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 4,
-      children: isoCodes
-          .map(
-            (code) => Tooltip(
-              message: code,
-              child: Text(_flag(code),
-                  style: const TextStyle(fontSize: 18)),
-            ),
-          )
-          .toList(),
     );
   }
 }
@@ -504,6 +563,8 @@ class _ProfileInfoTab extends StatelessWidget {
     required this.isEditing,
     required this.isSaving,
     required this.nameController,
+    required this.bioController,
+    required this.phoneController,
     required this.tipoViagemSelected,
     required this.preferenciasSelected,
     required this.tipoViagemOptions,
@@ -518,12 +579,17 @@ class _ProfileInfoTab extends StatelessWidget {
     required this.onLogout,
     required this.onDeleteAccount,
     required this.onThemeChanged,
+    required this.onEditBio,
+    required this.onEditPersonalData,
+    required this.onEditTravelPreferences,
   });
 
   final AuthUser? user;
   final bool isEditing;
   final bool isSaving;
   final TextEditingController nameController;
+  final TextEditingController bioController;
+  final TextEditingController phoneController;
   final List<String> tipoViagemSelected;
   final List<String> preferenciasSelected;
   final List<String> tipoViagemOptions;
@@ -538,6 +604,9 @@ class _ProfileInfoTab extends StatelessWidget {
   final VoidCallback onLogout;
   final VoidCallback onDeleteAccount;
   final ValueChanged<ThemePreference> onThemeChanged;
+  final VoidCallback onEditBio;
+  final VoidCallback onEditPersonalData;
+  final VoidCallback onEditTravelPreferences;
 
   @override
   Widget build(BuildContext context) {
@@ -546,11 +615,17 @@ class _ProfileInfoTab extends StatelessWidget {
         SliverToBoxAdapter(
           child: ProfileSectionCard(
             title: 'Minha Bio',
+            onEdit: onEditBio,
             children: [
               Text(
-                'Apaixonado por descobrir novas culturas e destinos exóticos. Planejando minha próxima aventura para a Islândia!',
+                bioController.text.isNotEmpty
+                    ? bioController.text
+                    : 'Escreva algo sobre você...',
                 style: context.textTheme.bodyMedium?.copyWith(
                   height: 1.6,
+                  color: bioController.text.isNotEmpty
+                      ? context.cadife.textPrimary
+                      : context.cadife.textSecondary.withValues(alpha: 0.5),
                 ),
               ),
             ],
@@ -559,18 +634,25 @@ class _ProfileInfoTab extends StatelessWidget {
         SliverToBoxAdapter(
           child: ProfileSectionCard(
             title: 'Dados Pessoais',
+            onEdit: onEditPersonalData,
             children: [
+              ProfileInfoRow(
+                icon: Icons.person_outline,
+                label: 'Nome',
+                value: nameController.text.isNotEmpty ? nameController.text : 'Não informado',
+              ),
+              const SizedBox(height: 16),
               ProfileInfoRow(
                 icon: Icons.email_outlined,
                 label: 'E-mail',
                 value: user?.email ?? '—',
+                readOnly: true,
               ),
               const SizedBox(height: 16),
               ProfileInfoRow(
                 icon: Icons.phone_outlined,
                 label: 'Telefone',
-                value: user?.phone ?? 'Não informado',
-                readOnly: true,
+                value: phoneController.text.isNotEmpty ? phoneController.text : 'Não informado',
               ),
               const SizedBox(height: 16),
               ProfileInfoRow(
@@ -579,6 +661,7 @@ class _ProfileInfoTab extends StatelessWidget {
                 value: user?.createdAt != null
                     ? DateFormat('dd/MM/yyyy').format(user!.createdAt!)
                     : '—',
+                readOnly: true,
               ),
             ],
           ),
@@ -586,6 +669,7 @@ class _ProfileInfoTab extends StatelessWidget {
         SliverToBoxAdapter(
           child: ProfileSectionCard(
             title: 'Preferências de Viagem',
+            onEdit: onEditTravelPreferences,
             children: [
               ProfileChipGroup(
                 label: 'Tipo de viagem',
@@ -712,3 +796,6 @@ Future<void> _confirmDeleteAccount(BuildContext context, WidgetRef ref) async {
     );
   }
 }
+
+// Removido extension que estava fora da classe _ProfileScreenState
+

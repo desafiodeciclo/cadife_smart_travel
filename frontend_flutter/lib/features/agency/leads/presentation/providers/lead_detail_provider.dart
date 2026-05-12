@@ -64,4 +64,28 @@ class LeadDetailNotifier extends FamilyAsyncNotifier<Lead?, String> {
       },
     );
   }
+
+  Future<void> updateLead({
+    String? name,
+    String? phone,
+    String? email,
+    LeadStatus? status,
+    LeadScore? score,
+  }) async {
+    final result = await ref.read(updateLeadUseCaseProvider).call(
+      id: arg,
+      name: name,
+      phone: phone,
+      email: email,
+      status: status,
+      score: score,
+    );
+    
+    result.fold(
+      (failure) => state = AsyncError(failure, StackTrace.current),
+      (updatedLead) {
+        state = AsyncData(updatedLead);
+      },
+    );
+  }
 }

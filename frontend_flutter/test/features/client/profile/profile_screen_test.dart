@@ -28,12 +28,18 @@ class _FakeProfileRepository implements IProfileRepository {
     List<String>? tipoViagem,
     List<String>? preferencias,
     bool? temPassaporte,
+    String? bio,
+    String? avatarUrl,
+    String? phone,
   }) async {
     return Right(_user!.copyWith(
       name: name,
       tipoViagem: tipoViagem,
       preferencias: preferencias,
       temPassaporte: temPassaporte,
+      bio: bio,
+      avatarUrl: avatarUrl,
+      phone: phone,
     ));
   }
 }

@@ -47,6 +47,9 @@ class UserProfileNotifier extends AsyncNotifier<AuthUser?> {
     List<String>? tipoViagem,
     List<String>? preferencias,
     bool? temPassaporte,
+    String? bio,
+    String? avatarUrl,
+    String? phone,
   }) async {
     final saveNotifier = ref.read(profileSaveStateProvider.notifier);
     saveNotifier.state = const AsyncLoading();
@@ -56,6 +59,9 @@ class UserProfileNotifier extends AsyncNotifier<AuthUser?> {
       tipoViagem: tipoViagem,
       preferencias: preferencias,
       temPassaporte: temPassaporte,
+      bio: bio,
+      avatarUrl: avatarUrl,
+      phone: phone,
     );
     return result.fold(
       (failure) {

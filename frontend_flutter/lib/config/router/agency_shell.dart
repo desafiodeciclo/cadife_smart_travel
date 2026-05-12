@@ -25,10 +25,10 @@ class _AgencyShellState extends ConsumerState<AgencyShell> {
   ];
 
   static const _adminTabs = [
-    '/agency/dashboard',
-    '/agency/leads',
+    '/agency/admin/overview',
+    '/agency/admin/leads',
     '/agency/agenda',
-    '/agency/admin',
+    '/agency/admin/consultants',
     '/agency/profile',
   ];
 
@@ -37,11 +37,7 @@ class _AgencyShellState extends ConsumerState<AgencyShell> {
   List<String> _tabs = _baseTabs;
 
   List<String> _getTabsList(bool isAdmin) {
-    final tabs = ['/agency/dashboard', '/agency/leads', '/agency/agenda', '/agency/profile'];
-    if (isAdmin) {
-      tabs.insert(3, '/agency/admin/consultants');
-    }
-    return tabs;
+    return isAdmin ? _adminTabs : _baseTabs;
   }
 
   int _indexFromPath(String path, bool isAdmin) {
@@ -116,7 +112,7 @@ class _AgencyShellState extends ConsumerState<AgencyShell> {
           const CadifeBottomNavItem(icon: LucideIcons.users, label: 'Leads'),
           const CadifeBottomNavItem(icon: LucideIcons.calendarDays, label: 'Agenda'),
           if (isAdmin)
-            const CadifeBottomNavItem(icon: LucideIcons.shield, label: 'ADM'),
+            const CadifeBottomNavItem(icon: LucideIcons.shieldCheck, label: 'Gestão'),
           const CadifeBottomNavItem(icon: LucideIcons.circleUser, label: 'Perfil'),
         ],
       ),

@@ -57,6 +57,15 @@ class MockAdminRepository {
     return List.unmodifiable(_consultores);
   }
 
+  Future<ConsultorAdmin?> getConsultorById(String id) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    try {
+      return _consultores.firstWhere((c) => c.id == id);
+    } on StateError {
+      return null;
+    }
+  }
+
   Future<ConsultorAdmin> toggleConsultorStatus(String id) async {
     await Future.delayed(const Duration(milliseconds: 400));
     final index = _consultores.indexWhere((c) => c.id == id);
@@ -100,14 +109,30 @@ class MockAdminRepository {
 
   Future<AgenciaMetrics> getMetrics() async {
     await Future.delayed(const Duration(milliseconds: 500));
-    final ativos = _consultores.where((c) => c.isActive).length;
+    
+    int totalLeadsAtivos = 0;
+    int totalLeadsAtendidos = 0;
+    double totalReceita = 0;
+    double somaTaxaConversao = 0;
+    int consultoresAtivos = 0;
+
+    for (final c in _consultores) {
+      totalLeadsAtivos += c.leadsAtivos;
+      totalLeadsAtendidos += c.totalLeadsAtendidos ?? 0;
+      totalReceita += c.receitaGerada ?? 0;
+      somaTaxaConversao += c.taxaConversao;
+      if (c.isActive) consultoresAtivos++;
+    }
+
+    final mediaTaxaConversao = _consultores.isEmpty ? 0.0 : somaTaxaConversao / _consultores.length;
+
     return AgenciaMetrics(
-      totalLeads: 147,
-      taxaConversao: 0.68,
-      receitaEstimada: 3420000.0,
-      consultoresAtivos: ativos,
-      leadsNovosMes: 23,
-      leadsFechadosMes: 8,
+      totalLeads: totalLeadsAtivos,
+      taxaConversao: mediaTaxaConversao,
+      receitaEstimada: totalReceita,
+      consultoresAtivos: consultoresAtivos,
+      leadsNovosMes: 23, // Mantendo estático ou poderia ser calculado
+      leadsFechadosMes: totalLeadsAtendidos,
       leadsPerdidosMes: 4,
     );
   }

@@ -1,10 +1,14 @@
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:cadife_smart_travel/features/client/profile/presentation/widgets/profile_widgets.dart';
+import 'package:cadife_smart_travel/features/settings/application/theme_notifier.dart';
+import 'package:cadife_smart_travel/features/settings/domain/entities/user_preferences.dart';
 import 'package:cadife_smart_travel/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -14,176 +18,171 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  // Mock local state for demonstration of "working" toggles
-  bool _notifLead = true;
-  bool _notifSchedule = true;
-  bool _notifProposals = true;
-  String _selectedTheme = 'Automático';
+  bool _notifInApp = true;
+  bool _notifPush = true;
+  bool _notifNewLead = true;
+  bool _notifNewMeeting = true;
+  bool _notifAutoDeactivate = false;
+  TimeOfDay _deactivateTime = const TimeOfDay(hour: 22, minute: 0);
   String _selectedCurrency = 'BRL (R\$)';
-  TimeOfDay _startTime = const TimeOfDay(hour: 9, minute: 0);
-  TimeOfDay _endTime = const TimeOfDay(hour: 18, minute: 0);
 
   @override
   Widget build(BuildContext context) {
     final userAsync = ref.watch(currentUserProvider);
+    final cadife = context.cadife;
+    // final isDark = context.isDark; // Removido por nÃ£o ser usado
+    final themePref = ref.watch(themeNotifierProvider).maybeWhen(
+          data: (p) => p,
+          orElse: () => ThemePreference.system,
+        );
 
     return userAsync.when(
       data: (user) {
         if (user == null) {
-          return const Scaffold(
-            body: Center(child: Text('Usuário não autenticado')),
+          return Scaffold(
+            backgroundColor: cadife.background,
+            body: const Center(child: Text('Usuário não autenticado')),
           );
         }
 
         return Scaffold(
-          backgroundColor: AppColors.cardBackground,
+          backgroundColor: cadife.background,
           appBar: AppBar(
-            title: const Text(
+            title: Text(
               'CONFIGURAÇÕES',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                letterSpacing: 1.2,
+              style: GoogleFonts.inter(
+                fontWeight: FontWeight.w800,
+                fontSize: 14,
+                letterSpacing: 1.5,
+                color: cadife.textPrimary,
               ),
             ),
             elevation: 0,
-            backgroundColor: Colors.white,
-            foregroundColor: Colors.black,
+            centerTitle: true,
+            backgroundColor: cadife.background,
+            foregroundColor: cadife.textPrimary,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
+              icon: Icon(LucideIcons.chevronLeft, color: cadife.textPrimary),
               onPressed: () => context.pop(),
             ),
           ),
           body: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // SEÇÃO: Notificações (genérica)
+                // SEÇÃO: Notificações
                 _buildSection(
+                  context,
                   title: 'NOTIFICAÇÕES',
                   children: [
                     _buildSettingToggle(
-                      label: 'Novo Lead Qualificado',
-                      description: 'Receber notificação quando um lead é qualificado',
-                      initialValue: _notifLead,
-                      onChanged: (value) => setState(() => _notifLead = value),
+                      context,
+                      label: 'Notificações In-app',
+                      description: 'Receber avisos dentro do aplicativo',
+                      value: _notifInApp,
+                      onChanged: (value) => setState(() => _notifInApp = value),
                     ),
                     _buildSettingToggle(
-                      label: 'Agendamento Confirmado',
-                      description: 'Receber notificação quando cliente confirma horário',
-                      initialValue: _notifSchedule,
-                      onChanged: (value) => setState(() => _notifSchedule = value),
+                      context,
+                      label: 'Notificações Push',
+                      description: 'Receber notificações no sistema',
+                      value: _notifPush,
+                      onChanged: (value) => setState(() => _notifPush = value),
                     ),
-                    _buildSettingToggle(
-                      label: 'Propostas Atualizadas',
-                      description: 'Receber notificação sobre status de propostas',
-                      initialValue: _notifProposals,
-                      onChanged: (value) => setState(() => _notifProposals = value),
-                    ),
+                    if (user.role == UserRole.consultor) ...[
+                      const Divider(height: 1, indent: 16, endIndent: 16),
+                      _buildSettingToggle(
+                        context,
+                        label: 'Novo Lead',
+                        description: 'Avisar quando chegar um novo lead',
+                        value: _notifNewLead,
+                        onChanged: (value) => setState(() => _notifNewLead = value),
+                      ),
+                      _buildSettingToggle(
+                        context,
+                        label: 'Nova Reunião',
+                        description: 'Avisar quando uma reunião for marcada',
+                        value: _notifNewMeeting,
+                        onChanged: (value) => setState(() => _notifNewMeeting = value),
+                      ),
+                      _buildSettingToggle(
+                        context,
+                        label: 'Pausar Notificações',
+                        description: 'Desativar notificações em horário específico',
+                        value: _notifAutoDeactivate,
+                        onChanged: (value) => setState(() => _notifAutoDeactivate = value),
+                      ),
+                      if (_notifAutoDeactivate)
+                        _buildTimeInput(
+                          context,
+                          label: 'Horário para desativar',
+                          time: _deactivateTime,
+                          onChanged: (time) => setState(() => _deactivateTime = time),
+                        ),
+                    ],
                   ],
                 ),
 
-                const SizedBox(height: 24),
 
-                // SEÇÃO: Horários de Trabalho (apenas consultor)
-                if (user.role == UserRole.consultor)
+                // SEÇÃO: Preferências (apenas cliente)
+                if (user.role == UserRole.cliente) ...[
                   _buildSection(
-                    title: 'HORÁRIOS DE TRABALHO',
-                    children: [
-                      _buildTimeInput(
-                        label: 'Início',
-                        initialTime: _startTime,
-                        onChanged: (time) => setState(() => _startTime = time),
-                      ),
-                      const SizedBox(height: 12),
-                      _buildTimeInput(
-                        label: 'Fim',
-                        initialTime: _endTime,
-                        onChanged: (time) => setState(() => _endTime = time),
-                      ),
-                      const SizedBox(height: 12),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                        child: Text(
-                          'Dias de trabalho: Seg-Sex',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                if (user.role == UserRole.consultor)
-                  const SizedBox(height: 24),
-
-                if (user.role == UserRole.consultor)
-                  _buildSection(
-                    title: 'TEMPLATES DE RESPOSTA',
+                    context,
+                    title: 'PREFERÊNCIAS',
                     children: [
                       _buildSettingButton(
-                        label: 'Gerenciar Templates',
-                        onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Gerenciamento de templates em breve')),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-
-                // SEÇÃO: Preferências de Viagem (apenas cliente)
-                if (user.role == UserRole.cliente)
-                  _buildSection(
-                    title: 'PREFERÊNCIAS DE VIAGEM',
-                    children: [
-                      _buildSettingButton(
+                        context,
                         label: 'Estilo de Viagem',
                         onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Configuração de estilo em breve')),
+                          ShadToaster.of(context).show(
+                            const ShadToast(description: Text('Configuração de estilo em breve')),
                           );
                         },
                       ),
                       _buildSettingOption(
+                        context,
                         label: 'Moeda Preferencial',
                         options: ['BRL (R\$)', 'USD (\$)', 'EUR (€)'],
-                        initialValue: _selectedCurrency,
+                        value: _selectedCurrency,
                         onChanged: (value) => setState(() => _selectedCurrency = value),
                       ),
                     ],
                   ),
-
-                if (user.role == UserRole.consultor || user.role == UserRole.cliente)
                   const SizedBox(height: 24),
+                ],
 
-                // SEÇÃO: Tema (genérica)
+                // SEÇÃO: Aparência
                 _buildSection(
+                  context,
                   title: 'APARÊNCIA',
                   children: [
-                    _buildSettingOption(
-                      label: 'Tema',
-                      options: ['Claro', 'Escuro', 'Automático'],
-                      initialValue: _selectedTheme,
-                      onChanged: (value) => setState(() => _selectedTheme = value),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: ProfileThemeSelector(
+                        themePreference: themePref,
+                        onChanged: (pref) =>
+                            ref.read(themeNotifierProvider.notifier).setTheme(pref),
+                      ),
                     ),
                   ],
                 ),
 
                 const SizedBox(height: 24),
 
-                // SEÇÃO: Segurança (genérica)
+                // SEÇÃO: Segurança
                 _buildSection(
+                  context,
                   title: 'SEGURANÇA',
                   children: [
                     _buildSettingButton(
+                      context,
                       label: 'Alterar Senha',
                       onTap: () => _showChangePasswordModal(context),
                     ),
                     _buildSettingButton(
-                      label: 'Logout em Todos os Dispositivos',
+                      context,
+                      label: 'Sair de todos os dispositivos',
                       onTap: () => _showLogoutAllModal(context),
                     ),
                   ],
@@ -191,85 +190,82 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                 const SizedBox(height: 24),
 
-                // SEÇÃO: Informações (genérica)
+                // SEÇÃO: Informações
                 _buildSection(
+                  context,
                   title: 'INFORMAÇÕES',
                   children: [
-                    const Padding(
-                      padding: EdgeInsets.all(14),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Versão: 1.0.0',
-                            style: TextStyle(fontSize: 13),
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            'Desenvolvido por Cadife Smart Travel',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    _buildInfoRow(context, label: 'Versão', value: '1.0.0'),
+                    _buildInfoRow(context, label: 'Desenvolvedor', value: 'Cadife Smart Travel'),
                   ],
                 ),
 
-                const SizedBox(height: 24),
-
-                // Botão Logout
-                ElevatedButton(
-                  onPressed: () => _handleLogout(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    foregroundColor: Colors.white,
-                    minimumSize: const Size.fromHeight(48),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text('FAZER LOGOUT'),
-                ),
                 const SizedBox(height: 32),
+
+                // Ações da conta
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Column(
+                    children: [
+                      CadifeButton(
+                        text: 'Sair da conta',
+                        icon: LucideIcons.logOut,
+                        isOutline: true,
+                        onPressed: () => _confirmLogout(context, ref),
+                      ),
+                      const SizedBox(height: 12),
+                      CadifeButton(
+                        text: 'Deletar conta',
+                        icon: LucideIcons.trash2,
+                        isOutline: true,
+                        onPressed: () => _confirmDeleteAccount(context, ref),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 48),
               ],
             ),
           ),
         );
       },
-      loading: () => const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+      loading: () => Scaffold(
+        backgroundColor: cadife.background,
+        body: const Center(child: CircularProgressIndicator()),
       ),
       error: (e, st) => Scaffold(
+        backgroundColor: cadife.background,
         body: Center(child: Text('Erro: $e')),
       ),
     );
   }
 
-  Widget _buildSection({
+  Widget _buildSection(
+    BuildContext context, {
     required String title,
     required List<Widget> children,
   }) {
+    final cadife = context.cadife;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 0.5,
-            color: AppColors.textSecondary,
+        Padding(
+          padding: const EdgeInsets.only(left: 8, bottom: 8),
+          child: Text(
+            title,
+            style: GoogleFonts.inter(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.2,
+              color: cadife.textSecondary,
+            ),
           ),
         ),
-        const SizedBox(height: 12),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border.all(color: AppColors.borderColor),
-            borderRadius: BorderRadius.circular(12),
+            color: cadife.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: cadife.cardBorder),
           ),
           child: Column(children: children),
         ),
@@ -277,98 +273,149 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  Widget _buildSettingToggle({
+  Widget _buildSettingToggle(
+    BuildContext context, {
     required String label,
     required String description,
-    required bool initialValue,
+    required bool value,
     required ValueChanged<bool> onChanged,
   }) {
+    final cadife = context.cadife;
     return Padding(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+                Text(
+                  label,
+                  style: GoogleFonts.inter(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                    color: cadife.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
                 Text(
                   description,
-                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: cadife.textSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ],
             ),
           ),
-          Switch(
-            value: initialValue,
+          ShadSwitch(
+            value: value,
             onChanged: onChanged,
-            activeThumbColor: AppColors.primary,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildTimeInput({
+  Widget _buildTimeInput(
+    BuildContext context, {
     required String label,
-    required TimeOfDay initialTime,
+    required TimeOfDay time,
     required ValueChanged<TimeOfDay> onChanged,
   }) {
-    return GestureDetector(
+    final cadife = context.cadife;
+    return InkWell(
       onTap: () async {
         final TimeOfDay? picked = await showTimePicker(
           context: context,
-          initialTime: initialTime,
+          initialTime: time,
         );
-        if (picked != null) {
-          onChanged(picked);
-        }
+        if (picked != null) onChanged(picked);
       },
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: AppColors.cardBackground,
-          border: Border.all(color: AppColors.borderColor),
-          borderRadius: BorderRadius.circular(8),
-        ),
+      borderRadius: BorderRadius.circular(16),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
-            Text('${initialTime.hour}:${initialTime.minute.toString().padLeft(2, '0')}'),
+            Text(
+              label,
+              style: GoogleFonts.inter(
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+                color: cadife.textPrimary,
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: cadife.background,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: cadife.cardBorder),
+              ),
+              child: Text(
+                '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 13,
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSettingOption({
+  Widget _buildSettingOption(
+    BuildContext context, {
     required String label,
     required List<String> options,
-    required String initialValue,
+    required String value,
     required ValueChanged<String> onChanged,
   }) {
+    final cadife = context.cadife;
     return Padding(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 8),
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontWeight: FontWeight.w700,
+              fontSize: 14,
+              color: cadife.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 10),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(
-              color: AppColors.cardBackground,
-              border: Border.all(color: AppColors.borderColor),
-              borderRadius: BorderRadius.circular(8),
+              color: cadife.background,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: cadife.cardBorder),
             ),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
-                value: initialValue,
+                value: value,
                 isExpanded: true,
-                items: options.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-                onChanged: (value) => onChanged(value!),
+                dropdownColor: cadife.surface,
+                icon: Icon(LucideIcons.chevronDown, size: 16, color: cadife.textSecondary),
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: cadife.textPrimary,
+                ),
+                items: options
+                    .map((e) => DropdownMenuItem(
+                          value: e,
+                          child: Text(e),
+                        ))
+                    .toList(),
+                onChanged: (val) => onChanged(val!),
               ),
             ),
           ),
@@ -377,73 +424,149 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  Widget _buildSettingButton({
+  Widget _buildSettingButton(
+    BuildContext context, {
     required String label,
     required VoidCallback onTap,
   }) {
+    final cadife = context.cadife;
     return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
-            const Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.textSecondary),
+            Text(
+              label,
+              style: GoogleFonts.inter(
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+                color: cadife.textPrimary,
+              ),
+            ),
+            Icon(LucideIcons.chevronRight, size: 16, color: cadife.textSecondary),
           ],
         ),
       ),
     );
   }
 
-  void _showChangePasswordModal(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Alterar Senha'),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              decoration: InputDecoration(labelText: 'Senha Atual'),
-              obscureText: true,
+  Widget _buildInfoRow(
+    BuildContext context, {
+    required String label,
+    required String value,
+  }) {
+    final cadife = context.cadife;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontWeight: FontWeight.w700,
+              fontSize: 14,
+              color: cadife.textPrimary,
             ),
-            TextField(
-              decoration: InputDecoration(labelText: 'Nova Senha'),
-              obscureText: true,
+          ),
+          Text(
+            value,
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: cadife.textSecondary,
             ),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancelar')),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Senha alterada com sucesso')),
-              );
-            },
-            child: const Text('Salvar'),
           ),
         ],
       ),
     );
   }
 
-  void _showLogoutAllModal(BuildContext context) {
-    showDialog(
+  void _showChangePasswordModal(BuildContext context) {
+    showShadDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Logout em Todos os Dispositivos'),
-        content: const Text('Você será desconectado de todos os seus dispositivos'),
+      builder: (context) => ShadDialog(
+        title: const Text('Alterar Senha'),
+        description: const Text('Digite sua senha atual e a nova senha desejada.'),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancelar')),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _handleLogout(context);
-            },
-            child: const Text('Confirmar'),
+          Row(
+            children: [
+              Expanded(
+                child: ShadButton.outline(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancelar'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ShadButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    ShadToaster.of(context).show(
+                      const ShadToast(description: Text('Senha alterada com sucesso')),
+                    );
+                  },
+                  child: const Text('Salvar'),
+                ),
+              ),
+            ],
+          ),
+        ],
+        child: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ShadInput(
+              placeholder: Text('Senha Atual'),
+              obscureText: true,
+              leading: Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Icon(LucideIcons.lock, size: 16),
+              ),
+            ),
+            SizedBox(height: 12),
+            ShadInput(
+              placeholder: Text('Nova Senha'),
+              obscureText: true,
+              leading: Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Icon(LucideIcons.keyRound, size: 16),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showLogoutAllModal(BuildContext context) {
+    showShadDialog(
+      context: context,
+      builder: (context) => ShadDialog(
+        title: const Text('Logout em Todos os Dispositivos'),
+        description: const Text('Você será desconectado de todas as sessões ativas.'),
+        actions: [
+          Row(
+            children: [
+              Expanded(
+                child: ShadButton.outline(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancelar'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ShadButton.destructive(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    _handleLogout(context);
+                  },
+                  child: const Text('Confirmar'),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -454,4 +577,81 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     ref.read(authNotifierProvider.notifier).logout();
     context.go('/auth/login');
   }
+
+  Future<void> _confirmLogout(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showShadDialog<bool>(
+      context: context,
+      builder: (ctx) => ShadDialog(
+        title: const Text('Sair da conta'),
+        description: const Text('Tem certeza que deseja sair?'),
+        actions: [
+          Row(
+            children: [
+              Expanded(
+                child: ShadButton.outline(
+                  onPressed: () => Navigator.of(ctx).pop(false),
+                  child: const Text('Cancelar'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ShadButton.destructive(
+                  onPressed: () => Navigator.of(ctx).pop(true),
+                  child: const Text('Sair'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      _handleLogout(context);
+    }
+  }
+
+  Future<void> _confirmDeleteAccount(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showShadDialog<bool>(
+      context: context,
+      builder: (ctx) => ShadDialog(
+        title: const Row(
+          children: [
+            Icon(LucideIcons.triangleAlert, color: AppColors.error, size: 20),
+            SizedBox(width: 8),
+            Text('Apagar conta'),
+          ],
+        ),
+        description: const Text(
+          'Esta ação é permanente e todos os seus dados serão perdidos. Tem certeza?',
+        ),
+        actions: [
+          Row(
+            children: [
+              Expanded(
+                child: ShadButton.outline(
+                  onPressed: () => Navigator.of(ctx).pop(false),
+                  child: const Text('Cancelar'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ShadButton.destructive(
+                  onPressed: () => Navigator.of(ctx).pop(true),
+                  child: const Text('Apagar'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      ShadToaster.of(context).show(
+        const ShadToast(description: Text('Solicitação de exclusão enviada')),
+      );
+    }
+  }
 }
+
