@@ -74,6 +74,20 @@ async def execute(payload: dict, db: AsyncSession) -> None:
     }
     lead: Lead = await lead_service.upsert_lead_with_resilience(db, lead_data)
 
+    # ── AYA Gate: se AYA desativada, persiste mensagem e notifica consultor ──
+    if not lead.aya_ativo:
+        tipo_gate: TipoMensagem = (
+            TipoMensagem(msg_type)
+            if msg_type in TipoMensagem.__members__
+            else TipoMensagem.texto
+        )
+        await lead_service.save_interacao(
+            db, lead.id, msg_cliente=text, msg_ia=None, tipo=tipo_gate
+        )
+        await _enqueue_aya_disabled_notification(db, lead)
+        logger.info("aya_disabled_message_persisted", lead_id=str(lead.id), phone=phone)
+        return
+
     # ── Step 2: Advance status NOVO → EM_ATENDIMENTO ─────────────────────
     if lead.status == LeadStatus.novo:
         await lead_service.update_lead_status(db, lead, LeadStatus.em_atendimento)
@@ -86,6 +100,10 @@ async def execute(payload: dict, db: AsyncSession) -> None:
     # ── Step 2.5: Ensure conversation memory is loaded (restart-resilient) ─
     interacoes_list = await lead_service.get_recent_interacoes(db, lead.id, limit=20)
     ai_service.preload_memory_from_db(phone, interacoes_list)
+
+    # ── Notifica consultor que o cliente respondeu (mesmo com AYA ativa) ──
+    if lead.consultor_id:
+        await _enqueue_message_received_notification(db, lead, text or "Mídia recebida")
 
     # ── Step 3: Generate AI reply — route by message type ─────────────────
     reply: str
@@ -176,6 +194,79 @@ async def execute(payload: dict, db: AsyncSession) -> None:
         latency_ms=send_result.latency_ms,
         retries=send_result.retries_used,
     )
+
+
+async def _enqueue_aya_disabled_notification(db: AsyncSession, lead: Lead) -> None:
+    """Notify the assigned consultant that the client sent a message while AYA is off."""
+    from sqlalchemy import select
+    from app.models.notification_queue import NotificationQueue
+
+    if not lead.consultor_id:
+        return
+
+    result = await db.execute(
+        select(User).where(User.id == lead.consultor_id, User.fcm_token.isnot(None))
+    )
+    consultor = result.scalar_one_or_none()
+    if not consultor or not consultor.fcm_token:
+        logger.warning("aya_disabled_no_consultant_token", lead_id=str(lead.id))
+        return
+
+    nome = lead.nome or "Cliente"
+    job = NotificationQueue(
+        lead_id=lead.id,
+        status="pending",
+        retry_count=0,
+        max_retries=3,
+        retry_delay_seconds=30,
+        next_retry_at=None,
+        payload={
+            "title": "Mensagem recebida — AYA desativada",
+            "body": f"{nome} enviou uma mensagem. Você está em atendimento manual.",
+            "data": {"type": "aya_disabled_message", "lead_id": str(lead.id)},
+            "fcm_tokens": [consultor.fcm_token],
+        },
+    )
+    db.add(job)
+    await db.commit()
+    logger.info("aya_disabled_consultant_notified", lead_id=str(lead.id), consultor_id=str(lead.consultor_id))
+
+
+async def _enqueue_message_received_notification(db: AsyncSession, lead: Lead, text: str) -> None:
+    """Notify assigned consultant that the client responded (even if AYA is handling it)."""
+    from sqlalchemy import select
+    from app.models.notification_queue import NotificationQueue
+
+    if not lead.consultor_id:
+        return
+
+    result = await db.execute(
+        select(User).where(User.id == lead.consultor_id, User.fcm_token.isnot(None))
+    )
+    consultor = result.scalar_one_or_none()
+    if not consultor or not consultor.fcm_token:
+        return
+
+    nome = lead.nome or "Cliente"
+    resumo = (text[:50] + "...") if len(text) > 50 else text
+
+    job = NotificationQueue(
+        lead_id=lead.id,
+        status="pending",
+        retry_count=0,
+        max_retries=3,
+        retry_delay_seconds=30,
+        next_retry_at=None,
+        payload={
+            "title": f"Resposta de {nome}",
+            "body": resumo,
+            "data": {"type": "new_customer_message", "lead_id": str(lead.id)},
+            "fcm_tokens": [consultor.fcm_token],
+        },
+    )
+    db.add(job)
+    await db.commit()
+    logger.info("consultant_notified_of_reply", lead_id=str(lead.id), consultor_id=str(lead.consultor_id))
 
 
 async def _enqueue_qualified_notification(
