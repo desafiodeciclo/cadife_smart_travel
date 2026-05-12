@@ -10,6 +10,7 @@ from app.core.security import (
 )
 from app.models.user import (
     FcmTokenRequest,
+    FcmTokenResponse,
     LoginRequest,
     RefreshRequest,
     TokenResponse,
@@ -126,6 +127,7 @@ async def update_me(
 
 @router.post(
     "/users/fcm-token",
+    response_model=FcmTokenResponse,
     summary="Registro de token FCM",
     description="Registra ou atualiza o token Firebase Cloud Messaging do dispositivo para notificações push.",
     responses={
@@ -137,6 +139,6 @@ async def register_fcm_token(
     body: FcmTokenRequest,
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
-):
+) -> FcmTokenResponse:
     await update_fcm_token(db, current_user, body.fcm_token)
-    return {"message": "Token FCM registrado com sucesso"}
+    return FcmTokenResponse(message="Token FCM registrado com sucesso")

@@ -3,6 +3,8 @@ import 'package:cadife_smart_travel/features/agency/agenda/domain/entities/agend
 import 'package:cadife_smart_travel/features/agency/agenda/domain/repositories/i_agenda_repository.dart';
 import 'package:fpdart/fpdart.dart';
 
+/// Dados alinhados com backend/scripts/db/seeds/02_leads.py e 04_agendamentos.py.
+/// Usa datas relativas ao dia atual para manter o calendário funcional em dev.
 class MockAgendaRepository implements IAgendaRepository {
   MockAgendaRepository() {
     _seedMockData();
@@ -15,34 +17,35 @@ class MockAgendaRepository implements IAgendaRepository {
     final today = DateTime(now.year, now.month, now.day);
 
     _agendas.addAll([
+      // Hoje — leads dos seeds
       Agendamento(
         id: 'mock-1',
-        leadId: 'lead-001',
-        consultorId: 'consultor-1',
+        leadId: 'rafael-mendes',
+        consultorId: 'jakeline-lima',
         dateTime: today.copyWith(hour: 9),
         durationMinutes: 60,
         status: 'agendado',
-        nomeCliente: 'Ana Souza',
-        destinoViagem: 'Cancún, México',
-        notes: 'Família de 4 pessoas, viagem de férias',
+        nomeCliente: 'Rafael Mendes',
+        destinoViagem: 'Nova York, EUA',
+        notes: 'Família de 4 pessoas (2 adultos + 2 crianças). Curadoria principal.',
         createdAt: now.subtract(const Duration(days: 2)),
       ),
       Agendamento(
         id: 'mock-2',
-        leadId: 'lead-002',
-        consultorId: 'consultor-1',
+        leadId: 'camila-santos',
+        consultorId: 'daniela-costa',
         dateTime: today.copyWith(hour: 11),
         durationMinutes: 90,
         status: 'pendente',
-        nomeCliente: 'Carlos Mendes',
-        destinoViagem: 'Paris, França',
-        notes: 'Lua de mel, busca experiências românticas',
+        nomeCliente: 'Camila Santos',
+        destinoViagem: 'Tóquio, Japão',
+        notes: 'Grupo de 4 amigas. Atenção: alergia a frutos do mar.',
         createdAt: now.subtract(const Duration(days: 1)),
       ),
       Agendamento(
         id: 'mock-3',
         leadId: 'blocked',
-        consultorId: 'consultor-1',
+        consultorId: 'daniela-costa',
         dateTime: today.copyWith(hour: 13),
         durationMinutes: 60,
         status: 'bloqueado',
@@ -52,83 +55,89 @@ class MockAgendaRepository implements IAgendaRepository {
       ),
       Agendamento(
         id: 'mock-4',
-        leadId: 'lead-003',
-        consultorId: 'consultor-1',
+        leadId: 'ana-luiza-gomes',
+        consultorId: 'marcos-andrade',
         dateTime: today.copyWith(hour: 15),
         durationMinutes: 60,
         status: 'agendado',
-        nomeCliente: 'Julia Ferreira',
-        destinoViagem: 'Tóquio, Japão',
-        notes: 'Grupo de amigos, 5 pessoas',
+        nomeCliente: 'Ana Luiza Gomes',
+        destinoViagem: 'Maldivas',
+        notes: 'Lua de mel. Cliente muito animada com villa overwater.',
         createdAt: now.subtract(const Duration(hours: 3)),
       ),
-      // Yesterday
+      // Ontem — lead realizado
       Agendamento(
         id: 'mock-5',
-        leadId: 'lead-004',
-        consultorId: 'consultor-1',
+        leadId: 'otavio-grotto',
+        consultorId: 'daniela-costa',
         dateTime: today.subtract(const Duration(days: 1)).copyWith(hour: 10),
         durationMinutes: 60,
         status: 'realizado',
-        nomeCliente: 'Pedro Alves',
-        destinoViagem: 'Lisboa, Portugal',
+        nomeCliente: 'Otávio Grotto',
+        destinoViagem: 'Paris, França',
+        notes: 'Aniversário de casamento. Roteiro finalizado e aprovado.',
         createdAt: now.subtract(const Duration(days: 3)),
       ),
-      // Tomorrow
+      // Amanhã
       Agendamento(
         id: 'mock-6',
-        leadId: 'lead-005',
-        consultorId: 'consultor-1',
+        leadId: 'joao-silva',
+        consultorId: 'jakeline-lima',
         dateTime: today.add(const Duration(days: 1)).copyWith(hour: 10),
         durationMinutes: 60,
         status: 'agendado',
-        nomeCliente: 'Mariana Costa',
-        destinoViagem: 'Maldivas',
+        nomeCliente: 'João Silva',
+        destinoViagem: 'Europa (Portugal ou Espanha)',
+        notes: 'Primeiro contato. Ainda definindo destino.',
         createdAt: now,
       ),
       Agendamento(
         id: 'mock-7',
-        leadId: 'lead-006',
-        consultorId: 'consultor-1',
+        leadId: 'maria-oliveira',
+        consultorId: 'diego-costa',
         dateTime: today.add(const Duration(days: 1)).copyWith(hour: 14),
         durationMinutes: 90,
         status: 'pendente',
-        nomeCliente: 'Roberto Lima',
-        destinoViagem: 'Nova York, EUA',
+        nomeCliente: 'Maria Oliveira',
+        destinoViagem: 'Cancún, México',
+        notes: 'Casal. Verificar passaportes antes da reunião.',
         createdAt: now,
       ),
-      // Day after tomorrow
+      // Depois de amanhã
       Agendamento(
         id: 'mock-8',
-        leadId: 'lead-007',
-        consultorId: 'consultor-1',
+        leadId: 'fernanda-castro',
+        consultorId: 'diego-costa',
         dateTime: today.add(const Duration(days: 2)).copyWith(hour: 9),
         durationMinutes: 60,
         status: 'agendado',
-        nomeCliente: 'Fernanda Rocha',
-        destinoViagem: 'Santorini, Grécia',
+        nomeCliente: 'Fernanda Castro',
+        destinoViagem: 'Maldivas',
+        notes: 'Lead qualificado. Aguardando proposta.',
         createdAt: now,
       ),
       Agendamento(
         id: 'mock-9',
-        leadId: 'lead-008',
-        consultorId: 'consultor-1',
+        leadId: 'rafael-mendes',
+        consultorId: 'jakeline-lima',
         dateTime: today.add(const Duration(days: 2)).copyWith(hour: 11),
         durationMinutes: 60,
         status: 'agendado',
-        nomeCliente: 'Bruno Martins',
-        destinoViagem: 'Buenos Aires, Argentina',
+        nomeCliente: 'Rafael Mendes',
+        destinoViagem: 'Nova York, EUA',
+        notes: 'Follow-up — confirmar visto americano.',
         createdAt: now,
       ),
       Agendamento(
         id: 'mock-10',
-        leadId: 'lead-009',
-        consultorId: 'consultor-1',
+        leadId: 'ana-luiza-gomes',
+        consultorId: 'marcos-andrade',
         dateTime: today.add(const Duration(days: 2)).copyWith(hour: 14),
         durationMinutes: 60,
         status: 'agendado',
-        nomeCliente: 'Camila Santos',
-        destinoViagem: 'Dubai, EAU',
+        nomeCliente: 'Ana Luiza Gomes',
+        destinoViagem: 'Maldivas',
+        notes: 'Apresentação final do pacote curado.',
         createdAt: now,
       ),
     ]);
@@ -166,7 +175,6 @@ class MockAgendaRepository implements IAgendaRepository {
   ) async {
     await Future.delayed(const Duration(milliseconds: 600));
 
-    // Validate time range 09:00–16:00
     final hour = request.dateTime.hour;
     if (hour < 9 || hour >= 16) {
       return const Left(
@@ -174,7 +182,6 @@ class MockAgendaRepository implements IAgendaRepository {
       );
     }
 
-    // Check max 6 per day
     final sameDay = _agendas
         .where(
           (a) =>
@@ -191,7 +198,6 @@ class MockAgendaRepository implements IAgendaRepository {
       );
     }
 
-    // Check for slot conflict
     final conflict = _agendas.any(
       (a) =>
           a.dateTime.year == request.dateTime.year &&
@@ -208,7 +214,7 @@ class MockAgendaRepository implements IAgendaRepository {
     final agenda = Agendamento(
       id: 'mock-${DateTime.now().millisecondsSinceEpoch}',
       leadId: request.leadId,
-      consultorId: 'mock-consultor-id',
+      consultorId: 'daniela-costa',
       dateTime: request.dateTime,
       durationMinutes: request.durationMinutes,
       status: isBloqueio ? 'bloqueado' : 'agendado',
@@ -261,7 +267,6 @@ class MockAgendaRepository implements IAgendaRepository {
     DateTime date,
   ) async {
     await Future.delayed(const Duration(milliseconds: 300));
-    // Slots from 09:00 to 16:00 (8 slots)
     final slots = List.generate(8, (i) {
       final hour = 9 + i;
       final start = DateTime(date.year, date.month, date.day, hour);

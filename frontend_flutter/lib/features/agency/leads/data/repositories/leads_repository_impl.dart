@@ -1,10 +1,12 @@
 import 'package:cadife_smart_travel/features/agency/leads/data/datasources/i_leads_datasource.dart';
-import 'package:cadife_smart_travel/features/agency/leads/data/models/conversation_summary_api_model.dart'; // Importante adicionar
+import 'package:cadife_smart_travel/features/agency/leads/data/models/conversation_summary_api_model.dart';
 import 'package:cadife_smart_travel/features/agency/leads/data/models/lead_api_model.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/briefing.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
-import 'package:cadife_smart_travel/features/client/historico/domain/entities/interacao.dart';
+import 'package:cadife_smart_travel/shared/domain/entities/interacao.dart';
 
+/// Implementação Mock do Datasource de Leads.
+/// Centraliza os dados simulados alinhados com o backend (Seeds).
 class LeadsRemoteMockDatasource implements ILeadsDatasource {
   final List<LeadApiModel> _mockLeads = [
     LeadApiModel(
@@ -84,8 +86,10 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
   @override
   Future<LeadApiModel> getLeadById(String id) async {
     await Future.delayed(const Duration(milliseconds: 300));
-    return _mockLeads.firstWhere((l) => l.id == id,
-        orElse: () => throw Exception('Lead não encontrado'));
+    return _mockLeads.firstWhere(
+      (l) => l.id == id,
+      orElse: () => throw Exception('Lead não encontrado'),
+    );
   }
 
   @override
@@ -97,8 +101,10 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
   @override
   Future<Briefing> getBriefing(String leadId) async {
     await Future.delayed(const Duration(milliseconds: 300));
-    final lead = _mockLeads.firstWhere((l) => l.id == leadId,
-        orElse: () => _mockLeads.first);
+    final lead = _mockLeads.firstWhere(
+      (l) => l.id == leadId,
+      orElse: () => _mockLeads.first,
+    );
     return Briefing(
       leadId: leadId,
       completudePct: lead.completudePct,
@@ -130,7 +136,6 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
   @override
   Future<ConversationSummaryApiModel?> getConversationSummary(String leadId) async {
     await Future.delayed(const Duration(milliseconds: 400));
-    // Simula um resumo estruturado vindo da IA
     return ConversationSummaryApiModel(
       id: 'summary_$leadId',
       leadId: leadId,
