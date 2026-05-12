@@ -13,6 +13,7 @@ from app.models.proposta import Proposta, PropostaCreate, PropostaResponse, Prop
 from app.models.user import User
 from app.presentation.schemas.common_errors import HTTPErrorResponse
 from app.services import lead_service
+from app.services.fcm_service import send_push_notification
 
 router = APIRouter(
     prefix="/propostas",
@@ -76,6 +77,17 @@ async def create_proposta(
     db.add(proposta)
     await db.commit()
     await db.refresh(proposta)
+
+    # Notify client about new proposal (best-effort)
+    client_token = await lead_service._get_client_fcm_token(db, lead)
+    if client_token:
+        await send_push_notification(
+            fcm_token=client_token,
+            title="Proposta de viagem criada!",
+            body="Verifique os detalhes no app",
+            data={"type": "proposal_created", "proposal_id": str(proposta.id)},
+        )
+
     return PropostaResponse.model_validate(proposta)
 
 
@@ -169,11 +181,16 @@ async def update_proposta(
         setattr(proposta, field, value)
 
     # Lifecycle propagation: aprovada → lead fechado; recusada → lead proposta
-    if body.status is not None:
+    # Using update_lead_status so FCM notifications are sent to the client.
+    if body.status is not None and lead is not None:
         if body.status == PropostaStatus.aprovada:
-            lead.status = LeadStatus.fechado.value
+            await lead_service.update_lead_status(
+                db, lead, LeadStatus.fechado, triggered_by="proposta_aprovada"
+            )
         elif body.status == PropostaStatus.recusada:
-            lead.status = LeadStatus.proposta.value
+            await lead_service.update_lead_status(
+                db, lead, LeadStatus.proposta, triggered_by="proposta_recusada"
+            )
 
     await db.commit()
     await db.refresh(proposta)
