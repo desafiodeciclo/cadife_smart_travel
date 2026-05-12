@@ -92,4 +92,18 @@ class LeadsRepositoryImpl implements ILeadsRepository {
       return Left(Failure.fromException(e));
     }
   }
+
+  @override
+  Future<Either<Failure, Unit>> toggleAya(
+    String leadId, {
+    required bool ativo,
+    String? motivo,
+  }) async {
+    try {
+      await _remoteDatasource.toggleAya(leadId, ativo: ativo, motivo: motivo);
+      return const Right(unit);
+    } on Exception catch (e) {
+      return Left(Failure.fromException(e));
+    }
+  }
 }
