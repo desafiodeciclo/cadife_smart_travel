@@ -92,7 +92,7 @@ class PerfilViagem(str, Enum):
     """Traveler profile types (spec.md §4.2)."""
 
     casal = "casal"
-    familia = "família"
+    familia = "familia"
     solo = "solo"
     grupo = "grupo"
     amigos = "amigos"
@@ -102,7 +102,7 @@ class OrcamentoPerfil(str, Enum):
     """Budget tier classification (spec.md §4.2)."""
 
     baixo = "baixo"
-    medio = "médio"
+    medio = "medio"
     alto = "alto"
     premium = "premium"
 
@@ -113,9 +113,9 @@ class SuitcaseCategory(str, Enum):
     documentos = "documentos"
     roupas = "roupas"
     higiene = "higiene"
-    eletronicos = "eletrônicos"
-    saude = "saúde"
-    acessorios = "acessórios"
+    eletronicos = "eletronicos"
+    saude = "saude"
+    acessorios = "acessorios"
     outros = "outros"
 
 
@@ -153,7 +153,7 @@ class OfferCategoria(str, Enum):
     internacional = "internacional"
     nacional = "nacional"
     lua_de_mel = "lua_de_mel"
-    familia = "família"
+    familia = "familia"
     aventura = "aventura"
     cruzeiro = "cruzeiro"
     executivo = "executivo"
