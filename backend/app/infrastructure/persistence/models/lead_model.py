@@ -39,6 +39,7 @@ if TYPE_CHECKING:
     from app.infrastructure.persistence.models.proposta_model import PropostaModel
     from app.infrastructure.persistence.models.suitcase_model import SuitcaseItemModel
     from app.infrastructure.persistence.models.travel_diary_model import TravelDiaryEntryModel
+    from app.infrastructure.persistence.models.aya_toggle_history_model import AyaToggleHistoryModel
 
 
 # PostgreSQL native ENUM types — enforced at DB level, not just application level
@@ -97,6 +98,7 @@ class LeadModel(Base):
     consultor_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL")
     )
+    aya_ativo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, server_default="true")
     is_archived: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     criado_em: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
@@ -126,4 +128,7 @@ class LeadModel(Base):
     )
     diary_entries: Mapped[list["TravelDiaryEntryModel"]] = relationship(
         "TravelDiaryEntryModel", back_populates="lead", lazy="select", cascade="all, delete-orphan"
+    )
+    aya_toggle_history: Mapped[list["AyaToggleHistoryModel"]] = relationship(
+        "AyaToggleHistoryModel", back_populates="lead", lazy="select", cascade="all, delete-orphan"
     )
