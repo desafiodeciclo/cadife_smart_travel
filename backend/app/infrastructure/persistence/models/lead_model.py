@@ -42,6 +42,7 @@ if TYPE_CHECKING:
     from app.infrastructure.persistence.models.suitcase_model import SuitcaseItemModel
     from app.infrastructure.persistence.models.travel_diary_model import TravelDiaryEntryModel
     from app.infrastructure.persistence.models.itinerary_model import ItineraryItemModel
+    from app.infrastructure.persistence.models.lead_score_history_model import LeadScoreHistoryModel
 
 
 # PostgreSQL native ENUM types — enforced at DB level, not just application level
@@ -137,4 +138,10 @@ class LeadModel(Base):
     itinerary_items: Mapped[list["ItineraryItemModel"]] = relationship(
         "ItineraryItemModel", back_populates="lead", lazy="select", cascade="all, delete-orphan",
         order_by="ItineraryItemModel.horario_inicio",
+    )
+    score_history: Mapped[list["LeadScoreHistoryModel"]] = relationship(
+        "LeadScoreHistoryModel",
+        back_populates="lead",
+        lazy="select",
+        order_by="LeadScoreHistoryModel.criado_em.desc()",
     )

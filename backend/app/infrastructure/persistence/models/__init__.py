@@ -10,6 +10,9 @@ Import order matters: Lead must be defined before dependent models.
 
 from app.infrastructure.persistence.models.user_model import UserModel  # noqa: F401
 from app.infrastructure.persistence.models.lead_model import LeadModel  # noqa: F401
+from app.infrastructure.persistence.models.lead_score_history_model import (  # noqa: F401
+    LeadScoreHistoryModel,
+)
 from app.infrastructure.persistence.models.briefing_model import (
     BriefingModel,
 )  # noqa: F401
@@ -46,6 +49,7 @@ from app.models.dead_letter_queue import DeadLetterQueue  # noqa: F401
 __all__ = [
     "UserModel",
     "LeadModel",
+    "LeadScoreHistoryModel",
     "BriefingModel",
     "InteracaoModel",
     "AgendamentoModel",
