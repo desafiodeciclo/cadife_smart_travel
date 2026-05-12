@@ -9,6 +9,7 @@ from datetime import datetime
 from app.infrastructure.persistence.models.lead_model import LeadModel
 from app.infrastructure.persistence.models.user_model import UserModel
 from app.infrastructure.persistence.models.travel_diary_model import TravelDiaryEntryModel
+from app.infrastructure.security.pii_encryption import hmac_hash
 
 
 @pytest.fixture
@@ -35,7 +36,7 @@ async def test_lead(db_session):
         id=uuid.uuid4(),
         nome="Viagem de Teste",
         telefone="+5511999999999",
-        telefone_hash="hash_teste_diary",
+        telefone_hash=hmac_hash("+5511999999999"),
         status="novo"
     )
     db_session.add(lead)

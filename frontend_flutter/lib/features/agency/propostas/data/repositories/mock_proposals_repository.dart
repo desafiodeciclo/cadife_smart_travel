@@ -35,4 +35,9 @@ class MockProposalsRepository implements IProposalsRepository {
   Future<Either<Failure, void>> deleteProposal(String id) async {
     return const Right(null);
   }
+
+  @override
+  Future<Either<Failure, Proposta>> sendProposal(String id) async {
+    return const Left(ServerFailure('Not implemented in mock'));
+  }
 }
