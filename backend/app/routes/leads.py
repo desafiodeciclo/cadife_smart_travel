@@ -284,6 +284,12 @@ async def update_lead(
             status_code=status.HTTP_404_NOT_FOUND, detail="Lead não encontrado"
         )
 
+    # Scope Check
+    if current_user.perfil == "consultor" and lead.consultor_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado ao lead"
+        )
+
     data = lead_in.model_dump(exclude_none=True)
 
     # ── State Machine validation ──────────────────────────────────────────
@@ -345,6 +351,12 @@ async def archive_lead(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Lead não encontrado"
         )
+
+    # Scope Check
+    if current_user.perfil == "consultor" and lead.consultor_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado ao lead"
+        )
     await lead_service.soft_delete(db, lead)
 
 
@@ -369,6 +381,12 @@ async def get_interacoes(
     if not lead:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Lead não encontrado"
+        )
+
+    # Scope Check
+    if current_user.perfil == "consultor" and lead.consultor_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado ao lead"
         )
     from app.models.interacao import InteracaoResponse
 
@@ -483,6 +501,12 @@ async def get_briefing(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Briefing não encontrado"
         )
+
+    # Scope Check
+    if current_user.perfil == "consultor" and lead.consultor_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado ao lead"
+        )
     return BriefingResponse.model_validate(lead.briefing)
 
 
@@ -509,6 +533,12 @@ async def update_briefing(
     if not lead or not lead.briefing:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Briefing não encontrado"
+        )
+
+    # Scope Check
+    if current_user.perfil == "consultor" and lead.consultor_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado ao lead"
         )
 
     briefing = lead.briefing

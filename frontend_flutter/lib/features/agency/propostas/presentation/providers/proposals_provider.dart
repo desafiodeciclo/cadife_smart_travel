@@ -9,8 +9,8 @@ final iProposalsRepositoryProvider = Provider<IProposalsRepository>((ref) {
 
 final proposalsProvider =
     AsyncNotifierProvider<ProposalsNotifier, List<Proposta>>(
-      ProposalsNotifier.new,
-    );
+  ProposalsNotifier.new,
+);
 
 class ProposalsNotifier extends AsyncNotifier<List<Proposta>> {
   @override
@@ -46,15 +46,18 @@ class ProposalsNotifier extends AsyncNotifier<List<Proposta>> {
   Future<void> createProposal(CreateProposalRequest request) async {
     final repo = ref.read(iProposalsRepositoryProvider);
     final result = await repo.createProposal(request);
-    
+    result.fold(
+      (failure) => state = AsyncError(failure, StackTrace.current),
+      (_) => refresh(),
+    );
+  }
+
+  Future<void> sendProposal(String proposalId) async {
+    final repo = ref.read(iProposalsRepositoryProvider);
+    final result = await repo.sendProposal(proposalId);
     result.fold(
       (failure) => state = AsyncError(failure, StackTrace.current),
       (_) => refresh(),
     );
   }
 }
-
-
-
-
-

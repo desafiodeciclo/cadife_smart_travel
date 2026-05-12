@@ -1,4 +1,5 @@
 import 'package:cadife_smart_travel/core/error/failures.dart';
+import 'package:cadife_smart_travel/features/agency/leads/data/providers/leads_data_providers.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/providers/leads_usecases_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -58,6 +59,16 @@ class LeadsNotifier extends AsyncNotifier<List<Lead>> {
         return Right(lead);
       },
     );
+  }
+
+  Future<void> reassignLead(String id, String consultorNome) async {
+    final datasource = ref.read(leadsDatasourceProvider);
+    try {
+      await datasource.reassignLead(id, consultorNome);
+      await refresh();
+    } on Exception catch (e) {
+      state = AsyncError(e, StackTrace.current);
+    }
   }
 
   Lead? findByPhone(String phone) {

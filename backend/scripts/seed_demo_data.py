@@ -21,6 +21,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.persistence.database import AsyncSessionLocal, engine
+from app.infrastructure.security.pii_encryption import hmac_hash
 from app.models.lead import Lead
 from app.models.user import User, UserPerfil
 from app.domain.entities.enums import LeadOrigem, LeadStatus
@@ -36,31 +37,35 @@ async def get_or_create_admin(session: AsyncSession) -> User:
     return admin
 
 async def seed_leads(session: AsyncSession, admin: User) -> None:
-    # Check if we already have demo leads
     result = await session.execute(select(Lead).limit(1))
     if result.scalar_one_or_none():
         print("[SKIP] Demo leads already exist.")
         return
 
+    joao_phone = "+5511999999999"
+    maria_phone = "+5511888888888"
+
     demo_leads = [
         Lead(
             id=uuid.uuid4(),
             nome="João Silva",
-            telefone="+5511999999999",
+            telefone=joao_phone,
+            telefone_hash=hmac_hash(joao_phone),
             origem=LeadOrigem.whatsapp,
             status=LeadStatus.novo,
-            consultor_id=admin.id
+            consultor_id=admin.id,
         ),
         Lead(
             id=uuid.uuid4(),
             nome="Maria Oliveira",
-            telefone="+5511888888888",
-            origem=LeadOrigem.site,
+            telefone=maria_phone,
+            telefone_hash=hmac_hash(maria_phone),
+            origem=LeadOrigem.web,
             status=LeadStatus.em_atendimento,
-            consultor_id=admin.id
-        )
+            consultor_id=admin.id,
+        ),
     ]
-    
+
     session.add_all(demo_leads)
     await session.commit()
     print(f"[OK] {len(demo_leads)} Demo leads created.")
