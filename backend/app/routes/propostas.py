@@ -164,6 +164,7 @@ async def update_proposta(
     if lead:
         check_lead_access(current_user, lead)
 
+    old_status = proposta.status
     for field, value in body.model_dump(exclude_none=True).items():
         setattr(proposta, field, value)
 
@@ -176,4 +177,19 @@ async def update_proposta(
 
     await db.commit()
     await db.refresh(proposta)
+
+    # Checkpoint triggers (fire-and-forget — do not block the response)
+    if body.status is not None and old_status != body.status:
+        import asyncio
+        from app.services.checkpoint_service import activate_checkpoint, SISTEMA
+        from app.domain.entities.enums import TravelCheckpoint
+        if body.status == PropostaStatus.enviada:
+            asyncio.ensure_future(
+                activate_checkpoint(db, proposta.lead_id, TravelCheckpoint.proposta_enviada, SISTEMA)
+            )
+        elif body.status == PropostaStatus.aprovada:
+            asyncio.ensure_future(
+                activate_checkpoint(db, proposta.lead_id, TravelCheckpoint.proposta_aprovada, SISTEMA)
+            )
+
     return PropostaResponse.model_validate(proposta)

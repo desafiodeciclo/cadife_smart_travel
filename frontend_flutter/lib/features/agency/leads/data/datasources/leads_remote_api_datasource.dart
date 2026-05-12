@@ -1,6 +1,7 @@
 import 'package:cadife_smart_travel/core/constants/api_constants.dart';
 import 'package:cadife_smart_travel/core/offline/offline_manager.dart';
 import 'package:cadife_smart_travel/features/agency/leads/data/datasources/i_leads_datasource.dart';
+import 'package:cadife_smart_travel/features/agency/leads/data/models/conversation_summary_api_model.dart';
 import 'package:cadife_smart_travel/features/agency/leads/data/models/lead_api_model.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/briefing.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
@@ -231,5 +232,17 @@ class LeadsRemoteApiDatasource implements ILeadsDatasource {
     final lead = LeadApiModel.fromJson(response.data as Map<String, dynamic>);
     await _offlineManager.invalidateByPrefix('$_cacheKeyPrefix:list:');
     return lead;
+  }
+
+  @override
+  Future<ConversationSummaryApiModel?> getConversationSummary(String leadId) async {
+    try {
+      final response = await _dio.get(ApiConstants.leadConversationSummary(leadId));
+      return ConversationSummaryApiModel.fromJson(
+          response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return null;
+      rethrow;
+    }
   }
 }

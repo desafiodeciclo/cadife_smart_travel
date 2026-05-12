@@ -1,9 +1,11 @@
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/client/status/domain/entities/client_travel_status.dart';
+import 'package:cadife_smart_travel/features/client/status/presentation/providers/checkpoints_provider.dart';
 import 'package:cadife_smart_travel/features/client/status/presentation/providers/status_notifier.dart';
 import 'package:cadife_smart_travel/features/client/status/presentation/providers/status_providers.dart';
 import 'package:cadife_smart_travel/features/client/status/presentation/widgets/ongoing_trip_card.dart';
 import 'package:cadife_smart_travel/features/client/status/presentation/widgets/status_stepper_widget.dart';
+import 'package:cadife_smart_travel/features/client/status/presentation/widgets/travel_checkpoint_timeline.dart';
 import 'package:cadife_smart_travel/features/notifications/presentation/widgets/notification_bell.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -70,6 +72,8 @@ class StatusPage extends ConsumerWidget {
                   ),
                   const SizedBox(height: 20),
                   StatusStepperWidget(currentStep: _mapStatusToStep(status.status)),
+                  const SizedBox(height: 32),
+                  _CheckpointSection(leadId: status.id),
                 ],
               ),
             ),
@@ -96,6 +100,26 @@ class StatusPage extends ConsumerWidget {
     context.pushNamed(
       'client_travel_calendar',
       pathParameters: {'leadId': leadId},
+    );
+  }
+}
+
+class _CheckpointSection extends ConsumerWidget {
+  const _CheckpointSection({required this.leadId});
+
+  final String leadId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final async = ref.watch(checkpointsProvider(leadId));
+    return async.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (_, _) => TextButton.icon(
+        onPressed: () => ref.invalidate(checkpointsProvider(leadId)),
+        icon: const Icon(Icons.refresh, size: 16),
+        label: const Text('Erro ao carregar progresso. Tentar novamente'),
+      ),
+      data: (checkpoints) => TravelCheckpointTimeline(activated: checkpoints),
     );
   }
 }
