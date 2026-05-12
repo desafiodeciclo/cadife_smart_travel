@@ -3,6 +3,8 @@ import 'package:cadife_smart_travel/features/agency/agenda/domain/entities/agend
 import 'package:cadife_smart_travel/features/agency/agenda/presentation/providers/agenda_provider.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/providers/leads_notifier.dart';
+import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
+import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/state_container.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
@@ -49,6 +51,9 @@ class AgendaScreen extends ConsumerWidget {
         ) ??
         false;
 
+    final user = ref.watch(authNotifierProvider).valueOrNull;
+    final isAdmin = user?.role == UserRole.admin;
+
     return PageScaffold(
       appBar: CadifeAppBar(
         title: 'Agenda',
@@ -84,32 +89,55 @@ class AgendaScreen extends ConsumerWidget {
         ],
       ),
       floatingActionButton: viewMode == 1
-          ? FloatingActionButton.extended(
-              backgroundColor: AppColors.primary,
-              icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text(
-                'Nova reunião',
-                style: TextStyle(color: Colors.white),
-              ),
-              onPressed: () {
-                final selectedDate = ref.read(selectedAgendaDateProvider);
-                final now = DateTime.now();
-                final defaultHour =
-                    selectedDate.day == now.day ? now.hour.clamp(9, 15) : 9;
-                final slotStart = DateTime(
-                  selectedDate.year,
-                  selectedDate.month,
-                  selectedDate.day,
-                  defaultHour,
-                );
-                showModalBottomSheet<void>(
-                  context: context,
-                  isScrollControlled: true,
-                  backgroundColor: Colors.transparent,
-                  builder: (_) => _LeadSelectSheet(slotStart: slotStart),
-                );
-              },
-            )
+          ? isAdmin
+              ? FloatingActionButton(
+                  backgroundColor: AppColors.primary,
+                  onPressed: () {
+                    final selectedDate = ref.read(selectedAgendaDateProvider);
+                    final now = DateTime.now();
+                    final defaultHour =
+                        selectedDate.day == now.day ? now.hour.clamp(9, 15) : 9;
+                    final slotStart = DateTime(
+                      selectedDate.year,
+                      selectedDate.month,
+                      selectedDate.day,
+                      defaultHour,
+                    );
+                    showModalBottomSheet<void>(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (_) => _LeadSelectSheet(slotStart: slotStart),
+                    );
+                  },
+                  child: const Icon(Icons.add, color: Colors.white),
+                )
+              : FloatingActionButton.extended(
+                  backgroundColor: AppColors.primary,
+                  icon: const Icon(Icons.add, color: Colors.white),
+                  label: const Text(
+                    'Nova reunião',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  onPressed: () {
+                    final selectedDate = ref.read(selectedAgendaDateProvider);
+                    final now = DateTime.now();
+                    final defaultHour =
+                        selectedDate.day == now.day ? now.hour.clamp(9, 15) : 9;
+                    final slotStart = DateTime(
+                      selectedDate.year,
+                      selectedDate.month,
+                      selectedDate.day,
+                      defaultHour,
+                    );
+                    showModalBottomSheet<void>(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (_) => _LeadSelectSheet(slotStart: slotStart),
+                    );
+                  },
+                )
           : null,
       body: Column(
         children: [

@@ -92,4 +92,28 @@ class LeadsRepositoryImpl implements ILeadsRepository {
       return Left(Failure.fromException(e));
     }
   }
+
+  @override
+  Future<Either<Failure, Lead>> updateLead({
+    required String id,
+    String? name,
+    String? phone,
+    String? email,
+    LeadStatus? status,
+    LeadScore? score,
+  }) async {
+    try {
+      final lead = await _remoteDatasource.updateLead(
+        id: id,
+        name: name,
+        phone: phone,
+        email: email,
+        status: status,
+        score: score,
+      );
+      return Right(lead);
+    } on Exception catch (e) {
+      return Left(Failure.fromException(e));
+    }
+  }
 }

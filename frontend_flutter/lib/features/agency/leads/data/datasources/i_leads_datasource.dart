@@ -13,4 +13,12 @@ abstract class ILeadsDatasource {
   Future<LeadApiModel> createLead(CreateLeadRequest request);
   Future<LeadApiModel> createManualLead(ManualLeadCreate request);
   Future<LeadApiModel> reassignLead(String id, String consultorNome);
+  Future<LeadApiModel> updateLead({
+    required String id,
+    String? name,
+    String? phone,
+    String? email,
+    LeadStatus? status,
+    LeadScore? score,
+  });
 }

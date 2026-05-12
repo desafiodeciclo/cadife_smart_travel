@@ -13,4 +13,12 @@ abstract class ILeadsRepository {
   Future<Either<Failure, List<Interacao>>> getInteractions(String leadId);
   Future<Either<Failure, Lead>> createLead(CreateLeadRequest request);
   Future<Either<Failure, Lead>> createManualLead(ManualLeadCreate request);
+  Future<Either<Failure, Lead>> updateLead({
+    required String id,
+    String? name,
+    String? phone,
+    String? email,
+    LeadStatus? status,
+    LeadScore? score,
+  });
 }

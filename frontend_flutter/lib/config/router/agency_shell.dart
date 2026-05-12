@@ -17,74 +17,87 @@ class AgencyShell extends ConsumerStatefulWidget {
 }
 
 class _AgencyShellState extends ConsumerState<AgencyShell> {
-  static const _baseTabs = [
-    '/agency/dashboard',
-    '/agency/leads',
-    '/agency/agenda',
-    '/agency/profile',
-  ];
-
-  static const _adminTabs = [
-    '/agency/dashboard',
-    '/agency/leads',
-    '/agency/agenda',
-    '/agency/admin',
-    '/agency/profile',
-  ];
-
-  int _currentIndex = 0;
   int _previousIndex = 0;
-  List<String> _tabs = _baseTabs;
 
-  List<String> _getTabsList(bool isAdmin) {
-    final tabs = ['/agency/dashboard', '/agency/leads', '/agency/agenda', '/agency/profile'];
+  // Derivamos as abas, itens e o índice atual de forma reativa e centralizada
+  (List<String>, List<CadifeBottomNavItem>, int) _getNavigationState(bool isAdmin, String path) {
+    // Definimos as abas (URLs)
+    final tabs = isAdmin 
+      ? [
+          '/agency/admin/overview',
+          '/agency/admin/leads',
+          '/agency/admin/consultants',
+          '/agency/agenda',
+          '/agency/profile',
+        ]
+      : [
+          '/agency/dashboard',
+          '/agency/leads',
+          '/agency/agenda',
+          '/agency/profile',
+        ];
+
+    // Definimos os itens da barra (Ícones e Labels)
+    final items = isAdmin
+      ? [
+          const CadifeBottomNavItem(icon: LucideIcons.layoutDashboard, label: 'Dashboard'),
+          const CadifeBottomNavItem(icon: LucideIcons.users, label: 'Leads'),
+          const CadifeBottomNavItem(icon: LucideIcons.shieldCheck, label: 'Consultores'),
+          const CadifeBottomNavItem(icon: LucideIcons.calendarDays, label: 'Agenda'),
+          const CadifeBottomNavItem(icon: LucideIcons.circleUser, label: 'Perfil'),
+        ]
+      : [
+          const CadifeBottomNavItem(icon: LucideIcons.layoutDashboard, label: 'Dashboard'),
+          const CadifeBottomNavItem(icon: LucideIcons.users, label: 'Leads'),
+          const CadifeBottomNavItem(icon: LucideIcons.calendarDays, label: 'Agenda'),
+          const CadifeBottomNavItem(icon: LucideIcons.circleUser, label: 'Perfil'),
+        ];
+
+    // Calculamos o índice baseado no path e no papel (isAdmin)
+    int index = 0;
     if (isAdmin) {
-      tabs.insert(3, '/agency/admin/consultants');
+      if (path.startsWith('/agency/admin/overview')) {
+        index = 0;
+      } else if (path.startsWith('/agency/admin/leads')) {
+        index = 1;
+      } else if (path.startsWith('/agency/leads')) {
+        index = 1;
+      } else if (path.startsWith('/agency/admin/consultants')) {
+        index = 2;
+      } else if (path.startsWith('/agency/agenda')) {
+        index = 3;
+      } else if (path.startsWith('/agency/profile')) {
+        index = 4;
+      } else if (path.startsWith('/agency/admin')) {
+        index = 0;
+      }
+    } else {
+      if (path.startsWith('/agency/dashboard')) {
+        index = 0;
+      } else if (path.startsWith('/agency/leads')) {
+        index = 1;
+      } else if (path.startsWith('/agency/agenda')) {
+        index = 2;
+      } else if (path.startsWith('/agency/profile')) {
+        index = 3;
+      }
     }
-    return tabs;
-  }
 
-  int _indexFromPath(String path, bool isAdmin) {
-    final tabs = _getTabsList(isAdmin);
-    for (int i = 0; i < tabs.length; i++) {
-      if (path.startsWith(tabs[i])) return i;
-    }
-    return 0;
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    final user = ref.read(authNotifierProvider).valueOrNull;
-    final isAdmin = user?.role == UserRole.admin;
-    _currentIndex = _indexFromPath(widget.location, isAdmin);
-    _previousIndex = _currentIndex;
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final user = ref.read(authNotifierProvider).valueOrNull;
-    final newTabs = user?.role == UserRole.admin ? _adminTabs : _baseTabs;
-    if (newTabs.length != _tabs.length) {
-      setState(() {
-        _tabs = newTabs;
-        _currentIndex = _indexFromPath(widget.location, user?.role == UserRole.admin);
-      });
-    }
+    return (tabs, items, index);
   }
 
   @override
   void didUpdateWidget(AgencyShell old) {
     super.didUpdateWidget(old);
-    final user = ref.read(authNotifierProvider).valueOrNull;
-    final isAdmin = user?.role == UserRole.admin;
-    final newIndex = _indexFromPath(widget.location, isAdmin);
-    if (newIndex != _currentIndex) {
-      setState(() {
-        _previousIndex = _currentIndex;
-        _currentIndex = newIndex;
-      });
+    if (old.location != widget.location) {
+      // Usamos ref.read aqui apenas para capturar o índice anterior para a animação
+      final user = ref.read(authNotifierProvider).valueOrNull;
+      final isAdmin = user?.role == UserRole.admin;
+      final (_, _, oldIndex) = _getNavigationState(isAdmin, old.location);
+      final (_, _, newIndex) = _getNavigationState(isAdmin, widget.location);
+      if (oldIndex != newIndex) {
+        _previousIndex = oldIndex;
+      }
     }
   }
 
@@ -92,12 +105,13 @@ class _AgencyShellState extends ConsumerState<AgencyShell> {
   Widget build(BuildContext context) {
     final user = ref.watch(authNotifierProvider).valueOrNull;
     final isAdmin = user?.role == UserRole.admin;
-    /* Unused local variables tabs and items removed */
+    
+    final (tabs, items, currentIndex) = _getNavigationState(isAdmin, widget.location);
 
     return Scaffold(
       body: PageTransitionSwitcher(
         duration: const Duration(milliseconds: 280),
-        reverse: _currentIndex < _previousIndex,
+        reverse: currentIndex < _previousIndex,
         transitionBuilder: (child, primaryAnimation, secondaryAnimation) =>
             SharedAxisTransition(
               animation: primaryAnimation,
@@ -109,16 +123,9 @@ class _AgencyShellState extends ConsumerState<AgencyShell> {
         child: widget.child,
       ),
       bottomNavigationBar: CadifeBottomNav(
-        currentIndex: _currentIndex,
-        onTap: (i) => context.go(_tabs[i]),
-        items: [
-          const CadifeBottomNavItem(icon: LucideIcons.layoutDashboard, label: 'Dashboard'),
-          const CadifeBottomNavItem(icon: LucideIcons.users, label: 'Leads'),
-          const CadifeBottomNavItem(icon: LucideIcons.calendarDays, label: 'Agenda'),
-          if (isAdmin)
-            const CadifeBottomNavItem(icon: LucideIcons.shield, label: 'ADM'),
-          const CadifeBottomNavItem(icon: LucideIcons.circleUser, label: 'Perfil'),
-        ],
+        currentIndex: currentIndex,
+        onTap: (i) => context.go(tabs[i]),
+        items: items,
       ),
     );
   }

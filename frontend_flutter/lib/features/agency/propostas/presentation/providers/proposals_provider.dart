@@ -12,6 +12,33 @@ final proposalsProvider =
   ProposalsNotifier.new,
 );
 
+final proposalsByLeadProvider =
+    AsyncNotifierProvider.family<ProposalsByLeadNotifier, List<Proposta>, String>(
+  ProposalsByLeadNotifier.new,
+);
+
+class ProposalsByLeadNotifier extends FamilyAsyncNotifier<List<Proposta>, String> {
+  @override
+  Future<List<Proposta>> build(String arg) async {
+    final repo = ref.watch(iProposalsRepositoryProvider);
+    final result = await repo.getProposals(leadId: arg);
+    return result.fold<List<Proposta>>(
+      (failure) => throw failure,
+      (proposals) => proposals,
+    );
+  }
+
+  Future<void> refresh() async {
+    state = const AsyncLoading();
+    final repo = ref.read(iProposalsRepositoryProvider);
+    final result = await repo.getProposals(leadId: arg);
+    state = result.fold(
+      (failure) => AsyncError(failure, StackTrace.current),
+      AsyncData.new,
+    );
+  }
+}
+
 class ProposalsNotifier extends AsyncNotifier<List<Proposta>> {
   @override
   Future<List<Proposta>> build() async {

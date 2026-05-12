@@ -10,6 +10,7 @@ enum EmptyType {
   noOffers,            // Nenhuma oferta
   noDocuments,         // Nenhum documento
   emptyJournal,        // Diário vazio
+  noProposals,         // Nenhuma proposta
   notFound,            // Recurso não encontrado
   notImplemented,      // Feature não implementada
 }
@@ -25,6 +26,7 @@ extension EmptyTypeConfig on EmptyType {
       EmptyType.noOffers => 'Nenhuma oferta disponível',
       EmptyType.noDocuments => 'Nenhum documento',
       EmptyType.emptyJournal => 'Comece a registrar suas memórias',
+      EmptyType.noProposals => 'Nenhuma proposta criada',
       EmptyType.notFound => 'Não encontrado',
       EmptyType.notImplemented => 'Em breve',
     };
@@ -48,6 +50,8 @@ extension EmptyTypeConfig on EmptyType {
         'Os documentos da sua viagem aparecerão aqui.',
       EmptyType.emptyJournal =>
         'Adicione fotos e notas das suas experiências.',
+      EmptyType.noProposals =>
+        'Crie sua primeira proposta para este lead.',
       EmptyType.notFound =>
         'O item que você procura não foi encontrado.',
       EmptyType.notImplemented =>
@@ -65,6 +69,7 @@ extension EmptyTypeConfig on EmptyType {
       EmptyType.noOffers => LucideIcons.tag,
       EmptyType.noDocuments => LucideIcons.files,
       EmptyType.emptyJournal => LucideIcons.camera,
+      EmptyType.noProposals => LucideIcons.fileText,
       EmptyType.notFound => LucideIcons.searchX,
       EmptyType.notImplemented => LucideIcons.construction,
     };

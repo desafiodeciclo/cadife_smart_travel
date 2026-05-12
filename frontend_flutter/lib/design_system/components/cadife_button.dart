@@ -69,7 +69,7 @@ class CadifeButton extends StatelessWidget {
       width: double.infinity,
       height: 56,
       child: switch (variant) {
-        ButtonVariant.primary => isOutline 
+        ButtonVariant.primary => isOutline
             ? ShadButton.outline(
                 onPressed: buttonOnPressed,
                 leading: leading,
@@ -79,7 +79,14 @@ class CadifeButton extends StatelessWidget {
                 onPressed: buttonOnPressed,
                 leading: leading,
                 backgroundColor: theme.primary,
-                child: child,
+                foregroundColor: Colors.white,
+                child: Text(
+                  _displayText,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
         ButtonVariant.secondary => ShadButton.secondary(
             onPressed: buttonOnPressed,

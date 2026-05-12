@@ -16,7 +16,7 @@ class AdminOverviewPage extends ConsumerWidget {
     return PageScaffold(
       appBar: const CadifeAppBar(
         title: 'Visão Geral da Agência',
-        showProfile: false,
+        showProfile: true,
       ),
       body: StateContainer<AgenciaMetrics>(
         state: metricsAsync,
@@ -64,7 +64,7 @@ class AdminOverviewPage extends ConsumerWidget {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        _QuickActionsGrid(),
+                        const _QuickActionsGrid(),
                         const SizedBox(height: 32),
                       ],
                     ),
@@ -74,6 +74,85 @@ class AdminOverviewPage extends ConsumerWidget {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _QuickActionsGrid extends StatelessWidget {
+  const _QuickActionsGrid();
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: 16,
+      crossAxisSpacing: 16,
+      childAspectRatio: 1.5,
+      children: [
+        _QuickActionCard(
+          title: 'Novo Consultor',
+          icon: LucideIcons.userPlus,
+          color: AppColors.primary,
+          onTap: () => context.go('/agency/admin/consultants/new'),
+        ),
+        _QuickActionCard(
+          title: 'Criar novo lead',
+          icon: LucideIcons.userPlus,
+          color: AppColors.success,
+          onTap: () => context.go('/agency/leads/new'),
+        ),
+      ],
+    );
+  }
+}
+
+class _QuickActionCard extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _QuickActionCard({
+    required this.title,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ShadCard(
+      padding: EdgeInsets.zero,
+      radius: BorderRadius.circular(12),
+      border: ShadBorder.all(color: context.cadife.cardBorder.withValues(alpha: 0.5)),
+      backgroundColor: context.cadife.cardBackground,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Icon(icon, size: 28, color: color),
+                const SizedBox(height: 12),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -266,27 +345,3 @@ class _PerformanceRow extends StatelessWidget {
   }
 }
 
-class _QuickActionsGrid extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Column(
-      children: [
-        CadifeButton(
-          text: 'Gerenciar Consultores',
-          icon: LucideIcons.users,
-          analyticsLabel: 'admin_consultores',
-          onPressed: () => context.push('/agency/admin/consultants'),
-        ),
-        const SizedBox(height: 12),
-        CadifeButton(
-          text: 'Todos os Leads',
-          icon: LucideIcons.clipboardList,
-          variant: ButtonVariant.secondary,
-          isOutline: true,
-          analyticsLabel: 'admin_all_leads',
-          onPressed: () => context.push('/agency/admin/leads'),
-        ),
-      ],
-    );
-  }
-}
