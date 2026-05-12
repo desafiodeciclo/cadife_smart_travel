@@ -1,0 +1,242 @@
+{
+  "id": "feat-travel-checkpoints-progress-001",
+  "title": "feat/travel-checkpoints-progress — Sistema de checkpoints do ciclo de vida da viagem",
+  "type": "feature",
+  "status": "in-progress",
+  "priority": "high",
+  "points": 10,
+  "assignees": ["Frank Willian", "Nikolas Tesch"],
+  "created_at": "2026-05-11",
+  "epic": "Ciclo de Vida da Viagem — Cliente",
+  "blocked_by": ["chore/setup-database-orm-architecture"],
+  "related": ["feat/ui-client-travel-briefing"],
+  "user_story": "Como cliente, quero acompanhar o progresso da minha viagem em etapas claras, para que eu saiba exatamente em que fase está o meu atendimento e o que esperar a seguir.",
+  "acceptance_criteria": [
+    "Checkpoints definidos e aprovados pelo PO Diego em reunião de alinhamento (obrigatória antes de qualquer código)",
+    "Enum TravelCheckpoint com 7 valores: BRIEFING_COLETADO, CURADORIA_INICIADA, PROPOSTA_ENVIADA, PROPOSTA_APROVADA, VIAGEM_CONFIRMADA, VIAGEM_EM_ANDAMENTO, VIAGEM_CONCLUIDA",
+    "BRIEFING_COLETADO ativado automaticamente quando lead.score numérico > 40 e briefing com ≥ 5 campos preenchidos",
+    "CURADORIA_INICIADA ativado manualmente pelo consultor via POST /leads/{id}/checkpoints",
+    "PROPOSTA_ENVIADA ativado automaticamente quando Proposta.status transita para 'enviada'",
+    "PROPOSTA_APROVADA ativado pelo consultor manualmente ou automaticamente via confirmação do cliente",
+    "VIAGEM_CONFIRMADA ativado pelo consultor via endpoint manual após fechamento do lead",
+    "VIAGEM_EM_ANDAMENTO ativado automaticamente pelo cronjob diário na data de partida do briefing",
+    "VIAGEM_CONCLUIDA ativado automaticamente pelo cronjob diário na data de retorno + 1 dia",
+    "Tabela travel_checkpoints com campos: id (UUID PK), lead_id (FK leads), checkpoint (enum), ativado_em (timestamptz), ativado_por (VARCHAR — user_id UUID ou literal 'sistema')",
+    "GET /leads/{id}/checkpoints retorna lista ordenada de checkpoints com timestamps (JWT obrigatório)",
+    "POST /leads/{id}/checkpoints ativa checkpoint manual — aceita somente roles consultor/admin (HTTP 403 para cliente)",
+    "Checkpoint já ativado não pode ser duplicado — retorna HTTP 409 Conflict",
+    "Cronjob diário verifica datas de partida e retorno dos briefings e ativa VIAGEM_EM_ANDAMENTO e VIAGEM_CONCLUIDA",
+    "Ativação de qualquer checkpoint dispara notificação FCM ao cliente e ao consultor assignado",
+    "App Flutter cliente exibe timeline visual de checkpoints na TravelBriefingPage com ícone, label e timestamp formatado",
+    "Testes Pytest cobrem: ativação manual, ativação automática, idempotência (409), restrição de role e lógica do cronjob",
+    "Testes Flutter Widget cobrem: exibição da timeline completa, estado com checkpoints parciais e estado vazio"
+  ],
+  "checkpoints_spec": {
+    "BRIEFING_COLETADO": {
+      "activation": "automática",
+      "trigger": "score_numerico > 40 AND campos_briefing_preenchidos >= 5",
+      "triggered_by": "sistema"
+    },
+    "CURADORIA_INICIADA": {
+      "activation": "manual",
+      "trigger": "consultor inicia atendimento via endpoint",
+      "triggered_by": "user_id (consultor)"
+    },
+    "PROPOSTA_ENVIADA": {
+      "activation": "automática",
+      "trigger": "Proposta.status == 'enviada' (hook em proposta_service)",
+      "triggered_by": "sistema"
+    },
+    "PROPOSTA_APROVADA": {
+      "activation": "manual ou automática",
+      "trigger": "consultor via endpoint OU confirmação do cliente",
+      "triggered_by": "user_id ou sistema"
+    },
+    "VIAGEM_CONFIRMADA": {
+      "activation": "manual",
+      "trigger": "consultor após fechamento do lead",
+      "triggered_by": "user_id (consultor)"
+    },
+    "VIAGEM_EM_ANDAMENTO": {
+      "activation": "automática",
+      "trigger": "cronjob diário: data_partida == hoje",
+      "triggered_by": "sistema"
+    },
+    "VIAGEM_CONCLUIDA": {
+      "activation": "automática",
+      "trigger": "cronjob diário: data_retorno + 1 dia <= hoje",
+      "triggered_by": "sistema"
+    }
+  },
+  "steps": [
+    {
+      "id": "0.1",
+      "name": "Reunião de alinhamento com PO Diego — validar checkpoints e regras de transição",
+      "description": "Reunião obrigatória (≈2h) antes de qualquer código. Validar os 7 checkpoints, suas condições de ativação, regras de idempotência e escopo de notificações. Atualizar spec se necessário.",
+      "status": "done",
+      "estimated_hours": 2,
+      "owner": "Frank Willian + Nikolas Tesch + Diego (PO)",
+      "files": []
+    },
+    {
+      "id": "1.1",
+      "name": "Adicionar enum TravelCheckpoint em enums.py",
+      "description": "Inserir TravelCheckpoint(str, Enum) com os 7 valores no arquivo de enums de domínio. Não requer migration ainda.",
+      "status": "pending",
+      "estimated_hours": 0.5,
+      "owner": "Nikolas Tesch",
+      "files": [
+        "backend/app/domain/entities/enums.py"
+      ]
+    },
+    {
+      "id": "1.2",
+      "name": "Alembic migration: criar tabela travel_checkpoints e enum travel_checkpoint_enum",
+      "description": "Migration cria: (1) tipo ENUM PostgreSQL 'travel_checkpoint_enum' com os 7 valores; (2) tabela travel_checkpoints com colunas id UUID PK, lead_id FK leads ON DELETE CASCADE, checkpoint travel_checkpoint_enum NOT NULL, ativado_em TIMESTAMPTZ DEFAULT now(), ativado_por VARCHAR(64) NOT NULL; (3) unique constraint (lead_id, checkpoint) para idempotência; (4) índice em lead_id.",
+      "status": "pending",
+      "estimated_hours": 1,
+      "owner": "Nikolas Tesch",
+      "files": [
+        "backend/migrations/versions/h2i3j4k5l6m7_create_travel_checkpoints.py"
+      ]
+    },
+    {
+      "id": "1.3",
+      "name": "ORM model TravelCheckpoint + relacionamento em Lead",
+      "description": "Criar TravelCheckpointModel em models/travel_checkpoint.py com campos mapeados. Adicionar relationship checkpoints: Mapped[list[TravelCheckpoint]] em Lead com back_populates e order_by ativado_em.",
+      "status": "pending",
+      "estimated_hours": 1,
+      "owner": "Nikolas Tesch",
+      "files": [
+        "backend/app/models/travel_checkpoint.py",
+        "backend/app/models/lead.py"
+      ]
+    },
+    {
+      "id": "2.1",
+      "name": "CheckpointService: ativar checkpoint (manual e automático)",
+      "description": "Criar checkpoint_service.py com: activate_checkpoint(db, lead_id, checkpoint, ativado_por) — insere na tabela, lança HTTP 409 se já existir (unique violation), dispara FCM ao cliente e consultor via fcm_service; get_checkpoints(db, lead_id) — retorna lista ordenada.",
+      "status": "pending",
+      "estimated_hours": 2,
+      "owner": "Nikolas Tesch",
+      "files": [
+        "backend/app/services/checkpoint_service.py"
+      ]
+    },
+    {
+      "id": "2.2",
+      "name": "Triggers automáticos: BRIEFING_COLETADO e PROPOSTA_ENVIADA",
+      "description": "Em lead_service.update_briefing_from_extraction(): após calcular score, se score_numerico > 40 e campos >= 5, chamar checkpoint_service.activate_checkpoint(..., 'BRIEFING_COLETADO', 'sistema'). Em proposta_service (hook pós-update): quando status muda para 'enviada', ativar PROPOSTA_ENVIADA.",
+      "status": "pending",
+      "estimated_hours": 1.5,
+      "owner": "Nikolas Tesch",
+      "files": [
+        "backend/app/services/lead_service.py",
+        "backend/app/services/proposta_service.py"
+      ]
+    },
+    {
+      "id": "3.1",
+      "name": "Schemas Pydantic: CheckpointResponse e CheckpointActivateRequest",
+      "description": "CheckpointResponse(checkpoint, ativado_em, ativado_por). CheckpointActivateRequest(checkpoint: TravelCheckpoint) com validação de campo. CheckpointListResponse(checkpoints: list[CheckpointResponse], total: int).",
+      "status": "pending",
+      "estimated_hours": 0.5,
+      "owner": "Nikolas Tesch",
+      "files": [
+        "backend/app/presentation/schemas/checkpoints.py"
+      ]
+    },
+    {
+      "id": "3.2",
+      "name": "Endpoints REST: GET e POST /leads/{id}/checkpoints",
+      "description": "GET /leads/{lead_id}/checkpoints — JWT obrigatório, qualquer role pode consultar, retorna CheckpointListResponse. POST /leads/{lead_id}/checkpoints — JWT obrigatório, role DEVE ser consultor ou admin (HTTP 403 para cliente), body: CheckpointActivateRequest. Ambos documentados no Swagger.",
+      "status": "pending",
+      "estimated_hours": 1.5,
+      "owner": "Nikolas Tesch",
+      "files": [
+        "backend/app/routes/leads.py"
+      ]
+    },
+    {
+      "id": "4.1",
+      "name": "Cronjob diário: ativar VIAGEM_EM_ANDAMENTO e VIAGEM_CONCLUIDA por data",
+      "description": "Criar função check_travel_date_checkpoints(db) em checkpoint_service.py: query leads com status fechado, join briefing, verifica data_partida e data_retorno contra hoje. Ativa checkpoints via activate_checkpoint (idempotência garantida pelo unique constraint). Registrar como scheduled task no startup do app (APScheduler ou endpoint /admin/cron/checkpoints chamável manualmente em dev).",
+      "status": "pending",
+      "estimated_hours": 2,
+      "owner": "Frank Willian",
+      "files": [
+        "backend/app/services/checkpoint_service.py",
+        "backend/app/core/scheduler.py"
+      ]
+    },
+    {
+      "id": "5.1",
+      "name": "Flutter: modelo CheckpointItem e repositório",
+      "description": "Criar CheckpointItem (checkpoint, ativadoEm, ativadoPor) em lib/features/client/travel/models/. Adicionar getCheckpoints(leadId) e activateCheckpoint(leadId, checkpoint) no repositório TravelRepository via ApiService.",
+      "status": "pending",
+      "estimated_hours": 1,
+      "owner": "Frank Willian",
+      "files": [
+        "frontend_flutter/lib/features/client/travel/models/checkpoint_item.dart",
+        "frontend_flutter/lib/features/client/travel/repositories/travel_repository.dart"
+      ]
+    },
+    {
+      "id": "5.2",
+      "name": "Flutter: CheckpointsProvider (Riverpod) + TravelCheckpointTimeline widget",
+      "description": "AsyncNotifierProvider que busca GET /leads/{id}/checkpoints. TravelCheckpointTimeline widget stateless que exibe lista vertical: checkpoint ativado (ícone colorido + timestamp formatado pt-BR) vs pendente (ícone cinza). Integrar na TravelBriefingPage existente como seção 'Progresso da Viagem'.",
+      "status": "pending",
+      "estimated_hours": 2,
+      "owner": "Frank Willian",
+      "files": [
+        "frontend_flutter/lib/features/client/travel/providers/checkpoints_provider.dart",
+        "frontend_flutter/lib/features/client/travel/widgets/travel_checkpoint_timeline.dart",
+        "frontend_flutter/lib/features/client/travel/pages/travel_briefing_page.dart"
+      ]
+    },
+    {
+      "id": "6.1",
+      "name": "Testes backend: CheckpointService + endpoints + cronjob",
+      "description": "Testes pytest: (1) ativar checkpoint manual com role correto; (2) tentativa com role cliente → 403; (3) ativação duplicada → 409; (4) BRIEFING_COLETADO ativado ao atingir threshold; (5) PROPOSTA_ENVIADA ativado ao mudar status proposta; (6) lógica do cronjob com datas simuladas; (7) GET /leads/{id}/checkpoints retorna lista ordenada.",
+      "status": "pending",
+      "estimated_hours": 2,
+      "owner": "Nikolas Tesch",
+      "files": [
+        "backend/tests/test_services/test_checkpoint_service.py",
+        "backend/tests/test_presentation/test_checkpoints_endpoints.py"
+      ]
+    },
+    {
+      "id": "6.2",
+      "name": "Testes Flutter: widget TravelCheckpointTimeline",
+      "description": "Widget tests: (1) timeline completa com 7 checkpoints ativados; (2) timeline parcial (3 de 7 ativados — restantes em cinza); (3) estado vazio (nenhum checkpoint); (4) loading state; (5) error state com retry.",
+      "status": "pending",
+      "estimated_hours": 1,
+      "owner": "Frank Willian",
+      "files": [
+        "frontend_flutter/test/features/client/travel/widgets/travel_checkpoint_timeline_test.dart"
+      ]
+    },
+    {
+      "id": "7.1",
+      "name": "Validação final com PO Diego",
+      "description": "Demo dos endpoints e da timeline Flutter ao PO. Validar os labels dos checkpoints em português para o cliente, timing do cronjob e comportamento das notificações FCM.",
+      "status": "pending",
+      "estimated_hours": 1,
+      "owner": "Frank Willian + Nikolas Tesch + Diego (PO)",
+      "files": []
+    }
+  ],
+  "dependencies": {
+    "blocked_by": ["chore/setup-database-orm-architecture"],
+    "related": ["feat/ui-client-travel-briefing", "feat/flutter-fcm-notifications"]
+  },
+  "estimated_hours_total": 19,
+  "notes": [
+    "⚠️ Step 0.1 (reunião PO) é pré-requisito absoluto — nenhum código antes da aprovação dos checkpoints",
+    "A unique constraint (lead_id, checkpoint) no banco garante idempotência sem lógica extra na aplicação",
+    "Cronjob deve ser idempotente — pode rodar N vezes sem criar duplicatas graças ao unique constraint",
+    "Notificações FCM devem ser assíncronas (BackgroundTask) — não bloquear o endpoint",
+    "ativado_por aceita UUID (consultor) ou string literal 'sistema' — manter VARCHAR flexível"
+  ]
+}

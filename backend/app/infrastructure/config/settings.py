@@ -210,6 +210,18 @@ class Settings(BaseSettings):
         description="Global toggle for response caching via Redis",
     )
 
+    # ── AYA Toggle Feature ────────────────────────────────────────────────
+    AYA_CONTEXT_MSGS: int = Field(
+        default=10,
+        ge=1,
+        description="Number of recent messages injected as context when AYA is reactivated",
+    )
+    AYA_ALERT_HOURS: int = Field(
+        default=48,
+        ge=1,
+        description="Hours before alerting consultant that AYA has been disabled for too long",
+    )
+
     # ── Business Rules (spec.md §8.4) ─────────────────────────────────────
     LEAD_EXPIRATION_DAYS: int = Field(
         default=30,
@@ -295,8 +307,8 @@ def _load_external_secrets(settings: Settings) -> Settings:
     This hook is intentionally empty for MVP — the interface is ready for extension.
     """
     if settings.APP_ENV == "production":
-        # TODO: Implement production secret loading strategy here.
-        # Options: AWS Secrets Manager, HashiCorp Vault, GCP Secret Manager.
+        # TODO(devops-backlog): Implement production secret loading via AWS Secrets Manager / Vault.
+        # Requires issue criada no repo desafiodeciclo/cadife-smart-travel antes de deploy prod.
         pass
     return settings
 

@@ -65,11 +65,11 @@ def upgrade() -> None:
         name='lead_origem_enum',
     )
     perfil_viagem_enum = postgresql.ENUM(
-        'casal', 'família', 'solo', 'grupo', 'amigos',
+        'casal', 'familia', 'solo', 'grupo', 'amigos',
         name='perfil_viagem_enum',
     )
     orcamento_perfil_enum = postgresql.ENUM(
-        'baixo', 'médio', 'alto', 'premium',
+        'baixo', 'medio', 'alto', 'premium',
         name='orcamento_perfil_enum',
     )
     tipo_mensagem_enum = postgresql.ENUM(

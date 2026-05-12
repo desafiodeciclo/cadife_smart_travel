@@ -76,7 +76,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         behavior: SnackBarBehavior.floating,
         action: SnackBarAction(
           label: 'Tentar novamente',
-          textColor: Colors.white,
+          textColor: AppColors.white,
           onPressed: _onSavePressed,
         ),
       ));
@@ -97,10 +97,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     // Also listen for future refreshes (e.g. pull-to-refresh)
     ref.listen<AsyncValue<AgencySettings>>(agencySettingsProvider, (_, next) {
       final s = next.valueOrNull;
-      if (s != null && _draft == null) {
-        setState(() {
-          _draft = s;
-          _saved = s;
+      if (s != null && _draft == null && mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            setState(() {
+              _draft = s;
+              _saved = s;
+            });
+          }
         });
       }
     });
@@ -192,7 +196,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       height: 16,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Colors.white,
+                        color: AppColors.white,
                       ),
                     ),
                     SizedBox(width: 8),
@@ -224,10 +228,10 @@ class _SectionCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: ShadCard(
         padding: const EdgeInsets.all(24),
-        backgroundColor: isDark ? context.cadife.cardBackground : Colors.white,
+        backgroundColor: isDark ? context.cadife.cardBackground : AppColors.white,
         radius: BorderRadius.circular(24),
         border: ShadBorder.all(
-          color: isDark ? Colors.white.withValues(alpha: 0.05) : context.cadife.cardBorder,
+          color: isDark ? AppColors.whiteOverlay15 : context.cadife.cardBorder,
           width: 1,
         ),
         child: Column(
@@ -962,7 +966,7 @@ class _ChangePasswordDialogState extends ConsumerState<_ChangePasswordDialog> {
                   width: 16,
                   height: 16,
                   child: CircularProgressIndicator(
-                      strokeWidth: 2, color: Colors.white),
+                      strokeWidth: 2, color: AppColors.white),
                 )
               : const Text('Enviar'),
         ),

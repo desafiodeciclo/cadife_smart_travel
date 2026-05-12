@@ -38,8 +38,11 @@ from app.infrastructure.persistence.models.documento_model import (
 from app.infrastructure.persistence.models.offer_model import (
     OfferModel,
 )  # noqa: F401
-from app.infrastructure.persistence.models.itinerary_model import (
-    ItineraryItemModel,
+from app.infrastructure.persistence.models.aya_toggle_history_model import (
+    AyaToggleHistoryModel,
+)  # noqa: F401
+from app.infrastructure.persistence.models.conversation_summary_model import (
+    ConversationSummaryModel,
 )  # noqa: F401
 from app.infrastructure.persistence.models.travel_model import (
     TravelModel,
@@ -62,7 +65,8 @@ __all__ = [
     "TravelDiaryEntryModel",
     "Documento",
     "OfferModel",
-    "ItineraryItemModel",
+    "AyaToggleHistoryModel",
+    "ConversationSummaryModel",
     "NotificationQueue",
     "DeadLetterQueue",
 ]
