@@ -174,6 +174,7 @@ async def ia_status() -> IaStatusResponse:
 
 @router.post(
     "/reindexar",
+    response_model=ReindexarResponse,
     summary="Reindexar base de conhecimento",
     description=(
         "Dispara uma re-ingestão completa da base de conhecimento RAG em background. "

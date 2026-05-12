@@ -81,7 +81,8 @@ class DocumentoService:
         categoria: DocumentoCategoria,
         enviado_por: uuid.UUID,
         user_role: str,
-        user_phone: Optional[str] = None
+        user_phone: Optional[str] = None,
+        client_fcm_token: Optional[str] = None,
     ) -> Documento:
         """
         Uploads a document to S3 and records metadata in DB.
@@ -154,12 +155,19 @@ class DocumentoService:
             )
 
             # 7. Send Push Notification (Best effort)
-            await send_push_notification(
-                fcm_token="TARGET_TOKEN_PLACEHOLDER",  # TODO: Get actual client token
-                title="Novo documento disponível",
-                body=f"Um novo documento ({categoria.value}) foi adicionado à sua viagem.",
-                data={"type": "document_upload", "lead_id": str(lead_id)}
-            )
+            if client_fcm_token:
+                await send_push_notification(
+                    fcm_token=client_fcm_token,
+                    title="Novo documento disponível",
+                    body=f"Um novo documento ({categoria.value}) foi adicionado à sua viagem.",
+                    data={"type": "document_upload", "lead_id": str(lead_id)},
+                )
+            else:
+                logger.warning(
+                    "document_notification_skipped",
+                    lead_id=str(lead_id),
+                    reason="client_fcm_token_unavailable",
+                )
 
             logger.info("document_uploaded", lead_id=str(lead_id), doc_id=str(documento.id))
             return documento

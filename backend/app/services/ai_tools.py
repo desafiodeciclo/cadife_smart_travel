@@ -339,8 +339,9 @@ async def _check_availability(args: dict[str, Any]) -> str:
     Placeholder para integração com Google Calendar.
     Retorna slots simulados até GOOGLE_CALENDAR_CREDENTIALS estiver configurado.
 
-    TODO: substituir pela chamada real à Google Calendar API quando
+    TODO(ia-backlog): substituir pela chamada real à Google Calendar API quando
     as credenciais estiverem disponíveis em settings.GOOGLE_CALENDAR_CREDENTIALS.
+    Rastrear em issue: desafiodeciclo/cadife-smart-travel — integração Google Calendar.
     """
     from datetime import datetime, timedelta
 
