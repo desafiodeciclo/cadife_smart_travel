@@ -2,7 +2,7 @@
 Model Router — Services Layer
 ==============================
 Routes WhatsApp messages to the appropriate OpenRouter model based on type:
-  text  → OPENROUTER_MODEL              (chat / conversation)
+  text  → OPENROUTER_MODEL               (chat / conversation)
   audio → OPENROUTER_AUDIO_MODEL        (gpt-4o-audio-preview — input_audio via /chat/completions)
   image → OPENROUTER_VISION_MODEL       (vision — image description / OCR)
 
@@ -71,16 +71,12 @@ def select_model(msg_type: str) -> str:
 
 
 def _convert_to_wav(audio_bytes: bytes, src_format: str) -> bytes:
-    """Converte áudio para WAV via ffmpeg (pipe stdin→stdout, sem arquivo em disco).
-
-    WhatsApp envia audio/ogg;codecs=opus. GPT-4o-audio-preview aceita apenas
-    WAV e MP3. ffmpeg é instalado via apt-get no Dockerfile e via brew no macOS.
-    """
+    """Converte áudio para WAV via ffmpeg (pipe stdin→stdout, sem arquivo em disco)."""
     cmd = [
         "ffmpeg",
-        "-f", src_format,   # formato de entrada explícito (ogg, aac, amr…)
+        "-f", src_format,   # formato de entrada explícito
         "-i", "pipe:0",     # lê do stdin
-        "-ar", "16000",     # 16 kHz — adequado para fala, menor payload
+        "-ar", "16000",     # 16 kHz
         "-ac", "1",         # mono
         "-f", "wav",
         "pipe:1",           # escreve no stdout
@@ -95,7 +91,7 @@ def _convert_to_wav(audio_bytes: bytes, src_format: str) -> bytes:
         )
     except FileNotFoundError as exc:
         raise RuntimeError(
-            "ffmpeg não encontrado. Instale com: brew install ffmpeg  (macOS) "
+            "ffmpeg não encontrado. Instale com: brew install ffmpeg (macOS) "
             "ou verifique o Dockerfile (apt-get install ffmpeg)."
         ) from exc
 
@@ -115,21 +111,10 @@ def _convert_to_wav(audio_bytes: bytes, src_format: str) -> bytes:
 
 
 async def transcribe_audio(audio_bytes: bytes, mime_type: str) -> str:
-    """Transcreve áudio via openai/gpt-4o-audio-preview no OpenRouter.
-
-    Fluxo:
-      1. Se o formato já é WAV ou MP3, usa direto.
-      2. Caso contrário (OGG/Opus do WhatsApp, AAC, etc.) converte para WAV via pydub.
-      3. Envia ao gpt-4o-audio-preview via input_audio no /chat/completions.
-
-    Raises:
-        RuntimeError: se a conversão de formato falhar.
-        httpx.HTTPStatusError: se a API retornar erro HTTP.
-    """
+    """Transcreve áudio via openai/gpt-4o-audio-preview no OpenRouter."""
     normalized_mime = mime_type.split(";")[0].strip().lower()
     src_fmt = _EXT_MAP.get(normalized_mime, "ogg")
 
-    # Converte para WAV se o formato não for nativo do gpt-4o
     if src_fmt in _GPT4O_NATIVE_FORMATS:
         audio_wav = audio_bytes
         audio_fmt = src_fmt
@@ -173,39 +158,15 @@ async def transcribe_audio(audio_bytes: bytes, mime_type: str) -> str:
         **_OPENROUTER_HEADERS,
     }
 
-    try:
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            response = await client.post(
-                f"{_OPENROUTER_BASE}/chat/completions",
-                json=payload,
-                headers=auth_headers,
-            )
-            response.raise_for_status()
-            data = response.json()
-            text: str = data["choices"][0]["message"]["content"] or ""
-    except httpx.HTTPStatusError as exc:
-        logger.error(
-            "audio_transcription_api_error",
-            model=settings.OPENROUTER_AUDIO_MODEL,
-            status=exc.response.status_code,
-            body=exc.response.text[:400],
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        response = await client.post(
+            f"{_OPENROUTER_BASE}/chat/completions",
+            json=payload,
+            headers=auth_headers,
         )
-        raise
-    except (KeyError, IndexError) as exc:
-        logger.error(
-            "audio_transcription_parse_error",
-            model=settings.OPENROUTER_AUDIO_MODEL,
-            error=str(exc),
-        )
-        raise RuntimeError(f"Unexpected audio response structure: {exc}") from exc
-
-    logger.info(
-        "audio_transcribed",
-        model=settings.OPENROUTER_AUDIO_MODEL,
-        src_format=src_fmt,
-        chars=len(text),
-    )
-    return text
+        response.raise_for_status()
+        data = response.json()
+        return data["choices"][0]["message"]["content"] or ""
 
 
 async def analyze_image(
@@ -213,13 +174,7 @@ async def analyze_image(
     mime_type: str,
     caption: Optional[str] = None,
 ) -> str:
-    """Describe or extract data from an image via a vision model on OpenRouter.
-
-    Returns a plain-text description / OCR extraction.
-
-    Raises:
-        httpx.HTTPStatusError: on API error.
-    """
+    """Describe or extract data from an image via a vision model on OpenRouter."""
     image_b64 = base64.b64encode(image_bytes).decode()
     data_url = f"data:{mime_type};base64,{image_b64}"
 
@@ -254,14 +209,7 @@ async def analyze_image(
             headers=auth_headers,
         )
         response.raise_for_status()
-        description: str = response.json()["choices"][0]["message"]["content"] or ""
-
-    logger.info(
-        "image_analyzed",
-        model=settings.OPENROUTER_VISION_MODEL,
-        chars=len(description),
-    )
-    return description
+        return response.json()["choices"][0]["message"]["content"] or ""
 
 
 async def route_media_message(
@@ -270,15 +218,13 @@ async def route_media_message(
     mime_type: str,
     caption: Optional[str] = None,
 ) -> Optional[str]:
-    """Download and process a WhatsApp media message.
-
-    Orchestrates: download → transcribe/analyze → return plain text.
-    Returns None (caller should use graceful fallback) on any failure.
-    """
+    """Download and process a WhatsApp media message."""
     from app.services.whatsapp_service import download_media
 
     try:
         media_bytes = await download_media(media_id)
+        
+        # RESOLUÇÃO DO CONFLITO: Usando a lógica mais robusta da developer
         if not media_bytes:
             logger.warning("media_download_empty", msg_type=msg_type, media_id=media_id)
             return None
@@ -290,19 +236,6 @@ async def route_media_message(
             return await analyze_image(media_bytes, mime_type, caption)
 
         logger.debug("media_type_not_routable", msg_type=msg_type)
-        return None
-
-    except httpx.HTTPStatusError as exc:
-        logger.error(
-            "media_api_error",
-            msg_type=msg_type,
-            status_code=exc.response.status_code,
-            error=str(exc),
-        )
-        return None
-
-    except httpx.TimeoutException:
-        logger.error("media_download_timeout", msg_type=msg_type, media_id=media_id)
         return None
 
     except Exception as exc:

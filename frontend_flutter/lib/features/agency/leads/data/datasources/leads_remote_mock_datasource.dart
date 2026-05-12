@@ -66,66 +66,6 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
       consultorNome: 'Diego Costa',
       createdAt: DateTime.now().subtract(const Duration(hours: 18)),
     ),
-    LeadApiModel(
-      id: '4',
-      name: 'Bruno Almeida',
-      phone: '+55 31 96666-0004',
-      status: LeadStatus.agendado,
-      score: LeadScore.morno,
-      completudePct: 72,
-      destino: 'Lisboa + Porto, Portugal',
-      dataIda: DateTime(2025, 9, 15),
-      dataVolta: DateTime(2025, 9, 26),
-      numPessoas: 3,
-      perfil: 'Família',
-      tipoViagem: 'Lazer',
-      orcamentoFaixa: '20k - 35k',
-      passaporteValido: true,
-      experienciaInternacional: true,
-      preferencias: 'Apartamento, aluguel de carro',
-      consultorNome: 'Jakeline Lima',
-      createdAt: DateTime.now().subtract(const Duration(days: 2)),
-    ),
-    LeadApiModel(
-      id: '5',
-      name: 'Fernanda Castro',
-      phone: '+55 41 95555-0005',
-      email: 'fcastro@outlook.com',
-      status: LeadStatus.proposta,
-      score: LeadScore.quente,
-      completudePct: 95,
-      destino: 'Maldivas',
-      dataIda: DateTime(2025, 7, 20),
-      dataVolta: DateTime(2025, 7, 30),
-      numPessoas: 2,
-      perfil: 'Casal',
-      tipoViagem: 'Lua de mel',
-      orcamentoFaixa: '60k - 100k',
-      passaporteValido: true,
-      experienciaInternacional: true,
-      preferencias: 'Over water bungalow, all inclusive',
-      consultorNome: 'Diego Costa',
-      createdAt: DateTime.now().subtract(const Duration(days: 4)),
-    ),
-    LeadApiModel(
-      id: '6',
-      name: 'Thiago Mendes',
-      phone: '+55 62 94444-0006',
-      status: LeadStatus.fechado,
-      score: LeadScore.quente,
-      completudePct: 100,
-      destino: 'Roma + Amalfi, Itália',
-      dataIda: DateTime(2025, 6, 10),
-      dataVolta: DateTime(2025, 6, 24),
-      numPessoas: 2,
-      perfil: 'Casal',
-      tipoViagem: 'Lazer e Gastronomia',
-      orcamentoFaixa: '45k - 65k',
-      passaporteValido: true,
-      experienciaInternacional: true,
-      consultorNome: 'Diego Costa',
-      createdAt: DateTime.now().subtract(const Duration(days: 14)),
-    ),
   ];
 
   @override
@@ -147,7 +87,7 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
   @override
   Future<LeadApiModel?> getMyLead() async {
     await Future.delayed(const Duration(milliseconds: 400));
-    return _mockLeads.first;
+    return _mockLeads.isNotEmpty ? _mockLeads.first : null;
   }
 
   @override
@@ -155,29 +95,9 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
     await Future.delayed(const Duration(milliseconds: 500));
     final index = _mockLeads.indexWhere((l) => l.id == id);
     if (index == -1) throw Exception('Lead não encontrado: $id');
-    final old = _mockLeads[index];
-    final updated = LeadApiModel(
-      id: old.id,
-      name: old.name,
-      phone: old.phone,
-      email: old.email,
+    
+    final updated = _mockLeads[index].copyWith(
       status: newStatus,
-      score: old.score,
-      completudePct: old.completudePct,
-      destino: old.destino,
-      dataIda: old.dataIda,
-      dataVolta: old.dataVolta,
-      numPessoas: old.numPessoas,
-      perfil: old.perfil,
-      tipoViagem: old.tipoViagem,
-      preferencias: old.preferencias,
-      orcamentoFaixa: old.orcamentoFaixa,
-      passaporteValido: old.passaporteValido,
-      experienciaInternacional: old.experienciaInternacional,
-      assignedTo: old.assignedTo,
-      consultorNome: old.consultorNome,
-      consultorAvatar: old.consultorAvatar,
-      createdAt: old.createdAt,
       updatedAt: DateTime.now(),
     );
     _mockLeads[index] = updated;
@@ -200,10 +120,7 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
       tipoViagem: lead.tipoViagem,
       preferencias: lead.preferencias,
       orcamentoFaixa: lead.orcamentoFaixa,
-      resumoConversa:
-          'Cliente interessado em ${lead.destino ?? "destino a confirmar"}. '
-          'Perfil: ${lead.perfil ?? "não identificado"}. '
-          'Aguardando curadoria do consultor.',
+      resumoConversa: 'Resumo simulado para o lead ${lead.name}.',
     );
   }
 
@@ -241,40 +158,6 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
   }
 
   @override
-  Future<LeadApiModel> reassignLead(String id, String consultorNome) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    final index = _mockLeads.indexWhere((l) => l.id == id);
-    if (index == -1) throw Exception('Lead não encontrado: $id');
-    final old = _mockLeads[index];
-    final updated = LeadApiModel(
-      id: old.id,
-      name: old.name,
-      phone: old.phone,
-      email: old.email,
-      status: old.status,
-      score: old.score,
-      completudePct: old.completudePct,
-      destino: old.destino,
-      dataIda: old.dataIda,
-      dataVolta: old.dataVolta,
-      numPessoas: old.numPessoas,
-      perfil: old.perfil,
-      tipoViagem: old.tipoViagem,
-      preferencias: old.preferencias,
-      orcamentoFaixa: old.orcamentoFaixa,
-      passaporteValido: old.passaporteValido,
-      experienciaInternacional: old.experienciaInternacional,
-      assignedTo: old.assignedTo,
-      consultorNome: consultorNome,
-      consultorAvatar: old.consultorAvatar,
-      createdAt: old.createdAt,
-      updatedAt: DateTime.now(),
-    );
-    _mockLeads[index] = updated;
-    return updated;
-  }
-
-  @override
   Future<LeadApiModel> createManualLead(ManualLeadCreate request) async {
     await Future.delayed(const Duration(milliseconds: 600));
     final newLead = LeadApiModel(
@@ -283,18 +166,39 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
       phone: request.phone,
       email: request.email,
       status: LeadStatus.novo,
-      score: LeadScore.morno, // Manual starts as morno
+      score: LeadScore.morno,
       completudePct: 15,
       destino: request.destino,
       dataIda: request.dataIda,
       numPessoas: request.numPessoas,
       orcamentoFaixa: request.orcamentoFaixa,
       preferencias: request.preferencias,
-      consultorNome: 'Você', // Mocking current user
+      consultorNome: 'Você',
       createdAt: DateTime.now(),
     );
     _mockLeads.insert(0, newLead);
     return newLead;
+  }
+
+  @override
+  Future<void> toggleAya(String leadId, {required bool ativo, String? motivo}) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    // Simulação de alteração de estado da IA
+    print('AYA ${ativo ? 'ativada' : 'desativada'} para lead $leadId. Motivo: $motivo');
+  }
+
+  @override
+  Future<LeadApiModel> reassignLead(String id, String consultorNome) async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    final index = _mockLeads.indexWhere((l) => l.id == id);
+    if (index == -1) throw Exception('Lead não encontrado: $id');
+    
+    final updated = _mockLeads[index].copyWith(
+      consultorNome: consultorNome,
+      updatedAt: DateTime.now(),
+    );
+    _mockLeads[index] = updated;
+    return updated;
   }
 
   @override
@@ -309,29 +213,14 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
     await Future.delayed(const Duration(milliseconds: 600));
     final index = _mockLeads.indexWhere((l) => l.id == id);
     if (index == -1) throw Exception('Lead não encontrado: $id');
+    
     final old = _mockLeads[index];
-    final updated = LeadApiModel(
-      id: old.id,
+    final updated = old.copyWith(
       name: name ?? old.name,
       phone: phone ?? old.phone,
       email: email ?? old.email,
       status: status ?? old.status,
       score: score ?? old.score,
-      completudePct: old.completudePct,
-      destino: old.destino,
-      dataIda: old.dataIda,
-      dataVolta: old.dataVolta,
-      numPessoas: old.numPessoas,
-      perfil: old.perfil,
-      tipoViagem: old.tipoViagem,
-      preferencias: old.preferencias,
-      orcamentoFaixa: old.orcamentoFaixa,
-      passaporteValido: old.passaporteValido,
-      experienciaInternacional: old.experienciaInternacional,
-      assignedTo: old.assignedTo,
-      consultorNome: old.consultorNome,
-      consultorAvatar: old.consultorAvatar,
-      createdAt: old.createdAt,
       updatedAt: DateTime.now(),
     );
     _mockLeads[index] = updated;

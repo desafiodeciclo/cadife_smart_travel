@@ -1,6 +1,6 @@
 {
   "info": {
-    "_postman_id": "baac01ef-6019-4449-a018-93316a291c62",
+    "_postman_id": "7c954b3c-3dfd-4e83-a114-12b8829e8a69",
     "name": "Cadife Smart Travel API",
     "description": "Backend inteligente para turismo via WhatsApp + Flutter. Orquestra webhooks da Meta, processamento de IA (RAG + LangChain), gestão de leads, propostas e agendamentos. Documentação completa disponível em /docs (Swagger UI) e /redoc (ReDoc).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -591,6 +591,41 @@
               ]
             },
             "description": "Permite ao consultor editar manualmente campos do briefing e recalcula o percentual de completude.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Ativar ou desativar a AYA para um lead",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads/{lead_id}/aya-toggle",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "{lead_id}",
+                "aya-toggle"
+              ]
+            },
+            "description": "Permite ao consultor pausar o atendimento da IA para uma conversa específica. Quando desativada (ativo=false): mensagens são persistidas no log mas não processadas pela IA. Quando reativada (ativo=true): AYA retoma com contexto das últimas mensagens. Cada toggle é registrado em aya_toggle_history para auditoria.",
             "body": {
               "mode": "raw",
               "raw": "{}",

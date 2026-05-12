@@ -77,7 +77,7 @@ class LeadsRemoteApiDatasource implements ILeadsDatasource {
   Future<LeadApiModel> updateLeadStatus(String id, LeadStatus newStatus) async {
     final response = await _dio.patch(
       ApiConstants.leadById(id),
-      data: {'status': newStatus.name},
+      data: {'status': newStatus.toSnakeCase()},
     );
     final lead = LeadApiModel.fromJson(response.data as Map<String, dynamic>);
 
@@ -182,19 +182,15 @@ class LeadsRemoteApiDatasource implements ILeadsDatasource {
   }
 
   @override
-  Future<LeadApiModel> reassignLead(String id, String consultorNome) async {
-    final response = await _dio.patch(
-      '${ApiConstants.leadById(id)}/reassign',
-      data: {'consultor_nome': consultorNome},
+  Future<void> toggleAya(String leadId, {required bool ativo, String? motivo}) async {
+    await _dio.patch(
+      ApiConstants.leadAyaToggle(leadId),
+      data: {
+        'ativo': ativo,
+        'motivo': motivo,
+      },
     );
-    final lead = LeadApiModel.fromJson(response.data as Map<String, dynamic>);
-
-    await _offlineManager.saveToCache(
-      '$_cacheKeyPrefix:detail:$id',
-      response.data,
-    );
-    await _offlineManager.invalidateByPrefix('$_cacheKeyPrefix:list:');
-    return lead;
+    await _offlineManager.invalidateByPrefix('$_cacheKeyPrefix:detail:$leadId');
   }
 
   @override

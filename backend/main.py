@@ -31,6 +31,7 @@ from app.services.ingestion_pipeline import get_ingestion_pipeline
 from app.jobs.lead_expiration_job import expire_stale_leads
 from app.jobs.proposta_expiration_job import expire_stale_propostas_job
 from app.jobs.notification_worker import NotificationWorker, WORKER_INTERVAL_SECONDS
+from app.jobs.aya_alert_job import alert_aya_disabled_leads
 
 # Routers
 from app.routes import admin, agenda, auth, documents, ia, leads, offers, propostas, webhook, suitcase, diary
@@ -115,10 +116,19 @@ async def lifespan(app: FastAPI):
         replace_existing=True,
     )
 
+    # 4. AYA Alert: Checks for leads with AYA disabled > AYA_ALERT_HOURS every hour
+    _scheduler.add_job(
+        alert_aya_disabled_leads,
+        trigger="interval",
+        hours=1,
+        id="aya_disabled_alert",
+        replace_existing=True,
+    )
+
     _scheduler.start()
     logger.info(
-        "scheduler_started", 
-        jobs=["lead_expiration", "proposta_expiration", "notification_worker"]
+        "scheduler_started",
+        jobs=["lead_expiration", "proposta_expiration", "notification_worker", "aya_disabled_alert"],
     )
 
     logger.info("startup_complete", version="1.0.0")

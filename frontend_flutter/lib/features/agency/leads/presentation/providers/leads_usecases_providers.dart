@@ -3,6 +3,7 @@ import 'package:cadife_smart_travel/features/agency/leads/domain/usecases/create
 import 'package:cadife_smart_travel/features/agency/leads/domain/usecases/get_briefing_usecase.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/usecases/get_lead_by_id_usecase.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/usecases/get_leads_usecase.dart';
+import 'package:cadife_smart_travel/features/agency/leads/domain/usecases/toggle_aya_usecase.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/usecases/update_lead_status_usecase.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/usecases/update_lead_usecase.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -29,4 +30,8 @@ final getBriefingUseCaseProvider = Provider<GetBriefingUseCase>((ref) {
 
 final createManualLeadUseCaseProvider = Provider<CreateManualLeadUseCase>((ref) {
   return CreateManualLeadUseCase(ref.watch(leadsRepositoryProvider));
+});
+
+final toggleAyaUseCaseProvider = Provider<ToggleAyaUseCase>((ref) {
+  return ToggleAyaUseCase(ref.watch(leadsRepositoryProvider));
 });

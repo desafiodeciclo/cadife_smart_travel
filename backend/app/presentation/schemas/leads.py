@@ -4,11 +4,6 @@ Lead Schemas — Presentation Layer (DTOs / Response Models)
 Strict Pydantic v2 schemas for everything that crosses the wire.
 These classes must NEVER contain ORM/SQLAlchemy objects — only
 primitive types, enums, UUIDs and datetime.
-
-This module enforces the IDOR / DataLeak defence rule:
-  * No internal DB fields (e.g. telefone_hash) are exposed.
-  * No ORM instances are returned directly from route handlers.
-  * Mappers in app/application/dto/lead_mapper.py translate ORM → DTO.
 """
 
 from __future__ import annotations
@@ -71,6 +66,29 @@ class LeadUpdateRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+class AyaToggleRequest(BaseModel):
+    ativo: bool
+    motivo: Optional[str] = Field(
+        default=None,
+        max_length=500,
+        description="Motivo do toggle — obrigatório ao desativar (recomendado)",
+    )
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class AyaToggleResponseDTO(BaseModel):
+    lead_id: uuid.UUID
+    aya_ativo: bool
+    motivo: Optional[str] = None
+    alterado_em: datetime
+    contexto_msgs_count: int = Field(
+        description="Mensagens recentes disponíveis para contexto quando AYA for reativada"
+    )
+
+    model_config = ConfigDict(extra="forbid")
+
+
 # ── Response DTOs ──────────────────────────────────────────────────────────
 
 
@@ -100,8 +118,13 @@ class LeadDetailDTO(BaseModel):
     origem: LeadOrigem
     status: LeadStatus
     score: Optional[LeadScore] = None
+    
+    # --- RESOLUÇÃO DO CONFLITO: Unindo os campos das duas branches ---
+    aya_ativo: bool = True
     score_numerico: Optional[int] = None
     score_calculado_em: Optional[datetime] = None
+    # -----------------------------------------------------------------
+
     consultor_id: Optional[uuid.UUID] = None
     consultor_nome: Optional[str] = None
     consultor_avatar: Optional[str] = None
