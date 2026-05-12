@@ -1,8 +1,8 @@
 import 'package:cadife_smart_travel/core/constants/api_constants.dart';
+import 'package:cadife_smart_travel/core/network/dio_provider.dart';
 import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:get_it/get_it.dart';
 
 /// Entidade representando um consultor na gestão de admin.
 class AdminConsultant {
@@ -65,7 +65,7 @@ class ConsultantMetrics {
 
 /// Provider que busca a lista de consultores do endpoint admin.
 final adminConsultantsProvider = FutureProvider<List<AdminConsultant>>((ref) async {
-  final dio = GetIt.I<Dio>();
+  final dio = ref.read(dioClientProvider);
   final response = await dio.get('${ApiConstants.baseUrl}/admin/users');
   final List<dynamic> items = response.data['items'] as List<dynamic>;
   return items.map((e) => AdminConsultant.fromJson(e as Map<String, dynamic>)).toList();
@@ -73,9 +73,9 @@ final adminConsultantsProvider = FutureProvider<List<AdminConsultant>>((ref) asy
 
 /// Notifier para operações de admin (criar, atualizar, deletar).
 class AdminConsultantsNotifier extends StateNotifier<AsyncValue<List<AdminConsultant>>> {
-  AdminConsultantsNotifier() : super(const AsyncValue.loading());
+  AdminConsultantsNotifier(this._dio) : super(const AsyncValue.loading());
 
-  final Dio _dio = GetIt.I<Dio>();
+  final Dio _dio;
 
   Future<void> refresh() async {
     state = const AsyncValue.loading();
@@ -151,5 +151,5 @@ class AdminConsultantsNotifier extends StateNotifier<AsyncValue<List<AdminConsul
 
 final adminConsultantsNotifierProvider =
     StateNotifierProvider<AdminConsultantsNotifier, AsyncValue<List<AdminConsultant>>>(
-  (ref) => AdminConsultantsNotifier(),
+  (ref) => AdminConsultantsNotifier(ref.read(dioClientProvider)),
 );

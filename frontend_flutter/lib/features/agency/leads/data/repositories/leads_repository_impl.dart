@@ -1,15 +1,16 @@
 import 'package:cadife_smart_travel/core/error/failures.dart';
 import 'package:cadife_smart_travel/features/agency/leads/data/datasources/i_leads_datasource.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/briefing.dart';
+import 'package:cadife_smart_travel/features/agency/leads/domain/entities/conversation_summary.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/repositories/i_leads_repository.dart';
-import 'package:cadife_smart_travel/features/client/historico/domain/entities/interacao.dart';
+import 'package:cadife_smart_travel/shared/domain/entities/interacao.dart';
 import 'package:fpdart/fpdart.dart';
 
 class LeadsRepositoryImpl implements ILeadsRepository {
   final ILeadsDatasource _datasource;
 
-  LeadsRepositoryImpl({required ILeadsDatasource datasource}) : _datasource = datasource;
+  LeadsRepositoryImpl(this._datasource);
 
   @override
   Future<Either<Failure, List<Lead>>> getLeads({LeadStatus? status, LeadScore? score}) async {
@@ -62,6 +63,16 @@ class LeadsRepositoryImpl implements ILeadsRepository {
   }
 
   @override
+  Future<Either<Failure, ConversationSummary?>> getConversationSummary(String leadId) async {
+    try {
+      final result = await _datasource.getConversationSummary(leadId);
+      return Right(result);
+    } on Object catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, Lead>> createLead(CreateLeadRequest request) async {
     try {
       final result = await _datasource.createLead(request);
@@ -102,16 +113,6 @@ class LeadsRepositoryImpl implements ILeadsRepository {
   }
 
   @override
-  Future<Either<Failure, Lead>> reassignLead(String id, String consultorNome) async {
-    try {
-      final result = await _datasource.reassignLead(id, consultorNome);
-      return Right(result);
-    } on Object catch (e) {
-      return Left(ServerFailure(e.toString()));
-    }
-  }
-
-  @override
   Future<Either<Failure, Lead>> updateLead({
     required String id,
     String? name,
@@ -129,6 +130,16 @@ class LeadsRepositoryImpl implements ILeadsRepository {
         status: status,
         score: score,
       );
+      return Right(result);
+    } on Object catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Lead>> reassignLead(String id, String consultorNome) async {
+    try {
+      final result = await _datasource.reassignLead(id, consultorNome);
       return Right(result);
     } on Object catch (e) {
       return Left(ServerFailure(e.toString()));

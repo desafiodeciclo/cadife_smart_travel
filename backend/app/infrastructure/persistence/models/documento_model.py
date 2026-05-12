@@ -26,6 +26,9 @@ class Documento(Base):
     lead_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("leads.id", ondelete="CASCADE"), index=True
     )
+    travel_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("travels.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     nome: Mapped[str] = mapped_column(String(255), nullable=False)
     s3_key: Mapped[str] = mapped_column(String(512), nullable=False)
     categoria: Mapped[str] = mapped_column(

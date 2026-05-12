@@ -1,24 +1,24 @@
 import uuid
-from decimal import Decimal
+from datetime import datetime
 from typing import Optional
 
 import structlog
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.domain.entities.enums import OfferCategoria, OfferStatus
+from app.domain.entities.enums import OfferStatus
 from app.infrastructure.security.dependencies import (
     RequiresRole,
     get_current_user,
+    get_optional_user,
     get_db,
 )
 from app.presentation.schemas.offer_schema import (
-    OfferCreate,
-    OfferInterestResponse,
-    OfferListItem,
-    OfferListResponse,
+    OfferCreateRequest,
+    OfferDetailResponse,
     OfferResponse,
-    OfferUpdate,
+    OfferUpdateRequest,
+    OffersListResponse,
 )
 from app.models.user import User
 from app.services import offer_service
@@ -27,269 +27,215 @@ logger = structlog.get_logger()
 router = APIRouter(prefix="/offers", tags=["Offers"])
 
 
-def _form_to_offer_create(
-    titulo: str = Form(..., min_length=3, max_length=255),
-    destino: str = Form(..., min_length=2, max_length=255),
-    descricao: Optional[str] = Form(None),
-    categoria: OfferCategoria = Form(OfferCategoria.outros),
-    preco_base: Optional[Decimal] = Form(None),
-    servicos_inclusos: Optional[str] = Form(None),
-    data_saida_sugerida: Optional[str] = Form(None),
-    duracao_dias: Optional[int] = Form(None),
-) -> OfferCreate:
-    """Convert form fields to an OfferCreate schema."""
-    from datetime import date as dt_date
-
-    data: dict = {
-        "titulo": titulo,
-        "destino": destino,
-        "descricao": descricao,
-        "categoria": categoria,
-        "preco_base": preco_base,
-        "servicos_inclusos": [],
-        "data_saida_sugerida": dt_date.fromisoformat(data_saida_sugerida) if data_saida_sugerida else None,
-        "duracao_dias": duracao_dias,
-    }
-    if servicos_inclusos:
-        data["servicos_inclusos"] = [s.strip() for s in servicos_inclusos.split(",") if s.strip()]
-    return OfferCreate.model_validate(data)
-
-
-def _form_to_offer_update(
-    titulo: Optional[str] = Form(None),
-    destino: Optional[str] = Form(None),
-    descricao: Optional[str] = Form(None),
-    categoria: Optional[OfferCategoria] = Form(None),
-    preco_base: Optional[Decimal] = Form(None),
-    servicos_inclusos: Optional[str] = Form(None),
-    imagens: Optional[str] = Form(None),
-    data_saida_sugerida: Optional[str] = Form(None),
-    duracao_dias: Optional[int] = Form(None),
-) -> OfferUpdate:
-    """Convert form fields to an OfferUpdate schema."""
-    from datetime import date as dt_date
-
-    data: dict = {}
-    if titulo is not None:
-        data["titulo"] = titulo
-    if destino is not None:
-        data["destino"] = destino
-    if descricao is not None:
-        data["descricao"] = descricao
-    if categoria is not None:
-        data["categoria"] = categoria
-    if preco_base is not None:
-        data["preco_base"] = preco_base
-    if servicos_inclusos is not None:
-        data["servicos_inclusos"] = [s.strip() for s in servicos_inclusos.split(",") if s.strip()]
-    if imagens is not None:
-        data["imagens"] = [s.strip() for s in imagens.split(",") if s.strip()]
-    if data_saida_sugerida is not None:
-        data["data_saida_sugerida"] = dt_date.fromisoformat(data_saida_sugerida)
-    if duracao_dias is not None:
-        data["duracao_dias"] = duracao_dias
-    return OfferUpdate.model_validate(data)
-
-
-@router.post(
-    "",
-    response_model=OfferResponse,
-    status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))],
-)
-async def create_offer(
-    data: dict = Depends(_form_to_offer_create),
-    images: list[UploadFile] = File(default_factory=list),
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    """Create a new travel offer with optional image uploads."""
-    offer = await offer_service.create_offer(
-        db, data=data, images=images, user_id=current_user.id
-    )
-    return OfferResponse.model_validate(offer)
-
-
-@router.get(
-    "",
-    response_model=OfferListResponse,
-)
+@router.get("", response_model=OffersListResponse)
 async def list_offers(
-    status: Optional[OfferStatus] = Query(None),
-    categoria: Optional[OfferCategoria] = Query(None),
-    preco_min: Optional[Decimal] = Query(None, ge=0),
-    preco_max: Optional[Decimal] = Query(None, ge=0),
-    search: Optional[str] = Query(None, description="Busca por título ou destino"),
+    destination: Optional[str] = Query(None, description="Filtrar por destino"),
+    min_price: Optional[float] = Query(None, ge=0),
+    max_price: Optional[float] = Query(None, ge=0),
+    min_date: Optional[datetime] = Query(None, description="Data de saída mínima"),
+    max_date: Optional[datetime] = Query(None, description="Data de saída máxima"),
+    travelers: Optional[int] = Query(None, ge=1, description="Nº de passageiros"),
+    duration_min: Optional[int] = Query(None, ge=1, description="Duração mínima em dias"),
+    duration_max: Optional[int] = Query(None, ge=1),
+    search: Optional[str] = Query(None, description="Buscar por título ou destino"),
     page: int = Query(1, ge=1),
-    limit: int = Query(20, ge=1, le=100),
+    limit: int = Query(10, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
 ):
-    """List offers with filters and pagination."""
-    # Clients only see published offers
-    effective_status = status
-    if current_user.perfil == "cliente":
-        effective_status = OfferStatus.publicada
-
+    """
+    Listar ofertas publicadas com filtros (Visão Cliente)
+    """
     items, total = await offer_service.list_offers(
         db,
-        status=effective_status,
-        categoria=categoria,
-        preco_min=preco_min,
-        preco_max=preco_max,
+        destination=destination,
+        min_price=min_price,
+        max_price=max_price,
+        min_date=min_date,
+        max_date=max_date,
+        travelers=travelers,
+        duration_min=duration_min,
+        duration_max=duration_max,
         search=search,
         page=page,
         limit=limit,
     )
 
     pages = (total + limit - 1) // limit
-    return OfferListResponse(
-        items=[OfferListItem.model_validate(o) for o in items],
+    return OffersListResponse(
+        offers=[OfferResponse.model_validate(o) for o in items],
         total=total,
         page=page,
+        pages=pages,
+        filters_applied={
+            "destination": destination,
+            "min_price": min_price,
+            "max_price": max_price,
+            "travelers": travelers,
+        }
+    )
+
+
+@router.get("/agency/my-offers", response_model=OffersListResponse)
+async def get_my_offers(
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1, le=100),
+    status_filter: Optional[OfferStatus] = Query(None, alias="status"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Listar todas as ofertas da agência/consultor autenticado
+    """
+    if current_user.perfil not in ["consultor", "admin", "agencia"]:
+        raise HTTPException(status_code=403, detail="Apenas consultores e agências podem ver suas ofertas")
+
+    items, total = await offer_service.list_offers(
+        db,
+        agency_id=current_user.id,
+        status_filter=status_filter,
+        page=page,
         limit=limit,
+    )
+
+    pages = (total + limit - 1) // limit
+    return OffersListResponse(
+        offers=[OfferResponse.model_validate(o) for o in items],
+        total=total,
+        page=page,
         pages=pages,
     )
 
 
-@router.get(
-    "/{offer_id}",
-    response_model=OfferResponse,
-)
+@router.get("/{offer_id}", response_model=OfferDetailResponse)
 async def get_offer(
     offer_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
+    current_user: Optional[User] = Depends(get_optional_user),
+):
+    """
+    Obter detalhes completos de uma oferta. 
+    Soma 1 view se for cliente ou não autenticado.
+    """
+    increment_view = True if not current_user or current_user.perfil == "cliente" else False
+    
+    offer = await offer_service.get_offer_by_id(db, offer_id, increment_view=increment_view)
+    
+    if not offer:
+        raise HTTPException(status_code=404, detail="Oferta não encontrada")
+    
+    # Se for rascunho, apenas o dono ou admin pode ver
+    if offer.status == OfferStatus.draft:
+        if not current_user or (current_user.perfil != "admin" and offer.agency_id != current_user.id):
+             raise HTTPException(status_code=404, detail="Oferta não encontrada")
+
+    return OfferDetailResponse.model_validate(offer)
+
+
+@router.post("", response_model=OfferResponse, status_code=status.HTTP_201_CREATED)
+async def create_offer(
+    req: OfferCreateRequest,
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Get a single offer by ID."""
-    offer = await offer_service.get_offer_by_id(db, offer_id)
-    if not offer:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Oferta não encontrada"
-        )
-    if current_user.perfil == "cliente" and offer.status != OfferStatus.publicada:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Oferta não disponível",
-        )
+    """
+    Criar nova oferta (status: draft)
+    """
+    if current_user.perfil not in ["consultor", "admin", "agencia"]:
+        raise HTTPException(status_code=403, detail="Apenas agências/consultores podem criar ofertas")
+
+    offer = await offer_service.create_offer(db, req, agency_id=current_user.id)
     return OfferResponse.model_validate(offer)
 
 
-@router.patch(
-    "/{offer_id}",
-    response_model=OfferResponse,
-    dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))],
-)
+@router.patch("/{offer_id}", response_model=OfferResponse)
 async def update_offer(
     offer_id: uuid.UUID,
-    data: dict = Depends(_form_to_offer_update),
-    images: list[UploadFile] = File(default_factory=list),
+    req: OfferUpdateRequest,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Update an offer. RBAC: creator or admin only."""
+    """
+    Atualizar oferta (apenas se status == draft)
+    """
     offer = await offer_service.get_offer_by_id(db, offer_id)
     if not offer:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Oferta não encontrada"
-        )
-
-    if current_user.perfil != "admin" and offer.criado_por != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Sem permissão para editar esta oferta",
-        )
-
-    updated = await offer_service.update_offer(db, offer, data, images=images or None)
-    return OfferResponse.model_validate(updated)
+        raise HTTPException(status_code=404, detail="Oferta não encontrada")
+        
+    updated_offer = await offer_service.update_offer(db, offer, req, agency_id=current_user.id)
+    return OfferResponse.model_validate(updated_offer)
 
 
-@router.patch(
-    "/{offer_id}/publish",
-    response_model=OfferResponse,
-    dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))],
-)
-async def toggle_publish(
+@router.patch("/{offer_id}/publish")
+async def toggle_publish_offer(
     offer_id: uuid.UUID,
-    publish: bool = Query(..., description="True to publish, False to unpublish"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Publish or unpublish an offer. RBAC: creator or admin only."""
+    """
+    Publicar ou despublicar oferta (Toggle)
+    """
     offer = await offer_service.get_offer_by_id(db, offer_id)
     if not offer:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Oferta não encontrada"
-        )
-
-    if current_user.perfil != "admin" and offer.criado_por != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Sem permissão para alterar esta oferta",
-        )
-
-    updated = await offer_service.publish_offer(db, offer, publish)
-    return OfferResponse.model_validate(updated)
+        raise HTTPException(status_code=404, detail="Oferta não encontrada")
+        
+    updated = await offer_service.toggle_publish(db, offer, agency_id=current_user.id)
+    
+    return {
+        "status": "success",
+        "message": f"Oferta {updated.status.value}!",
+        "new_status": updated.status.value,
+        "offer_id": str(updated.id),
+    }
 
 
-@router.delete(
-    "/{offer_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))],
-)
+@router.delete("/{offer_id}")
 async def delete_offer(
     offer_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Soft-delete an offer. RBAC: creator or admin only."""
+    """
+    Arquivar oferta (soft delete)
+    """
     offer = await offer_service.get_offer_by_id(db, offer_id)
     if not offer:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Oferta não encontrada"
-        )
-
-    if current_user.perfil != "admin" and offer.criado_por != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Sem permissão para excluir esta oferta",
-        )
-
-    await offer_service.soft_delete_offer(db, offer)
+        raise HTTPException(status_code=404, detail="Oferta não encontrada")
+        
+    await offer_service.soft_delete_offer(db, offer, agency_id=current_user.id)
+    
+    return {
+        "status": "success",
+        "message": "Oferta removida",
+        "offer_id": str(offer_id),
+    }
 
 
-@router.post(
-    "/{offer_id}/interest",
-    response_model=OfferInterestResponse,
-    dependencies=[Depends(RequiresRole("cliente"))],
-)
+@router.post("/{offer_id}/interest")
 async def express_interest(
     offer_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Client expresses interest in an offer → auto-creates a lead."""
+    """
+    Cliente expressa interesse em oferta → cria lead automaticamente
+    """
+    if current_user.perfil != "cliente":
+        raise HTTPException(status_code=403, detail="Apenas clientes podem expressar interesse")
+
     offer = await offer_service.get_offer_by_id(db, offer_id)
     if not offer:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Oferta não encontrada"
-        )
-    if offer.status != OfferStatus.publicada:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Oferta não está publicada",
-        )
+        raise HTTPException(status_code=404, detail="Oferta não encontrada")
+    
+    if offer.status != OfferStatus.published:
+        raise HTTPException(status_code=400, detail="Oferta não disponível")
 
-    lead = await offer_service.create_lead_from_interest(
-        db,
-        offer=offer,
+    result = await offer_service.express_interest(
+        db, 
+        offer=offer, 
         user_id=current_user.id,
-        user_phone=current_user.telefone,
-        user_name=current_user.nome,
+        user_name=current_user.nome or "Cliente",
+        user_email=current_user.email,
+        user_phone=current_user.telefone
     )
-
-    return OfferInterestResponse(
-        message="Interesse registrado com sucesso",
-        lead_id=lead.id,
-        offer_id=offer.id,
-    )
+    
+    return result

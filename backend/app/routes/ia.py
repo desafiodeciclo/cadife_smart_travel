@@ -57,6 +57,26 @@ class ReindexarRequest(BaseModel):
     force: bool = False
 
 
+class IaStatusResponse(BaseModel):
+    status: str
+    model: str
+    rag_documents: int
+    vector_db: str
+    domain_validator: str
+
+
+class ReindexarResponse(BaseModel):
+    status: str
+    message: str
+    force: bool
+
+
+class IngestionStatusResponse(BaseModel):
+    indexed_documents: int
+    total_chunks: int
+    documents: list[dict]
+
+
 # ---------------------------------------------------------------------------
 # Existing endpoints
 # ---------------------------------------------------------------------------
@@ -133,17 +153,18 @@ async def extrair_briefing(request: Request, response: Response, body: ExtrairBr
 
 @router.get(
     "/status",
+    response_model=IaStatusResponse,
     summary="Status do serviço de IA",
     description="Health check do módulo de IA retornando modelo ativo, contagem de documentos RAG e status do validador.",
 )
-async def ia_status():
-    return {
-        "status": "ok",
-        "model": settings.OPENROUTER_MODEL,
-        "rag_documents": rag_service.get_rag_document_count(),
-        "vector_db": "chromadb",
-        "domain_validator": "active",
-    }
+async def ia_status() -> IaStatusResponse:
+    return IaStatusResponse(
+        status="ok",
+        model=settings.OPENROUTER_MODEL,
+        rag_documents=rag_service.get_rag_document_count(),
+        vector_db="chromadb",
+        domain_validator="active",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -153,6 +174,7 @@ async def ia_status():
 
 @router.post(
     "/reindexar",
+    response_model=ReindexarResponse,
     summary="Reindexar base de conhecimento",
     description=(
         "Dispara uma re-ingestão completa da base de conhecimento RAG em background. "
@@ -167,18 +189,19 @@ async def ia_status():
         422: {"description": "Erro de validação no body", "model": HTTPErrorResponse},
     },
 )
-async def reindexar_base(body: ReindexarRequest, background_tasks: BackgroundTasks):
+async def reindexar_base(body: ReindexarRequest, background_tasks: BackgroundTasks) -> ReindexarResponse:
     pipeline = get_ingestion_pipeline()
     background_tasks.add_task(pipeline.ingest_all, body.force)
-    return {
-        "status": "accepted",
-        "message": "Reindexação iniciada em background",
-        "force": body.force,
-    }
+    return ReindexarResponse(
+        status="accepted",
+        message="Reindexação iniciada em background",
+        force=body.force,
+    )
 
 
 @router.get(
     "/ingestion-status",
+    response_model=IngestionStatusResponse,
     summary="Status da ingestão",
     description="Retorna o resumo do cache de ingestão atual (documentos indexados + contagem de chunks).",
     dependencies=[Depends(get_current_user)],
@@ -187,6 +210,6 @@ async def reindexar_base(body: ReindexarRequest, background_tasks: BackgroundTas
         403: {"description": "Sem permissão", "model": HTTPErrorResponse},
     },
 )
-async def ingestion_status():
+async def ingestion_status() -> IngestionStatusResponse:
     pipeline = get_ingestion_pipeline()
-    return pipeline.get_status()
+    return IngestionStatusResponse(**pipeline.get_status())

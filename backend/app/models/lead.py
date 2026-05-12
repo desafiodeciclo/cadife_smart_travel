@@ -1,6 +1,16 @@
 import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
+from decimal import Decimal
+
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, func, Numeric
+from sqlalchemy.dialects.postgresql import ENUM as PgEnum, UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from pydantic import BaseModel
+
+from app.core.database import Base
+from app.infrastructure.security.pii_encryption import EncryptedString
+from app.domain.entities.enums import LeadOrigem, LeadStatus, LeadScore, PropostaStatus
 
 if TYPE_CHECKING:
     from app.models.briefing import Briefing
@@ -8,18 +18,9 @@ if TYPE_CHECKING:
     from app.models.agendamento import Agendamento
     from app.models.proposta import Proposta
     from app.models.user import User
+    from app.models.documento import Documento
+    from app.models.travel_checkpoint import TravelCheckpointRecord
     from app.models.lead_score_history import LeadScoreHistory
-
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, func
-from sqlalchemy.dialects.postgresql import ENUM as PgEnum, UUID
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from pydantic import BaseModel
-
-from app.core.database import Base
-from app.infrastructure.security.pii_encryption import EncryptedString
-from decimal import Decimal
-
-from app.domain.entities.enums import LeadOrigem, LeadStatus, LeadScore, PropostaStatus
 
 
 class Lead(Base):
@@ -56,8 +57,18 @@ class Lead(Base):
     consultor_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id")
     )
+    client_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id"), nullable=True
+    )
+    offer_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("offers.id"), nullable=True
+    )
+    budget: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), nullable=True)
     aya_ativo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_archived: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    deletado_em: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     criado_em: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -65,6 +76,7 @@ class Lead(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
+    # Relacionamentos Base
     briefing: Mapped[Optional["Briefing"]] = relationship(
         "Briefing", back_populates="lead", uselist=False
     )
@@ -82,6 +94,15 @@ class Lead(Base):
         primaryjoin="foreign(Lead.consultor_id) == User.id",
         overlaps="consultor",
     )
+
+    # --- UNIFICAÇÃO DE RELACIONAMENTOS ESPECÍFICOS ---
+    checkpoints: Mapped[list["TravelCheckpointRecord"]] = relationship(
+        "TravelCheckpointRecord",
+        back_populates="lead",
+        order_by="TravelCheckpointRecord.ativado_em",
+        cascade="all, delete-orphan",
+    )
+    
     score_history: Mapped[list["LeadScoreHistory"]] = relationship(
         "LeadScoreHistory",
         back_populates="lead",
@@ -90,8 +111,7 @@ class Lead(Base):
     )
 
 
-# Pydantic schemas
-
+# --- Pydantic schemas ---
 
 class LeadCreate(BaseModel):
     nome: Optional[str] = None
@@ -124,6 +144,8 @@ class LeadResponse(BaseModel):
     status: LeadStatus
     score: Optional[LeadScore]
     consultor_id: Optional[uuid.UUID]
+    client_id: Optional[uuid.UUID] = None
+    offer_id: Optional[uuid.UUID] = None
     consultor_nome: Optional[str] = None
     consultor_avatar: Optional[str] = None
     is_archived: bool

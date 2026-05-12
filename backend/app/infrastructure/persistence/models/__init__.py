@@ -41,6 +41,12 @@ from app.infrastructure.persistence.models.offer_model import (
 from app.infrastructure.persistence.models.aya_toggle_history_model import (
     AyaToggleHistoryModel,
 )  # noqa: F401
+from app.infrastructure.persistence.models.conversation_summary_model import (
+    ConversationSummaryModel,
+)  # noqa: F401
+from app.infrastructure.persistence.models.travel_model import (
+    TravelModel,
+)  # noqa: F401
 
 # Notification queue models (side-effect imports to register metadata)
 from app.models.notification_queue import NotificationQueue  # noqa: F401
@@ -58,7 +64,9 @@ __all__ = [
     "SuitcaseSuggestionModel",
     "TravelDiaryEntryModel",
     "Documento",
+    "OfferModel",
     "AyaToggleHistoryModel",
+    "ConversationSummaryModel",
     "NotificationQueue",
     "DeadLetterQueue",
 ]

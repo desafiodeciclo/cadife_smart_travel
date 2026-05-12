@@ -167,7 +167,8 @@ enum LeadOrigem {
   presencial('Presencial'),
   redeSocial('Rede Social'),
   outro('Outro'),
-  manual('Manual');
+  manual('Manual'),
+  offerInterest('Oferta');
 
   final String label;
   const LeadOrigem(this.label);

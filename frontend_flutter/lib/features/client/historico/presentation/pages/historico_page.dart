@@ -9,6 +9,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+enum TripStatusFilter { all, completed, ongoing, upcoming }
+enum PeriodFilter { all, last30Days, last6Months, lastYear }
+
 class HistoricoPage extends ConsumerStatefulWidget {
   const HistoricoPage({super.key});
 
@@ -19,6 +22,8 @@ class HistoricoPage extends ConsumerStatefulWidget {
 class _HistoricoPageState extends ConsumerState<HistoricoPage> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
+  TripStatusFilter _statusFilter = TripStatusFilter.all;
+  PeriodFilter _periodFilter = PeriodFilter.all;
 
   @override
   void dispose() {
@@ -27,15 +32,60 @@ class _HistoricoPageState extends ConsumerState<HistoricoPage> {
   }
 
   List<TripSummary> _filter(List<TripSummary> trips) {
-    if (_searchQuery.isEmpty) return trips;
-    final q = _searchQuery.toLowerCase();
-    return trips
-        .where(
-          (t) =>
-              t.name.toLowerCase().contains(q) ||
-              (t.destino?.toLowerCase().contains(q) ?? false),
-        )
-        .toList();
+    var filtered = trips;
+
+    // Search query
+    if (_searchQuery.isNotEmpty) {
+      final q = _searchQuery.toLowerCase();
+      filtered = filtered
+          .where(
+            (t) =>
+                t.name.toLowerCase().contains(q) ||
+                (t.destino?.toLowerCase().contains(q) ?? false),
+          )
+          .toList();
+    }
+
+    // Status filter
+    final now = DateTime.now();
+    if (_statusFilter != TripStatusFilter.all) {
+      filtered = filtered.where((t) {
+        if (t.dataIda == null || t.dataVolta == null) return true;
+
+        switch (_statusFilter) {
+          case TripStatusFilter.completed:
+            return t.dataVolta!.isBefore(now);
+          case TripStatusFilter.ongoing:
+            return (t.dataIda!.isBefore(now) ||
+                    t.dataIda!.isAtSameMomentAs(now)) &&
+                (t.dataVolta!.isAfter(now) ||
+                    t.dataVolta!.isAtSameMomentAs(now));
+          case TripStatusFilter.upcoming:
+            return t.dataIda!.isAfter(now);
+          case TripStatusFilter.all:
+            return true;
+        }
+      }).toList();
+    }
+
+    // Period filter
+    if (_periodFilter != PeriodFilter.all) {
+      final limitDate = switch (_periodFilter) {
+        PeriodFilter.last30Days => now.subtract(const Duration(days: 30)),
+        PeriodFilter.last6Months => now.subtract(const Duration(days: 180)),
+        PeriodFilter.lastYear => now.subtract(const Duration(days: 365)),
+        PeriodFilter.all => null,
+      };
+
+      if (limitDate != null) {
+        filtered = filtered.where((t) {
+          if (t.dataIda == null) return true;
+          return t.dataIda!.isAfter(limitDate);
+        }).toList();
+      }
+    }
+
+    return filtered;
   }
 
   void _showFilterOptions(BuildContext context) {
@@ -43,53 +93,194 @@ class _HistoricoPageState extends ConsumerState<HistoricoPage> {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: context.cadife.background,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: context.cadife.cardBorder,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) {
+          return Container(
+            decoration: BoxDecoration(
+              color: context.cadife.background,
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(20)),
             ),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Filtros', style: AppTextStyles.h4),
-                TextButton(
-                  onPressed: () {
-                    setState(() {
-                      _searchController.clear();
-                      _searchQuery = '';
-                    });
-                    context.pop();
-                  },
-                  child: const Text('Limpar'),
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: context.cadife.cardBorder,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Filtros', style: AppTextStyles.h4),
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          _statusFilter = TripStatusFilter.all;
+                          _periodFilter = PeriodFilter.all;
+                        });
+                        setModalState(() {
+                          _statusFilter = TripStatusFilter.all;
+                          _periodFilter = PeriodFilter.all;
+                        });
+                      },
+                      child: const Text('Limpar'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'STATUS',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.1,
+                    color: context.cadife.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _buildFilterChip(
+                      label: 'Todos',
+                      value: TripStatusFilter.all,
+                      groupValue: _statusFilter,
+                      onChanged: (v) {
+                        setModalState(() => _statusFilter = v);
+                        setState(() => _statusFilter = v);
+                      },
+                    ),
+                    _buildFilterChip(
+                      label: 'Concluídas',
+                      value: TripStatusFilter.completed,
+                      groupValue: _statusFilter,
+                      onChanged: (v) {
+                        setModalState(() => _statusFilter = v);
+                        setState(() => _statusFilter = v);
+                      },
+                    ),
+                    _buildFilterChip(
+                      label: 'Em andamento',
+                      value: TripStatusFilter.ongoing,
+                      groupValue: _statusFilter,
+                      onChanged: (v) {
+                        setModalState(() => _statusFilter = v);
+                        setState(() => _statusFilter = v);
+                      },
+                    ),
+                    _buildFilterChip(
+                      label: 'Próximas',
+                      value: TripStatusFilter.upcoming,
+                      groupValue: _statusFilter,
+                      onChanged: (v) {
+                        setModalState(() => _statusFilter = v);
+                        setState(() => _statusFilter = v);
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'PERÍODO',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.1,
+                    color: context.cadife.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _buildFilterChip(
+                      label: 'Tudo',
+                      value: PeriodFilter.all,
+                      groupValue: _periodFilter,
+                      onChanged: (v) {
+                        setModalState(() => _periodFilter = v);
+                        setState(() => _periodFilter = v);
+                      },
+                    ),
+                    _buildFilterChip(
+                      label: 'Últimos 30 dias',
+                      value: PeriodFilter.last30Days,
+                      groupValue: _periodFilter,
+                      onChanged: (v) {
+                        setModalState(() => _periodFilter = v);
+                        setState(() => _periodFilter = v);
+                      },
+                    ),
+                    _buildFilterChip(
+                      label: 'Últimos 6 meses',
+                      value: PeriodFilter.last6Months,
+                      groupValue: _periodFilter,
+                      onChanged: (v) {
+                        setModalState(() => _periodFilter = v);
+                        setState(() => _periodFilter = v);
+                      },
+                    ),
+                    _buildFilterChip(
+                      label: 'Último ano',
+                      value: PeriodFilter.lastYear,
+                      groupValue: _periodFilter,
+                      onChanged: (v) {
+                        setModalState(() => _periodFilter = v);
+                        setState(() => _periodFilter = v);
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 32),
+                ShadButton(
+                  onPressed: () => context.pop(),
+                  width: double.infinity,
+                  child: const Text('Aplicar Filtros'),
                 ),
               ],
             ),
-            const SizedBox(height: 24),
-            Text('Em breve, mais opções de filtros...',
-                style: TextStyle(color: context.cadife.textSecondary)),
-            const SizedBox(height: 32),
-            ShadButton(
-              onPressed: () => context.pop(),
-              width: double.infinity,
-              child: const Text('Aplicar Filtros'),
-            ),
-          ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildFilterChip<T>({
+    required String label,
+    required T value,
+    required T groupValue,
+    required ValueChanged<T> onChanged,
+  }) {
+    final isSelected = value == groupValue;
+    return GestureDetector(
+      onTap: () => onChanged(value),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? AppColors.primary : context.cadife.cardBorder,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : context.cadife.textSecondary,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+            fontSize: 13,
+          ),
         ),
       ),
     );
@@ -122,7 +313,9 @@ class _HistoricoPageState extends ConsumerState<HistoricoPage> {
                     ShadIconButton.ghost(
                       icon: Icon(
                         LucideIcons.x,
-                        color: context.isDark ? Colors.white60 : context.cadife.textSecondary,
+                        color: context.isDark
+                            ? Colors.white60
+                            : context.cadife.textSecondary,
                         size: 16,
                       ),
                       width: 32,
@@ -168,7 +361,9 @@ class _HistoricoPageState extends ConsumerState<HistoricoPage> {
 
                 if (filtered.isEmpty) {
                   return AppEmptyState(
-                    type: _searchQuery.isNotEmpty
+                    type: _searchQuery.isNotEmpty ||
+                            _statusFilter != TripStatusFilter.all ||
+                            _periodFilter != PeriodFilter.all
                         ? EmptyType.emptySearch
                         : EmptyType.noTrips,
                   );
@@ -198,3 +393,4 @@ class _HistoricoPageState extends ConsumerState<HistoricoPage> {
     );
   }
 }
+

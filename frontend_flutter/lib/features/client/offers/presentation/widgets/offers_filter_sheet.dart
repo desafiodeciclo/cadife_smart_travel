@@ -8,6 +8,8 @@ class OffersFilterSheet extends StatefulWidget {
   final double initialMaxPrice;
   final DateTime? initialStartDate;
   final DateTime? initialEndDate;
+  final int? initialMinDays;
+  final int? initialMaxDays;
 
   const OffersFilterSheet({
     required this.initialCategories,
@@ -16,6 +18,8 @@ class OffersFilterSheet extends StatefulWidget {
     this.initialDestination,
     this.initialStartDate,
     this.initialEndDate,
+    this.initialMinDays,
+    this.initialMaxDays,
     super.key,
   });
 
@@ -30,6 +34,7 @@ class _OffersFilterSheetState extends State<OffersFilterSheet> {
   late double _maxPrice;
   DateTime? _startDate;
   DateTime? _endDate;
+  late RangeValues _durationRange;
 
   final _availableDestinations = [
     'Maldivas', 'Paris', 'Gramado', 'Cancún', 'Tóquio', 
@@ -53,6 +58,10 @@ class _OffersFilterSheetState extends State<OffersFilterSheet> {
     _maxPrice = widget.initialMaxPrice;
     _startDate = widget.initialStartDate;
     _endDate = widget.initialEndDate;
+    _durationRange = RangeValues(
+      (widget.initialMinDays ?? 1).toDouble(),
+      (widget.initialMaxDays ?? 30).toDouble(),
+    );
   }
 
   void _toggleCategory(String category) {
@@ -223,6 +232,27 @@ class _OffersFilterSheetState extends State<OffersFilterSheet> {
                   ),
                   const SizedBox(height: 24),
 
+                  // Duração
+                  _buildSectionTitle(theme, cadife, 'Duração (dias)'),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('${_durationRange.start.toInt()} dias', style: theme.textTheme.small.copyWith(color: cadife.textSecondary)),
+                      Text('${_durationRange.end.toInt()} dias', style: theme.textTheme.small.copyWith(color: cadife.textSecondary)),
+                    ],
+                  ),
+                  RangeSlider(
+                    values: _durationRange,
+                    min: 1,
+                    max: 30,
+                    divisions: 29,
+                    activeColor: cadife.primary,
+                    inactiveColor: cadife.muted,
+                    onChanged: (values) => setState(() => _durationRange = values),
+                  ),
+                  const SizedBox(height: 24),
+
                   // Tipo de Viagem
                   _buildSectionTitle(theme, cadife, 'Tipo de Viagem'),
                   const SizedBox(height: 12),
@@ -269,6 +299,8 @@ class _OffersFilterSheetState extends State<OffersFilterSheet> {
                               'maxPrice': 50000.0,
                               'startDate': null,
                               'endDate': null,
+                              'minDays': null,
+                              'maxDays': null,
                             });
                           },
                         ),
@@ -285,6 +317,8 @@ class _OffersFilterSheetState extends State<OffersFilterSheet> {
                               'maxPrice': _maxPrice,
                               'startDate': _startDate,
                               'endDate': _endDate,
+                              'minDays': _durationRange.start.toInt(),
+                              'maxDays': _durationRange.end.toInt(),
                             });
                           },
                         ),

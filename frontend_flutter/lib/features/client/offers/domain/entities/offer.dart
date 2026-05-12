@@ -1,6 +1,7 @@
 import 'package:cadife_smart_travel/features/client/offers/domain/entities/date_range.dart';
+import 'package:equatable/equatable.dart';
 
-class Offer {
+class Offer extends Equatable {
   final String id;
   final String title;
   final String destination;
@@ -11,13 +12,9 @@ class Offer {
   final double rating;
   final int daysCount;
   final DateRange dates;
-  
-  // New fields for UI compatibility
   final bool hasDiscount;
   final double discountPercent;
-  final int availableSpots;
-  final List<String> highlights;
-  final List<String> includedServices;
+  final bool availableSpot;
 
   const Offer({
     required this.id,
@@ -32,68 +29,47 @@ class Offer {
     required this.dates,
     this.hasDiscount = false,
     this.discountPercent = 0.0,
-    this.availableSpots = 10,
-    this.highlights = const [],
-    this.includedServices = const [],
+    this.availableSpot = true,
   });
 
-  // Getters for UI compatibility
   double get estimatedPrice => price;
-  double get basePrice => hasDiscount ? price / (1 - discountPercent / 100) : price;
-  double get finalPrice => price;
-  String get destinationImageUrl => imageUrl;
-  int get durationDays => daysCount;
-  DateTime get departureDate => dates.start;
-  DateTime get returnDate => dates.end;
-  int get availableSpot => availableSpots;
+  double get finalPrice => hasDiscount ? price * (1 - discountPercent / 100) : price;
+  String? get destinationImageUrl => imageUrl;
 
-  // fromJson
   factory Offer.fromJson(Map<String, dynamic> json) {
     return Offer(
       id: json['id'] as String,
       title: json['title'] as String,
       destination: json['destination'] as String,
-      category: json['category'] as String,
-      description: json['description'] as String,
+      category: json['category'] as String? ?? 'Geral',
+      description: json['description'] as String? ?? '',
       price: (json['price'] as num).toDouble(),
-      imageUrl: json['imageUrl'] as String,
-      rating: (json['rating'] as num).toDouble(),
-      daysCount: json['daysCount'] as int,
-      dates: DateRange(
-        start: DateTime.parse(json['startDate'] as String),
-        end: DateTime.parse(json['endDate'] as String),
-      ),
-      hasDiscount: json['hasDiscount'] as bool? ?? false,
-      discountPercent: (json['discountPercent'] as num? ?? 0.0).toDouble(),
-      availableSpots: json['availableSpots'] as int? ?? 10,
-      highlights: (json['highlights'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
-      includedServices: (json['includedServices'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
+      imageUrl: json['image_url'] as String? ?? '',
+      rating: (json['rating'] as num? ?? 0.0).toDouble(),
+      daysCount: json['days_count'] as int? ?? 0,
+      dates: DateRange.fromJson(json['dates'] as Map<String, dynamic>),
+      hasDiscount: json['has_discount'] as bool? ?? false,
+      discountPercent: (json['discount_percent'] as num? ?? 0.0).toDouble(),
+      availableSpot: json['available_spot'] as bool? ?? true,
     );
   }
 
-  // toJson
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'title': title,
-      'destination': destination,
-      'category': category,
-      'description': description,
-      'price': price,
-      'imageUrl': imageUrl,
-      'rating': rating,
-      'daysCount': daysCount,
-      'startDate': dates.start.toIso8601String(),
-      'endDate': dates.end.toIso8601String(),
-      'hasDiscount': hasDiscount,
-      'discountPercent': discountPercent,
-      'availableSpots': availableSpots,
-      'highlights': highlights,
-      'includedServices': includedServices,
-    };
-  }
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'title': title,
+    'destination': destination,
+    'category': category,
+    'description': description,
+    'price': price,
+    'image_url': imageUrl,
+    'rating': rating,
+    'days_count': daysCount,
+    'dates': dates.toJson(),
+    'has_discount': hasDiscount,
+    'discount_percent': discountPercent,
+    'available_spot': availableSpot,
+  };
 
-  // copyWith
   Offer copyWith({
     String? id,
     String? title,
@@ -107,9 +83,7 @@ class Offer {
     DateRange? dates,
     bool? hasDiscount,
     double? discountPercent,
-    int? availableSpots,
-    List<String>? highlights,
-    List<String>? includedServices,
+    bool? availableSpot,
   }) {
     return Offer(
       id: id ?? this.id,
@@ -124,9 +98,13 @@ class Offer {
       dates: dates ?? this.dates,
       hasDiscount: hasDiscount ?? this.hasDiscount,
       discountPercent: discountPercent ?? this.discountPercent,
-      availableSpots: availableSpots ?? this.availableSpots,
-      highlights: highlights ?? this.highlights,
-      includedServices: includedServices ?? this.includedServices,
+      availableSpot: availableSpot ?? this.availableSpot,
     );
   }
+
+  @override
+  List<Object?> get props => [
+    id, title, destination, category, description, price, imageUrl,
+    rating, daysCount, dates, hasDiscount, discountPercent, availableSpot
+  ];
 }
