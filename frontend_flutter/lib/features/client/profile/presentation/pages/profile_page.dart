@@ -143,6 +143,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
             onToggleEdit: () => setState(() => _isEditing = !_isEditing),
           ),
 
+          const _ProfileMetricsGrid(),
+
           // ── Pinned TabBar ───────────────────────────────────────────────
           Material(
             color: cadife.background,
@@ -281,13 +283,14 @@ class _ProfileStatsHeader extends StatelessWidget {
                 ),
                 child: ShadAvatar(
                   user?.avatarUrl != null ? user!.avatarUrl! : '',
-                  size: const Size.square(64),
+                  size: const Size.square(112),
                   placeholder: Text(
                     _initials(user?.name ?? '?'),
                     style: GoogleFonts.inter(
-                      fontSize: 22,
+                      fontSize: 36,
                       fontWeight: FontWeight.w800,
                       color: isDark ? Colors.white : AppColors.primary,
+                      letterSpacing: -1,
                     ),
                   ),
                 ),
@@ -347,31 +350,22 @@ class _ProfileStatsHeader extends StatelessWidget {
             ),
           ),
 
-          // Stats column + Settings Icon
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              GestureDetector(
-                onTap: () => context.push('/client/settings'),
-                child: Icon(
-                  LucideIcons.settings,
-                  size: 20,
-                  color: cadife.textSecondary,
-                ),
+          // Settings Icon
+          GestureDetector(
+            onTap: () => context.push('/client/settings'),
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: cadife.surface,
+                shape: BoxShape.circle,
+                border: Border.all(color: cadife.cardBorder),
               ),
-              const SizedBox(height: 12),
-              const _MiniStat(
-                icon: LucideIcons.plane,
-                value: '${ClientProfileMocks.mockTotalTrips}',
-                label: 'viagens',
+              child: Icon(
+                LucideIcons.settings,
+                size: 20,
+                color: cadife.textSecondary,
               ),
-              const SizedBox(height: 8),
-              _MiniStat(
-                icon: LucideIcons.globe,
-                value: '${ClientProfileMocks.mockCountriesIso.length}',
-                label: 'países',
-              ),
-            ],
+            ),
           ),
         ],
       ),
@@ -379,50 +373,98 @@ class _ProfileStatsHeader extends StatelessWidget {
   }
 }
 
-class _MiniStat extends StatelessWidget {
-  const _MiniStat({
+// ─── Metrics Grid (New section for Etapa 4) ───────────────────────────────────
+
+class _ProfileMetricsGrid extends StatelessWidget {
+  const _ProfileMetricsGrid();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+      child: GridView.count(
+        crossAxisCount: 2,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 1.45,
+        children: [
+          const _MetricCard(
+            icon: LucideIcons.plane,
+            value: '${ClientProfileMocks.mockTotalTrips}',
+            label: 'Viagens',
+            color: AppColors.primary,
+          ),
+          _MetricCard(
+            icon: LucideIcons.globe,
+            value: '${ClientProfileMocks.mockCountriesIso.length}',
+            label: 'Países',
+            color: AppColors.success,
+          ),
+          const _MetricCard(
+            icon: LucideIcons.mapPin,
+            value: '12',
+            label: 'Desejados',
+            color: AppColors.info,
+          ),
+          const _MetricCard(
+            icon: LucideIcons.calendar,
+            value: '45',
+            label: 'Dias Fora',
+            color: AppColors.warning,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MetricCard extends StatelessWidget {
+  const _MetricCard({
     required this.icon,
     required this.value,
     required this.label,
+    required this.color,
   });
 
   final IconData icon;
   final String value;
   final String label;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
     final cadife = context.cadife;
-    final theme = Theme.of(context);
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 14, color: AppColors.primary),
-        const SizedBox(width: 4),
-        RichText(
-          text: TextSpan(
-            children: [
-              TextSpan(
-                text: value,
-                style: theme.textTheme.labelMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: cadife.textPrimary,
-                ),
-              ),
-              TextSpan(
-                text: ' $label',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: cadife.textSecondary,
-                ),
-              ),
-            ],
+    return ShadCard(
+      padding: const EdgeInsets.all(16),
+      radius: BorderRadius.circular(16),
+      backgroundColor: color.withValues(alpha: 0.07),
+      border: ShadBorder.all(color: color.withValues(alpha: 0.15)),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: color, size: 24),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: AppTextStyles.h4.copyWith(color: color),
           ),
-        ),
-      ],
+          const SizedBox(height: 2),
+          Text(
+            label.toUpperCase(),
+            style: AppTextStyles.caption.copyWith(
+              color: cadife.textSecondary,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
+
 
 class _CountryFlags extends StatelessWidget {
   const _CountryFlags({required this.isoCodes});
@@ -501,6 +543,19 @@ class _ProfileInfoTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return CustomScrollView(
       slivers: [
+        SliverToBoxAdapter(
+          child: ProfileSectionCard(
+            title: 'Minha Bio',
+            children: [
+              Text(
+                'Apaixonado por descobrir novas culturas e destinos exóticos. Planejando minha próxima aventura para a Islândia!',
+                style: context.textTheme.bodyMedium?.copyWith(
+                  height: 1.6,
+                ),
+              ),
+            ],
+          ),
+        ),
         SliverToBoxAdapter(
           child: ProfileSectionCard(
             title: 'Dados Pessoais',

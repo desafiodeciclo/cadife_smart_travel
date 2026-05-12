@@ -1,0 +1,75 @@
+{
+  "id": "B-feat-admin-general-profile",
+  "title": "(B) feat/admin-general-profile",
+  "priority": "high",
+  "assignee": "Backend / Flutter",
+  "sprint": 7,
+  "status": "completed",
+  "steps": [
+    {
+      "id": "1.1",
+      "name": "Atualizar seed_admin.py para criar ADM inicial com telefone e role admin",
+      "status": "done"
+    },
+    {
+      "id": "1.2",
+      "name": "Criar schemas Pydantic para admin: AdminUserCreate, AdminUserUpdate, AdminUserResponse, AdminUserListResponse",
+      "status": "done"
+    },
+    {
+      "id": "2.1",
+      "name": "Implementar AdminService: CRUD de consultores, soft-delete com reatribuição de leads, envio de email de boas-vindas",
+      "status": "done"
+    },
+    {
+      "id": "2.2",
+      "name": "Implementar rota POST /admin/users com criação de consultor e email de boas-vindas",
+      "status": "done"
+    },
+    {
+      "id": "2.3",
+      "name": "Implementar rota GET /admin/users com lista de consultores, status e métricas",
+      "status": "done"
+    },
+    {
+      "id": "2.4",
+      "name": "Implementar rota PATCH /admin/users/{id} para editar/desisativar consultor",
+      "status": "done"
+    },
+    {
+      "id": "2.5",
+      "name": "Implementar rota DELETE /admin/users/{id} soft-delete com reatribuição de leads",
+      "status": "done"
+    },
+    {
+      "id": "2.6",
+      "name": "Implementar rota PATCH /admin/leads/{id}/reassign com notificação push para ambos",
+      "status": "done"
+    },
+    {
+      "id": "3.1",
+      "name": "Adicionar log de auditoria estruturado para todas as ações do ADM",
+      "status": "done"
+    },
+    {
+      "id": "4.1",
+      "name": "Criar testes de integração pytest para endpoints admin",
+      "status": "done"
+    },
+    {
+      "id": "5.1",
+      "name": "Criar AdminConsultantManagementPage no Flutter com lista, status, métricas e ações",
+      "status": "done"
+    },
+    {
+      "id": "5.2",
+      "name": "Atualizar GoRouter e AgencyShell para incluir rota /agency/admin/consultants",
+      "status": "done"
+    },
+    {
+      "id": "6.1",
+      "name": "Regenerar OpenAPI snapshot e validar suite de tests",
+      "status": "done"
+    }
+  ]
+}

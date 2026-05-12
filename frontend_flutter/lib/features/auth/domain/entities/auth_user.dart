@@ -1,4 +1,4 @@
-﻿import 'package:equatable/equatable.dart';
+import 'package:equatable/equatable.dart';
 
 class AuthUser extends Equatable {
   const AuthUser({
@@ -12,6 +12,11 @@ class AuthUser extends Equatable {
     this.tipoViagem,
     this.preferencias,
     this.temPassaporte,
+    this.activeLeads = 0,
+    this.successRate = 0.0,
+    this.totalRevenue = 0.0,
+    this.closedDeals = 0,
+    this.bio,
   });
 
   final String id;
@@ -24,6 +29,13 @@ class AuthUser extends Equatable {
   final List<String>? tipoViagem;
   final List<String>? preferencias;
   final bool? temPassaporte;
+  
+  // Consultant Metrics (also used in Profile)
+  final int activeLeads;
+  final double successRate;
+  final double totalRevenue;
+  final int closedDeals;
+  final String? bio;
 
   factory AuthUser.fromJson(Map<String, dynamic> json) => AuthUser(
     id: json['id'] as String,
@@ -43,6 +55,11 @@ class AuthUser extends Equatable {
     tipoViagem: (json['tipo_viagem'] as List<dynamic>?)?.cast<String>(),
     preferencias: (json['preferencias'] as List<dynamic>?)?.cast<String>(),
     temPassaporte: json['tem_passaporte'] as bool?,
+    activeLeads: json['active_leads'] as int? ?? 0,
+    successRate: (json['success_rate'] as num?)?.toDouble() ?? 0.0,
+    totalRevenue: (json['total_revenue'] as num?)?.toDouble() ?? 0.0,
+    closedDeals: json['closed_deals'] as int? ?? 0,
+    bio: json['bio'] as String?,
   );
 
   Map<String, dynamic> toJson() => {
@@ -56,6 +73,11 @@ class AuthUser extends Equatable {
     'tipo_viagem': tipoViagem,
     'preferencias': preferencias,
     'tem_passaporte': temPassaporte,
+    'active_leads': activeLeads,
+    'success_rate': successRate,
+    'total_revenue': totalRevenue,
+    'closed_deals': closedDeals,
+    'bio': bio,
   };
 
   AuthUser copyWith({
@@ -65,6 +87,11 @@ class AuthUser extends Equatable {
     List<String>? tipoViagem,
     List<String>? preferencias,
     bool? temPassaporte,
+    int? activeLeads,
+    double? successRate,
+    double? totalRevenue,
+    int? closedDeals,
+    String? bio,
   }) => AuthUser(
     id: id,
     name: name ?? this.name,
@@ -76,6 +103,11 @@ class AuthUser extends Equatable {
     tipoViagem: tipoViagem ?? this.tipoViagem,
     preferencias: preferencias ?? this.preferencias,
     temPassaporte: temPassaporte ?? this.temPassaporte,
+    activeLeads: activeLeads ?? this.activeLeads,
+    successRate: successRate ?? this.successRate,
+    totalRevenue: totalRevenue ?? this.totalRevenue,
+    closedDeals: closedDeals ?? this.closedDeals,
+    bio: bio ?? this.bio,
   );
 
   @override
@@ -90,6 +122,11 @@ class AuthUser extends Equatable {
     tipoViagem,
     preferencias,
     temPassaporte,
+    activeLeads,
+    successRate,
+    totalRevenue,
+    closedDeals,
+    bio,
   ];
 }
 

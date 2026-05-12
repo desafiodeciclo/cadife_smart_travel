@@ -241,6 +241,40 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
   }
 
   @override
+  Future<LeadApiModel> reassignLead(String id, String consultorNome) async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    final index = _mockLeads.indexWhere((l) => l.id == id);
+    if (index == -1) throw Exception('Lead não encontrado: $id');
+    final old = _mockLeads[index];
+    final updated = LeadApiModel(
+      id: old.id,
+      name: old.name,
+      phone: old.phone,
+      email: old.email,
+      status: old.status,
+      score: old.score,
+      completudePct: old.completudePct,
+      destino: old.destino,
+      dataIda: old.dataIda,
+      dataVolta: old.dataVolta,
+      numPessoas: old.numPessoas,
+      perfil: old.perfil,
+      tipoViagem: old.tipoViagem,
+      preferencias: old.preferencias,
+      orcamentoFaixa: old.orcamentoFaixa,
+      passaporteValido: old.passaporteValido,
+      experienciaInternacional: old.experienciaInternacional,
+      assignedTo: old.assignedTo,
+      consultorNome: consultorNome,
+      consultorAvatar: old.consultorAvatar,
+      createdAt: old.createdAt,
+      updatedAt: DateTime.now(),
+    );
+    _mockLeads[index] = updated;
+    return updated;
+  }
+
+  @override
   Future<LeadApiModel> createManualLead(ManualLeadCreate request) async {
     await Future.delayed(const Duration(milliseconds: 600));
     final newLead = LeadApiModel(

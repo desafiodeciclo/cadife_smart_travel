@@ -60,10 +60,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
     if (_emailState == _EmailState.invalid) return;
 
-    await ref.read(authNotifierProvider.notifier).login(
-          _emailController.text.trim(),
-          _passwordController.text,
-        );
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    debugPrint('LOGIN SCREEN: email="$email", password="$password"');
+
+    await ref.read(authNotifierProvider.notifier).login(email, password);
   }
 
   @override
