@@ -28,3 +28,26 @@ class User {
     );
   }
 }
+
+// Async notifier for fetching user
+class CurrentUserNotifier extends AsyncNotifier<User> {
+  @override
+  Future<User> build() async {
+    // Try to get user from /me endpoint
+    final apiService = ref.watch(apiServiceProvider);
+    try {
+      final response = await apiService.get('/users/me');
+      return User.fromJson(response);
+    } catch (e) {
+      print("Failed to fetch user: $e");
+      rethrow;
+    }
+  }
+
+  // Logout function
+  Future<void> logout() async {
+    final apiService = ref.watch(apiServiceProvider);
+    await apiService.clearToken();
+    state = const AsyncValue.loading(); // Reset state
+  }
+}
