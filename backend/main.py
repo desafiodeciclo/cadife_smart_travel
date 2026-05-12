@@ -31,6 +31,7 @@ from app.jobs.lead_expiration_job import expire_stale_leads
 from app.jobs.proposta_expiration_job import expire_stale_propostas_job
 from app.jobs.notification_worker import NotificationWorker, WORKER_INTERVAL_SECONDS
 from app.jobs.checkpoint_cron_job import run_checkpoint_cron
+from app.jobs.conversation_summary_retry_job import run_conversation_summary_retry
 
 # Routers
 from app.routes import admin, agenda, auth, documents, ia, leads, offers, propostas, webhook, suitcase, diary
@@ -125,10 +126,25 @@ async def lifespan(app: FastAPI):
         replace_existing=True,
     )
 
+    # 5. Conversation Summary Retry: Reattempts pending LLM summaries every 15 min
+    _scheduler.add_job(
+        run_conversation_summary_retry,
+        trigger="interval",
+        minutes=15,
+        id="conversation_summary_retry",
+        replace_existing=True,
+    )
+
     _scheduler.start()
     logger.info(
         "scheduler_started",
-        jobs=["lead_expiration", "proposta_expiration", "notification_worker", "checkpoint_cron"]
+        jobs=[
+            "lead_expiration",
+            "proposta_expiration",
+            "notification_worker",
+            "checkpoint_cron",
+            "conversation_summary_retry",
+        ],
     )
 
     logger.info("startup_complete", version="1.0.0")

@@ -186,6 +186,21 @@ async def execute(payload: dict, db: AsyncSession) -> None:
         retries=send_result.retries_used,
     )
 
+    # ── Step 9: Detect closed sessions and generate conversation summaries ──
+    # Runs after the interaction is persisted so the current message is included.
+    # Non-blocking: failures are caught and logged without affecting the main flow.
+    try:
+        from app.services.conversation_summary_service import summarise_closed_sessions
+
+        all_interacoes = await lead_service.get_recent_interacoes(db, lead.id, limit=500)
+        await summarise_closed_sessions(db, lead.id, all_interacoes)
+    except Exception as exc:
+        logger.warning(
+            "conversation_summary_trigger_failed",
+            lead_id=str(lead.id),
+            error=str(exc),
+        )
+
 
 async def _notify_new_lead_creation(db: AsyncSession, lead: Lead) -> None:
     """Send FCM push to the assigned consultor or next in round-robin queue.

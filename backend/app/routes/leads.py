@@ -31,6 +31,10 @@ from app.infrastructure.security.dependencies import (
 )
 from app.infrastructure.security.pii_encryption import hmac_hash
 from app.models.briefing import BriefingResponse, BriefingUpdate, calculate_completude
+from app.models.conversation_summary import (
+    ConversationSummaryListResponse,
+    ConversationSummaryResponse,
+)
 from app.models.interacao import InteracaoListResponse
 from app.models.lead import Lead
 from app.presentation.schemas.common_errors import HTTPErrorResponse
@@ -661,3 +665,105 @@ async def activate_checkpoint(
         db, lead_id, body.checkpoint, str(current_user.id)
     )
     return CheckpointResponse.model_validate(record)
+
+
+# ── GET /leads/{lead_id}/conversation-summary ─────────────────────────────
+
+
+@router.get(
+    "/{lead_id}/conversation-summary",
+    response_model=ConversationSummaryResponse,
+    summary="Resumo de IA da conversa mais recente",
+    description=(
+        "Retorna o resumo estruturado em tópicos gerado pela IA para a sessão de "
+        "conversa mais recente do lead. Útil como briefing rápido para o consultor. "
+        "Retorna 404 se nenhum resumo foi gerado ainda."
+    ),
+    dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))],
+    responses={
+        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
+        403: {"description": "Sem permissão para este lead", "model": HTTPErrorResponse},
+        404: {"description": "Lead ou resumo não encontrado", "model": HTTPErrorResponse},
+    },
+)
+async def get_conversation_summary(
+    lead_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    lead = await lead_service.get_lead_by_id(db, lead_id)
+    if not lead:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Lead não encontrado"
+        )
+
+    if current_user.perfil == "consultor" and lead.consultor_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado ao lead"
+        )
+
+    from app.infrastructure.persistence.repositories.conversation_summary_repository import (
+        ConversationSummaryRepository,
+    )
+
+    repo = ConversationSummaryRepository(db)
+    row = await repo.get_latest_by_lead(lead_id)
+    if not row:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Nenhum resumo de conversa disponível para este lead",
+        )
+    return ConversationSummaryResponse.model_validate(row)
+
+
+# ── GET /leads/{lead_id}/conversation-summaries ───────────────────────────
+
+
+@router.get(
+    "/{lead_id}/conversation-summaries",
+    response_model=ConversationSummaryListResponse,
+    summary="Histórico de resumos de conversa do lead",
+    description=(
+        "Retorna o histórico paginado de resumos de sessões de conversa entre o "
+        "cliente e a AYA, do mais recente ao mais antigo."
+    ),
+    dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))],
+    responses={
+        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
+        403: {"description": "Sem permissão para este lead", "model": HTTPErrorResponse},
+        404: {"description": "Lead não encontrado", "model": HTTPErrorResponse},
+    },
+)
+async def list_conversation_summaries(
+    lead_id: uuid.UUID,
+    page: int = Query(1, ge=1, description="Número da página"),
+    limit: int = Query(20, ge=1, le=100, description="Itens por página"),
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    lead = await lead_service.get_lead_by_id(db, lead_id)
+    if not lead:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Lead não encontrado"
+        )
+
+    if current_user.perfil == "consultor" and lead.consultor_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado ao lead"
+        )
+
+    from app.infrastructure.persistence.repositories.conversation_summary_repository import (
+        ConversationSummaryRepository,
+    )
+    import math
+
+    repo = ConversationSummaryRepository(db)
+    rows, total = await repo.list_by_lead(lead_id, page=page, limit=limit)
+    items = [ConversationSummaryResponse.model_validate(r) for r in rows]
+    return ConversationSummaryListResponse(
+        items=items,
+        total=total,
+        page=page,
+        limit=limit,
+        pages=math.ceil(total / limit) if total else 0,
+    )

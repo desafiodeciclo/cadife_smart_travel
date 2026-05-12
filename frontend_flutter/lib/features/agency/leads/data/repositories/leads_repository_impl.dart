@@ -1,6 +1,7 @@
 import 'package:cadife_smart_travel/core/error/failures.dart';
 import 'package:cadife_smart_travel/features/agency/leads/data/datasources/i_leads_datasource.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/briefing.dart';
+import 'package:cadife_smart_travel/features/agency/leads/domain/entities/conversation_summary.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/repositories/i_leads_repository.dart';
 import 'package:cadife_smart_travel/features/client/historico/domain/entities/interacao.dart';
@@ -88,6 +89,16 @@ class LeadsRepositoryImpl implements ILeadsRepository {
     try {
       final lead = await _remoteDatasource.createManualLead(request);
       return Right(lead);
+    } on Exception catch (e) {
+      return Left(Failure.fromException(e));
+    }
+  }
+
+  @override
+  Future<Either<Failure, ConversationSummary?>> getConversationSummary(String leadId) async {
+    try {
+      final model = await _remoteDatasource.getConversationSummary(leadId);
+      return Right(model?.toDomain());
     } on Exception catch (e) {
       return Left(Failure.fromException(e));
     }

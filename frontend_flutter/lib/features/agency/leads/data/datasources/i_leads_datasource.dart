@@ -1,3 +1,4 @@
+import 'package:cadife_smart_travel/features/agency/leads/data/models/conversation_summary_api_model.dart';
 import 'package:cadife_smart_travel/features/agency/leads/data/models/lead_api_model.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/briefing.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
@@ -13,4 +14,5 @@ abstract class ILeadsDatasource {
   Future<LeadApiModel> createLead(CreateLeadRequest request);
   Future<LeadApiModel> createManualLead(ManualLeadCreate request);
   Future<LeadApiModel> reassignLead(String id, String consultorNome);
+  Future<ConversationSummaryApiModel?> getConversationSummary(String leadId);
 }

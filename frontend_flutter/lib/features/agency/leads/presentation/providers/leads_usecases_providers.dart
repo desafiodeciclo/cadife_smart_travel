@@ -1,6 +1,8 @@
 import 'package:cadife_smart_travel/features/agency/leads/data/providers/leads_data_providers.dart';
+import 'package:cadife_smart_travel/features/agency/leads/domain/entities/conversation_summary.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/usecases/create_manual_lead_usecase.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/usecases/get_briefing_usecase.dart';
+import 'package:cadife_smart_travel/features/agency/leads/domain/usecases/get_conversation_summary_usecase.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/usecases/get_lead_by_id_usecase.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/usecases/get_leads_usecase.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/usecases/update_lead_status_usecase.dart';
@@ -25,3 +27,16 @@ final getBriefingUseCaseProvider = Provider<GetBriefingUseCase>((ref) {
 final createManualLeadUseCaseProvider = Provider<CreateManualLeadUseCase>((ref) {
   return CreateManualLeadUseCase(ref.watch(leadsRepositoryProvider));
 });
+
+final getConversationSummaryUseCaseProvider =
+    Provider<GetConversationSummaryUseCase>((ref) {
+  return GetConversationSummaryUseCase(ref.watch(leadsRepositoryProvider));
+});
+
+final conversationSummaryProvider = FutureProvider.family<ConversationSummary?, String>(
+  (ref, leadId) async {
+    final useCase = ref.watch(getConversationSummaryUseCaseProvider);
+    final result = await useCase(leadId);
+    return result.fold((_) => null, (summary) => summary);
+  },
+);

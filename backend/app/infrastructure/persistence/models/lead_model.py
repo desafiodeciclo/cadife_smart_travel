@@ -137,6 +137,6 @@ class LeadModel(Base):
         "ItineraryItemModel", back_populates="lead", lazy="select", cascade="all, delete-orphan",
         order_by="ItineraryItemModel.horario_inicio",
     )
-    conversation_summary: Mapped[Optional["ConversationSummaryModel"]] = relationship(
-        "ConversationSummaryModel", back_populates="lead", uselist=False, lazy="select", cascade="all, delete-orphan"
+    conversation_summaries: Mapped[list["ConversationSummaryModel"]] = relationship(
+        "ConversationSummaryModel", back_populates="lead", lazy="select", cascade="all, delete-orphan"
     )

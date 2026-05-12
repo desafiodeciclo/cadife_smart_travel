@@ -4,9 +4,11 @@ import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/admin/domain/entities/admin_entities.dart';
 import 'package:cadife_smart_travel/features/admin/presentation/providers/admin_providers.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/presentation/widgets/schedule_appointment_modal.dart';
+import 'package:cadife_smart_travel/features/agency/leads/domain/entities/conversation_summary.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/providers/lead_detail_provider.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/providers/leads_notifier.dart';
+import 'package:cadife_smart_travel/features/agency/leads/presentation/providers/leads_usecases_providers.dart';
 import 'package:cadife_smart_travel/features/agency/propostas/presentation/widgets/proposal_form_tab.dart';
 import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_notifier.dart';
@@ -385,12 +387,14 @@ class _ActionButtons extends ConsumerWidget {
   }
 }
 
-class _BriefingTab extends StatelessWidget {
+class _BriefingTab extends ConsumerWidget {
   final Lead lead;
   const _BriefingTab({required this.lead});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final summaryAsync = ref.watch(conversationSummaryProvider(lead.id));
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -415,6 +419,9 @@ class _BriefingTab extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 24),
+        // ── AI Conversation Summary ──────────────────────────────────────
+        _AiSummarySection(summaryAsync: summaryAsync),
+        const SizedBox(height: 24),
         Text(
           'Observações',
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: context.cadife.textSecondary),
@@ -433,6 +440,183 @@ class _BriefingTab extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _AiSummarySection extends StatelessWidget {
+  final AsyncValue<ConversationSummary?> summaryAsync;
+  const _AiSummarySection({required this.summaryAsync});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.auto_awesome, size: 16, color: AppColors.primary),
+            const SizedBox(width: 6),
+            Text(
+              'Resumo da Conversa (IA)',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: context.cadife.textSecondary,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        summaryAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (_, _) => const _SummaryUnavailableCard(message: 'Erro ao carregar resumo.'),
+          data: (summary) {
+            if (summary == null) {
+              return const _SummaryUnavailableCard(
+                message: 'Nenhum resumo disponível ainda. O resumo é gerado automaticamente após cada sessão de conversa.',
+              );
+            }
+            if (summary.resumoPendente) {
+              return const _SummaryUnavailableCard(
+                message: 'Resumo em processamento. Aguarde alguns minutos.',
+                isPending: true,
+              );
+            }
+            final topics = summary.resumo;
+            if (topics == null) return const _SummaryUnavailableCard(message: 'Resumo não disponível.');
+            return ShadCard(
+              padding: const EdgeInsets.all(16),
+              radius: BorderRadius.circular(12),
+              border: ShadBorder.all(
+                color: AppColors.primary.withValues(alpha: 0.2),
+                width: 1,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (topics.intencaoPrincipal != null)
+                    _SummaryTopic(
+                      icon: Icons.travel_explore,
+                      label: 'Intenção Principal',
+                      value: topics.intencaoPrincipal!,
+                    ),
+                  if (topics.datasEPassageiros != null)
+                    _SummaryTopic(
+                      icon: Icons.calendar_today,
+                      label: 'Datas e Passageiros',
+                      value: topics.datasEPassageiros!,
+                    ),
+                  if (topics.orcamento != null)
+                    _SummaryTopic(
+                      icon: Icons.account_balance_wallet_outlined,
+                      label: 'Orçamento',
+                      value: topics.orcamento!,
+                    ),
+                  if (topics.restricoesEPreferencias != null)
+                    _SummaryTopic(
+                      icon: Icons.tune,
+                      label: 'Restrições e Preferências',
+                      value: topics.restricoesEPreferencias!,
+                    ),
+                  if (topics.decisoesTomadas != null)
+                    _SummaryTopic(
+                      icon: Icons.check_circle_outline,
+                      label: 'Decisões Tomadas',
+                      value: topics.decisoesTomadas!,
+                    ),
+                  if (topics.proximosPassos != null)
+                    _SummaryTopic(
+                      icon: Icons.arrow_forward_outlined,
+                      label: 'Próximos Passos',
+                      value: topics.proximosPassos!,
+                      isLast: true,
+                    ),
+                ],
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _SummaryUnavailableCard extends StatelessWidget {
+  final String message;
+  final bool isPending;
+  const _SummaryUnavailableCard({required this.message, this.isPending = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return ShadCard(
+      padding: const EdgeInsets.all(16),
+      radius: BorderRadius.circular(12),
+      border: ShadBorder.all(color: context.cadife.cardBorder.withValues(alpha: 0.3), width: 1),
+      child: Row(
+        children: [
+          Icon(
+            isPending ? Icons.hourglass_top : Icons.info_outline,
+            size: 18,
+            color: context.cadife.textSecondary,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(fontSize: 13, color: context.cadife.textSecondary),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SummaryTopic extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final bool isLast;
+  const _SummaryTopic({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.isLast = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 15, color: AppColors.primary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: context.cadife.textSecondary,
+                    letterSpacing: 0.4,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: const TextStyle(fontSize: 13),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

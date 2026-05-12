@@ -1,4 +1,5 @@
 import 'package:cadife_smart_travel/features/agency/leads/data/datasources/i_leads_datasource.dart';
+import 'package:cadife_smart_travel/features/agency/leads/data/models/conversation_summary_api_model.dart';
 import 'package:cadife_smart_travel/features/agency/leads/data/models/lead_api_model.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/briefing.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
@@ -295,5 +296,25 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
     );
     _mockLeads.insert(0, newLead);
     return newLead;
+  }
+
+  @override
+  Future<ConversationSummaryApiModel?> getConversationSummary(String leadId) async {
+    return ConversationSummaryApiModel(
+      id: 'mock-summary-$leadId',
+      leadId: leadId,
+      sessaoId: 'mock:20260510_1000',
+      resumoPendente: false,
+      geradoEm: DateTime.now().subtract(const Duration(hours: 2)),
+      resumoJson: const ConversationSummaryTopicsApiModel(
+        intencaoPrincipal: 'Viagem para Paris em família',
+        datasEPassageiros: 'Julho 2026 · 4 pessoas (casal + 2 filhos)',
+        orcamento: 'Médio — aprox. R\$ 20.000',
+        restricoesEPreferencias: 'Hotel próximo a pontos turísticos, voos diretos preferidos',
+        decisoesTomadas: 'Interesse confirmado, aguardando proposta',
+        proximosPassos: 'Consultor irá enviar proposta de pacote completo',
+      ),
+      tokensUtilizados: 312,
+    );
   }
 }
