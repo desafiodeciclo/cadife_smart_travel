@@ -168,6 +168,14 @@ class BriefingExtracted(BaseModel):
         None,
         description="Notas adicionais, restrições alimentares, celebrações ou pedidos especiais.",
     )
+    campos_inferidos: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Lista de campos cujo valor foi inferido pelo contexto, "
+            "não mencionados explicitamente pelo cliente. "
+            "Não afeta o score — apenas rastreabilidade."
+        ),
+    )
 
     @field_validator("perfil", mode="before")
     @classmethod

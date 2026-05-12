@@ -47,12 +47,13 @@ class ClientHomeMocks {
         roteiro: 'Uma jornada inesquecível por Paris, a Cidade Luz. Exploraremos os principais monumentos, como a Torre Eiffel e o Museu do Louvre, além de caminhadas charmosas pelo bairro de Le Marais e jantares em bistrôs típicos franceses.',
       );
 
+  /// Alinhado com backend/scripts/db/seeds/01_users.py — Daniela Costa
   static ConsultantInfo mockConsultant() => const ConsultantInfo(
-        id: 'consultant-001',
-        name: 'João Santos',
-        phone: '+5511999887766',
-        photoUrl: 'https://via.placeholder.com/150?text=João',
-        email: 'joao.santos@cadife.com',
+        id: 'daniela-costa',
+        name: 'Daniela Costa',
+        phone: '+5511977777777',
+        photoUrl: 'https://i.pravatar.cc/150?u=daniela',
+        email: 'daniela.costa@cadifetoure.com.br',
       );
 
   static List<ClientDocument> mockDocuments() => [
@@ -95,13 +96,23 @@ class ClientHomeMocks {
           destination: 'Itália',
           category: 'Cultura',
           description: 'Moda, cultura e gastronomia no coração da Itália',
+          basePrice: 5500.0,
           price: 5200.0,
-          rating: 4.8,
-          daysCount: 7,
+          currency: 'BRL',
           dates: DateRange(
             start: DateTime(2026, 9, 10),
             end: DateTime(2026, 9, 17),
           ),
+          daysCount: 7,
+          rating: 4.8,
+          travelers: 2,
+          availableSpots: 10,
+          spotsReserved: 2,
+          status: 'published',
+          highlights: const ['Moda', 'Gastronomia', 'Cultura'],
+          amenities: const ['Voo incluso', 'Hotel 4 estrelas'],
+          views: 120,
+          interests: 45,
           imageUrl: 'https://images.unsplash.com/photo-1520923179278-ee25e24e467e?auto=format&fit=crop&q=80&w=800',
         ),
         Offer(
@@ -110,13 +121,23 @@ class ClientHomeMocks {
           destination: 'Rep. Tcheca',
           category: 'História',
           description: 'A Cidade Dourada com arquitetura medieval incomparável',
+          basePrice: 4500.0,
           price: 4100.0,
-          rating: 4.9,
-          daysCount: 5,
+          currency: 'BRL',
           dates: DateRange(
             start: DateTime(2026, 10, 5),
             end: DateTime(2026, 10, 10),
           ),
+          daysCount: 5,
+          rating: 4.7,
+          travelers: 2,
+          availableSpots: 8,
+          spotsReserved: 3,
+          status: 'published',
+          highlights: const ['História', 'Arquitetura', 'Cerveja Artesanal'],
+          amenities: const ['Voo incluso', 'Guia em português'],
+          views: 85,
+          interests: 22,
           imageUrl: 'https://images.unsplash.com/photo-1519677100203-a0e668c92439?auto=format&fit=crop&q=80&w=800',
         ),
         Offer(
@@ -125,16 +146,27 @@ class ClientHomeMocks {
           destination: 'Grécia',
           category: 'Romântico',
           description: 'Vistas deslumbrantes do pôr do sol e águas cristalinas',
+          basePrice: 7000.0,
           price: 6500.0,
-          rating: 4.7,
-          daysCount: 6,
+          currency: 'BRL',
           dates: DateRange(
             start: DateTime(2026, 8, 20),
             end: DateTime(2026, 8, 26),
           ),
+          daysCount: 6,
+          rating: 4.9,
+          travelers: 2,
+          availableSpots: 6,
+          spotsReserved: 4,
+          status: 'published',
+          highlights: const ['Pôr do Sol', 'Mar Egeu', 'Romantismo'],
+          amenities: const ['Hotel Boutique', 'Café da manhã incluso'],
+          views: 210,
+          interests: 88,
           imageUrl: 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?auto=format&fit=crop&q=80&w=800',
         ),
       ];
+
 
   static List<ItineraryItem> mockItineraryItems(String leadId) => [
         ItineraryItem(

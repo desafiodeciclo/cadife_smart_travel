@@ -65,7 +65,13 @@ class ClientHomeScreen extends ConsumerWidget {
                         child: Skeleton(height: 32, width: 200),
                       ),
                     ),
-                    error: (err, _) => const SizedBox.shrink(),
+                    error: (err, _) => Padding(
+                      padding: const EdgeInsets.only(bottom: 20),
+                      child: Text(
+                        'Erro ao carregar nome: $err',
+                        style: const TextStyle(color: Colors.red, fontSize: 12),
+                      ),
+                    ),
                   ),
 
                   // 1. Banner da viagem atual

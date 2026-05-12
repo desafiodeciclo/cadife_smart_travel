@@ -2,16 +2,11 @@ import 'package:cadife_smart_travel/core/constants/api_constants.dart';
 import 'package:cadife_smart_travel/features/client/status/domain/entities/checkpoint_item.dart';
 import 'package:dio/dio.dart';
 
-abstract class ICheckpointDatasource {
-  Future<List<CheckpointItem>> getCheckpoints(String leadId);
-}
-
-class CheckpointDatasource implements ICheckpointDatasource {
+class CheckpointDatasource {
   const CheckpointDatasource(this._dio);
 
   final Dio _dio;
 
-  @override
   Future<List<CheckpointItem>> getCheckpoints(String leadId) async {
     final response = await _dio.get<Map<String, dynamic>>(
       ApiConstants.leadCheckpoints(leadId),

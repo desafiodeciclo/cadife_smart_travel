@@ -3,7 +3,7 @@ import 'package:cadife_smart_travel/features/client/status/data/datasources/chec
 import 'package:cadife_smart_travel/features/client/status/domain/entities/checkpoint_item.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-final _checkpointDatasourceProvider = Provider<ICheckpointDatasource>((ref) {
+final _checkpointDatasourceProvider = Provider<CheckpointDatasource>((ref) {
   return CheckpointDatasource(ref.watch(dioClientProvider));
 });
 

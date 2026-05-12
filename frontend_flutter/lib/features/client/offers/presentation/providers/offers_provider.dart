@@ -1,47 +1,103 @@
-import 'package:cadife_smart_travel/data/mock/offers_mock.dart';
+import 'package:cadife_smart_travel/features/client/offers/data/repositories/offer_repository.dart';
 import 'package:cadife_smart_travel/features/client/offers/domain/entities/offer.dart';
-import 'package:cadife_smart_travel/features/client/offers/presentation/providers/offers_filter_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-final offersProvider = FutureProvider<List<Offer>>((ref) async {
-  final filters = ref.watch(offersFilterProvider);
-  
-  // Simula um delay de rede para demonstração do estado de loading
-  await Future.delayed(const Duration(milliseconds: 600));
-  
-  var offers = List<Offer>.from(mockOffers);
+class OffersFilterState {
+  final String? destination;
+  final double? minPrice;
+  final double? maxPrice;
+  final int? minDays;
+  final int? maxDays;
+  final String? search;
+  final int page;
 
-  // Filtro por busca (título ou destino)
-  if (filters.searchQuery.isNotEmpty) {
-    final query = filters.searchQuery.toLowerCase();
-    offers = offers.where((o) => 
-      o.title.toLowerCase().contains(query) || 
-      o.destination.toLowerCase().contains(query)
-    ).toList();
+  OffersFilterState({
+    this.destination,
+    this.minPrice,
+    this.maxPrice,
+    this.minDays,
+    this.maxDays,
+    this.search,
+    this.page = 1,
+  });
+
+  OffersFilterState copyWith({
+    String? destination,
+    double? minPrice,
+    double? maxPrice,
+    int? minDays,
+    int? maxDays,
+    String? search,
+    int? page,
+  }) {
+    return OffersFilterState(
+      destination: destination ?? this.destination,
+      minPrice: minPrice ?? this.minPrice,
+      maxPrice: maxPrice ?? this.maxPrice,
+      minDays: minDays ?? this.minDays,
+      maxDays: maxDays ?? this.maxDays,
+      search: search ?? this.search,
+      page: page ?? this.page,
+    );
+  }
+}
+
+class OffersNotifier extends StateNotifier<AsyncValue<List<Offer>>> {
+  final OfferRepository _repository;
+  OffersFilterState _filter = OffersFilterState();
+
+  OffersNotifier(this._repository) : super(const AsyncValue.loading()) {
+    loadOffers();
   }
 
-  // Filtro por destino
-  if (filters.destination != null) {
-    offers = offers.where((o) => o.destination == filters.destination).toList();
+  Future<void> loadOffers() async {
+    state = const AsyncValue.loading();
+    try {
+      final result = await _repository.listOffers(
+        destination: _filter.destination,
+        minPrice: _filter.minPrice,
+        maxPrice: _filter.maxPrice,
+        durationMin: _filter.minDays,
+        durationMax: _filter.maxDays,
+        search: _filter.search,
+        page: _filter.page,
+      );
+      
+      final List<dynamic> offersJson = result['offers'];
+      final offers = offersJson.map((e) => Offer.fromJson(e)).toList();
+      state = AsyncValue.data(offers);
+    } on Exception catch (e, st) {
+      state = AsyncValue.error(e, st);
+    } on Object catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
   }
 
-
-  // Filtro por categorias
-  if (filters.categories.isNotEmpty) {
-    offers = offers.where((o) => filters.categories.contains(o.category)).toList();
+  void applyFilters(OffersFilterState filter) {
+    _filter = filter;
+    loadOffers();
   }
 
-  // Filtro por preço
-  offers = offers.where((o) => o.price >= filters.minPrice && o.price <= filters.maxPrice).toList();
-
-  // Filtro por período
-  if (filters.startDate != null && filters.endDate != null) {
-    offers = offers.where((o) {
-      // Verifica se há sobreposição entre o período desejado e o período da oferta
-      return !(o.dates.start.isAfter(filters.endDate!) || o.dates.end.isBefore(filters.startDate!));
-    }).toList();
+  void setSearch(String? search) {
+    _filter = _filter.copyWith(search: search, page: 1);
+    loadOffers();
   }
-  
-  return offers;
+}
+
+final offersProvider = StateNotifierProvider<OffersNotifier, AsyncValue<List<Offer>>>((ref) {
+  final repository = ref.watch(offerRepositoryProvider);
+  return OffersNotifier(repository);
 });
 
+// Provider for agency offers
+class MyOffersNotifier extends AsyncNotifier<List<Offer>> {
+  @override
+  Future<List<Offer>> build() async {
+    final repository = ref.watch(offerRepositoryProvider);
+    final result = await repository.getMyOffers();
+    final List<dynamic> offersJson = result['offers'];
+    return offersJson.map((e) => Offer.fromJson(e)).toList();
+  }
+}
+
+final myOffersProvider = AsyncNotifierProvider<MyOffersNotifier, List<Offer>>(MyOffersNotifier.new);

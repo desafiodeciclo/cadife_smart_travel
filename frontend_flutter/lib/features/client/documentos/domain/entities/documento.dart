@@ -56,6 +56,33 @@ class Documento extends Equatable {
     );
   }
 
+  factory Documento.fromJson(Map<String, dynamic> json) {
+    DocumentType parseType(String? t) {
+      switch (t) {
+        case 'pdf':
+          return DocumentType.pdf;
+        case 'image':
+          return DocumentType.image;
+        case 'video':
+          return DocumentType.video;
+        case 'audio':
+          return DocumentType.audio;
+        default:
+          return DocumentType.other;
+      }
+    }
+
+    return Documento(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      type: parseType(json['type'] as String?),
+      size: (json['size_kb'] as num).toInt() * 1024,
+      url: json['url'] as String,
+      tripId: json['travel_id'] as String?,
+      createdAt: DateTime.tryParse(json['uploaded_at'] as String),
+    );
+  }
+
   @override
   List<Object?> get props => [id, name, type, size, url, isGlobal, tripId, createdAt, category];
 }

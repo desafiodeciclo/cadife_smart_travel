@@ -199,7 +199,7 @@ void _registerLeadModule() {
 
   sl.registerLazySingleton<ILeadsRepository>(
     () => LeadsRepositoryImpl(
-      remoteDatasource: sl<ILeadsDatasource>(),
+      sl<ILeadsDatasource>(),
     ),
   );
 }

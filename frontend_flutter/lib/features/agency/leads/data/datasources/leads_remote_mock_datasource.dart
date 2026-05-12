@@ -3,11 +3,140 @@ import 'package:cadife_smart_travel/features/agency/leads/data/models/conversati
 import 'package:cadife_smart_travel/features/agency/leads/data/models/lead_api_model.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/briefing.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
-import 'package:cadife_smart_travel/features/client/historico/domain/entities/interacao.dart';
+import 'package:cadife_smart_travel/shared/domain/entities/interacao.dart';
 
+/// Dados alinhados com backend/scripts/db/seeds/02_leads.py e 03_briefings.py
 class LeadsRemoteMockDatasource implements ILeadsDatasource {
   final List<LeadApiModel> _mockLeads = [
-    // ... [Mantém os leads mockados do seu código original: Mariana Souza, Ricardo Fernandes, Camila Rocha]
+    // Daniela Costa — lead fechado (Otávio Grotto)
+    LeadApiModel(
+      id: 'otavio-grotto',
+      name: 'Otávio Grotto',
+      phone: '+55 11 96666-6666',
+      email: 'otavio.grotto@gmail.com',
+      status: LeadStatus.fechado,
+      score: LeadScore.quente,
+      completudePct: 100,
+      destino: 'Paris, França',
+      dataIda: DateTime(2026, 6, 15),
+      dataVolta: DateTime(2026, 6, 22),
+      numPessoas: 2,
+      perfil: 'Casal',
+      tipoViagem: 'Romântica / Luxo',
+      orcamentoFaixa: 'Premium (acima de 25k)',
+      passaporteValido: true,
+      experienciaInternacional: true,
+      preferencias: 'Monumentos, restaurantes estrelados, museus',
+      consultorNome: 'Daniela Costa',
+      createdAt: DateTime(2026, 1, 10),
+    ),
+    // Daniela Costa — lead proposta (Camila Santos)
+    LeadApiModel(
+      id: 'camila-santos',
+      name: 'Camila Santos',
+      phone: '+55 11 95555-5555',
+      email: 'camila.santos@gmail.com',
+      status: LeadStatus.proposta,
+      score: LeadScore.morno,
+      completudePct: 96,
+      destino: 'Tóquio, Japão',
+      dataIda: DateTime(2026, 8, 5),
+      dataVolta: DateTime(2026, 8, 19),
+      numPessoas: 4,
+      perfil: 'Amigos',
+      tipoViagem: 'Aventura / Gastronomia',
+      orcamentoFaixa: 'Alto (15k–25k)',
+      passaporteValido: true,
+      experienciaInternacional: true,
+      preferencias: 'Templos, culinária local, lojas de anime',
+      consultorNome: 'Daniela Costa',
+      createdAt: DateTime(2026, 2, 5),
+    ),
+    // Jakeline Lima — lead agendado (Rafael Mendes)
+    LeadApiModel(
+      id: 'rafael-mendes',
+      name: 'Rafael Mendes',
+      phone: '+55 11 94444-4444',
+      email: 'rafael.mendes@gmail.com',
+      status: LeadStatus.agendado,
+      score: LeadScore.quente,
+      completudePct: 92,
+      destino: 'Nova York, EUA',
+      dataIda: DateTime(2026, 7, 15),
+      dataVolta: DateTime(2026, 7, 25),
+      numPessoas: 4,
+      perfil: 'Família',
+      tipoViagem: 'Turismo / Compras',
+      orcamentoFaixa: 'Alto (15k–25k)',
+      passaporteValido: false,
+      experienciaInternacional: false,
+      preferencias: '2 adultos e 2 crianças (8 e 12 anos)',
+      consultorNome: 'Jakeline Lima',
+      createdAt: DateTime(2026, 3, 1),
+    ),
+    // Jakeline Lima — lead novo (João Silva)
+    LeadApiModel(
+      id: 'joao-silva',
+      name: 'João Silva',
+      phone: '+55 11 99999-9999',
+      email: null,
+      status: LeadStatus.novo,
+      score: LeadScore.frio,
+      completudePct: 15,
+      destino: 'Europa',
+      numPessoas: null,
+      perfil: null,
+      tipoViagem: null,
+      orcamentoFaixa: null,
+      passaporteValido: null,
+      experienciaInternacional: null,
+      preferencias: 'Ainda definindo roteiro. Interesse em Portugal ou Espanha.',
+      consultorNome: 'Jakeline Lima',
+      createdAt: DateTime(2026, 4, 20),
+    ),
+    // Diego Costa — lead em_atendimento (Maria Oliveira)
+    LeadApiModel(
+      id: 'maria-oliveira',
+      name: 'Maria Oliveira',
+      phone: '+55 11 88888-8888',
+      email: null,
+      status: LeadStatus.emAtendimento,
+      score: LeadScore.morno,
+      completudePct: 48,
+      destino: 'Cancún, México',
+      dataIda: DateTime(2026, 12, 20),
+      dataVolta: null,
+      numPessoas: 2,
+      perfil: 'Casal',
+      tipoViagem: 'Lazer',
+      orcamentoFaixa: 'Médio (8k–15k)',
+      passaporteValido: null,
+      experienciaInternacional: null,
+      consultorNome: 'Diego Costa',
+      createdAt: DateTime(2026, 4, 28),
+    ),
+    // Marcos Andrade — lead qualificado (Ana Luiza Gomes)
+    LeadApiModel(
+      id: 'ana-luiza-gomes',
+      name: 'Ana Luiza Gomes',
+      phone: '+55 11 86666-6666',
+      email: null,
+      status: LeadStatus.qualificado,
+      score: LeadScore.quente,
+      completudePct: 82,
+      destino: 'Maldivas',
+      dataIda: DateTime(2026, 9, 5),
+      dataVolta: DateTime(2026, 9, 15),
+      numPessoas: 2,
+      perfil: 'Casal',
+      tipoViagem: 'Lua de mel',
+      orcamentoFaixa: 'Alto (15k–25k)',
+      passaporteValido: true,
+      experienciaInternacional: true,
+      preferencias: 'Villa overwater, tranquilidade',
+      consultorNome: 'Marcos Andrade',
+      createdAt: DateTime(2026, 5, 3),
+    ),
   ];
 
   // --- MÉTODOS DE LEITURA (READ) ---
@@ -25,7 +154,10 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
   @override
   Future<LeadApiModel> getLeadById(String id) async {
     await Future.delayed(const Duration(milliseconds: 300));
-    return _mockLeads.firstWhere((l) => l.id == id);
+    return _mockLeads.firstWhere(
+      (l) => l.id == id,
+      orElse: () => throw Exception('Lead não encontrado: $id'),
+    );
   }
 
   @override
@@ -68,7 +200,6 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
 
   @override
   Future<ConversationSummaryApiModel?> getConversationSummary(String leadId) async {
-    // Implementação unificada: Retorna um resumo detalhado para apoiar o consultor
     await Future.delayed(const Duration(milliseconds: 300));
     return ConversationSummaryApiModel(
       id: 'mock-summary-$leadId',
@@ -95,9 +226,14 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
     await Future.delayed(const Duration(milliseconds: 500));
     final newLead = LeadApiModel(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
-      name: request.name, phone: request.phone, email: request.email,
-      status: LeadStatus.novo, score: LeadScore.frio,
-      completudePct: 10, destino: request.destino, createdAt: DateTime.now(),
+      name: request.name,
+      phone: request.phone,
+      email: request.email,
+      status: LeadStatus.novo,
+      score: LeadScore.frio,
+      completudePct: 10,
+      destino: request.destino,
+      createdAt: DateTime.now(),
     );
     _mockLeads.insert(0, newLead);
     return newLead;
@@ -108,11 +244,19 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
     await Future.delayed(const Duration(milliseconds: 600));
     final newLead = LeadApiModel(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
-      name: request.name, phone: request.phone, email: request.email,
-      status: LeadStatus.novo, score: LeadScore.morno,
-      completudePct: 15, destino: request.destino, dataIda: request.dataIda,
-      numPessoas: request.numPessoas, orcamentoFaixa: request.orcamentoFaixa,
-      preferencias: request.preferencias, consultorNome: 'Você', createdAt: DateTime.now(),
+      name: request.name,
+      phone: request.phone,
+      email: request.email,
+      status: LeadStatus.novo,
+      score: LeadScore.morno,
+      completudePct: 15,
+      destino: request.destino,
+      dataIda: request.dataIda,
+      numPessoas: request.numPessoas,
+      orcamentoFaixa: request.orcamentoFaixa,
+      preferencias: request.preferencias,
+      consultorNome: 'Você',
+      createdAt: DateTime.now(),
     );
     _mockLeads.insert(0, newLead);
     return newLead;
@@ -123,8 +267,7 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
   @override
   Future<void> toggleAya(String leadId, {required bool ativo, String? motivo}) async {
     await Future.delayed(const Duration(milliseconds: 300));
-    // Simula o log de desativação da IA no console para debug
-    print('DEBUG: AYA ${ativo ? 'ativada' : 'desativada'} para lead $leadId. Motivo: $motivo');
+    // Simulação de alteração de estado da IA concluída
   }
 
   @override
@@ -137,7 +280,7 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
     await Future.delayed(const Duration(milliseconds: 500));
     final index = _mockLeads.indexWhere((l) => l.id == id);
     if (index == -1) throw Exception('Lead não encontrado');
-    
+
     final updated = _mockLeads[index].copyWith(
       consultorNome: consultorNome,
       updatedAt: DateTime.now(),
@@ -158,7 +301,7 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
     await Future.delayed(const Duration(milliseconds: 600));
     final index = _mockLeads.indexWhere((l) => l.id == id);
     if (index == -1) throw Exception('Lead não encontrado');
-    
+
     final old = _mockLeads[index];
     final updated = old.copyWith(
       name: name ?? old.name,

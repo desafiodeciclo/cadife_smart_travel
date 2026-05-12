@@ -89,3 +89,7 @@ class UserProfileUpdate(BaseModel):
 
 class FcmTokenRequest(BaseModel):
     fcm_token: str
+
+
+class FcmTokenResponse(BaseModel):
+    message: str

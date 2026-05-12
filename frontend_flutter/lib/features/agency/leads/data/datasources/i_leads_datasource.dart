@@ -2,7 +2,7 @@ import 'package:cadife_smart_travel/features/agency/leads/data/models/conversati
 import 'package:cadife_smart_travel/features/agency/leads/data/models/lead_api_model.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/briefing.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
-import 'package:cadife_smart_travel/features/client/historico/domain/entities/interacao.dart';
+import 'package:cadife_smart_travel/shared/domain/entities/interacao.dart';
 
 /// Contrato de fonte de dados para a gestão de Leads.
 /// Define as operações entre o App e o Backend da Cadife Smart Travel.

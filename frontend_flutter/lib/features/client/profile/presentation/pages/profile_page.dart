@@ -10,11 +10,15 @@ import 'package:cadife_smart_travel/features/settings/domain/entities/user_prefe
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cadife_smart_travel/providers/auth_provider.dart'; // Importado
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart'; // Importado para formatar datas
 
 class ProfileScreen extends ConsumerStatefulWidget {
-  const ProfileScreen({super.key});
+  const ProfileScreen({this.initialTabIndex = 0, super.key});
+
+  final int initialTabIndex;
 
   @override
   ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
@@ -45,7 +49,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(
+      length: 3,
+      vsync: this,
+      initialIndex: widget.initialTabIndex,
+    );
   }
 
   @override
@@ -189,7 +197,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
 
   @override
   Widget build(BuildContext context) {
-    final userAsync = ref.watch(userProfileProvider);
+    final userAsync = ref.watch(currentUserProvider);
     final cadife = context.cadife;
 
     return Scaffold(

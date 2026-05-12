@@ -2,7 +2,7 @@ import 'package:cadife_smart_travel/core/error/failures.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/briefing.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/conversation_summary.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
-import 'package:cadife_smart_travel/features/client/historico/domain/entities/interacao.dart';
+import 'package:cadife_smart_travel/shared/domain/entities/interacao.dart';
 import 'package:fpdart/fpdart.dart';
 
 /// Contrato do Repositório de Leads.
@@ -42,14 +42,12 @@ abstract class ILeadsRepository {
 
   /// Ativa ou desativa o bot Aya para um lead específico.
   /// Retorna [Unit] (vazio funcional) em caso de sucesso.
-  /// (Funcionalidade: developer)
   Future<Either<Failure, Unit>> toggleAya(String leadId, {required bool ativo, String? motivo});
 
   /// Atualiza o status do lead no pipeline de vendas.
   Future<Either<Failure, Lead>> updateLeadStatus(String id, LeadStatus newStatus);
 
   /// Atualiza múltiplos campos do lead (Nome, Telefone, Email, etc).
-  /// (Funcionalidade: developer)
   Future<Either<Failure, Lead>> updateLead({
     required String id,
     String? name,
@@ -58,4 +56,7 @@ abstract class ILeadsRepository {
     LeadStatus? status,
     LeadScore? score,
   });
+
+  /// Reatribui um lead para outro consultor.
+  Future<Either<Failure, Lead>> reassignLead(String id, String consultorNome);
 }

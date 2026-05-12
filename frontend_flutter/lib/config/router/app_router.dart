@@ -16,6 +16,8 @@ import 'package:cadife_smart_travel/features/agency/leads/presentation/pages/lea
 import 'package:cadife_smart_travel/features/agency/leads/presentation/pages/lead_edit_page.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/pages/leads_page.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/pages/manual_lead_create_page.dart';
+import 'package:cadife_smart_travel/features/agency/offers/presentation/screens/offer_form_screen.dart';
+import 'package:cadife_smart_travel/features/agency/offers/presentation/screens/offers_management_screen.dart';
 import 'package:cadife_smart_travel/features/agency/propostas/presentation/pages/proposal_create_page.dart';
 import 'package:cadife_smart_travel/features/agency/propostas/presentation/pages/proposals_page.dart';
 */
@@ -249,6 +251,35 @@ final routerProvider = Provider<GoRouter>((ref) {
             ],
           ),
           GoRoute(
+            path: '/agency/offers',
+            name: 'agency_offers',
+            pageBuilder: (context, state) => SlideTransitionPage(
+              name: state.name,
+              child: const OffersManagementScreen(),
+            ),
+            routes: [
+              GoRoute(
+                path: 'create',
+                name: 'agency_offer_create',
+                pageBuilder: (context, state) => SlideTransitionPage(
+                  name: state.name,
+                  child: const OfferFormScreen(),
+                ),
+              ),
+              GoRoute(
+                path: ':offerId/edit',
+                name: 'agency_offer_edit',
+                pageBuilder: (context, state) {
+                  final offerId = state.pathParameters['offerId']!;
+                  return SlideTransitionPage(
+                    name: state.name,
+                    child: OfferFormScreen(offerId: offerId),
+                  );
+                },
+              ),
+            ],
+          ),
+          GoRoute(
             path: '/agency/agenda',
             name: 'agency_agenda',
             pageBuilder: (context, state) => SlideTransitionPage(
@@ -421,23 +452,13 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/client/profile',
             name: 'client_profile',
-            pageBuilder: (context, state) => SlideTransitionPage(
-              name: state.name,
-              child: const client_profile.ProfileScreen(),
-            ),
-            routes: [
-              GoRoute(
-                path: 'diary/:tripId',
-                name: 'client_diary_detail',
-                pageBuilder: (context, state) {
-                  final tripId = state.pathParameters['tripId']!;
-                  return SlideTransitionPage(
-                    name: state.name,
-                    child: TravelJournalDetailScreen(tripId: tripId),
-                  );
-                },
-              ),
-            ],
+            pageBuilder: (context, state) {
+              final tab = int.tryParse(state.uri.queryParameters['tab'] ?? '0') ?? 0;
+              return SlideTransitionPage(
+                name: state.name,
+                child: client_profile.ProfileScreen(initialTabIndex: tab),
+              );
+            },
           ),
           GoRoute(
             path: '/client/settings',
@@ -448,6 +469,19 @@ final routerProvider = Provider<GoRouter>((ref) {
             ),
           ),
         ],
+      ),
+
+      // Diary detail — full-screen (no bottom nav), pushable from outside ShellRoute
+      GoRoute(
+        path: '/client/profile/diary/:tripId',
+        name: 'client_diary_detail',
+        pageBuilder: (context, state) {
+          final tripId = state.pathParameters['tripId']!;
+          return SlideTransitionPage(
+            name: state.name,
+            child: TravelJournalDetailScreen(tripId: tripId),
+          );
+        },
       ),
 
       // Travel Details & Calendar — full-screen detail (no bottom nav)

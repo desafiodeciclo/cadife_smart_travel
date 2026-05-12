@@ -70,7 +70,7 @@ class _TravelJournalDetailScreenState
         elevation: 0,
         leading: IconButton(
           icon: Icon(LucideIcons.arrowLeft, color: cadife.textPrimary),
-          onPressed: () => Navigator.maybePop(context),
+          onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
           _tripName(),

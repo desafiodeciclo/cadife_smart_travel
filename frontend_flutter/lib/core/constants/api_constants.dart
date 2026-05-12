@@ -28,6 +28,7 @@ class ApiConstants {
   static String leadById(String id) => '/leads/$id';
   static String leadBriefing(String id) => '/leads/$id/briefing';
   static String leadAyaToggle(String id) => '/leads/$id/aya-toggle';
+  static String leadReassign(String id) => '/leads/$id/reassign';
   static const String leadsManual = '/leads/manual';
 
   // ── Agenda ─────────────────────────────────────────────
@@ -54,6 +55,9 @@ class ApiConstants {
   // ── IA ─────────────────────────────────────────────────
   static const String iaProcessar = '/ia/processar';
   static const String iaExtrairBriefing = '/ia/extrair-briefing';
+
+  // ── Travels ────────────────────────────────────────────
+  static String travelDocuments(String travelId) => '/travels/$travelId/documents';
 
   // ── Webhook (para health check) ────────────────────────
   static const String webhookHealth = '/health';

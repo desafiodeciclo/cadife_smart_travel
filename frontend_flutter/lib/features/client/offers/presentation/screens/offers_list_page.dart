@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/client/offers/presentation/providers/offers_filter_provider.dart';
 import 'package:cadife_smart_travel/features/client/offers/presentation/providers/offers_provider.dart';
@@ -11,11 +13,48 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-class OffersListPage extends ConsumerWidget {
+class OffersListPage extends ConsumerStatefulWidget {
   const OffersListPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<OffersListPage> createState() => _OffersListPageState();
+}
+
+class _OffersListPageState extends ConsumerState<OffersListPage> {
+  final _searchController = TextEditingController();
+  Timer? _debounce;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _onSearchChanged(String value) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 400), () {
+      final updated = ref.read(offersFilterProvider).copyWith(searchQuery: value);
+      ref.read(offersFilterProvider.notifier).state = updated;
+      _syncFilters(updated);
+    });
+  }
+
+  void _syncFilters(OffersFilters filters) {
+    ref.read(offersProvider.notifier).applyFilters(
+      OffersFilterState(
+        search: filters.searchQuery.isEmpty ? null : filters.searchQuery,
+        destination: filters.destination,
+        minPrice: filters.minPrice > 0 ? filters.minPrice : null,
+        maxPrice: filters.maxPrice < 50000.0 ? filters.maxPrice : null,
+        minDays: filters.minDays,
+        maxDays: filters.maxDays,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final offersAsync = ref.watch(offersProvider);
     final filters = ref.watch(offersFilterProvider);
 
@@ -27,62 +66,67 @@ class OffersListPage extends ConsumerWidget {
       ],
       body: Column(
         children: [
-          // Busca (Visual apenas por enquanto)
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: ShadInput(
+              controller: _searchController,
               placeholder: const Text('Buscar destinos ou pacotes...'),
-              onChanged: (v) {
-                ref.read(offersFilterProvider.notifier).update((state) => state.copyWith(searchQuery: v));
-              },
+              onChanged: _onSearchChanged,
               leading: const Padding(
                 padding: EdgeInsets.all(12.0),
                 child: Icon(LucideIcons.search, size: 16),
               ),
-              trailing: Padding(
-                padding: const EdgeInsets.only(right: 8.0),
-                child: ShadIconButton.ghost(
-                  icon: Icon(
-                    LucideIcons.slidersHorizontal,
-                    size: 16,
-                    color: filters != const OffersFilters() ? context.cadife.primary : null,
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 1,
+                    height: 20,
+                    color: context.cadife.cardBorder,
                   ),
-                  onPressed: () async {
-                    final result = await showModalBottomSheet<Map<String, dynamic>>(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.transparent,
-                      builder: (context) => OffersFilterSheet(
-                        initialDestination: filters.destination,
-                        initialCategories: filters.categories,
-                        initialMinPrice: filters.minPrice,
-                        initialMaxPrice: filters.maxPrice,
-                        initialStartDate: filters.startDate,
-                        initialEndDate: filters.endDate,
-                      ),
-                    );
-
-                    if (result != null) {
-                      ref.read(offersFilterProvider.notifier).update(
-                        (state) => state.copyWith(
-                          destination: result['destination'],
-                          categories: result['categories'],
-                          minPrice: result['minPrice'],
-                          maxPrice: result['maxPrice'],
-                          startDate: result['startDate'],
-                          endDate: result['endDate'],
-                          clearDestination: result['destination'] == null,
-                          clearDates: result['startDate'] == null,
+                  ShadButton.ghost(
+                    child: Icon(LucideIcons.listFilter,
+                        size: 20, color: context.cadife.primary),
+                    onPressed: () async {
+                      final result = await showModalBottomSheet<Map<String, dynamic>>(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (context) => OffersFilterSheet(
+                          initialDestination: filters.destination,
+                          initialCategories: filters.categories,
+                          initialMinPrice: filters.minPrice,
+                          initialMaxPrice: filters.maxPrice,
+                          initialStartDate: filters.startDate,
+                          initialEndDate: filters.endDate,
+                          initialMinDays: filters.minDays,
+                          initialMaxDays: filters.maxDays,
                         ),
                       );
-                    }
-                  },
-                ),
+
+                      if (result != null) {
+                        final updated = ref.read(offersFilterProvider).copyWith(
+                          destination: result['destination'] as String?,
+                          categories: result['categories'] as List<String>?,
+                          minPrice: result['minPrice'] as double?,
+                          maxPrice: result['maxPrice'] as double?,
+                          startDate: result['startDate'] as DateTime?,
+                          endDate: result['endDate'] as DateTime?,
+                          minDays: result['minDays'] as int?,
+                          maxDays: result['maxDays'] as int?,
+                          clearDestination: result['destination'] == null,
+                          clearDates: result['startDate'] == null,
+                          clearDuration: result['minDays'] == null,
+                        );
+                        ref.read(offersFilterProvider.notifier).state = updated;
+                        _syncFilters(updated);
+                      }
+                    },
+                  ),
+                ],
               ),
             ),
           ),
-
-
 
           // Lista / Grid
           Expanded(
@@ -94,7 +138,7 @@ class OffersListPage extends ConsumerWidget {
                   );
                 }
                 return RefreshIndicator(
-                  onRefresh: () => ref.refresh(offersProvider.future),
+                  onRefresh: () => ref.read(offersProvider.notifier).loadOffers(),
                   child: CustomScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     slivers: [

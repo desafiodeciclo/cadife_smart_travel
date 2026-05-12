@@ -1,7 +1,6 @@
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/client/status/domain/entities/checkpoint_item.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 /// Ordered list of all 7 travel milestones.
 /// Activated checkpoints show a coloured icon + timestamp; pending ones are grey.

@@ -40,7 +40,7 @@ from app.jobs.conversation_summary_retry_job import run_conversation_summary_ret
 from app.jobs.aya_alert_job import alert_aya_disabled_leads
 
 # Routers
-from app.routes import admin, agenda, auth, documents, ia, leads, offers, propostas, webhook, suitcase, diary, users
+from app.routes import admin, agenda, auth, documents, ia, leads, offers, propostas, webhook, suitcase, diary, users, travels
 
 # Middlewares
 from app.presentation.middlewares.request_id import RequestIdMiddleware
@@ -159,6 +159,7 @@ app.include_router(admin.router)
 app.include_router(suitcase.router)
 app.include_router(offers.router)
 app.include_router(diary.router)
+app.include_router(travels.router)
 
 @app.get("/health", tags=["Health"])
 async def health():
