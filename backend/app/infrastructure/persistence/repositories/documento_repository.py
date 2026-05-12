@@ -60,6 +60,18 @@ class DocumentoRepository(AbstractRepository[Documento], IDocumentoRepository):
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
 
+    async def list_by_travel(
+        self, travel_id: uuid.UUID, include_deleted: bool = False
+    ) -> list[Documento]:
+        """Lists all documents associated with a travel."""
+        stmt = select(Documento).where(Documento.travel_id == travel_id)
+        if not include_deleted:
+            stmt = stmt.where(Documento.deleted_at.is_(None))
+
+        stmt = stmt.order_by(Documento.criado_em.desc())
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
+
     async def soft_delete(self, documento_id: uuid.UUID) -> None:
         """Marks a document as deleted for retention purposes (spec.md §1.2)."""
         documento = await self.get_by_id(documento_id)

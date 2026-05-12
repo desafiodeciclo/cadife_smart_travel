@@ -1,5 +1,6 @@
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/client/documentos/presentation/providers/documentos_notifier.dart';
+import 'package:cadife_smart_travel/features/client/documentos/presentation/providers/documents_by_travel_provider.dart';
 import 'package:cadife_smart_travel/features/client/documentos/presentation/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -36,7 +37,7 @@ class _TripDocumentsPageState extends ConsumerState<TripDocumentsPage> {
   @override
   Widget build(BuildContext context) {
     final tripsAsync = ref.watch(tripsWithDocumentsProvider);
-    final docsAsync = ref.watch(tripDocumentsProvider(widget.tripId));
+    final docsAsync = ref.watch(documentsByTravelProvider(widget.tripId));
 
     return tripsAsync.maybeWhen(
       data: (trips) {

@@ -145,7 +145,7 @@ class NotificationQueueService:
             retry_count_exhausted=job.retry_count,
         )
         db.add(dlq_entry)
-        await db.delete(job)
+        job.status = "moved_to_dlq"
         await db.commit()
         await db.refresh(dlq_entry)
 

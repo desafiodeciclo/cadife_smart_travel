@@ -81,6 +81,8 @@ class LeadsRepositoryImpl implements ILeadsRepository {
     }
   }
 
+  // --- OPERAÇÕES E ATUALIZAÇÃO (UPDATE/ACTION) ---
+
   @override
   Future<Either<Failure, Unit>> toggleAya(String leadId, {required bool ativo, String? motivo}) async {
     try {

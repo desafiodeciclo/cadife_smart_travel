@@ -117,20 +117,6 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
     {
         "type": "function",
         "function": {
-            "name": "check_existing_lead",
-            "description": "Verifica se um cliente já existe pelo telefone.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "phone": {"type": "string", "description": "Telefone internacional."}
-                },
-                "required": ["phone"],
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
             "name": "persist_lead_data",
             "description": "Salva ou atualiza dados confirmados do briefing no CRM.",
             "parameters": {
@@ -163,22 +149,6 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
             },
         },
     },
-    {
-        "type": "function",
-        "function": {
-            "name": "generate_travel_image",
-            "description": "Gera uma imagem inspiracional do destino.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "destino": {"type": "string"},
-                    "perfil": {"type": "string"},
-                    "estilo": {"type": "string", "default": "luxo"}
-                },
-                "required": ["destino"],
-            },
-        },
-    },
 ]
 
 # ── Implementations ──────────────────────────────────────────────────────────
@@ -204,16 +174,79 @@ async def _get_lead_context_by_wa_id(wa_id: str, db: Optional[AsyncSession]) -> 
         } if briefing else {}
 
         interacoes = await lead_service.get_recent_interacoes(db, lead.id, limit=5)
-        return json.dumps({
-            "exists": True,
-            "nome": lead.nome,
-            "status": lead.status.value if lead.status else None,
-            "briefing": briefing_data,
-            "history_count": len(interacoes)
-        })
+        history = [
+            {
+                "from": "cliente" if row.get("mensagem_cliente") else "aya",
+                "text": row.get("mensagem_cliente") or row.get("mensagem_ia", ""),
+            }
+            for row in interacoes
+            if row.get("mensagem_cliente") or row.get("mensagem_ia")
+        ]
+
+        return json.dumps(
+            {
+                "exists": True,
+                "is_new_lead": False,
+                "lead_id": str(lead.id),
+                "nome": lead.nome,
+                "status": lead.status.value if lead.status else None,
+                "score": lead.score.value if lead.score else None,
+                "briefing": briefing_data,
+                "recent_history": history,
+            }
+        )
     except Exception as exc:
-        logger.error("tool_context_failed", error=str(exc))
-        return json.dumps({"error": "lookup_failed"})
+        logger.error("tool_get_lead_context_failed", wa_id=wa_id, error=str(exc))
+        return json.dumps({"exists": False, "error": "crm_lookup_failed"})
+
+
+async def _check_availability(args: dict[str, Any]) -> str:
+    from datetime import datetime, timedelta
+
+    duration = int(args.get("duration_minutes", 45))
+    preferred_date_str: Optional[str] = args.get("preferred_date")
+
+    try:
+        base = (
+            datetime.strptime(preferred_date_str, "%Y-%m-%d")
+            if preferred_date_str
+            else datetime.now()
+        )
+    except (ValueError, TypeError):
+        base = datetime.now()
+
+    slots = []
+    day_offset = 1
+    while len(slots) < 3 and day_offset <= 14:
+        candidate = base + timedelta(days=day_offset)
+        day_offset += 1
+        if candidate.weekday() > 4:  # pula fim de semana
+            continue
+        for hour in [9, 11, 14, 16]:
+            slot_dt = candidate.replace(hour=hour, minute=0, second=0, microsecond=0)
+            slots.append({
+                "datetime": slot_dt.strftime("%Y-%m-%d %H:%M"),
+                "duration_minutes": duration,
+                "available": True,
+            })
+            if len(slots) >= 3:
+                break
+
+    return json.dumps({
+        "status": "placeholder",
+        "note": "Integração Google Calendar pendente. Slots simulados.",
+        "slots": slots,
+    })
+
+
+async def _query_project_scope(query: str) -> str:
+    try:
+        context = await rag_service.retrieve_context(query, k=3)
+        return context if context else "Informação não encontrada na base de conhecimento."
+    except Exception as exc:
+        logger.error("tool_rag_failed", error=str(exc))
+        return json.dumps({"error": "rag_lookup_failed"})
+
 
 async def _persist_lead_data(phone: str, data: dict[str, Any], db: Optional[AsyncSession]) -> str:
     if not db: return json.dumps({"success": False, "reason": "db_unavailable"})
@@ -250,7 +283,8 @@ async def execute_tool(tool_name: str, tool_args: dict[str, Any], db: Optional[A
 
     if tool_name == "persist_lead_data":
         return await _persist_lead_data(tool_args["phone"], tool_args["data"], db)
-    
-    # ... demais mapeamentos (check_availability, generate_travel_image, etc)
+
+    if tool_name == "check_availability":
+        return await _check_availability(tool_args)
     
     return json.dumps({"error": f"Tool {tool_name} not implemented."})

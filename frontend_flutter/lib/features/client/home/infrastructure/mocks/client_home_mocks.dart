@@ -47,12 +47,13 @@ class ClientHomeMocks {
         roteiro: 'Uma jornada inesquecível por Paris, a Cidade Luz. Exploraremos os principais monumentos, como a Torre Eiffel e o Museu do Louvre, além de caminhadas charmosas pelo bairro de Le Marais e jantares em bistrôs típicos franceses.',
       );
 
+  /// Alinhado com backend/scripts/db/seeds/01_users.py — Daniela Costa
   static ConsultantInfo mockConsultant() => const ConsultantInfo(
-        id: 'consultant-001',
-        name: 'João Santos',
-        phone: '+5511999887766',
-        photoUrl: 'https://via.placeholder.com/150?text=João',
-        email: 'joao.santos@cadife.com',
+        id: 'daniela-costa',
+        name: 'Daniela Costa',
+        phone: '+5511977777777',
+        photoUrl: 'https://i.pravatar.cc/150?u=daniela',
+        email: 'daniela.costa@cadifetoure.com.br',
       );
 
   static List<ClientDocument> mockDocuments() => [

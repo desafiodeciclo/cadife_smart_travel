@@ -95,13 +95,15 @@ async def execute(payload: dict, db: AsyncSession) -> None:
         return
 
     # ── Step 2: Advance status NOVO → EM_ATENDIMENTO ─────────────────────
-    if lead.status == LeadStatus.novo:
+    is_new_lead = lead.status == LeadStatus.novo
+    if is_new_lead:
         await lead_service.update_lead_status(db, lead, LeadStatus.em_atendimento)
         logger.info(
             "lead_status_updated",
             lead_id=str(lead.id),
             new_status=LeadStatus.em_atendimento,
         )
+        await _notify_new_lead_creation(db, lead)
 
     lead_id = lead.id
 
@@ -204,8 +206,12 @@ async def execute(payload: dict, db: AsyncSession) -> None:
         except Exception as exc:
             try:
                 await db.rollback()
-            except Exception:
-                pass
+            except Exception as rollback_exc:
+                logger.error(
+                    "db_rollback_failed",
+                    lead_id=lead_id_str,
+                    error=str(rollback_exc),
+                )
             logger.error("briefing_update_error", lead_id=lead_id_str, error=str(exc))
 
     # ── Step 6: Persist interaction record ─────────────────────────────
@@ -225,6 +231,77 @@ async def execute(payload: dict, db: AsyncSession) -> None:
     # ── Step 8: Reply via WhatsApp ──────────────────────────────────────
     send_result = await whatsapp_service.send_message(phone, reply)
     await lead_service.update_interacao_send_result(db, interacao, send_result)
+
+    # ── Step 9: Detect closed sessions and generate conversation summaries ──
+    # Runs after the interaction is persisted so the current message is included.
+    # Non-blocking: failures are caught and logged without affecting the main flow.
+    try:
+        from app.services.conversation_summary_service import summarise_closed_sessions
+
+        all_interacoes = await lead_service.get_recent_interacoes(db, lead.id, limit=500)
+        await summarise_closed_sessions(db, lead.id, all_interacoes)
+    except Exception as exc:
+        logger.warning(
+            "conversation_summary_trigger_failed",
+            lead_id=str(lead.id),
+            error=str(exc),
+        )
+
+
+async def _notify_new_lead_creation(db: AsyncSession, lead: Lead) -> None:
+    """Send FCM push to the assigned consultor or next in round-robin queue.
+
+    Round-robin: increments a Redis counter and picks consultores[idx % count].
+    Falls back to the first available consultor when Redis is unavailable.
+    """
+    from sqlalchemy import select
+
+    # Honour explicit assignment first
+    target_token: str | None = None
+    if lead.consultor_id:
+        result = await db.execute(
+            select(User).where(User.id == lead.consultor_id, User.fcm_token.isnot(None))
+        )
+        consultor = result.scalar_one_or_none()
+        if consultor:
+            target_token = consultor.fcm_token
+
+    if not target_token:
+        # Round-robin across active consultores with FCM tokens
+        result = await db.execute(
+            select(User)
+            .where(
+                User.perfil == "consultor",
+                User.fcm_token.isnot(None),
+                User.is_active.is_(True),
+            )
+            .order_by(User.criado_em)
+        )
+        consultores = result.scalars().all()
+        if consultores:
+            try:
+                from app.infrastructure.cache.redis_client import get_redis
+
+                redis = await get_redis()
+                idx = await redis.incr("rr:consultor:new_lead")
+                chosen = consultores[(idx - 1) % len(consultores)]
+            except Exception:
+                chosen = consultores[0]
+            target_token = chosen.fcm_token
+
+    if not target_token:
+        logger.warning("no_consultor_token_for_new_lead", lead_id=str(lead.id))
+        return
+
+    from app.services.fcm_service import send_push_notification
+
+    await send_push_notification(
+        fcm_token=target_token,
+        title="Novo lead recebido",
+        body=f"Novo contato via WhatsApp: {lead.nome or lead.telefone}",
+        data={"type": "new_lead", "lead_id": str(lead.id)},
+    )
+    logger.info("fcm_new_lead_sent", lead_id=str(lead.id))
 
 
 # --- Funções Auxiliares de Notificação ---

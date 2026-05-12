@@ -102,7 +102,7 @@ class AgendaNotifier extends AsyncNotifier<List<Agendamento>> {
     return result.fold(
       (failure) => false,
       (updated) {
-        final current = state.value ?? [];
+        final current = state.whenData((list) => list).valueOrNull ?? [];
         state = AsyncData(
           current.map((a) => a.id == id ? updated : a).toList(),
         );
@@ -138,7 +138,7 @@ class AgendaNotifier extends AsyncNotifier<List<Agendamento>> {
     return result.fold(
       (failure) => false,
       (created) {
-        final current = state.value ?? [];
+        final current = state.whenData((list) => list).valueOrNull ?? [];
         state = AsyncData([...current, created]);
         return true;
       },
