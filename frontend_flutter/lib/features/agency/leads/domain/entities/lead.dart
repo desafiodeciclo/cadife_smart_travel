@@ -8,6 +8,7 @@ class Lead extends Equatable {
     required this.status,
     required this.score,
     required this.completudePct,
+    this.ayaAtivo = true,
     this.email,
     this.origem,
     this.destino,
@@ -32,6 +33,7 @@ class Lead extends Equatable {
   final String name;
   final String phone;
   final String? email;
+  final bool ayaAtivo;
   final LeadOrigem? origem;
   final LeadStatus status;
   final LeadScore score;
@@ -58,10 +60,9 @@ class Lead extends Equatable {
     name: json['name'] as String,
     phone: json['phone'] as String,
     email: json['email'] as String?,
-    status: LeadStatus.values.firstWhere(
-      (e) => e.name == json['status'],
-      orElse: () => LeadStatus.novo,
-    ),
+    ayaAtivo: json['aya_ativo'] as bool? ?? true,
+    origem: json['origem'] != null ? LeadOrigem.fromSnakeCase(json['origem'] as String) : null,
+    status: LeadStatus.fromSnakeCase(json['status'] as String? ?? 'novo'),
     score: LeadScore.values.firstWhere(
       (e) => e.name == json['score'],
       orElse: () => LeadScore.frio,
@@ -98,7 +99,8 @@ class Lead extends Equatable {
     'name': name,
     'phone': phone,
     'email': email,
-    'status': status.name,
+    'aya_ativo': ayaAtivo,
+    'status': status.name.replaceAllMapped(RegExp(r'[A-Z]'), (match) => '_${match.group(0)!.toLowerCase()}'),
     'score': score.name,
     'completude_pct': completudePct,
     'destino': destino,
@@ -121,14 +123,15 @@ class Lead extends Equatable {
 
   @override
   List<Object?> get props => [
-    id, 
-    name, 
-    phone, 
-    status, 
-    score, 
-    completudePct, 
-    assignedTo, 
-    consultorNome, 
+    id,
+    name,
+    phone,
+    status,
+    score,
+    completudePct,
+    ayaAtivo,
+    assignedTo,
+    consultorNome,
     consultorAvatar,
     imageUrl,
   ];
@@ -141,7 +144,19 @@ enum LeadStatus {
   agendado,
   proposta,
   fechado,
-  perdido,
+  perdido;
+
+  static LeadStatus fromSnakeCase(String value) {
+    return LeadStatus.values.firstWhere(
+      (e) => e.name == value || 
+             e.name.replaceAllMapped(RegExp(r'[A-Z]'), (match) => '_${match.group(0)!.toLowerCase()}') == value,
+      orElse: () => LeadStatus.novo,
+    );
+  }
+
+  String toSnakeCase() {
+    return name.replaceAllMapped(RegExp(r'[A-Z]'), (match) => '_${match.group(0)!.toLowerCase()}');
+  }
 }
 
 enum LeadScore { quente, morno, frio }
@@ -156,6 +171,18 @@ enum LeadOrigem {
 
   final String label;
   const LeadOrigem(this.label);
+
+  static LeadOrigem fromSnakeCase(String value) {
+    return LeadOrigem.values.firstWhere(
+      (e) => e.name == value || 
+             e.name.replaceAllMapped(RegExp(r'[A-Z]'), (match) => '_${match.group(0)!.toLowerCase()}') == value,
+      orElse: () => LeadOrigem.manual,
+    );
+  }
+
+  String toSnakeCase() {
+    return name.replaceAllMapped(RegExp(r'[A-Z]'), (match) => '_${match.group(0)!.toLowerCase()}');
+  }
 }
 
 class CreateLeadRequest extends Equatable {
@@ -215,7 +242,7 @@ class ManualLeadCreate extends Equatable {
     'name': name,
     'phone': phone,
     'email': email,
-    'origem': origem.name,
+    'origem': origem.toSnakeCase(),
     'consultor_id': consultorId,
     'force_create': forceCreate,
     'destino': destino,

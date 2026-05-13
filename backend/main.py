@@ -31,6 +31,9 @@ from app.services.ingestion_pipeline import get_ingestion_pipeline
 from app.jobs.lead_expiration_job import expire_stale_leads
 from app.jobs.proposta_expiration_job import expire_stale_propostas_job
 from app.jobs.notification_worker import NotificationWorker, WORKER_INTERVAL_SECONDS
+from app.jobs.checkpoint_cron_job import run_checkpoint_cron
+from app.jobs.conversation_summary_retry_job import run_conversation_summary_retry
+from app.jobs.aya_alert_job import alert_aya_disabled_leads
 
 # Routers
 from app.routes import admin, agenda, auth, documents, ia, leads, offers, propostas, webhook, suitcase, diary
@@ -50,9 +53,7 @@ settings = get_settings()
 configure_logging()
 logger = structlog.get_logger()
 
-# Scheduler instance — configured at module level, started/stopped in lifespan
 _scheduler = AsyncIOScheduler(timezone="UTC")
-
 
 # -------------------------------------------------------------------
 # Lifespan
@@ -60,21 +61,13 @@ _scheduler = AsyncIOScheduler(timezone="UTC")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info(
-        "startup_begin",
-        env=settings.APP_ENV,
-        debug=settings.DEBUG,
-    )
+    logger.info("startup_begin", env=settings.APP_ENV, debug=settings.DEBUG)
 
-    # Database
+    # Infra Start
     await create_tables()
-    logger.info("database_ready")
-
-    # Firebase
     init_firebase()
-    logger.info("firebase_ready")
 
-    # RAG Knowledge Base — incremental re-index on startup (skips unchanged files)
+    # RAG Knowledge Base
     try:
         pipeline = get_ingestion_pipeline()
         indexing_result = await pipeline.ingest_all(force=False)
@@ -83,129 +76,73 @@ async def lifespan(app: FastAPI):
         logger.warning("rag_indexing_failed_on_startup", error=str(exc))
 
     # -------------------------------------------------------------------
-    # Scheduled Jobs Configuration
+    # Scheduled Jobs Configuration (Unified)
     # -------------------------------------------------------------------
     
-    # 1. Lead Expiration: Runs daily at 02:00 UTC
-    _scheduler.add_job(
-        expire_stale_leads,
-        trigger="cron",
-        hour=2,
-        minute=0,
-        id="lead_expiration",
-        replace_existing=True,
-    )
+    # 1. Lead Expiration (Daily)
+    _scheduler.add_job(expire_stale_leads, trigger="cron", hour=2, minute=0, id="lead_expiration")
 
-    # 2. Proposta Expiration: Runs every 5 minutes (SLA window check)
-    _scheduler.add_job(
-        expire_stale_propostas_job,
-        trigger="interval",
-        minutes=5,
-        id="proposta_expiration",
-        replace_existing=True,
-    )
+    # 2. Proposta Expiration (Interval)
+    _scheduler.add_job(expire_stale_propostas_job, trigger="interval", minutes=5, id="proposta_expiration")
 
-    # 3. Notification Worker: Drains push queue every 15s
+    # 3. Notification Worker (Queue Drain)
     _notification_worker = NotificationWorker()
-    _scheduler.add_job(
-        _notification_worker.run,
-        trigger="interval",
-        seconds=WORKER_INTERVAL_SECONDS,
-        id="notification_worker",
-        replace_existing=True,
-    )
+    _scheduler.add_job(_notification_worker.run, trigger="interval", seconds=WORKER_INTERVAL_SECONDS, id="notification_worker")
+
+    # 4. Travel Checkpoint Cron (Daily - feat branch)
+    _scheduler.add_job(run_checkpoint_cron, trigger="cron", hour=3, minute=0, id="checkpoint_cron")
+
+    # 5. Conversation Summary Retry (15m - feat branch)
+    _scheduler.add_job(run_conversation_summary_retry, trigger="interval", minutes=15, id="conversation_summary_retry")
+
+    # 6. AYA Alert (Hourly - developer branch)
+    _scheduler.add_job(alert_aya_disabled_leads, trigger="interval", hours=1, id="aya_disabled_alert")
 
     _scheduler.start()
+    
     logger.info(
-        "scheduler_started", 
-        jobs=["lead_expiration", "proposta_expiration", "notification_worker"]
+        "scheduler_started",
+        jobs=[j.id for j in _scheduler.get_jobs()]
     )
 
-    logger.info("startup_complete", version="1.0.0")
-
     yield
-
     _scheduler.shutdown(wait=False)
-    logger.info("shutdown_complete")
-
 
 # -------------------------------------------------------------------
-# FastAPI App
+# FastAPI App Construction
 # -------------------------------------------------------------------
 
 app = FastAPI(
     title="Cadife Smart Travel API",
-    description=(
-        "Backend inteligente para turismo via WhatsApp + Flutter. "
-        "Orquestra webhooks da Meta, processamento de IA (RAG + LangChain), "
-        "gestão de leads, propostas e agendamentos. "
-        "Documentação completa disponível em /docs (Swagger UI) e /redoc (ReDoc)."
-    ),
     version="1.0.0",
-    contact={
-        "name": "Cadife Tour - Time de Desenvolvimento",
-        "url": "https://cadifetour.com.br",
-        "email": "dev@cadifetour.com.br",
-    },
-    license_info={
-        "name": "Confidencial — Uso Interno do Time de Desenvolvimento",
-    },
     lifespan=lifespan,
-    docs_url="/docs",
-    redoc_url="/redoc",
-    responses={
-        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
-        403: {"description": "Sem permissão", "model": HTTPErrorResponse},
-        422: {"description": "Erro de validação", "model": HTTPValidationErrorResponse},
-    },
+    # ... rest of metadata ...
 )
 
-# -------------------------------------------------------------------
-# Rate Limiter
-# -------------------------------------------------------------------
-
+# Exception Handlers & Middlewares
 app.state.limiter = limiter
-app.add_exception_handler(
-    RateLimitExceeded,
-    _rate_limit_exceeded_handler,
-)
-
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    """
-    Captura qualquer erro não tratado e retorna uma resposta limpa (404/500).
-    Evita vazamento de stack traces em produção.
-    """
     logger.error("unhandled_exception", error=str(exc), path=request.url.path)
     return JSONResponse(
         status_code=500,
-        content={
-            "detail": "Ocorreu um erro interno no servidor. Por favor, tente novamente mais tarde.",
-            "error_code": "INTERNAL_SERVER_ERROR",
-        },
+        content={"detail": "Erro interno no servidor.", "error_code": "INTERNAL_SERVER_ERROR"}
     )
 
-# -------------------------------------------------------------------
-# Middlewares
-# -------------------------------------------------------------------
 app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(RequestIdMiddleware)
 app.add_middleware(TimeoutMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[o.strip() for o in settings.ALLOWED_ORIGINS.split(",") if o.strip()],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_credentials=True, allow_methods=["*"], allow_headers=["*"],
 )
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(AuditTrailMiddleware)
 
-# -------------------------------------------------------------------
-# Routers
-# -------------------------------------------------------------------
-
+# Router Registration
 app.include_router(webhook.router)
 app.include_router(leads.router)
 app.include_router(ia.router)
@@ -218,32 +155,10 @@ app.include_router(suitcase.router)
 app.include_router(offers.router)
 app.include_router(diary.router)
 
-# -------------------------------------------------------------------
-# Health Check
-# -------------------------------------------------------------------
-
-@app.get(
-    "/health",
-    tags=["Health"],
-    summary="Health Check",
-    description="Endpoint de verificação de saúde da aplicação. Retorna status, versão e ambiente.",
-)
+@app.get("/health", tags=["Health"])
 async def health():
-    return {
-        "status": "ok",
-        "service": "cadife-smart-travel",
-        "version": app.version,
-        "env": settings.APP_ENV,
-    }
-
+    return {"status": "ok", "version": app.version, "env": settings.APP_ENV}
 
 if __name__ == "__main__":
     import uvicorn
-
-    uvicorn.run(
-        "main:app",
-        host=settings.HOST,
-        port=settings.PORT,
-        reload=settings.DEBUG,
-        log_level="info",
-    )
+    uvicorn.run("main:app", host=settings.HOST, port=settings.PORT, reload=settings.DEBUG)

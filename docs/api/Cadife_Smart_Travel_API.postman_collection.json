@@ -602,6 +602,41 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Ativar ou desativar a AYA para um lead",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads/{lead_id}/aya-toggle",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "{lead_id}",
+                "aya-toggle"
+              ]
+            },
+            "description": "Permite ao consultor pausar o atendimento da IA para uma conversa específica. Quando desativada (ativo=false): mensagens são persistidas no log mas não processadas pela IA. Quando reativada (ativo=true): AYA retoma com contexto das últimas mensagens. Cada toggle é registrado em aya_toggle_history para auditoria.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
         }
       ]
     },

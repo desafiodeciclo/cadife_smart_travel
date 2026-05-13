@@ -4,14 +4,6 @@ Lead ORM Table — Infrastructure/Persistence Layer
 SQLAlchemy mapped model for the 'leads' table.
 Includes DB-level constraints (CheckConstraint, Enum) and composite indexes
 for the most frequent query patterns in the CRM dashboard.
-
-Changes from previous app/models/lead.py:
-  - Imports Base from infrastructure.persistence (canonical location)
-  - PostgreSQL native ENUM types via SAEnum for constraint at DB level
-  - Composite index (status, criado_em) for dashboard list queries
-  - Composite index (consultor_id, status) for per-consultant views
-  - telefone/nome enlarged to String(512) for Fernet ciphertext (migration a1b2c3d4e5f6)
-  - telefone_hash String(64) for deterministic HMAC-SHA256 lookups (migration b2c3d4e5f6a1)
 """
 
 import uuid
@@ -41,11 +33,14 @@ if TYPE_CHECKING:
     from app.infrastructure.persistence.models.proposta_model import PropostaModel
     from app.infrastructure.persistence.models.suitcase_model import SuitcaseItemModel
     from app.infrastructure.persistence.models.travel_diary_model import TravelDiaryEntryModel
+    # --- Imports Unificados ---
+    from app.infrastructure.persistence.models.aya_toggle_history_model import AyaToggleHistoryModel
     from app.infrastructure.persistence.models.itinerary_model import ItineraryItemModel
+    from app.infrastructure.persistence.models.conversation_summary_model import ConversationSummaryModel
     from app.infrastructure.persistence.models.lead_score_history_model import LeadScoreHistoryModel
 
 
-# PostgreSQL native ENUM types — enforced at DB level, not just application level
+# PostgreSQL native ENUM types
 lead_status_enum = SAEnum(
     *[e.value for e in LeadStatus],
     name="lead_status_enum",
@@ -72,12 +67,8 @@ class LeadModel(Base):
     __tablename__ = "leads"
 
     __table_args__ = (
-        # Composite index: CRM dashboard queries by status + date (most frequent)
         Index("ix_leads_status_criado_em", "status", "criado_em"),
-        # Composite index: consultant view queries
         Index("ix_leads_consultor_status", "consultor_id", "status"),
-        # Note: ck_leads_telefone_min_length was dropped in migration a1b2c3d4e5f6
-        # (meaningless after Fernet encryption of telefone field)
         {"extend_existing": True},
     )
 
@@ -105,7 +96,11 @@ class LeadModel(Base):
     consultor_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL")
     )
+    aya_ativo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, server_default="true")
     is_archived: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    deletado_em: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     criado_em: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -116,7 +111,7 @@ class LeadModel(Base):
         nullable=False,
     )
 
-    # Relationships — lazy loaded by default for async safety
+    # --- Relationships ---
     briefing: Mapped[Optional["BriefingModel"]] = relationship(
         "BriefingModel", back_populates="lead", uselist=False, lazy="select"
     )
@@ -135,9 +130,19 @@ class LeadModel(Base):
     diary_entries: Mapped[list["TravelDiaryEntryModel"]] = relationship(
         "TravelDiaryEntryModel", back_populates="lead", lazy="select", cascade="all, delete-orphan"
     )
+    
+    # Adicionado pela branch de Fluxo de Registro
     itinerary_items: Mapped[list["ItineraryItemModel"]] = relationship(
         "ItineraryItemModel", back_populates="lead", lazy="select", cascade="all, delete-orphan",
         order_by="ItineraryItemModel.horario_inicio",
+    )
+    conversation_summaries: Mapped[list["ConversationSummaryModel"]] = relationship(
+        "ConversationSummaryModel", back_populates="lead", lazy="select", cascade="all, delete-orphan"
+    )
+
+    # Adicionado pela branch Developer
+    aya_toggle_history: Mapped[list["AyaToggleHistoryModel"]] = relationship(
+        "AyaToggleHistoryModel", back_populates="lead", lazy="select", cascade="all, delete-orphan"
     )
     score_history: Mapped[list["LeadScoreHistoryModel"]] = relationship(
         "LeadScoreHistoryModel",

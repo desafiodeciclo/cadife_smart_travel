@@ -27,6 +27,7 @@ class ApiConstants {
   static const String leads = '/leads';
   static String leadById(String id) => '/leads/$id';
   static String leadBriefing(String id) => '/leads/$id/briefing';
+  static String leadAyaToggle(String id) => '/leads/$id/aya-toggle';
   static const String leadsManual = '/leads/manual';
 
   // ── Agenda ─────────────────────────────────────────────
@@ -42,6 +43,13 @@ class ApiConstants {
   // ── Itinerário ─────────────────────────────────────────
   static String leadItinerary(String id) => '/leads/$id/itinerary';
   static String leadNote(String id, String date) => '/leads/$id/notes/$date';
+
+  // ── Checkpoints ────────────────────────────────────────
+  static String leadCheckpoints(String id) => '/leads/$id/checkpoints';
+
+  // ── Conversation Summaries ─────────────────────────────
+  static String leadConversationSummary(String id) => '/leads/$id/conversation-summary';
+  static String leadConversationSummaries(String id) => '/leads/$id/conversation-summaries';
 
   // ── IA ─────────────────────────────────────────────────
   static const String iaProcessar = '/ia/processar';
