@@ -50,6 +50,12 @@ MEDIA_FALLBACK_REPLY = (
 _validator = BriefingValidator()
 
 
+_FALLBACK_INFRA_REPLY = (
+    "Recebi sua mensagem! Tivemos uma instabilidade momentânea. "
+    "Um consultor da Cadife Tour irá te atender em breve. 😊"
+)
+
+
 async def execute(payload: dict, db: AsyncSession) -> None:
     """
     Main use-case entry point. Called as a BackgroundTask from the webhook
@@ -68,6 +74,39 @@ async def execute(payload: dict, db: AsyncSession) -> None:
 
     logger.info("processing_whatsapp_message", phone=phone, msg_type=msg_type, message_id=message_id)
 
+    try:
+        await _execute_inner(
+            phone=phone,
+            message_id=message_id,
+            text=text,
+            msg_type=msg_type,
+            media_id=media_id,
+            msg=msg,
+            db=db,
+        )
+    except Exception as exc:
+        logger.error(
+            "execute_unhandled_error",
+            phone=phone[-4:] if len(phone) >= 4 else "****",
+            error=str(exc),
+            error_type=type(exc).__name__,
+        )
+        try:
+            await whatsapp_service.send_message(phone, _FALLBACK_INFRA_REPLY)
+        except Exception:
+            pass
+
+
+async def _execute_inner(
+    *,
+    phone: str,
+    message_id: str | None,
+    text: str | None,
+    msg_type: str,
+    media_id: str | None,
+    msg: dict,
+    db: AsyncSession,
+) -> None:
     # Mark message as read early
     if message_id:
         await whatsapp_service.mark_as_read(phone, message_id)

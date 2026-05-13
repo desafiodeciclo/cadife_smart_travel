@@ -6,7 +6,6 @@ from typing import Optional
 import structlog
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_openai import ChatOpenAI
-from langchain_classic.memory import ConversationBufferWindowMemory
 
 from app.core.config import get_settings
 from app.models.briefing import BriefingExtracted, calculate_completude
@@ -117,7 +116,7 @@ class SimpleWindowMemory:
         return {self.memory_key: messages}
 
 
-_memories: dict[str, ConversationBufferWindowMemory] = {}
+_memories: dict[str, SimpleWindowMemory] = {}
 _memory_last_access: dict[str, float] = {}
 _MEMORY_TTL_SECONDS = 3600 * 4  # 4 hours of inactivity clears memory
 _llm: Optional[ChatOpenAI] = None

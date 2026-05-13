@@ -17,6 +17,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.services import rag_service
 from app.models.briefing import _PERFIL_ALIASES, _ORCAMENTO_ALIASES
+from app.infrastructure.config.settings import get_settings
+
+settings = get_settings()
 
 logger = structlog.get_logger()
 
@@ -111,6 +114,25 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
                     "query": {"type": "string", "description": "Pergunta específica do cliente."}
                 },
                 "required": ["query"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "generate_travel_image",
+            "description": (
+                "Gera uma imagem inspiracional do destino de viagem do cliente usando IA. "
+                "Use ao final do briefing (completude ≥ 60%) para encantar o cliente."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "destino": {"type": "string", "description": "Destino da viagem (ex: Lisboa, Portugal)."},
+                    "perfil": {"type": "string", "description": "Perfil do viajante: casal, família, solo, grupo, amigos."},
+                    "estilo": {"type": "string", "description": "Estilo: luxo, aventura, romântico, família, cultural.", "default": "luxo"},
+                },
+                "required": ["destino"],
             },
         },
     },
@@ -241,7 +263,7 @@ async def _check_availability(args: dict[str, Any]) -> str:
 
 async def _query_project_scope(query: str) -> str:
     try:
-        context = await rag_service.retrieve_context(query, k=3)
+        context = rag_service.retrieve_context(query, k=3)
         return context if context else "Informação não encontrada na base de conhecimento."
     except Exception as exc:
         logger.error("tool_rag_failed", error=str(exc))
@@ -270,6 +292,39 @@ async def _persist_lead_data(phone: str, data: dict[str, Any], db: Optional[Asyn
         logger.error("tool_persist_failed", error=str(exc))
         return json.dumps({"success": False, "error": str(exc)})
 
+async def _generate_travel_image(destino: str, perfil: str = "casal", estilo: str = "luxo") -> str:
+    prompt = (
+        f"A breathtaking travel photograph of {destino}, {estilo} style, "
+        f"perfect for {perfil} travelers. Professional photography, vivid colors, "
+        "inspiring and inviting atmosphere."
+    )
+    payload = {
+        "model": settings.OPENROUTER_IMAGE_GEN_MODEL,
+        "prompt": prompt,
+        "n": 1,
+        "size": "1024x1024",
+    }
+    auth_headers = {
+        "Authorization": f"Bearer {settings.OPENROUTER_API_KEY}",
+        "Content-Type": "application/json",
+        **_OPENROUTER_HEADERS,
+    }
+    try:
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.post(
+                f"{_OPENROUTER_BASE}/images/generations",
+                json=payload,
+                headers=auth_headers,
+            )
+            response.raise_for_status()
+            data = response.json()
+            image_url = data["data"][0]["url"]
+            return json.dumps({"success": True, "image_url": image_url, "destino": destino})
+    except Exception as exc:
+        logger.error("tool_image_gen_failed", destino=destino, error=str(exc))
+        return json.dumps({"success": False, "error": "image_generation_failed"})
+
+
 # ── Dispatcher ───────────────────────────────────────────────────────────────
 
 async def execute_tool(tool_name: str, tool_args: dict[str, Any], db: Optional[AsyncSession] = None) -> str:
@@ -286,5 +341,12 @@ async def execute_tool(tool_name: str, tool_args: dict[str, Any], db: Optional[A
 
     if tool_name == "check_availability":
         return await _check_availability(tool_args)
-    
+
+    if tool_name == "generate_travel_image":
+        return await _generate_travel_image(
+            destino=tool_args["destino"],
+            perfil=tool_args.get("perfil", "casal"),
+            estilo=tool_args.get("estilo", "luxo"),
+        )
+
     return json.dumps({"error": f"Tool {tool_name} not implemented."})

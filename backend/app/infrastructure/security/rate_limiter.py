@@ -30,7 +30,11 @@ try:
         storage_uri=settings.REDIS_URL,
         default_limits=[settings.RATE_LIMIT_DEFAULT],
         headers_enabled=True,
-        swallow_errors=False,
+        # swallow_errors=True: if Redis drops after startup, ConnectionError propagates
+        # through slowapi's _check_limits and hits _rate_limit_exceeded_handler which
+        # calls exc.detail — but ConnectionError has no .detail → AttributeError crash.
+        # Graceful degradation (allow through) is safer than crashing the webhook.
+        swallow_errors=True,
         key_prefix=settings.REDIS_PREFIX if settings.REDIS_PREFIX else "LIMITER",
     )
     logger.info("rate_limiter_ready", storage=settings.REDIS_URL)

@@ -20,7 +20,7 @@ from alembic import op
 import sqlalchemy as sa
 
 revision: str = "l6m7n8o9p0q1"
-down_revision: Union[tuple, None] = ("k5l6m7n8o9p0", "j4k5l6m7n8o9")
+down_revision: Union[str, None] = "5bf469d38868"
 branch_labels = None
 depends_on = None
 
