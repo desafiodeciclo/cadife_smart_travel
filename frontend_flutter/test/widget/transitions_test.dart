@@ -27,13 +27,13 @@ void main() {
         ),
       ),
     );
-    
+
     // Verifica se o Hero está presente na tela de detalhe
-    // (Pode falhar se leadId não for encontrado no provider real, 
+    // (Pode falhar se leadId não for encontrado no provider real,
     // mas o teste foca na estrutura)
     expect(find.byType(Hero), findsWidgets);
   });
-  
+
   testWidgets('AnimatedSwitcher está presente em transições de conteúdo', (tester) async {
      await tester.pumpWidget(
       const ProviderScope(
