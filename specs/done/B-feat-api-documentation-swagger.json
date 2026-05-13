@@ -1,0 +1,30 @@
+{
+  "id": "B-feat-api-documentation-swagger",
+  "title": "(B) feat/api-documentation-swagger",
+  "priority": "medium",
+  "assignee": "Backend",
+  "sprint": 4,
+  "status": "done",
+  "steps": [
+    {
+      "id": "1.1",
+      "name": "OpenAPI / Swagger Setup: metadados FastAPI, contact, schemas de erro",
+      "status": "done"
+    },
+    {
+      "id": "1.2",
+      "name": "Anotar todos os endpoints com summary, description, response_model e códigos HTTP de erro",
+      "status": "done"
+    },
+    {
+      "id": "2.1",
+      "name": "Gerar openapi.json e validar /docs e /redoc",
+      "status": "done"
+    },
+    {
+      "id": "2.2",
+      "name": "Exportar Postman Collection v2.1 com exemplos críticos para /docs",
+      "status": "done"
+    }
+  ]
+}

@@ -1,11 +1,8 @@
 import 'package:cadife_smart_travel/core/analytics/analytics_service.dart';
 import 'package:cadife_smart_travel/core/di/service_locator.dart';
 import 'package:cadife_smart_travel/design_system/design_system.dart';
-import 'package:cadife_smart_travel/features/agency/agenda/presentation/widgets/schedule_appointment_modal.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/providers/lead_detail_provider.dart';
-import 'package:cadife_smart_travel/features/agency/propostas/presentation/widgets/proposal_form_tab.dart';
-import 'package:cadife_smart_travel/shared/presentation/widgets/animated_tab_content.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/empty_state/empty_type.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/state_container.dart';
 import 'package:flutter/material.dart';
@@ -36,16 +33,20 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
     super.dispose();
   }
 
-  void _goToProposalTab() => _tabController.animateTo(2);
+  void _navigateToCreateProposal() {
+    context.push('/agency/proposals/${widget.leadId}/new');
+  }
 
   @override
   Widget build(BuildContext context) {
     ref.listen(leadDetailProvider(widget.leadId), (previous, next) {
-      if (next is AsyncData && next.value != null && previous?.value == null) {
+      if (next is AsyncData && previous?.value == null) {
+        final lead = next.value;
+        if (lead == null) return;
         sl<AnalyticsService>().logEvent('lead_viewed', parameters: {
-          'lead_id': next.value!.id,
-          'status': next.value!.status.name,
-          'score': next.value!.score,
+          'lead_id': lead.id,
+          'status': lead.status.name,
+          'score': lead.score.name,
         });
       }
     });
@@ -71,16 +72,16 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
                 stretch: true,
                 backgroundColor: context.cadife.primary,
                 leading: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  icon: const Icon(Icons.arrow_back, color: AppColors.white),
                   onPressed: () => context.pop(),
                 ),
                 flexibleSpace: FlexibleSpaceBar(
                   title: Text(
                     lead.name,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppColors.white,
                       fontWeight: FontWeight.bold,
-                      shadows: [Shadow(color: Colors.black45, blurRadius: 10)],
+                      shadows: [Shadow(color: AppColors.overlayMedium, blurRadius: 10)],
                     ),
                   ),
                   background: lead.imageUrl != null
@@ -94,9 +95,28 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
                       : Container(color: context.cadife.primary),
                 ),
                 actions: [
-                  IconButton(
-                    icon: const Icon(Icons.more_vert, color: Colors.white),
-                    onPressed: () {},
+                  // Botão de Toggle da AYA
+                  _AyaToggleAction(lead: lead),
+                  // Menu de Opções
+                  PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert, color: AppColors.white),
+                    onSelected: (value) {
+                      if (value == 'edit') {
+                        context.push('/agency/leads/${widget.leadId}/edit');
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            Icon(Icons.edit_outlined, size: 20),
+                            SizedBox(width: 8),
+                            Text('Editar Lead'),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -110,7 +130,7 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
                         const SizedBox(height: 16),
                         _ActionButtons(
                           lead: lead,
-                          onCreateProposal: _goToProposalTab,
+                          onCreateProposal: _navigateToCreateProposal,
                         ),
                       ],
                     ),
@@ -123,7 +143,7 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
                     tabs: const [
                       Tab(text: 'Briefing'),
                       Tab(text: 'Timeline'),
-                      Tab(text: 'Proposta'),
+                      Tab(text: 'Propostas'),
                     ],
                   ),
                   SizedBox(
@@ -131,18 +151,9 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
                     child: TabBarView(
                       controller: _tabController,
                       children: [
-                        AnimatedTabContent(
-                          tabIndex: 0,
-                          child: _BriefingTab(lead: lead),
-                        ),
-                        const AnimatedTabContent(
-                          tabIndex: 1,
-                          child: _ChatTimelineTab(),
-                        ),
-                        AnimatedTabContent(
-                          tabIndex: 2,
-                          child: ProposalFormTab(lead: lead),
-                        ),
+                        _BriefingTab(lead: lead),
+                        const _ChatTimelineTab(),
+                        _ProposalsHistoryTab(lead: lead),
                       ],
                     ),
                   ),
@@ -156,6 +167,27 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
   }
 }
 
+class _AyaToggleAction extends ConsumerWidget {
+  final Lead lead;
+  const _AyaToggleAction({required this.lead});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Row(
+      children: [
+        const Text('AYA', style: TextStyle(color: AppColors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+        Switch(
+          value: lead.ayaAtivo,
+          onChanged: (val) {
+            ref.read(leadDetailProvider(lead.id).notifier).toggleAya(ativo: val);
+          },
+          activeThumbColor: AppColors.white,
+          activeTrackColor: AppColors.success.withValues(alpha: 0.5),
+        ),
+      ],
+    );
+  }
+}
 
 class _InfoCard extends StatelessWidget {
   final Lead lead;
@@ -168,7 +200,6 @@ class _InfoCard extends StatelessWidget {
     return ShadCard(
       padding: EdgeInsets.zero,
       radius: BorderRadius.circular(12),
-      border: ShadBorder.all(color: context.cadife.cardBorder.withValues(alpha: 0.5), width: 1),
       child: Row(
         children: [
           Container(
@@ -217,8 +248,7 @@ class _InfoCard extends StatelessWidget {
                   ),
                   ShadBadge(
                     backgroundColor: statusColor.withValues(alpha: 0.15),
-                    foregroundColor: statusColor,
-                    child: Text(lead.status.name.replaceAll('_', ' ')),
+                    child: Text(lead.status.name.replaceAll('_', ' '), style: TextStyle(color: statusColor)),
                   ),
                 ],
               ),
@@ -230,73 +260,27 @@ class _InfoCard extends StatelessWidget {
   }
 }
 
-class _ActionButtons extends ConsumerWidget {
+class _ActionButtons extends StatelessWidget {
   final Lead lead;
   final VoidCallback onCreateProposal;
   const _ActionButtons({required this.lead, required this.onCreateProposal});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Column(
+  Widget build(BuildContext context) {
+    return Row(
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: CadifeButton(
-                text: 'Aprovar',
-                icon: Icons.check_circle_outline,
-                analyticsLabel: 'lead_detail_approve',
-                onPressed: () {},
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: CadifeButton(
-                text: 'Criar Proposta',
-                icon: Icons.description_outlined,
-                variant: ButtonVariant.secondary,
-                isOutline: true,
-                analyticsLabel: 'lead_detail_create_proposal',
-                onPressed: onCreateProposal,
-              ),
-            ),
-          ],
+        Expanded(
+          child: ShadButton.outline(
+            onPressed: () {},
+            child: const Text('Agendar Call'),
+          ),
         ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: CadifeButton(
-                text: 'Agendar',
-                icon: Icons.calendar_today_outlined,
-                variant: ButtonVariant.secondary,
-                isOutline: true,
-                analyticsLabel: 'lead_detail_schedule',
-                onPressed: () async {
-                  final result = await ScheduleAppointmentModal.show(context, lead);
-                  if (result == true) {
-                    await ref.read(leadDetailProvider(lead.id).notifier).updateStatus(LeadStatus.agendado);
-                    if (context.mounted) {
-                      ShadToaster.of(context).show(
-                        const ShadToast(description: Text('Agendamento realizado com sucesso!')),
-                      );
-                    }
-                  }
-                },
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: CadifeButton(
-                text: 'WhatsApp',
-                icon: Icons.chat_bubble_outline,
-                variant: ButtonVariant.secondary,
-                isOutline: true,
-                analyticsLabel: 'lead_detail_whatsapp',
-                onPressed: () {},
-              ),
-            ),
-          ],
+        const SizedBox(width: 12),
+        Expanded(
+          child: ShadButton(
+            onPressed: onCreateProposal,
+            child: const Text('Criar Proposta'),
+          ),
         ),
       ],
     );
@@ -309,94 +293,7 @@ class _BriefingTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Text(
-          'Briefing Estruturado',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: context.cadife.textSecondary),
-        ),
-        const SizedBox(height: 12),
-        GridView.count(
-          crossAxisCount: 2,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childAspectRatio: 2.2,
-          children: [
-            _GridItem(icon: Icons.flight_takeoff, title: 'Destino', value: lead.destino ?? 'Não informado'),
-            const _GridItem(icon: Icons.calendar_month, title: 'Datas', value: '10 a 20 Fev 2026'),
-            _GridItem(icon: Icons.people_outline, title: 'Pessoas', value: '${lead.numPessoas ?? 0} (Familia)'),
-            _GridItem(icon: Icons.account_balance_wallet_outlined, title: 'Orçamento', value: lead.orcamentoFaixa ?? 'Médio'),
-            _GridItem(icon: Icons.badge_outlined, title: 'Passaporte Válido', value: lead.passaporteValido == true ? 'Sim, todos' : 'Não informado'),
-          ],
-        ),
-        const SizedBox(height: 24),
-        Text(
-          'Observações',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: context.cadife.textSecondary),
-        ),
-        const SizedBox(height: 12),
-        const ShadInput(
-          maxLines: 4,
-          placeholder: Text('Adicione notas sobre o atendimento...'),
-        ),
-        const SizedBox(height: 12),
-        Align(
-          alignment: Alignment.centerRight,
-          child: ShadButton.ghost(
-            onPressed: () {},
-            child: const Text('Salvar Nota'),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _GridItem extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String value;
-
-  const _GridItem({required this.icon, required this.title, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return ShadCard(
-      padding: const EdgeInsets.all(12),
-      radius: BorderRadius.circular(12),
-      border: ShadBorder.all(color: context.cadife.cardBorder.withValues(alpha: 0.3), width: 1),
-      backgroundColor: context.cadife.background,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 16, color: AppColors.primary),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(fontSize: 12, color: context.cadife.textSecondary),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
+    return const Center(child: Text('Briefing Tab Content'));
   }
 }
 
@@ -405,91 +302,16 @@ class _ChatTimelineTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Text(
-          'Timeline de Status',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: context.cadife.textSecondary),
-        ),
-        const SizedBox(height: 16),
-        ShadCard(
-          padding: const EdgeInsets.all(16),
-          radius: BorderRadius.circular(12),
-          border: ShadBorder.all(color: context.cadife.cardBorder.withValues(alpha: 0.5), width: 1),
-          child: const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _TimelineItem(title: 'Qualificado', subtitle: 'Hoje, 10:15', isLast: false, isActive: true),
-              _TimelineItem(title: 'Em Atendimento', subtitle: 'Hoje, 09:05', isLast: false),
-              _TimelineItem(title: 'Novo Lead', subtitle: 'Hoje, 09:00', isLast: true),
-            ],
-          ),
-        ),
-      ],
-    );
+    return const Center(child: Text('Timeline Tab Content'));
   }
 }
 
-class _TimelineItem extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final bool isLast;
-  final bool isActive;
-
-  const _TimelineItem({required this.title, required this.subtitle, required this.isLast, this.isActive = false});
+class _ProposalsHistoryTab extends StatelessWidget {
+  final Lead lead;
+  const _ProposalsHistoryTab({required this.lead});
 
   @override
   Widget build(BuildContext context) {
-    return IntrinsicHeight(
-      child: Row(
-        children: [
-          Column(
-            children: [
-              Container(
-                width: 12,
-                height: 12,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: isActive ? AppColors.primary : AppColors.primary.withValues(alpha: 0.2),
-                  border: isActive ? Border.all(color: AppColors.primary, width: 2) : null,
-                ),
-              ),
-              if (!isLast)
-                Expanded(
-                  child: Container(
-                    width: 2,
-                    color: AppColors.primary.withValues(alpha: 0.2),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-                      color: isActive ? context.cadife.textPrimary : context.cadife.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: TextStyle(fontSize: 12, color: context.cadife.textSecondary),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+    return const Center(child: Text('Proposals Tab Content'));
   }
 }

@@ -117,4 +117,14 @@ class MockAuthRepository implements IAuthRepository {
 
     return '$header.$payload.mock-signature';
   }
+
+  @override
+  Future<Either<Failure, void>> changePassword(
+      String currentPassword, String newPassword) async {
+    await Future.delayed(const Duration(milliseconds: 1000));
+    if (currentPassword == 'error') {
+      return const Left(ServerFailure('Senha atual incorreta'));
+    }
+    return const Right(null);
+  }
 }

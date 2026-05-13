@@ -53,10 +53,10 @@ class CadifeThemeExtension extends ThemeExtension<CadifeThemeExtension> {
   static const dark = CadifeThemeExtension(
     primary:          AppColors.primary,
     background:       AppColors.backgroundDark,
-    surface:          AppColors.zinc900,
-    cardBackground:   AppColors.zinc900,
-    cardBorder:       AppColors.zinc800,
-    divider:          AppColors.zinc800,
+    surface:          AppColors.cardBackgroundDark,
+    cardBackground:   AppColors.cardBackgroundDark,
+    cardBorder:       AppColors.borderColorDark,
+    divider:          AppColors.borderColorDark,
     textPrimary:      AppColors.textPrimaryDark,
     textSecondary:    AppColors.textSecondaryDark,
     muted:            AppColors.zinc800,
@@ -120,6 +120,9 @@ extension CadifeThemeX on BuildContext {
   }
       
   bool get isDark => Theme.of(this).brightness == Brightness.dark;
+
+  ColorScheme get colorScheme => Theme.of(this).colorScheme;
+  TextTheme get textTheme => Theme.of(this).textTheme;
 
   ShadTextTheme get shadText => ShadTheme.of(this).textTheme;
 }

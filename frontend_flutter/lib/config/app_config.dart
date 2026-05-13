@@ -20,7 +20,7 @@ class AppConfig {
   // Pré-configurados
   static const AppConfig dev = AppConfig(
     environment: AppEnvironment.dev,
-    apiBaseUrl: 'http://10.0.2.2:4000', // ou ngrok URL via env var
+    apiBaseUrl: 'http://localhost:8080', // Use 'adb reverse tcp:8080 tcp:8080' para celular físico via USB
     firebaseProjectId: 'cadife-dev-123',
     enableDebugLogs: true,
     appName: 'Cadife Dev',

@@ -13,6 +13,7 @@ class TripSummary extends Equatable {
     this.numPessoas,
     this.imageUrl,
     this.orcamento,
+    this.roteiro,
   });
 
   final String id;
@@ -23,6 +24,7 @@ class TripSummary extends Equatable {
   final int? numPessoas;
   final String? imageUrl;
   final double? orcamento;
+  final String? roteiro;
 
   @override
   List<Object?> get props => [
@@ -34,5 +36,6 @@ class TripSummary extends Equatable {
         numPessoas,
         imageUrl,
         orcamento,
+        roteiro,
       ];
 }

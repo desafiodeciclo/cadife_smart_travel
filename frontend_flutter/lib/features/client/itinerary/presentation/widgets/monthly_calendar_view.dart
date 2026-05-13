@@ -1,3 +1,4 @@
+import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/client/itinerary/domain/entities/itinerary_item.dart';
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -36,6 +37,8 @@ class _MonthlyCalendarViewState extends State<MonthlyCalendarView> {
 
   @override
   Widget build(BuildContext context) {
+    final cadife = context.cadife;
+
     return Column(
       children: [
         TableCalendar<ItineraryItem>(
@@ -46,8 +49,7 @@ class _MonthlyCalendarViewState extends State<MonthlyCalendarView> {
           startingDayOfWeek: StartingDayOfWeek.monday,
           calendarFormat: CalendarFormat.month,
           availableCalendarFormats: const {CalendarFormat.month: 'Mês'},
-          selectedDayPredicate: (day) =>
-              isSameDay(widget.selectedDay, day),
+          selectedDayPredicate: (day) => isSameDay(widget.selectedDay, day),
           onDaySelected: (selected, focused) {
             setState(() => _focusedDay = focused);
             widget.onDaySelected(selected, focused);
@@ -56,43 +58,80 @@ class _MonthlyCalendarViewState extends State<MonthlyCalendarView> {
             setState(() => _focusedDay = focused);
           },
           eventLoader: _getEventsForDay,
-          headerStyle: const HeaderStyle(
+          headerStyle: HeaderStyle(
             formatButtonVisible: false,
             titleCentered: true,
             titleTextStyle: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF1A1A1A),
+              color: cadife.textPrimary,
             ),
             leftChevronIcon: Icon(
               Icons.chevron_left,
-              color: Color(0xFF393532),
+              color: cadife.textPrimary,
             ),
             rightChevronIcon: Icon(
               Icons.chevron_right,
-              color: Color(0xFF393532),
+              color: cadife.textPrimary,
             ),
-            headerPadding: EdgeInsets.symmetric(vertical: 8),
+            headerPadding: const EdgeInsets.symmetric(vertical: 8),
+            decoration: BoxDecoration(color: cadife.background),
           ),
           calendarStyle: CalendarStyle(
-            outsideDaysVisible: false,
-            selectedDecoration: const BoxDecoration(
-              color: Color(0xFFDD0B0E),
+            outsideDaysVisible: true,
+            outsideTextStyle: TextStyle(
+              color: cadife.textSecondary.withValues(alpha: 0.4),
+              fontSize: 13,
+            ),
+            defaultTextStyle: TextStyle(
+              color: cadife.textPrimary,
+              fontSize: 13,
+            ),
+            weekendTextStyle: TextStyle(
+              color: cadife.textSecondary,
+              fontSize: 13,
+            ),
+            selectedDecoration: BoxDecoration(
+              color: cadife.primary,
               shape: BoxShape.circle,
+            ),
+            selectedTextStyle: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+              fontSize: 13,
             ),
             todayDecoration: BoxDecoration(
-              color: const Color(0xFFDD0B0E).withValues(alpha: 0.15),
+              color: cadife.primary.withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
-            todayTextStyle: const TextStyle(
-              color: Color(0xFFDD0B0E),
+            todayTextStyle: TextStyle(
+              color: cadife.primary,
               fontWeight: FontWeight.w600,
+              fontSize: 13,
             ),
-            weekendTextStyle: const TextStyle(color: Color(0xFF5D6D7E)),
-            defaultTextStyle: const TextStyle(color: Color(0xFF1A1A1A)),
+            rowDecoration: BoxDecoration(color: cadife.background),
             markerDecoration: const BoxDecoration(shape: BoxShape.circle),
             markersMaxCount: 4,
             markersAlignment: Alignment.bottomCenter,
+            tableBorder: TableBorder(
+              horizontalInside: BorderSide(
+                color: cadife.cardBorder,
+                width: 0.5,
+              ),
+            ),
+          ),
+          daysOfWeekStyle: DaysOfWeekStyle(
+            weekdayStyle: TextStyle(
+              color: cadife.textSecondary,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+            weekendStyle: TextStyle(
+              color: cadife.textSecondary.withValues(alpha: 0.7),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+            decoration: BoxDecoration(color: cadife.background),
           ),
           calendarBuilders: CalendarBuilders<ItineraryItem>(
             markerBuilder: (context, day, events) {
@@ -129,17 +168,16 @@ class _MonthlyCalendarViewState extends State<MonthlyCalendarView> {
 
   List<ItineraryItemType> _uniqueTypes(List<ItineraryItem> items) {
     final seen = <ItineraryItemType>{};
-    return items
-        .map((e) => e.tipo)
-        .where(seen.add)
-        .toList();
+    return items.map((e) => e.tipo).where(seen.add).toList();
   }
 }
 
 class _EventTypeLegend extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final cadife = context.cadife;
     const types = ItineraryItemType.values;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Wrap(
@@ -161,9 +199,9 @@ class _EventTypeLegend extends StatelessWidget {
                   const SizedBox(width: 4),
                   Text(
                     type.label,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11,
-                      color: Color(0xFF5D6D7E),
+                      color: cadife.textSecondary,
                     ),
                   ),
                 ],

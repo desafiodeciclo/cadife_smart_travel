@@ -1,0 +1,70 @@
+{
+  "id": "B-feat-travel-diary-backend",
+  "title": "(B) feat/travel-diary-backend",
+  "priority": "high",
+  "assignee": "Backend",
+  "sprint": 6,
+  "status": "in-progress",
+  "steps": [
+    {
+      "id": "1.1",
+      "name": "Alembic migration: create travel_diary_entries table with indexes",
+      "status": "done"
+    },
+    {
+      "id": "1.2",
+      "name": "TravelDiaryEntryModel ORM with lead/user FKs and cascade delete",
+      "status": "done"
+    },
+    {
+      "id": "1.3",
+      "name": "IDiaryRepository interface + DiaryRepository implementation",
+      "status": "done"
+    },
+    {
+      "id": "2.1",
+      "name": "DiaryService with HEIC support and auto-thumbnail generation (300x300 JPEG)",
+      "status": "done"
+    },
+    {
+      "id": "2.2",
+      "name": "DiaryService ownership validation (user can only access own entries)",
+      "status": "done"
+    },
+    {
+      "id": "2.3",
+      "name": "DiaryService atomic cleanup: DB-first delete, S3 cleanup after commit",
+      "status": "done"
+    },
+    {
+      "id": "3.1",
+      "name": "Pydantic schemas: DiaryEntryCreate, DiaryEntryRead, DiaryEntryList (ConfigDict)",
+      "status": "done"
+    },
+    {
+      "id": "3.2",
+      "name": "FastAPI routes: POST /leads/{id}/diary/entries, GET /leads/{id}/diary/entries, GET /users/me/diary, DELETE /leads/{id}/diary/entries/{entry_id}",
+      "status": "done"
+    },
+    {
+      "id": "3.3",
+      "name": "Hydrate presigned URLs in all read responses (POST, GET list, GET timeline)",
+      "status": "done"
+    },
+    {
+      "id": "4.1",
+      "name": "Integration tests with mocked S3 (full cycle, privacy violation, HEIC upload)",
+      "status": "done"
+    },
+    {
+      "id": "4.2",
+      "name": "Regenerate OpenAPI snapshot (docs/api/openapi.json)",
+      "status": "done"
+    },
+    {
+      "id": "5.1",
+      "name": "Code review and PO validation (Diego)",
+      "status": "pending"
+    }
+  ]
+}

@@ -3,6 +3,7 @@ import 'dart:developer' as developer;
 
 import 'package:cadife_smart_travel/core/di/service_locator.dart';
 import 'package:cadife_smart_travel/core/notifications/local_notification_manager.dart';
+import 'package:cadife_smart_travel/core/notifications/travel_update_bus.dart';
 import 'package:cadife_smart_travel/features/auth/domain/repositories/i_auth_repository.dart';
 import 'package:cadife_smart_travel/features/notifications/domain/dtos/notification_payload_dto.dart';
 import 'package:cadife_smart_travel/features/notifications/domain/entities/in_app_notification.dart';
@@ -31,6 +32,13 @@ class FCMManager {
         'Recebido mensagem FCM Foreground: ${message.messageId}',
         name: 'FCMManager',
       );
+
+      // Sinaliza atualização de viagem para invalidar o cache do itinerário
+      final msgType = message.data['type'] as String?;
+      if (msgType == 'travel_updated') {
+        final travelId = message.data['travelId'] as String? ?? '';
+        TravelUpdateBus.emit(travelId);
+      }
 
       // Persistir no banco local
       try {

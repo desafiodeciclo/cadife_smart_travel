@@ -51,7 +51,11 @@ class AgendaNotifier extends AsyncNotifier<List<Agendamento>> {
     );
   }
 
-  Future<void> blockSlot(DateTime slotDateTime, {String? notes}) async {
+  Future<void> blockSlot(
+    DateTime slotDateTime, {
+    String? notes,
+    MotivoBloqueio? motivoBloqueio,
+  }) async {
     final agendaRepository = ref.read(agendaRepositoryProvider);
     final result = await agendaRepository.createAgenda(
       CreateAgendaRequest(
@@ -59,6 +63,7 @@ class AgendaNotifier extends AsyncNotifier<List<Agendamento>> {
         dateTime: slotDateTime,
         durationMinutes: 60,
         notes: notes,
+        motivoBloqueio: motivoBloqueio,
       ),
     );
     
@@ -77,7 +82,7 @@ class AgendaNotifier extends AsyncNotifier<List<Agendamento>> {
   Future<void> unblockSlot(String id) async {
     final agendaRepository = ref.read(agendaRepositoryProvider);
     final result = await agendaRepository.deleteAgenda(id);
-    
+
     state = await result.fold(
       (failure) => AsyncError(failure, StackTrace.current),
       (_) async {
@@ -86,6 +91,56 @@ class AgendaNotifier extends AsyncNotifier<List<Agendamento>> {
           (f) => AsyncError(f, StackTrace.current),
           AsyncData.new,
         );
+      },
+    );
+  }
+
+  Future<bool> editSlot(String id, UpdateAgendaRequest request) async {
+    final agendaRepository = ref.read(agendaRepositoryProvider);
+    final result = await agendaRepository.updateAgenda(id, request);
+
+    return result.fold(
+      (failure) => false,
+      (updated) {
+        final current = state.whenData((list) => list).valueOrNull ?? [];
+        state = AsyncData(
+          current.map((a) => a.id == id ? updated : a).toList(),
+        );
+        return true;
+      },
+    );
+  }
+
+  Future<bool> cancelSlot(String id) async {
+    return editSlot(id, const UpdateAgendaRequest(status: 'cancelado'));
+  }
+
+  Future<bool> scheduleSlot({
+    required String leadId,
+    required DateTime dateTime,
+    int durationMinutes = 60,
+    String? notes,
+    String? nomeCliente,
+    String? destinoViagem,
+  }) async {
+    final agendaRepository = ref.read(agendaRepositoryProvider);
+    final result = await agendaRepository.createAgenda(
+      CreateAgendaRequest(
+        leadId: leadId,
+        dateTime: dateTime,
+        durationMinutes: durationMinutes,
+        notes: notes,
+        nomeCliente: nomeCliente,
+        destinoViagem: destinoViagem,
+      ),
+    );
+
+    return result.fold(
+      (failure) => false,
+      (created) {
+        final current = state.whenData((list) => list).valueOrNull ?? [];
+        state = AsyncData([...current, created]);
+        return true;
       },
     );
   }

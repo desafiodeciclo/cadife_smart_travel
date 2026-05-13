@@ -1,151 +1,103 @@
-import 'package:cadife_smart_travel/core/cache/isar_cache_manager.dart';
-import 'package:cadife_smart_travel/core/di/service_locator.dart';
-import 'package:cadife_smart_travel/core/network/network_info.dart';
-import 'package:cadife_smart_travel/features/client/offers/data/repositories/mock_offer_repository.dart';
+import 'package:cadife_smart_travel/features/client/offers/data/repositories/offer_repository.dart';
 import 'package:cadife_smart_travel/features/client/offers/domain/entities/offer.dart';
-import 'package:cadife_smart_travel/features/client/offers/domain/repositories/i_offer_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// Provider do repositório
-final offerRepositoryProvider = Provider<IOfferRepository>((ref) {
-  final isar = sl<IsarCacheManager>();
-  // Para fins do mock, podemos sempre ler do networkInfo para isOffline
-  // Mas vamos tornar isso reativo, o que requereria ref.watch do networkInfoProvider (se houvesse).
-  // Por simplicidade, assumimos online, mas o repositorio lida com isso.
-  // Vamos passar isOffline: false por padrao e melhorar depois, ou verificar Future.
-  return MockOfferRepository(isar, isOffline: false);
-});
+class OffersFilterState {
+  final String? destination;
+  final double? minPrice;
+  final double? maxPrice;
+  final int? minDays;
+  final int? maxDays;
+  final String? search;
+  final int page;
 
-class OffersState {
-  final List<Offer> offers;
-  final bool isLoading;
-  final bool isLoadingMore;
-  final bool isOffline;
-  final String? error;
-  final int currentPage;
-  final bool hasReachedMax;
-
-  // Filtros
-  final String? query;
-  final List<String> categories;
-  final double minPrice;
-  final double maxPrice;
-
-  OffersState({
-    this.offers = const [],
-    this.isLoading = false,
-    this.isLoadingMore = false,
-    this.isOffline = false,
-    this.error,
-    this.currentPage = 1,
-    this.hasReachedMax = false,
-    this.query,
-    this.categories = const [],
-    this.minPrice = 0,
-    this.maxPrice = 50000,
+  OffersFilterState({
+    this.destination,
+    this.minPrice,
+    this.maxPrice,
+    this.minDays,
+    this.maxDays,
+    this.search,
+    this.page = 1,
   });
 
-  OffersState copyWith({
-    List<Offer>? offers,
-    bool? isLoading,
-    bool? isLoadingMore,
-    bool? isOffline,
-    String? error,
-    int? currentPage,
-    bool? hasReachedMax,
-    String? query,
-    List<String>? categories,
+  OffersFilterState copyWith({
+    String? destination,
     double? minPrice,
     double? maxPrice,
+    int? minDays,
+    int? maxDays,
+    String? search,
+    int? page,
   }) {
-    return OffersState(
-      offers: offers ?? this.offers,
-      isLoading: isLoading ?? this.isLoading,
-      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
-      isOffline: isOffline ?? this.isOffline,
-      error: error, // pode ser nulo para limpar
-      currentPage: currentPage ?? this.currentPage,
-      hasReachedMax: hasReachedMax ?? this.hasReachedMax,
-      query: query ?? this.query,
-      categories: categories ?? this.categories,
+    return OffersFilterState(
+      destination: destination ?? this.destination,
       minPrice: minPrice ?? this.minPrice,
       maxPrice: maxPrice ?? this.maxPrice,
+      minDays: minDays ?? this.minDays,
+      maxDays: maxDays ?? this.maxDays,
+      search: search ?? this.search,
+      page: page ?? this.page,
     );
   }
 }
 
-class OffersNotifier extends Notifier<OffersState> {
-  @override
-  OffersState build() {
-    // Carrega a primeira página imediatamente no build
-    Future.microtask(() => loadOffers(refresh: true));
-    return OffersState();
+class OffersNotifier extends StateNotifier<AsyncValue<List<Offer>>> {
+  final OfferRepository _repository;
+  OffersFilterState _filter = OffersFilterState();
+
+  OffersNotifier(this._repository) : super(const AsyncValue.loading()) {
+    loadOffers();
   }
 
-  Future<void> loadOffers({bool refresh = false}) async {
-    if (refresh) {
-      state = state.copyWith(isLoading: true, currentPage: 1, hasReachedMax: false, error: null);
-    } else {
-      if (state.isLoadingMore || state.hasReachedMax) return;
-      state = state.copyWith(isLoadingMore: true, error: null);
-    }
-
+  Future<void> loadOffers() async {
+    state = const AsyncValue.loading();
     try {
-      final isOffline = !await sl<NetworkInfo>().isConnected;
-      final repo = MockOfferRepository(sl<IsarCacheManager>(), isOffline: isOffline);
-
-      final newOffers = await repo.getOffers(
-        page: state.currentPage,
-        limit: 20,
-        query: state.query,
-        categories: state.categories,
-        minPrice: state.minPrice,
-        maxPrice: state.maxPrice,
+      final result = await _repository.listOffers(
+        destination: _filter.destination,
+        minPrice: _filter.minPrice,
+        maxPrice: _filter.maxPrice,
+        durationMin: _filter.minDays,
+        durationMax: _filter.maxDays,
+        search: _filter.search,
+        page: _filter.page,
       );
-
-      state = state.copyWith(
-        isLoading: false,
-        isLoadingMore: false,
-        isOffline: isOffline,
-        offers: refresh ? newOffers : [...state.offers, ...newOffers],
-        currentPage: state.currentPage + 1,
-        hasReachedMax: newOffers.length < 20,
-      );
-    } on Exception catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        isLoadingMore: false,
-        error: e.toString(),
-      );
+      
+      final List<dynamic> offersJson = result['offers'];
+      final offers = offersJson.map((e) => Offer.fromJson(e)).toList();
+      state = AsyncValue.data(offers);
+    } on Exception catch (e, st) {
+      state = AsyncValue.error(e, st);
+    } on Object catch (e, st) {
+      state = AsyncValue.error(e, st);
     }
   }
 
-  void updateFilters({
-    String? query,
-    List<String>? categories,
-    double? minPrice,
-    double? maxPrice,
-  }) {
-    state = state.copyWith(
-      query: query ?? state.query,
-      categories: categories ?? state.categories,
-      minPrice: minPrice ?? state.minPrice,
-      maxPrice: maxPrice ?? state.maxPrice,
-    );
-    loadOffers(refresh: true);
+  void applyFilters(OffersFilterState filter) {
+    _filter = filter;
+    loadOffers();
   }
 
-  void clearFilters() {
-    state = OffersState(
-      query: '',
-      categories: [],
-      minPrice: 0,
-      maxPrice: 50000,
-    );
-    loadOffers(refresh: true);
+  void setSearch(String? search) {
+    _filter = _filter.copyWith(search: search, page: 1);
+    loadOffers();
   }
 }
 
-final offersProvider = NotifierProvider<OffersNotifier, OffersState>(() {
-  return OffersNotifier();
+final offersProvider = StateNotifierProvider<OffersNotifier, AsyncValue<List<Offer>>>((ref) {
+  final repository = ref.watch(offerRepositoryProvider);
+  return OffersNotifier(repository);
 });
+
+// Provider for agency offers
+class MyOffersNotifier extends AsyncNotifier<List<Offer>> {
+  @override
+  Future<List<Offer>> build() async {
+    final repository = ref.watch(offerRepositoryProvider);
+    final result = await repository.getMyOffers();
+    final List<dynamic> offersJson = result['offers'];
+    return offersJson.map((e) => Offer.fromJson(e)).toList();
+  }
+}
+
+final myOffersProvider = AsyncNotifierProvider<MyOffersNotifier, List<Offer>>(MyOffersNotifier.new);

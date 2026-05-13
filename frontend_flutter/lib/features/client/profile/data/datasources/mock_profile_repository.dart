@@ -34,6 +34,9 @@ class MockProfileRepository implements IProfileRepository {
     List<String>? tipoViagem,
     List<String>? preferencias,
     bool? temPassaporte,
+    String? bio,
+    String? avatarUrl,
+    String? phone,
   }) async {
     await Future.delayed(const Duration(milliseconds: 600));
     if (_user == null) {
@@ -44,6 +47,9 @@ class MockProfileRepository implements IProfileRepository {
       tipoViagem: tipoViagem,
       preferencias: preferencias,
       temPassaporte: temPassaporte,
+      bio: bio,
+      avatarUrl: avatarUrl,
+      phone: phone,
     );
     return Right(_user!);
   }

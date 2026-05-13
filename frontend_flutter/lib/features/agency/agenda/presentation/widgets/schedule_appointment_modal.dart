@@ -3,6 +3,7 @@ import 'package:cadife_smart_travel/features/agency/agenda/presentation/provider
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 
 class ScheduleAppointmentModal extends ConsumerStatefulWidget {
@@ -84,7 +85,7 @@ class _ScheduleAppointmentModalState
         color: Theme.of(context).scaffoldBackgroundColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      child: Padding(
+      child: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(24, 16, 24, 24 + bottomInset),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -95,14 +96,14 @@ class _ScheduleAppointmentModalState
               children: [
                 IconButton(
                   icon: const Icon(Icons.close, color: AppColors.primary),
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed: () => context.pop(),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                 ),
                 const SizedBox(width: 16),
                 const Expanded(
                   child: Text(
-                    'SCHEDULE APPOINTMENT',
+                    'AGENDAR REUNIÃO',
                     style: TextStyle(
                       color: AppColors.primary,
                       fontSize: 16,
@@ -178,7 +179,7 @@ class _ScheduleAppointmentModalState
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Select Date',
+                  'Selecionar Data',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
@@ -279,7 +280,7 @@ class _ScheduleAppointmentModalState
                 Icon(Icons.access_time, size: 16, color: context.cadife.textSecondary),
                 const SizedBox(width: 8),
                 Text(
-                  'Available Times',
+                  'Horários Disponíveis',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
@@ -369,7 +370,7 @@ class _ScheduleAppointmentModalState
                   ? () async {
                       final success = await notifier.confirmAppointment(widget.lead.id);
                       if (success && context.mounted) {
-                        Navigator.of(context).pop(true);
+                        context.pop(true);
                       }
                     }
                   : null,
@@ -380,12 +381,12 @@ class _ScheduleAppointmentModalState
                       child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                     )
                   : const Icon(Icons.check_circle_outline, size: 18),
-              child: const Text('CONFIRM SCHEDULE'),
+              child: const Text('CONFIRMAR HORÁRIO'),
             ),
             const SizedBox(height: 8),
             ShadButton.outline(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
+              onPressed: () => context.pop(false),
+              child: const Text('Cancelar'),
             ),
           ],
         ),

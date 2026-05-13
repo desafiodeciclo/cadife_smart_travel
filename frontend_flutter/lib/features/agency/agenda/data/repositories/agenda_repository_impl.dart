@@ -184,6 +184,10 @@ class AgendaRepositoryImpl implements IAgendaRepository {
     if (e.response?.statusCode == 401) {
       return const UnauthorizedFailure();
     }
+    if (e.response?.statusCode == 409) {
+      final detail = e.response?.data?['detail'] as String?;
+      return ConflictFailure(detail ?? 'Conflito: Horário já ocupado.');
+    }
     return ServerFailure(e.message ?? 'Erro no servidor');
   }
 }

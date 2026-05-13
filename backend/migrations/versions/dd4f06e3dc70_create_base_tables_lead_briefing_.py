@@ -52,41 +52,43 @@ def upgrade() -> None:
         op.create_index('ix_users_email', 'users', ['email'], unique=True)
 
     # ── PostgreSQL ENUM types ──────────────────────────────────────────────
+    # create_type=False prevents create_table's before_create hook from
+    # attempting a second CREATE TYPE; we handle creation explicitly below.
     lead_status_enum = postgresql.ENUM(
         'novo', 'em_atendimento', 'qualificado', 'agendado', 'proposta', 'fechado', 'perdido',
-        name='lead_status_enum',
+        name='lead_status_enum', create_type=False,
     )
     lead_score_enum = postgresql.ENUM(
         'quente', 'morno', 'frio',
-        name='lead_score_enum',
+        name='lead_score_enum', create_type=False,
     )
     lead_origem_enum = postgresql.ENUM(
         'whatsapp', 'app', 'web',
-        name='lead_origem_enum',
+        name='lead_origem_enum', create_type=False,
     )
     perfil_viagem_enum = postgresql.ENUM(
-        'casal', 'família', 'solo', 'grupo', 'amigos',
-        name='perfil_viagem_enum',
+        'casal', 'familia', 'solo', 'grupo', 'amigos',
+        name='perfil_viagem_enum', create_type=False,
     )
     orcamento_perfil_enum = postgresql.ENUM(
-        'baixo', 'médio', 'alto', 'premium',
-        name='orcamento_perfil_enum',
+        'baixo', 'medio', 'alto', 'premium',
+        name='orcamento_perfil_enum', create_type=False,
     )
     tipo_mensagem_enum = postgresql.ENUM(
         'texto', 'audio', 'imagem', 'documento',
-        name='tipo_mensagem_enum',
+        name='tipo_mensagem_enum', create_type=False,
     )
     agendamento_status_enum = postgresql.ENUM(
         'pendente', 'confirmado', 'realizado', 'cancelado',
-        name='agendamento_status_enum',
+        name='agendamento_status_enum', create_type=False,
     )
     agendamento_tipo_enum = postgresql.ENUM(
         'online', 'presencial',
-        name='agendamento_tipo_enum',
+        name='agendamento_tipo_enum', create_type=False,
     )
     proposta_status_enum = postgresql.ENUM(
         'rascunho', 'enviada', 'aprovada', 'recusada', 'em_revisao',
-        name='proposta_status_enum',
+        name='proposta_status_enum', create_type=False,
     )
 
     for enum in [
@@ -97,112 +99,116 @@ def upgrade() -> None:
         enum.create(op.get_bind(), checkfirst=True)
 
     # ── leads ──────────────────────────────────────────────────────────────
-    op.create_table(
-        'leads',
-        sa.Column('id', postgresql.UUID(as_uuid=True), primary_key=True),
-        sa.Column('nome', sa.String(255), nullable=True),
-        sa.Column('telefone', sa.String(20), nullable=False, unique=True),
-        sa.Column('origem', lead_origem_enum, nullable=False, server_default='whatsapp'),
-        sa.Column('status', lead_status_enum, nullable=False, server_default='novo'),
-        sa.Column('score', lead_score_enum, nullable=True),
-        sa.Column('consultor_id', postgresql.UUID(as_uuid=True),
-                  sa.ForeignKey('users.id', ondelete='SET NULL'), nullable=True),
-        sa.Column('is_archived', sa.Boolean, nullable=False, server_default='false'),
-        sa.Column('criado_em', sa.DateTime(timezone=True),
-                  server_default=sa.func.now(), nullable=False),
-        sa.Column('atualizado_em', sa.DateTime(timezone=True),
-                  server_default=sa.func.now(), nullable=False),
-        sa.CheckConstraint("length(telefone) >= 10", name="ck_leads_telefone_min_length"),
-    )
-    # Indexes
-    op.create_index('ix_leads_telefone', 'leads', ['telefone'], unique=True)
-    op.create_index('ix_leads_status_criado_em', 'leads', ['status', 'criado_em'])
-    op.create_index('ix_leads_consultor_status', 'leads', ['consultor_id', 'status'])
+    if not inspector.has_table('leads'):
+        op.create_table(
+            'leads',
+            sa.Column('id', postgresql.UUID(as_uuid=True), primary_key=True),
+            sa.Column('nome', sa.String(255), nullable=True),
+            sa.Column('telefone', sa.String(20), nullable=False, unique=True),
+            sa.Column('origem', lead_origem_enum, nullable=False, server_default='whatsapp'),
+            sa.Column('status', lead_status_enum, nullable=False, server_default='novo'),
+            sa.Column('score', lead_score_enum, nullable=True),
+            sa.Column('consultor_id', postgresql.UUID(as_uuid=True),
+                      sa.ForeignKey('users.id', ondelete='SET NULL'), nullable=True),
+            sa.Column('is_archived', sa.Boolean, nullable=False, server_default='false'),
+            sa.Column('criado_em', sa.DateTime(timezone=True),
+                      server_default=sa.func.now(), nullable=False),
+            sa.Column('atualizado_em', sa.DateTime(timezone=True),
+                      server_default=sa.func.now(), nullable=False),
+            sa.CheckConstraint("length(telefone) >= 10", name="ck_leads_telefone_min_length"),
+        )
+        op.create_index('ix_leads_telefone', 'leads', ['telefone'], unique=True)
+        op.create_index('ix_leads_status_criado_em', 'leads', ['status', 'criado_em'])
+        op.create_index('ix_leads_consultor_status', 'leads', ['consultor_id', 'status'])
 
     # ── briefings ─────────────────────────────────────────────────────────
-    op.create_table(
-        'briefings',
-        sa.Column('id', postgresql.UUID(as_uuid=True), primary_key=True),
-        sa.Column('lead_id', postgresql.UUID(as_uuid=True),
-                  sa.ForeignKey('leads.id', ondelete='CASCADE'), nullable=False, unique=True),
-        sa.Column('destino', sa.String(255), nullable=True),
-        sa.Column('origem', sa.String(255), nullable=True),
-        sa.Column('data_ida', sa.Date, nullable=True),
-        sa.Column('data_volta', sa.Date, nullable=True),
-        sa.Column('duracao_dias', sa.Integer, nullable=True),
-        sa.Column('qtd_pessoas', sa.Integer, nullable=True),
-        sa.Column('perfil', perfil_viagem_enum, nullable=True),
-        sa.Column('tipo_viagem', postgresql.ARRAY(sa.String), nullable=True),
-        sa.Column('preferencias', postgresql.ARRAY(sa.String), nullable=True),
-        sa.Column('orcamento', orcamento_perfil_enum, nullable=True),
-        sa.Column('tem_passaporte', sa.Boolean, nullable=True),
-        sa.Column('observacoes', sa.Text, nullable=True),
-        sa.Column('completude_pct', sa.Integer, nullable=False, server_default='0'),
-        sa.CheckConstraint("completude_pct BETWEEN 0 AND 100", name="ck_briefings_completude_range"),
-        sa.CheckConstraint("qtd_pessoas IS NULL OR qtd_pessoas >= 1", name="ck_briefings_qtd_pessoas_min"),
-        sa.CheckConstraint("duracao_dias IS NULL OR duracao_dias >= 1", name="ck_briefings_duracao_min"),
-    )
-    op.create_index('ix_briefings_lead_id', 'briefings', ['lead_id'], unique=True)
+    if not inspector.has_table('briefings'):
+        op.create_table(
+            'briefings',
+            sa.Column('id', postgresql.UUID(as_uuid=True), primary_key=True),
+            sa.Column('lead_id', postgresql.UUID(as_uuid=True),
+                      sa.ForeignKey('leads.id', ondelete='CASCADE'), nullable=False, unique=True),
+            sa.Column('destino', sa.String(255), nullable=True),
+            sa.Column('origem', sa.String(255), nullable=True),
+            sa.Column('data_ida', sa.Date, nullable=True),
+            sa.Column('data_volta', sa.Date, nullable=True),
+            sa.Column('duracao_dias', sa.Integer, nullable=True),
+            sa.Column('qtd_pessoas', sa.Integer, nullable=True),
+            sa.Column('perfil', perfil_viagem_enum, nullable=True),
+            sa.Column('tipo_viagem', postgresql.ARRAY(sa.String), nullable=True),
+            sa.Column('preferencias', postgresql.ARRAY(sa.String), nullable=True),
+            sa.Column('orcamento', orcamento_perfil_enum, nullable=True),
+            sa.Column('tem_passaporte', sa.Boolean, nullable=True),
+            sa.Column('observacoes', sa.Text, nullable=True),
+            sa.Column('completude_pct', sa.Integer, nullable=False, server_default='0'),
+            sa.CheckConstraint("completude_pct BETWEEN 0 AND 100", name="ck_briefings_completude_range"),
+            sa.CheckConstraint("qtd_pessoas IS NULL OR qtd_pessoas >= 1", name="ck_briefings_qtd_pessoas_min"),
+            sa.CheckConstraint("duracao_dias IS NULL OR duracao_dias >= 1", name="ck_briefings_duracao_min"),
+        )
+        op.create_index('ix_briefings_lead_id', 'briefings', ['lead_id'], unique=True)
 
     # ── interacoes ────────────────────────────────────────────────────────
-    op.create_table(
-        'interacoes',
-        sa.Column('id', postgresql.UUID(as_uuid=True), primary_key=True),
-        sa.Column('lead_id', postgresql.UUID(as_uuid=True),
-                  sa.ForeignKey('leads.id', ondelete='CASCADE'), nullable=False),
-        sa.Column('mensagem_cliente', sa.Text, nullable=True),
-        sa.Column('mensagem_ia', sa.Text, nullable=True),
-        sa.Column('tipo_mensagem', tipo_mensagem_enum, nullable=False, server_default='texto'),
-        sa.Column('timestamp', sa.DateTime(timezone=True),
-                  server_default=sa.func.now(), nullable=False),
-        sa.Column('enviado_em', sa.DateTime(timezone=True), nullable=True),
-        sa.Column('status_envio', sa.String(10), nullable=True),
-        sa.Column('erro_envio', sa.Text, nullable=True),
-    )
-    op.create_index('ix_interacoes_lead_id', 'interacoes', ['lead_id'])
-    op.create_index('ix_interacoes_lead_timestamp', 'interacoes', ['lead_id', 'timestamp'])
+    if not inspector.has_table('interacoes'):
+        op.create_table(
+            'interacoes',
+            sa.Column('id', postgresql.UUID(as_uuid=True), primary_key=True),
+            sa.Column('lead_id', postgresql.UUID(as_uuid=True),
+                      sa.ForeignKey('leads.id', ondelete='CASCADE'), nullable=False),
+            sa.Column('mensagem_cliente', sa.Text, nullable=True),
+            sa.Column('mensagem_ia', sa.Text, nullable=True),
+            sa.Column('tipo_mensagem', tipo_mensagem_enum, nullable=False, server_default='texto'),
+            sa.Column('timestamp', sa.DateTime(timezone=True),
+                      server_default=sa.func.now(), nullable=False),
+            sa.Column('enviado_em', sa.DateTime(timezone=True), nullable=True),
+            sa.Column('status_envio', sa.String(10), nullable=True),
+            sa.Column('erro_envio', sa.Text, nullable=True),
+        )
+        op.create_index('ix_interacoes_lead_id', 'interacoes', ['lead_id'])
+        op.create_index('ix_interacoes_lead_timestamp', 'interacoes', ['lead_id', 'timestamp'])
 
     # ── agendamentos ──────────────────────────────────────────────────────
-    op.create_table(
-        'agendamentos',
-        sa.Column('id', postgresql.UUID(as_uuid=True), primary_key=True),
-        sa.Column('lead_id', postgresql.UUID(as_uuid=True),
-                  sa.ForeignKey('leads.id', ondelete='CASCADE'), nullable=False),
-        sa.Column('data', sa.Date, nullable=False),
-        sa.Column('hora', sa.Time, nullable=False),
-        sa.Column('status', agendamento_status_enum, nullable=False, server_default='pendente'),
-        sa.Column('tipo', agendamento_tipo_enum, nullable=False, server_default='online'),
-        sa.Column('consultor_id', postgresql.UUID(as_uuid=True),
-                  sa.ForeignKey('users.id', ondelete='SET NULL'), nullable=True),
-        sa.Column('criado_em', sa.DateTime(timezone=True),
-                  server_default=sa.func.now(), nullable=False),
-        sa.UniqueConstraint('lead_id', 'data', 'hora', name='uq_agendamento_lead_slot'),
-    )
-    op.create_index('ix_agendamentos_lead_id', 'agendamentos', ['lead_id'])
-    op.create_index('ix_agendamentos_lead_status', 'agendamentos', ['lead_id', 'status'])
-    op.create_index('ix_agendamentos_consultor_data', 'agendamentos', ['consultor_id', 'data'])
+    if not inspector.has_table('agendamentos'):
+        op.create_table(
+            'agendamentos',
+            sa.Column('id', postgresql.UUID(as_uuid=True), primary_key=True),
+            sa.Column('lead_id', postgresql.UUID(as_uuid=True),
+                      sa.ForeignKey('leads.id', ondelete='CASCADE'), nullable=False),
+            sa.Column('data', sa.Date, nullable=False),
+            sa.Column('hora', sa.Time, nullable=False),
+            sa.Column('status', agendamento_status_enum, nullable=False, server_default='pendente'),
+            sa.Column('tipo', agendamento_tipo_enum, nullable=False, server_default='online'),
+            sa.Column('consultor_id', postgresql.UUID(as_uuid=True),
+                      sa.ForeignKey('users.id', ondelete='SET NULL'), nullable=True),
+            sa.Column('criado_em', sa.DateTime(timezone=True),
+                      server_default=sa.func.now(), nullable=False),
+            sa.UniqueConstraint('lead_id', 'data', 'hora', name='uq_agendamento_lead_slot'),
+        )
+        op.create_index('ix_agendamentos_lead_id', 'agendamentos', ['lead_id'])
+        op.create_index('ix_agendamentos_lead_status', 'agendamentos', ['lead_id', 'status'])
+        op.create_index('ix_agendamentos_consultor_data', 'agendamentos', ['consultor_id', 'data'])
 
     # ── propostas ─────────────────────────────────────────────────────────
-    op.create_table(
-        'propostas',
-        sa.Column('id', postgresql.UUID(as_uuid=True), primary_key=True),
-        sa.Column('lead_id', postgresql.UUID(as_uuid=True),
-                  sa.ForeignKey('leads.id', ondelete='CASCADE'), nullable=False),
-        sa.Column('descricao', sa.Text, nullable=False),
-        sa.Column('valor_estimado', sa.Numeric(12, 2), nullable=True),
-        sa.Column('status', proposta_status_enum, nullable=False, server_default='rascunho'),
-        sa.Column('consultor_id', postgresql.UUID(as_uuid=True),
-                  sa.ForeignKey('users.id', ondelete='SET NULL'), nullable=True),
-        sa.Column('criado_em', sa.DateTime(timezone=True),
-                  server_default=sa.func.now(), nullable=False),
-        sa.CheckConstraint(
-            "valor_estimado IS NULL OR valor_estimado >= 0",
-            name="ck_propostas_valor_positivo",
-        ),
-    )
-    op.create_index('ix_propostas_lead_id', 'propostas', ['lead_id'])
-    op.create_index('ix_propostas_lead_status', 'propostas', ['lead_id', 'status'])
-    op.create_index('ix_propostas_consultor_status', 'propostas', ['consultor_id', 'status'])
+    if not inspector.has_table('propostas'):
+        op.create_table(
+            'propostas',
+            sa.Column('id', postgresql.UUID(as_uuid=True), primary_key=True),
+            sa.Column('lead_id', postgresql.UUID(as_uuid=True),
+                      sa.ForeignKey('leads.id', ondelete='CASCADE'), nullable=False),
+            sa.Column('descricao', sa.Text, nullable=False),
+            sa.Column('valor_estimado', sa.Numeric(12, 2), nullable=True),
+            sa.Column('status', proposta_status_enum, nullable=False, server_default='rascunho'),
+            sa.Column('consultor_id', postgresql.UUID(as_uuid=True),
+                      sa.ForeignKey('users.id', ondelete='SET NULL'), nullable=True),
+            sa.Column('criado_em', sa.DateTime(timezone=True),
+                      server_default=sa.func.now(), nullable=False),
+            sa.CheckConstraint(
+                "valor_estimado IS NULL OR valor_estimado >= 0",
+                name="ck_propostas_valor_positivo",
+            ),
+        )
+        op.create_index('ix_propostas_lead_id', 'propostas', ['lead_id'])
+        op.create_index('ix_propostas_lead_status', 'propostas', ['lead_id', 'status'])
+        op.create_index('ix_propostas_consultor_status', 'propostas', ['consultor_id', 'status'])
 
 
 def downgrade() -> None:

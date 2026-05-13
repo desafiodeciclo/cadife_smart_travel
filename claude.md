@@ -8,9 +8,19 @@ Plataforma de atendimento turístico inteligente para a **Cadife Tour**:
 
 - **WhatsApp Bot (AYA):** assistente de pré-atendimento via IA — coleta briefing estruturado e qualifica leads 24/7.
 - **Backend FastAPI:** orquestra webhook Meta, camada IA (LangChain+RAG), banco de dados, notificações FCM.
-- **App Flutter:** CRM da agência (dashboard, pipeline, agenda) + portal do cliente (status da viagem) — offline-first, biometria, GoRouter + Riverpod.
+- **App Flutter:** CRM da agência (dashboard, pipeline, agenda, propostas, perfil) + portal do cliente (status da viagem, documentos, histórico, itinerário, ofertas, perfil com diário de viagem e mala de viagem) — offline-first, biometria, GoRouter + Riverpod.
 
 **Restrição Crítica Inegociável:** A IA NUNCA gera preços, confirma disponibilidade de voos/hospedagem ou fecha vendas. O sistema é de pré-atendimento — o consultor humano sempre fecha o negócio.
+
+---
+
+## Estado Atual do Projeto (Maio 2026)
+
+- **Versão:** 1.2.0 — MVP Completo
+- **Specs concluídas:** 25/25 (em `specs/done/`)
+- **Specs ativas:** 1 (`F-feat-ui-client-profile-full.json` — todos os steps concluídos, aguardando mover para `done/`)
+- **Specs pendentes:** 0 (`specs/pending/` vazio — novas tasks entram aqui antes de qualquer código)
+- **Próximos trabalhos:** suite de testes E2E, transcrição de áudio via Whisper, observabilidade avançada
 
 ---
 
@@ -31,7 +41,9 @@ Execute nesta ordem antes de tocar qualquer código:
     - `10_glossary_and_stakeholders.md` (Glossário e Stakeholders)
 2. Leia `.claude/rules/` — regras ativas por camada (backend, flutter, AI)
 3. Verifique `specs/active/` — há tasks em andamento? Retome-as do último step incompleto.
+   - **Estado atual:** `F-feat-ui-client-profile-full.json` está com todos os steps `"done"` — mova para `specs/done/` ao iniciar sessão.
 4. Se `specs/active/` vazio, verifique `specs/pending/` — assuma a próxima task disponível.
+   - **Estado atual:** `specs/pending/` está vazio. Novas features devem ser criadas como spec JSON aqui primeiro.
 
 ---
 

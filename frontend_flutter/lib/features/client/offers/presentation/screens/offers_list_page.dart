@@ -1,10 +1,12 @@
 import 'dart:async';
 
 import 'package:cadife_smart_travel/design_system/design_system.dart';
+import 'package:cadife_smart_travel/features/client/offers/presentation/providers/offers_filter_provider.dart';
 import 'package:cadife_smart_travel/features/client/offers/presentation/providers/offers_provider.dart';
 import 'package:cadife_smart_travel/features/client/offers/presentation/widgets/offer_card.dart';
 import 'package:cadife_smart_travel/features/client/offers/presentation/widgets/offer_shimmer.dart';
 import 'package:cadife_smart_travel/features/client/offers/presentation/widgets/offers_filter_sheet.dart';
+import 'package:cadife_smart_travel/features/notifications/presentation/widgets/notification_bell.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/empty_state/app_empty_state.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/empty_state/empty_type.dart';
 import 'package:flutter/material.dart';
@@ -19,173 +21,185 @@ class OffersListPage extends ConsumerStatefulWidget {
 }
 
 class _OffersListPageState extends ConsumerState<OffersListPage> {
-  final ScrollController _scrollController = ScrollController();
-  final TextEditingController _searchController = TextEditingController();
+  final _searchController = TextEditingController();
   Timer? _debounce;
 
   @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(_onScroll);
-  }
-
-  @override
   void dispose() {
-    _scrollController.dispose();
     _searchController.dispose();
     _debounce?.cancel();
     super.dispose();
   }
 
-  void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
-      ref.read(offersProvider.notifier).loadOffers();
-    }
-  }
-
-  void _onSearchChanged(String query) {
-    if (_debounce?.isActive ?? false) _debounce!.cancel();
-    _debounce = Timer(const Duration(milliseconds: 500), () {
-      ref.read(offersProvider.notifier).updateFilters(query: query);
+  void _onSearchChanged(String value) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 400), () {
+      final updated = ref.read(offersFilterProvider).copyWith(searchQuery: value);
+      ref.read(offersFilterProvider.notifier).state = updated;
+      _syncFilters(updated);
     });
   }
 
-  Future<void> _openFilters() async {
-    final state = ref.read(offersProvider);
-    final result = await showModalBottomSheet<Map<String, dynamic>>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => OffersFilterSheet(
-        initialCategories: state.categories,
-        initialMinPrice: state.minPrice,
-        initialMaxPrice: state.maxPrice,
+  void _syncFilters(OffersFilters filters) {
+    ref.read(offersProvider.notifier).applyFilters(
+      OffersFilterState(
+        search: filters.searchQuery.isEmpty ? null : filters.searchQuery,
+        destination: filters.destination,
+        minPrice: filters.minPrice > 0 ? filters.minPrice : null,
+        maxPrice: filters.maxPrice < 50000.0 ? filters.maxPrice : null,
+        minDays: filters.minDays,
+        maxDays: filters.maxDays,
       ),
     );
-
-    if (result != null) {
-      ref.read(offersProvider.notifier).updateFilters(
-        categories: result['categories'] as List<String>,
-        minPrice: result['minPrice'] as double,
-        maxPrice: result['maxPrice'] as double,
-      );
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(offersProvider);
-    final theme = ShadTheme.of(context);
-
-    final showEmptyState = !state.isLoading && state.offers.isEmpty;
-    final isFiltering = state.query != null && state.query!.isNotEmpty || state.categories.isNotEmpty || state.minPrice > 0 || state.maxPrice < 50000;
+    final offersAsync = ref.watch(offersProvider);
+    final filters = ref.watch(offersFilterProvider);
 
     return PageScaffold(
       title: 'Ofertas',
       actions: [
-        IconButton(
-          icon: Icon(
-            LucideIcons.slidersHorizontal,
-            color: state.categories.isNotEmpty ? theme.colorScheme.primary : null,
-          ),
-          onPressed: _openFilters,
-        ),
+        const NotificationBell(),
+        const SizedBox(width: 8),
       ],
       body: Column(
         children: [
-          // Banner Offline
-          if (state.isOffline)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-              color: Colors.orange,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(LucideIcons.wifiOff, size: 16, color: Colors.white),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Você está offline. Exibindo ofertas salvas.',
-                    style: theme.textTheme.small.copyWith(color: Colors.white),
-                  ),
-                ],
-              ),
-            ),
-          
-          // Busca
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: ShadInput(
               controller: _searchController,
               placeholder: const Text('Buscar destinos ou pacotes...'),
+              onChanged: _onSearchChanged,
               leading: const Padding(
                 padding: EdgeInsets.all(12.0),
                 child: Icon(LucideIcons.search, size: 16),
               ),
-              onChanged: _onSearchChanged,
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 1,
+                    height: 20,
+                    color: context.cadife.cardBorder,
+                  ),
+                  ShadButton.ghost(
+                    child: Icon(LucideIcons.listFilter,
+                        size: 20, color: context.cadife.primary),
+                    onPressed: () async {
+                      final result = await showModalBottomSheet<Map<String, dynamic>>(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (context) => OffersFilterSheet(
+                          initialDestination: filters.destination,
+                          initialCategories: filters.categories,
+                          initialMinPrice: filters.minPrice,
+                          initialMaxPrice: filters.maxPrice,
+                          initialStartDate: filters.startDate,
+                          initialEndDate: filters.endDate,
+                          initialMinDays: filters.minDays,
+                          initialMaxDays: filters.maxDays,
+                        ),
+                      );
+
+                      if (result != null) {
+                        final updated = ref.read(offersFilterProvider).copyWith(
+                          destination: result['destination'] as String?,
+                          categories: result['categories'] as List<String>?,
+                          minPrice: result['minPrice'] as double?,
+                          maxPrice: result['maxPrice'] as double?,
+                          startDate: result['startDate'] as DateTime?,
+                          endDate: result['endDate'] as DateTime?,
+                          minDays: result['minDays'] as int?,
+                          maxDays: result['maxDays'] as int?,
+                          clearDestination: result['destination'] == null,
+                          clearDates: result['startDate'] == null,
+                          clearDuration: result['minDays'] == null,
+                        );
+                        ref.read(offersFilterProvider.notifier).state = updated;
+                        _syncFilters(updated);
+                      }
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
 
           // Lista / Grid
           Expanded(
-            child: RefreshIndicator(
-              onRefresh: () async {
-                await ref.read(offersProvider.notifier).loadOffers(refresh: true);
-              },
-              child: showEmptyState
-                  ? ListView(
-                      children: [
-                        SizedBox(height: MediaQuery.of(context).size.height * 0.2),
-                        AppEmptyState(
-                          type: isFiltering ? EmptyType.emptySearch : EmptyType.noOffers,
-                          onAction: isFiltering
-                              ? () {
-                                  _searchController.clear();
-                                  ref.read(offersProvider.notifier).clearFilters();
-                                }
-                              : null,
-                        ),
-                      ],
-                    )
-                  : CustomScrollView(
-                      controller: _scrollController,
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      slivers: [
-                        SliverPadding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          sliver: SliverGrid(
-                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: MediaQuery.of(context).size.width > 600 ? 3 : 2,
-                              childAspectRatio: 0.7,
-                              crossAxisSpacing: 16,
-                              mainAxisSpacing: 16,
-                            ),
-                            delegate: SliverChildBuilderDelegate(
-                              (context, index) {
-                                if (index < state.offers.length) {
-                                  return OfferCard(
-                                    offer: state.offers[index],
-                                    onTap: () {
-                                      context.pushNamed(
-                                        'client_offer_details',
-                                        pathParameters: {'offerId': state.offers[index].id},
-                                        extra: state.offers[index],
-                                      );
-                                    },
+            child: offersAsync.when(
+              data: (offers) {
+                if (offers.isEmpty) {
+                  return const AppEmptyState(
+                    type: EmptyType.noOffers,
+                  );
+                }
+                return RefreshIndicator(
+                  onRefresh: () => ref.read(offersProvider.notifier).loadOffers(),
+                  child: CustomScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    slivers: [
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        sliver: SliverGrid(
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: MediaQuery.of(context).size.width > 600 ? 3 : 2,
+                            childAspectRatio: 0.58,
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 16,
+                          ),
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              final offer = offers[index];
+                              return OfferCard(
+                                offer: offer,
+                                onTap: () {
+                                  context.pushNamed(
+                                    'client_offer_details',
+                                    pathParameters: {'offerId': offer.id},
+                                    extra: offer,
                                   );
-                                } else if (state.isLoading || state.isLoadingMore) {
-                                  return const OfferShimmer();
-                                }
-                                return null;
-                              },
-                              childCount: state.offers.length +
-                                  (state.isLoading || state.isLoadingMore ? 4 : 0),
-                            ),
+                                },
+                              );
+                            },
+                            childCount: offers.length,
                           ),
                         ),
-                        const SliverToBoxAdapter(child: SizedBox(height: 32)),
-                      ],
+                      ),
+                      const SliverToBoxAdapter(child: SizedBox(height: 32)),
+                    ],
+                  ),
+                );
+              },
+              loading: () => GridView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: MediaQuery.of(context).size.width > 600 ? 3 : 2,
+                  childAspectRatio: 0.58,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                ),
+                itemCount: 6,
+                itemBuilder: (_, _) => const OfferShimmer(),
+              ),
+              error: (err, stack) => Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(LucideIcons.circleAlert, color: Colors.red, size: 48),
+                    const SizedBox(height: 16),
+                    Text('Erro ao carregar ofertas: $err'),
+                    const SizedBox(height: 16),
+                    ShadButton(
+                      child: const Text('Tentar novamente'),
+                      onPressed: () => ref.refresh(offersProvider),
                     ),
+                  ],
+                ),
+              ),
             ),
           ),
         ],

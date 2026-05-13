@@ -1,5 +1,7 @@
 import 'package:cadife_smart_travel/core/cache/isar_cache_manager.dart';
 import 'package:cadife_smart_travel/core/cache/isar_schemas/isar_schemas.dart';
+
+import 'package:cadife_smart_travel/features/client/offers/domain/entities/date_range.dart';
 import 'package:cadife_smart_travel/features/client/offers/domain/entities/offer.dart';
 import 'package:cadife_smart_travel/features/client/offers/domain/repositories/i_offer_repository.dart';
 
@@ -14,6 +16,7 @@ class MockOfferRepository implements IOfferRepository {
     int page = 1,
     int limit = 20,
     String? query,
+    String? destination,
     List<String>? categories,
     double? minPrice,
     double? maxPrice,
@@ -28,11 +31,27 @@ class MockOfferRepository implements IOfferRepository {
         destination: c.destination,
         category: c.category,
         description: c.description,
-        estimatedPrice: c.estimatedPrice,
+        basePrice: c.estimatedPrice,
+        price: c.estimatedPrice,
+        currency: 'BRL',
         imageUrl: c.imageUrl,
+        dates: DateRange(
+          start: DateTime.now(),
+          end: DateTime.now().add(const Duration(days: 7)),
+        ),
+        daysCount: 7,
+        rating: 4.5,
+        travelers: 2,
+        availableSpots: 10,
+        spotsReserved: 0,
+        status: 'published',
+        highlights: const [],
+        amenities: const [],
+        views: 0,
+        interests: 0,
       )).toList();
 
-      filtered = _applyFilters(filtered, query, categories, minPrice, maxPrice);
+      filtered = _applyFilters(filtered, query, destination, categories, minPrice, maxPrice);
 
       // Paginação
       final start = (page - 1) * limit;
@@ -47,7 +66,7 @@ class MockOfferRepository implements IOfferRepository {
     var offers = _generateMockOffers();
     
     // Aplica os mesmos filtros
-    offers = _applyFilters(offers, query, categories, minPrice, maxPrice);
+    offers = _applyFilters(offers, query, destination, categories, minPrice, maxPrice);
 
     // Paginação
     final start = (page - 1) * limit;
@@ -63,8 +82,8 @@ class MockOfferRepository implements IOfferRepository {
         destination: o.destination,
         category: o.category,
         description: o.description,
-        estimatedPrice: o.estimatedPrice,
-        imageUrl: o.imageUrl,
+        estimatedPrice: o.finalPrice,
+        imageUrl: o.destinationImageUrl,
         updatedAt: DateTime.now(),
       )).toList();
       await _cacheManager.putOffers(isarOffers);
@@ -76,6 +95,7 @@ class MockOfferRepository implements IOfferRepository {
   List<Offer> _applyFilters(
     List<Offer> list, 
     String? query, 
+    String? destination,
     List<String>? categories, 
     double? minPrice, 
     double? maxPrice
@@ -87,11 +107,14 @@ class MockOfferRepository implements IOfferRepository {
           return false;
         }
       }
+      if (destination != null && destination.isNotEmpty) {
+        if (o.destination != destination) return false;
+      }
       if (categories != null && categories.isNotEmpty) {
         if (!categories.contains(o.category)) return false;
       }
-      if (minPrice != null && o.estimatedPrice < minPrice) return false;
-      if (maxPrice != null && o.estimatedPrice > maxPrice) return false;
+      if (minPrice != null && o.finalPrice < minPrice) return false;
+      if (maxPrice != null && o.finalPrice > maxPrice) return false;
       return true;
     }).toList();
   }
@@ -100,14 +123,30 @@ class MockOfferRepository implements IOfferRepository {
     return List.generate(100, (index) {
       final category = _categories[index % _categories.length];
       final destination = _destinations[index % _destinations.length];
+      final basePrice = 2000.0 + (index * 150) % 15000;
       return Offer(
         id: 'offer-$index',
         title: 'Pacote Especial: $destination',
         destination: destination,
         category: category,
         description: 'Explore o melhor de $destination neste pacote exclusivo de $category. Inclui hospedagem premium, passeios guiados e experiências gastronômicas inesquecíveis.',
-        estimatedPrice: 1500.0 + (index * 150) % 15000,
+        basePrice: basePrice,
+        price: basePrice * 0.9,
         imageUrl: 'https://picsum.photos/seed/offer$index/600/400',
+        dates: DateRange(
+          start: DateTime.now().add(Duration(days: index * 2)),
+          end: DateTime.now().add(Duration(days: index * 2 + 7)),
+        ),
+        daysCount: 7,
+        rating: 4.5 + (index % 5) / 10,
+        travelers: 2,
+        availableSpots: 20,
+        spotsReserved: index % 10,
+        status: 'published',
+        highlights: const ['Highlight 1', 'Highlight 2'],
+        amenities: const ['Amenity 1', 'Amenity 2'],
+        views: 50 + index,
+        interests: 5 + (index % 20),
       );
     });
   }

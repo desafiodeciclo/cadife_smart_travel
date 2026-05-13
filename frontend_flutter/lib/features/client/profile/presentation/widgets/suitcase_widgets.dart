@@ -1,5 +1,4 @@
 import 'package:cadife_smart_travel/design_system/design_system.dart';
-import 'package:cadife_smart_travel/features/client/profile/data/mocks/client_profile_mocks.dart';
 import 'package:cadife_smart_travel/features/client/profile/domain/entities/suitcase_item.dart';
 import 'package:flutter/material.dart';
 
@@ -11,391 +10,432 @@ class SuitcaseTab extends StatefulWidget {
 }
 
 class _SuitcaseTabState extends State<SuitcaseTab> {
-  String _selectedTripId = 'trip-paris';
-  late List<SuitcaseItem> _items;
+  static const _categories = [
+    'Documentos',
+    'Roupas',
+    'Higiene',
+    'Eletrônicos',
+    'Outros',
+  ];
 
-  static const _trips = {
-    'trip-paris': '🇫🇷 Paris, França',
-    'trip-tokyo': '🇯🇵 Tóquio, Japão',
-  };
-
-  @override
-  void initState() {
-    super.initState();
-    _items = ClientProfileMocks.suitcaseItems(_selectedTripId);
-  }
-
-  void _selectTrip(String tripId) {
-    setState(() {
-      _selectedTripId = tripId;
-      _items = ClientProfileMocks.suitcaseItems(tripId);
-    });
-  }
-
-  void _togglePacked(int index) {
-    setState(() {
-      final item = _items[index];
-      _items[index] = item.copyWith(packed: !item.packed);
-    });
-  }
-
-  void _deleteItem(int index) {
-    setState(() => _items.removeAt(index));
-  }
-
-  void _updateItem(int index, String newName, String newCategory, int qty) {
-    setState(() {
-      _items[index] = _items[index].copyWith(
-        name: newName,
-        category: newCategory,
-        quantity: qty,
-      );
-    });
-  }
-
-  void _addItem(String name, String category) {
-    setState(() {
-      _items.add(
+  final List<BagData> _bags = [
+    BagData(
+      name: 'Itens Essenciais',
+      items: [
         SuitcaseItem(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
-          tripId: _selectedTripId,
-          category: category,
-          name: name,
-          packed: false,
-          isSuggestion: false,
+          id: 'e1',
+          tripId: 'default',
+          category: 'Documentos',
+          name: 'Passaporte',
+          packed: true,
           createdAt: DateTime.now(),
         ),
-      );
+        SuitcaseItem(
+          id: 'e2',
+          tripId: 'default',
+          category: 'Documentos',
+          name: 'Seguro Viagem',
+          packed: false,
+          createdAt: DateTime.now(),
+        ),
+        SuitcaseItem(
+          id: 'e3',
+          tripId: 'default',
+          category: 'Higiene',
+          name: 'Escova de Dentes',
+          packed: false,
+          createdAt: DateTime.now(),
+        ),
+        SuitcaseItem(
+          id: 'e4',
+          tripId: 'default',
+          category: 'Roupas',
+          name: 'Casaco',
+          packed: false,
+          createdAt: DateTime.now(),
+        ),
+      ],
+    ),
+  ];
+
+  // ── helpers ────────────────────────────────────────────────────────────────
+
+  Map<String, List<SuitcaseItem>> _groupByCategory(List<SuitcaseItem> items) {
+    final map = <String, List<SuitcaseItem>>{};
+    for (final item in items) {
+      (map[item.category] ??= []).add(item);
+    }
+    return map;
+  }
+
+  void _togglePacked(String itemId, bool? packed) {
+    setState(() {
+      for (final bag in _bags) {
+        final idx = bag.items.indexWhere((i) => i.id == itemId);
+        if (idx != -1) {
+          bag.items[idx] = bag.items[idx].copyWith(packed: packed ?? false);
+          break;
+        }
+      }
     });
   }
 
-  Map<String, List<_IndexedItem>> _groupedItems() {
-    final result = <String, List<_IndexedItem>>{};
-    for (var i = 0; i < _items.length; i++) {
-      final item = _items[i];
-      result.putIfAbsent(item.category, () => []).add(_IndexedItem(i, item));
-    }
-    return result;
+  // ── dialogs ────────────────────────────────────────────────────────────────
+
+  void _showCreateBagDialog() {
+    final ctrl = TextEditingController();
+    showShadDialog(
+      context: context,
+      builder: (ctx) => ShadDialog(
+        title: const Text('Criar nova mala'),
+        description: const Text('Dê um nome para identificar esta mala.'),
+        actions: [
+          ShadButton.outline(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          ShadButton(
+            onPressed: () {
+              final name = ctrl.text.trim();
+              if (name.isEmpty) return;
+              setState(() => _bags.add(BagData(name: name, items: [])));
+              Navigator.pop(ctx);
+            },
+            child: const Text('Criar'),
+          ),
+        ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: ShadInput(
+            controller: ctrl,
+            placeholder: const Text('Ex: Mala de Mão'),
+            autofocus: true,
+          ),
+        ),
+      ),
+    );
   }
 
-  int get _packedCount => _items.where((i) => i.packed).length;
+  void _showAddItemDialog(BagData bag) {
+    final nameCtrl = TextEditingController();
+    String category = _categories.first;
+
+    showShadDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => ShadDialog(
+          title: const Text('Adicionar item'),
+          actions: [
+            ShadButton.outline(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar'),
+            ),
+            ShadButton(
+              onPressed: () {
+                final name = nameCtrl.text.trim();
+                if (name.isEmpty) return;
+                setState(() {
+                  bag.items.add(SuitcaseItem(
+                    id: 'item-${DateTime.now().millisecondsSinceEpoch}',
+                    tripId: 'default',
+                    category: category,
+                    name: name,
+                    createdAt: DateTime.now(),
+                  ));
+                });
+                Navigator.pop(ctx);
+              },
+              child: const Text('Adicionar'),
+            ),
+          ],
+          child: _ItemForm(
+            nameCtrl: nameCtrl,
+            categories: _categories,
+            selectedCategory: category,
+            onCategoryChanged: (c) => setDialogState(() => category = c),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showEditItemDialog(BagData bag, SuitcaseItem item) {
+    final nameCtrl = TextEditingController(text: item.name);
+    String category = item.category;
+
+    showShadDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => ShadDialog(
+          title: const Text('Editar item'),
+          actions: [
+            ShadButton.outline(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar'),
+            ),
+            ShadButton(
+              onPressed: () {
+                final name = nameCtrl.text.trim();
+                if (name.isEmpty) return;
+                setState(() {
+                  final bagIdx = _bags.indexOf(bag);
+                  final itemIdx =
+                      _bags[bagIdx].items.indexWhere((i) => i.id == item.id);
+                  _bags[bagIdx].items[itemIdx] =
+                      item.copyWith(name: name, category: category);
+                });
+                Navigator.pop(ctx);
+              },
+              child: const Text('Salvar'),
+            ),
+          ],
+          child: _ItemForm(
+            nameCtrl: nameCtrl,
+            categories: _categories,
+            selectedCategory: category,
+            onCategoryChanged: (c) => setDialogState(() => category = c),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── build ──────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
-    final cadife = context.cadife;
-    final theme = Theme.of(context);
-    final grouped = _groupedItems();
-    final suggestions = _items.where((i) => i.isSuggestion).toList();
-    final totalItems = _items.length;
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+      child: Column(
+        children: [
+          // Lista de malas (expansion tiles)
+          ..._bags.map(_buildBagTile),
 
-    return Column(
-      children: [
-        // Trip selector + progress
-        Container(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-          child: Column(
-            children: [
-              // Trip dropdown
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(
-                  color: cadife.cardBackground,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: cadife.divider),
+          // "Nova mala" como item dentro da lista
+          const SizedBox(height: 4),
+          _NewBagTile(onTap: _showCreateBagDialog),
+        ],
+      ),
+    );
+  }
+
+  // ── bag tile ───────────────────────────────────────────────────────────────
+
+  Widget _buildBagTile(BagData bag) {
+    final cadife = context.cadife;
+    final packed = bag.items.where((i) => i.packed).length;
+    final total = bag.items.length;
+    final grouped = _groupByCategory(bag.items);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: cadife.cardBackground,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: cadife.cardBorder),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: ExpansionTile(
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          shape: const RoundedRectangleBorder(side: BorderSide.none),
+          collapsedShape: const RoundedRectangleBorder(side: BorderSide.none),
+          leading: Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(LucideIcons.luggage, color: AppColors.primary, size: 18),
+          ),
+          title: Text(
+            bag.name,
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 14,
+              color: cadife.textPrimary,
+            ),
+          ),
+          subtitle: total == 0
+              ? Text(
+                  'Vazia',
+                  style: TextStyle(fontSize: 12, color: cadife.textSecondary),
+                )
+              : Text(
+                  '$packed/$total itens',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: packed == total ? AppColors.success : cadife.textSecondary,
+                    fontWeight: packed == total ? FontWeight.w600 : FontWeight.normal,
+                  ),
                 ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    isExpanded: true,
-                    value: _selectedTripId,
-                    dropdownColor: cadife.cardBackground,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: cadife.textPrimary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    items: _trips.entries
-                        .map(
-                          (e) => DropdownMenuItem(
-                            value: e.key,
-                            child: Text(e.value),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (v) {
-                      if (v != null) _selectTrip(v);
-                    },
+          children: [
+            // Barra de progresso se houver itens
+            if (total > 0) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: LinearProgressIndicator(
+                    value: packed / total,
+                    minHeight: 4,
+                    backgroundColor: cadife.muted,
+                    valueColor: const AlwaysStoppedAnimation<Color>(AppColors.success),
                   ),
                 ),
               ),
-
-              if (totalItems > 0) ...[
-                const SizedBox(height: 12),
-                _PackingProgress(packed: _packedCount, total: totalItems),
-              ],
+              Divider(height: 1, color: cadife.cardBorder),
             ],
-          ),
+
+            // Itens agrupados por categoria
+            ..._buildGroupedItems(bag, grouped),
+
+            // Botão "Adicionar item" dentro da mala
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+              child: ShadButton.outline(
+                width: double.infinity,
+                size: ShadButtonSize.sm,
+                leading: const Icon(LucideIcons.plus, size: 14),
+                onPressed: () => _showAddItemDialog(bag),
+                child: const Text('Adicionar item'),
+              ),
+            ),
+          ],
         ),
+      ),
+    );
+  }
 
-        // List
-        Expanded(
-          child: _items.isEmpty
-              ? _EmptySuitcaseState(
-                  onAddItem: () => _showAddItemSheet(context),
-                )
-              : ListView(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-                  children: [
-                    // Suggestions section
-                    if (suggestions.isNotEmpty) ...[
-                      const _SectionHeader(
-                        icon: LucideIcons.sparkles,
-                        title: 'Sugestões para o destino',
-                        color: AppColors.warning,
-                      ),
-                      const SizedBox(height: 8),
-                      ...suggestions.map((item) {
-                        final idx = _items.indexOf(item);
-                        return SuitcaseItemTile(
-                          item: item,
-                          onToggle: () => _togglePacked(idx),
-                          onDelete: () => _deleteItem(idx),
-                          onEdit: () =>
-                              _showEditItemSheet(context, idx, item),
-                        );
-                      }),
-                      const SizedBox(height: 20),
-                      const Divider(),
-                      const SizedBox(height: 8),
-                    ],
+  List<Widget> _buildGroupedItems(
+    BagData bag,
+    Map<String, List<SuitcaseItem>> grouped,
+  ) {
+    final cadife = context.cadife;
+    final widgets = <Widget>[];
 
-                    // Categories
-                    ...grouped.entries.map((entry) {
-                      final category = entry.key;
-                      final categoryItems = entry.value
-                          .where((i) => !i.item.isSuggestion)
-                          .toList();
-                      if (categoryItems.isEmpty) return const SizedBox.shrink();
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _SectionHeader(
-                            icon: _categoryIcon(category),
-                            title: category,
-                          ),
-                          const SizedBox(height: 8),
-                          ...categoryItems.map((indexed) {
-                            return SuitcaseItemTile(
-                              item: indexed.item,
-                              onToggle: () => _togglePacked(indexed.index),
-                              onDelete: () => _deleteItem(indexed.index),
-                              onEdit: () => _showEditItemSheet(
-                                  context, indexed.index, indexed.item),
-                            );
-                          }),
-                          const SizedBox(height: 16),
-                        ],
-                      );
-                    }),
-                  ],
-                ),
-        ),
-
-        // Add item FAB area
-        if (_items.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: CadifeButton(
-              text: 'Adicionar item',
-              icon: Icons.add,
-              onPressed: () => _showAddItemSheet(context),
+    for (final category in grouped.keys) {
+      // Cabeçalho de categoria
+      widgets.add(
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+          child: Text(
+            category.toUpperCase(),
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.8,
+              color: cadife.textSecondary,
             ),
           ),
-      ],
-    );
+        ),
+      );
+
+      // Itens da categoria
+      for (final item in grouped[category]!) {
+        widgets.add(_buildItemRow(bag, item));
+      }
+
+      widgets.add(Divider(height: 1, indent: 16, endIndent: 16, color: cadife.cardBorder));
+    }
+
+    // Remove o último divisor extra
+    if (widgets.isNotEmpty) widgets.removeLast();
+
+    return widgets;
   }
 
-  void _showAddItemSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _AddItemSheet(
-        onSaved: (name, category) {
-          _addItem(name, category);
-          Navigator.pop(context);
-        },
+  Widget _buildItemRow(BagData bag, SuitcaseItem item) {
+    final cadife = context.cadife;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Row(
+        children: [
+          // Checkbox com estilo
+          SizedBox(
+            width: 40,
+            height: 40,
+            child: Checkbox(
+              value: item.packed,
+              activeColor: AppColors.primary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(5),
+              ),
+              onChanged: (v) => _togglePacked(item.id, v),
+            ),
+          ),
+
+          // Nome do item
+          Expanded(
+            child: Text(
+              item.name,
+              style: TextStyle(
+                fontSize: 14,
+                color: item.packed ? cadife.textSecondary : cadife.textPrimary,
+                decoration: item.packed ? TextDecoration.lineThrough : null,
+                decorationColor: cadife.textSecondary,
+              ),
+            ),
+          ),
+
+          // Botão editar
+          IconButton(
+            icon: Icon(LucideIcons.pencil, size: 14, color: cadife.textSecondary),
+            onPressed: () => _showEditItemDialog(bag, item),
+            tooltip: 'Editar item',
+            constraints: const BoxConstraints(maxWidth: 32, maxHeight: 32),
+            padding: EdgeInsets.zero,
+          ),
+        ],
       ),
     );
   }
-
-  void _showEditItemSheet(BuildContext context, int index, SuitcaseItem item) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _EditItemSheet(
-        item: item,
-        onUpdated: (name, category, qty) {
-          _updateItem(index, name, category, qty);
-          Navigator.pop(context);
-        },
-      ),
-    );
-  }
-
-  IconData _categoryIcon(String category) => switch (category) {
-        'Documentos' => LucideIcons.fileText,
-        'Roupas' => LucideIcons.shirt,
-        'Higiene' => LucideIcons.sparkles,
-        'Eletrônicos' => LucideIcons.zap,
-        _ => LucideIcons.package,
-      };
 }
 
-// ---------------------------------------------------------------------------
-// Indexed helper
-// ---------------------------------------------------------------------------
+// ─── Tile "Nova mala" (dentro da lista) ──────────────────────────────────────
 
-class _IndexedItem {
-  const _IndexedItem(this.index, this.item);
-  final int index;
-  final SuitcaseItem item;
-}
+class _NewBagTile extends StatelessWidget {
+  final VoidCallback onTap;
 
-// ---------------------------------------------------------------------------
-// Suitcase item tile
-// ---------------------------------------------------------------------------
-
-class SuitcaseItemTile extends StatelessWidget {
-  const SuitcaseItemTile({
-    required this.item,
-    required this.onToggle,
-    required this.onDelete,
-    required this.onEdit,
-    super.key,
-  });
-
-  final SuitcaseItem item;
-  final VoidCallback onToggle;
-  final VoidCallback onDelete;
-  final VoidCallback onEdit;
+  const _NewBagTile({required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final cadife = context.cadife;
-    final theme = Theme.of(context);
-    final isDark = context.isDark;
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: ShadCard(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-        backgroundColor: isDark ? cadife.cardBackground : Colors.white,
-        radius: BorderRadius.circular(12),
-        border: ShadBorder.all(
-          color: item.packed
-              ? AppColors.success.withValues(alpha: 0.3)
-              : (isDark
-                  ? Colors.white.withValues(alpha: 0.05)
-                  : cadife.cardBorder),
-          width: 1,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: cadife.cardBackground,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: AppColors.primary.withValues(alpha: 0.4),
+            style: BorderStyle.solid,
+          ),
         ),
         child: Row(
           children: [
-            // Checkbox
-            ShadCheckbox(
-              value: item.packed,
-              onChanged: (_) => onToggle(),
-            ),
-
-            // Info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.name,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: item.packed
-                          ? cadife.textSecondary
-                          : cadife.textPrimary,
-                      fontWeight: FontWeight.w600,
-                      decoration:
-                          item.packed ? TextDecoration.lineThrough : null,
-                      decorationColor: cadife.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      if (item.isSuggestion) ...[
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 1),
-                          decoration: BoxDecoration(
-                            color: AppColors.warning.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            'Sugestão',
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: AppColors.warning,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                      ],
-                      Text(
-                        'x${item.quantity}',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: cadife.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
               ),
+              child: const Icon(LucideIcons.plus, color: AppColors.primary, size: 18),
             ),
-
-            // Menu
-            PopupMenuButton<_ItemAction>(
-              icon: Icon(Icons.more_vert,
-                  size: 18, color: cadife.textSecondary),
-              color: cadife.cardBackground,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(color: cadife.divider),
+            const SizedBox(width: 12),
+            const Text(
+              'Criar nova mala',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.primary,
               ),
-              itemBuilder: (_) => [
-                PopupMenuItem(
-                  value: _ItemAction.edit,
-                  child: Row(
-                    children: [
-                      Icon(LucideIcons.pencil,
-                          size: 16, color: cadife.textPrimary),
-                      const SizedBox(width: 8),
-                      Text('Editar',
-                          style: TextStyle(color: cadife.textPrimary)),
-                    ],
-                  ),
-                ),
-                const PopupMenuItem(
-                  value: _ItemAction.delete,
-                  child: Row(
-                    children: [
-                      Icon(LucideIcons.trash2,
-                          size: 16, color: AppColors.error),
-                      SizedBox(width: 8),
-                      Text('Deletar',
-                          style: TextStyle(color: AppColors.error)),
-                    ],
-                  ),
-                ),
-              ],
-              onSelected: (action) {
-                if (action == _ItemAction.edit) onEdit();
-                if (action == _ItemAction.delete) onDelete();
-              },
             ),
           ],
         ),
@@ -404,531 +444,85 @@ class SuitcaseItemTile extends StatelessWidget {
   }
 }
 
-enum _ItemAction { edit, delete }
+// ─── Formulário de item (nome + categoria) ────────────────────────────────────
 
-// ---------------------------------------------------------------------------
-// Section header
-// ---------------------------------------------------------------------------
+class _ItemForm extends StatelessWidget {
+  final TextEditingController nameCtrl;
+  final List<String> categories;
+  final String selectedCategory;
+  final ValueChanged<String> onCategoryChanged;
 
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({
-    required this.icon,
-    required this.title,
-    this.color,
+  const _ItemForm({
+    required this.nameCtrl,
+    required this.categories,
+    required this.selectedCategory,
+    required this.onCategoryChanged,
   });
 
-  final IconData icon;
-  final String title;
-  final Color? color;
-
   @override
   Widget build(BuildContext context) {
     final cadife = context.cadife;
-    final theme = Theme.of(context);
-    final effectiveColor = color ?? cadife.textSecondary;
-
-    return Row(
-      children: [
-        Icon(icon, size: 14, color: effectiveColor),
-        const SizedBox(width: 6),
-        Text(
-          title.toUpperCase(),
-          style: theme.textTheme.labelSmall?.copyWith(
-            letterSpacing: 1.2,
-            fontWeight: FontWeight.w800,
-            color: effectiveColor,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Packing progress bar
-// ---------------------------------------------------------------------------
-
-class _PackingProgress extends StatelessWidget {
-  const _PackingProgress({required this.packed, required this.total});
-
-  final int packed;
-  final int total;
-
-  @override
-  Widget build(BuildContext context) {
-    final cadife = context.cadife;
-    final theme = Theme.of(context);
-    final progress = total == 0 ? 0.0 : packed / total;
 
     return Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              '$packed / $total itens embalados',
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: cadife.textSecondary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            Text(
-              '${(progress * 100).round()}%',
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: progress == 1.0 ? AppColors.success : AppColors.primary,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ],
+        ShadInput(
+          controller: nameCtrl,
+          placeholder: const Text('Nome do item'),
+          autofocus: true,
         ),
-        const SizedBox(height: 6),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            value: progress,
-            backgroundColor: cadife.muted,
-            color: progress == 1.0 ? AppColors.success : AppColors.primary,
-            minHeight: 6,
+        const SizedBox(height: 14),
+        Text(
+          'Categoria',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: cadife.textSecondary,
           ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 6,
+          children: categories.map((cat) {
+            final selected = cat == selectedCategory;
+            return GestureDetector(
+              onTap: () => onCategoryChanged(cat),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 120),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: selected
+                      ? AppColors.primary
+                      : cadife.muted,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: selected ? AppColors.primary : cadife.cardBorder,
+                  ),
+                ),
+                child: Text(
+                  cat,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                    color: selected ? Colors.white : cadife.textSecondary,
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
         ),
       ],
     );
   }
 }
 
-// ---------------------------------------------------------------------------
-// Empty state
-// ---------------------------------------------------------------------------
+// ─── Model local ─────────────────────────────────────────────────────────────
 
-class _EmptySuitcaseState extends StatelessWidget {
-  const _EmptySuitcaseState({required this.onAddItem});
+class BagData {
+  final String name;
+  final List<SuitcaseItem> items;
 
-  final VoidCallback onAddItem;
-
-  @override
-  Widget build(BuildContext context) {
-    final cadife = context.cadife;
-    final theme = Theme.of(context);
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              LucideIcons.luggage,
-              size: 64,
-              color: cadife.textSecondary.withValues(alpha: 0.4),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Mala vazia',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: cadife.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Adicione os itens para sua próxima viagem',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: cadife.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 28),
-            CadifeButton(
-              text: 'Adicionar item',
-              icon: Icons.add,
-              onPressed: onAddItem,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Add item bottom sheet
-// ---------------------------------------------------------------------------
-
-const _categories = [
-  'Documentos',
-  'Roupas',
-  'Higiene',
-  'Eletrônicos',
-  'Outros',
-];
-
-class _AddItemSheet extends StatefulWidget {
-  const _AddItemSheet({required this.onSaved});
-
-  final void Function(String name, String category) onSaved;
-
-  @override
-  State<_AddItemSheet> createState() => _AddItemSheetState();
-}
-
-class _AddItemSheetState extends State<_AddItemSheet> {
-  final _nameController = TextEditingController();
-  String _category = _categories.first;
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final cadife = context.cadife;
-    final theme = Theme.of(context);
-
-    return DraggableScrollableSheet(
-      initialChildSize: 0.55,
-      minChildSize: 0.4,
-      maxChildSize: 0.85,
-      expand: false,
-      builder: (context, scrollController) => Container(
-        decoration: BoxDecoration(
-          color: cadife.cardBackground,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: SingleChildScrollView(
-          controller: scrollController,
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 20,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _SheetHandle(),
-              Text(
-                'Adicionar item',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: cadife.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              TextField(
-                controller: _nameController,
-                onChanged: (_) => setState(() {}),
-                style: TextStyle(color: cadife.textPrimary),
-                decoration: InputDecoration(
-                  labelText: 'Nome do item',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: cadife.divider),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: cadife.divider),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide:
-                        const BorderSide(color: AppColors.primary, width: 2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              Text(
-                'Categoria',
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: cadife.textSecondary,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: _categories.map((cat) {
-                  final isSelected = _category == cat;
-                  return GestureDetector(
-                    onTap: () => setState(() => _category = cat),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 150),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? AppColors.primary
-                            : cadife.muted,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: isSelected
-                              ? AppColors.primary
-                              : cadife.divider,
-                        ),
-                      ),
-                      child: Text(
-                        cat,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: isSelected ? Colors.white : cadife.textPrimary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 24),
-
-              Row(
-                children: [
-                  Expanded(
-                    child: CadifeButton(
-                      text: 'Cancelar',
-                      isOutline: true,
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: CadifeButton(
-                      text: 'Adicionar',
-                      onPressed: _nameController.text.trim().isEmpty
-                          ? null
-                          : () => widget.onSaved(
-                                _nameController.text.trim(),
-                                _category,
-                              ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Edit item bottom sheet
-// ---------------------------------------------------------------------------
-
-class _EditItemSheet extends StatefulWidget {
-  const _EditItemSheet({required this.item, required this.onUpdated});
-
-  final SuitcaseItem item;
-  final void Function(String name, String category, int qty) onUpdated;
-
-  @override
-  State<_EditItemSheet> createState() => _EditItemSheetState();
-}
-
-class _EditItemSheetState extends State<_EditItemSheet> {
-  late TextEditingController _nameController;
-  late String _category;
-  late int _quantity;
-
-  @override
-  void initState() {
-    super.initState();
-    _nameController = TextEditingController(text: widget.item.name);
-    _category = widget.item.category;
-    _quantity = widget.item.quantity;
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final cadife = context.cadife;
-    final theme = Theme.of(context);
-
-    return DraggableScrollableSheet(
-      initialChildSize: 0.65,
-      minChildSize: 0.4,
-      maxChildSize: 0.85,
-      expand: false,
-      builder: (context, scrollController) => Container(
-        decoration: BoxDecoration(
-          color: cadife.cardBackground,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: SingleChildScrollView(
-          controller: scrollController,
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 20,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _SheetHandle(),
-              Text(
-                'Editar item',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: cadife.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              TextField(
-                controller: _nameController,
-                style: TextStyle(color: cadife.textPrimary),
-                decoration: InputDecoration(
-                  labelText: 'Nome do item',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: cadife.divider),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: cadife.divider),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide:
-                        const BorderSide(color: AppColors.primary, width: 2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Quantity stepper
-              Row(
-                children: [
-                  Text(
-                    'Quantidade:',
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: cadife.textSecondary,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    icon: Icon(LucideIcons.minus,
-                        size: 16, color: cadife.textPrimary),
-                    onPressed: _quantity > 1
-                        ? () => setState(() => _quantity--)
-                        : null,
-                  ),
-                  SizedBox(
-                    width: 32,
-                    child: Text(
-                      '$_quantity',
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: cadife.textPrimary,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(LucideIcons.plus,
-                        size: 16, color: cadife.textPrimary),
-                    onPressed: () => setState(() => _quantity++),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-
-              Text(
-                'Categoria',
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: cadife.textSecondary,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: _categories.map((cat) {
-                  final isSelected = _category == cat;
-                  return GestureDetector(
-                    onTap: () => setState(() => _category = cat),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 150),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: isSelected ? AppColors.primary : cadife.muted,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: isSelected
-                              ? AppColors.primary
-                              : cadife.divider,
-                        ),
-                      ),
-                      child: Text(
-                        cat,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: isSelected ? Colors.white : cadife.textPrimary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 24),
-
-              Row(
-                children: [
-                  Expanded(
-                    child: CadifeButton(
-                      text: 'Cancelar',
-                      isOutline: true,
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: CadifeButton(
-                      text: 'Salvar',
-                      onPressed: () => widget.onUpdated(
-                        _nameController.text.trim(),
-                        _category,
-                        _quantity,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// Shared sheet handle — same as in journal detail
-class _SheetHandle extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        width: 40,
-        height: 4,
-        margin: const EdgeInsets.only(bottom: 20),
-        decoration: BoxDecoration(
-          color: context.cadife.divider,
-          borderRadius: BorderRadius.circular(2),
-        ),
-      ),
-    );
-  }
+  BagData({required this.name, required this.items});
 }

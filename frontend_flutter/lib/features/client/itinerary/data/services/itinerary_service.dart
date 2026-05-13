@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:cadife_smart_travel/core/constants/api_constants.dart';
 import 'package:cadife_smart_travel/core/di/service_locator.dart';
+import 'package:cadife_smart_travel/features/client/home/infrastructure/mocks/client_home_mocks.dart';
 import 'package:cadife_smart_travel/features/client/itinerary/domain/entities/itinerary_item.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -22,10 +23,8 @@ class ItineraryService {
   static String _pendingKey(String leadId) => 'day_note_${leadId}_pending';
 
   Future<List<ItineraryItem>> fetchItinerary(String leadId) async {
-    // Para fins de demonstração/mock, se o ID começar com 'trip-h' ou for o mock padrão, retornamos dados mockados
-    if (leadId.startsWith('trip-h') || leadId == 'mock-lead-123') {
-      await Future.delayed(const Duration(milliseconds: 800));
-      return _getMockItinerary(leadId);
+    if (leadId.startsWith('trip') || leadId == 'mock-lead-123' || leadId.isEmpty) {
+      return ClientHomeMocks.mockItineraryItems(leadId.isEmpty ? 'trip-1' : leadId);
     }
 
     try {
@@ -42,48 +41,6 @@ class ItineraryService {
       debugPrint('ItineraryService.fetchItinerary error: $e');
       return _loadFromCache(leadId);
     }
-  }
-
-  List<ItineraryItem> _getMockItinerary(String leadId) {
-    final now = DateTime.now();
-    return [
-      ItineraryItem(
-        id: 'mock-itin-1',
-        leadId: leadId,
-        tipo: ItineraryItemType.voo,
-        titulo: 'Voo para o Destino',
-        descricao: 'Voo operado pela LATAM. Terminal 3.',
-        local: 'Aeroporto Internacional',
-        dataHora: DateTime(now.year, now.month, now.day, 10, 30),
-      ),
-      ItineraryItem(
-        id: 'mock-itin-2',
-        leadId: leadId,
-        tipo: ItineraryItemType.hotelCheckin,
-        titulo: 'Check-in no Hotel',
-        descricao: 'Reserva confirmada. Apresentar voucher.',
-        local: 'Hotel Grand Hyatt',
-        dataHora: DateTime(now.year, now.month, now.day, 15, 00),
-      ),
-      ItineraryItem(
-        id: 'mock-itin-3',
-        leadId: leadId,
-        tipo: ItineraryItemType.refeicao,
-        titulo: 'Jantar de Boas-vindas',
-        descricao: 'Reserva em nome de Cadife.',
-        local: 'Restaurante Le Gourmet',
-        dataHora: DateTime(now.year, now.month, now.day, 20, 00),
-      ),
-      ItineraryItem(
-        id: 'mock-itin-4',
-        leadId: leadId,
-        tipo: ItineraryItemType.passeio,
-        titulo: 'Tour pela Cidade',
-        descricao: 'Guia privativo em português.',
-        local: 'Ponto de encontro no Lobby',
-        dataHora: DateTime(now.year, now.month, now.day + 1, 09, 00),
-      ),
-    ];
   }
 
   List<ItineraryItem> _loadFromCache(String leadId) {

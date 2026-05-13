@@ -1,14 +1,23 @@
 import 'package:cadife_smart_travel/features/client/documentos/domain/entities/trip_summary.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Provider que gerencia a lista de viagens do cliente para o histórico.
-final historicoProvider = AsyncNotifierProvider<HistoricoNotifier, List<TripSummary>>(
+final travelHistoryProvider = AsyncNotifierProvider<HistoricoNotifier, List<TripSummary>>(
   HistoricoNotifier.new,
 );
 
 class HistoricoNotifier extends AsyncNotifier<List<TripSummary>> {
   @override
   Future<List<TripSummary>> build() async {
+    // Escuta eventos FCM para recarregar o histórico quando uma viagem for concluída
+    final subscription = FirebaseMessaging.onMessage.listen((message) {
+      if (message.data['type'] == 'travel_completed') {
+        ref.invalidateSelf();
+      }
+    });
+    ref.onDispose(subscription.cancel);
+
     // Simulando busca de dados
     await Future.delayed(const Duration(milliseconds: 800));
     return _mockHistoryTrips;
@@ -30,6 +39,7 @@ class HistoricoNotifier extends AsyncNotifier<List<TripSummary>> {
       numPessoas: 2,
       orcamento: 4500.00,
       imageUrl: 'https://images.unsplash.com/photo-1596436805366-5d589f6075c7?auto=format&fit=crop&q=80&w=800',
+      roteiro: 'Uma semana mágica na Serra Gaúcha, aproveitando o Natal Luz em Gramado, fondues deliciosos e passeios pelo Lago Negro e Mini Mundo.',
     ),
     TripSummary(
       id: 'trip-h2',
@@ -40,6 +50,7 @@ class HistoricoNotifier extends AsyncNotifier<List<TripSummary>> {
       numPessoas: 4,
       orcamento: 8200.50,
       imageUrl: 'https://images.unsplash.com/photo-1483729558449-99ef09a8c325?auto=format&fit=crop&q=80&w=800',
+      roteiro: 'A energia do Carnaval carioca! Desfiles na Sapucaí, blocos de rua em Santa Teresa e momentos de relaxamento nas praias de Ipanema e Leblon.',
     ),
     TripSummary(
       id: 'trip-h3',
@@ -50,6 +61,7 @@ class HistoricoNotifier extends AsyncNotifier<List<TripSummary>> {
       numPessoas: 1,
       orcamento: 1250.00,
       imageUrl: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&q=80&w=800',
+      roteiro: 'Imersão na metrópole paulista para reuniões de negócios, com jantares na Avenida Paulista e uma visita rápida ao Museu do Ipiranga.',
     ),
   ];
 }

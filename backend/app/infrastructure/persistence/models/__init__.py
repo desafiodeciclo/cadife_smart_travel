@@ -10,6 +10,9 @@ Import order matters: Lead must be defined before dependent models.
 
 from app.infrastructure.persistence.models.user_model import UserModel  # noqa: F401
 from app.infrastructure.persistence.models.lead_model import LeadModel  # noqa: F401
+from app.infrastructure.persistence.models.lead_score_history_model import (  # noqa: F401
+    LeadScoreHistoryModel,
+)
 from app.infrastructure.persistence.models.briefing_model import (
     BriefingModel,
 )  # noqa: F401
@@ -22,6 +25,31 @@ from app.infrastructure.persistence.models.agendamento_model import (
 from app.infrastructure.persistence.models.proposta_model import (
     PropostaModel,
 )  # noqa: F401
+from app.infrastructure.persistence.models.suitcase_model import (
+    SuitcaseItemModel,
+    SuitcaseSuggestionModel,
+)  # noqa: F401
+from app.infrastructure.persistence.models.travel_diary_model import (
+    TravelDiaryEntryModel,
+)  # noqa: F401
+from app.infrastructure.persistence.models.documento_model import (
+    Documento,
+)  # noqa: F401
+from app.infrastructure.persistence.models.offer_model import (
+    OfferModel,
+)  # noqa: F401
+from app.infrastructure.persistence.models.aya_toggle_history_model import (
+    AyaToggleHistoryModel,
+)  # noqa: F401
+from app.infrastructure.persistence.models.conversation_summary_model import (
+    ConversationSummaryModel,
+)  # noqa: F401
+from app.infrastructure.persistence.models.travel_model import (
+    TravelModel,
+)  # noqa: F401
+from app.infrastructure.persistence.models.itinerary_model import (
+    ItineraryItemModel,
+)  # noqa: F401
 
 # Notification queue models (side-effect imports to register metadata)
 from app.models.notification_queue import NotificationQueue  # noqa: F401
@@ -30,10 +58,20 @@ from app.models.dead_letter_queue import DeadLetterQueue  # noqa: F401
 __all__ = [
     "UserModel",
     "LeadModel",
+    "LeadScoreHistoryModel",
     "BriefingModel",
     "InteracaoModel",
     "AgendamentoModel",
     "PropostaModel",
+    "SuitcaseItemModel",
+    "SuitcaseSuggestionModel",
+    "TravelDiaryEntryModel",
+    "Documento",
+    "OfferModel",
+    "AyaToggleHistoryModel",
+    "ConversationSummaryModel",
+    "TravelModel",
+    "ItineraryItemModel",
     "NotificationQueue",
     "DeadLetterQueue",
 ]

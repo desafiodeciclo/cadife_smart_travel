@@ -123,6 +123,7 @@ backend/**/settings_local.py
 **/.symlinks/
 userdata
 xcuserdata
+**/android/app/.cxx/
 
 # Web/Desktop
 **/linux/flutter/ephemeral/
@@ -156,3 +157,4 @@ backend/chroma_db/
 backend/chroma_db_local/
 backend/chroma_db_gemini/
 backend/validation_report*.json
+google_service_account.json

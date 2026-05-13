@@ -21,6 +21,7 @@ from app.models.agendamento import (
     SlotDisponivel,
 )
 from app.models.user import User
+from app.presentation.schemas.common_errors import HTTPErrorResponse
 from app.services import lead_service
 
 logger = structlog.get_logger()
@@ -108,7 +109,17 @@ def _slot_lock_key(data: date, hora_str: str) -> int:
     return int(hashlib.sha256(raw).hexdigest(), 16) % (2**63)
 
 
-@router.get("/disponibilidade", response_model=DisponibilidadeResponse)
+@router.get(
+    "/disponibilidade",
+    response_model=DisponibilidadeResponse,
+    summary="Consultar disponibilidade de horários",
+    description="Retorna os slots de horário disponíveis para agendamento de curadoria em uma data específica.",
+    responses={
+        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
+        403: {"description": "Perfil sem permissão", "model": HTTPErrorResponse},
+        422: {"description": "Data inválida ou fora do formato", "model": HTTPErrorResponse},
+    },
+)
 async def get_disponibilidade(
     data: date = Query(..., description="Data para consulta (YYYY-MM-DD)"),
     db: AsyncSession = Depends(get_db),
@@ -131,7 +142,21 @@ async def get_disponibilidade(
 
 
 @router.post(
-    "", response_model=AgendamentoResponse, status_code=status.HTTP_201_CREATED
+    "",
+    response_model=AgendamentoResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Criar agendamento",
+    description=(
+        "Cria um agendamento de curadoria com validação de conflitos, trava de concorrência (pg_advisory_xact_lock) "
+        "e verificação de capacidade diária. Apenas dias úteis e horários entre 09:00–15:00 são permitidos."
+    ),
+    responses={
+        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
+        403: {"description": "Perfil sem permissão", "model": HTTPErrorResponse},
+        404: {"description": "Lead não encontrado", "model": HTTPErrorResponse},
+        409: {"description": "Conflito de horário ou capacidade esgotada", "model": HTTPErrorResponse},
+        422: {"description": "Data/hora inválida ou fora dos slots permitidos", "model": HTTPErrorResponse},
+    },
 )
 async def create_agendamento(
     body: AgendamentoCreate,
@@ -214,7 +239,17 @@ async def create_agendamento(
     return AgendamentoResponse.model_validate(agendamento)
 
 
-@router.get("/{agendamento_id}", response_model=AgendamentoResponse)
+@router.get(
+    "/{agendamento_id}",
+    response_model=AgendamentoResponse,
+    summary="Detalhes de um agendamento",
+    description="Retorna os dados de um agendamento específico, com verificação de acesso ao lead vinculado.",
+    responses={
+        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
+        403: {"description": "Sem permissão para o lead vinculado", "model": HTTPErrorResponse},
+        404: {"description": "Agendamento não encontrado", "model": HTTPErrorResponse},
+    },
+)
 async def get_agendamento(
     agendamento_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -233,7 +268,18 @@ async def get_agendamento(
     return AgendamentoResponse.model_validate(ag)
 
 
-@router.put("/{agendamento_id}", response_model=AgendamentoResponse)
+@router.put(
+    "/{agendamento_id}",
+    response_model=AgendamentoResponse,
+    summary="Atualizar agendamento",
+    description="Atualiza o status de um agendamento existente.",
+    responses={
+        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
+        403: {"description": "Sem permissão para o lead vinculado", "model": HTTPErrorResponse},
+        404: {"description": "Agendamento não encontrado", "model": HTTPErrorResponse},
+        422: {"description": "Status inválido", "model": HTTPErrorResponse},
+    },
+)
 async def update_agendamento(
     agendamento_id: uuid.UUID,
     body: AgendamentoUpdate,

@@ -1,4 +1,4 @@
-﻿import 'package:equatable/equatable.dart';
+import 'package:equatable/equatable.dart';
 
 class Lead extends Equatable {
   const Lead({
@@ -8,7 +8,9 @@ class Lead extends Equatable {
     required this.status,
     required this.score,
     required this.completudePct,
+    this.ayaAtivo = true,
     this.email,
+    this.origem,
     this.destino,
     this.dataIda,
     this.dataVolta,
@@ -31,6 +33,8 @@ class Lead extends Equatable {
   final String name;
   final String phone;
   final String? email;
+  final bool ayaAtivo;
+  final LeadOrigem? origem;
   final LeadStatus status;
   final LeadScore score;
   final int completudePct;
@@ -56,10 +60,9 @@ class Lead extends Equatable {
     name: json['name'] as String,
     phone: json['phone'] as String,
     email: json['email'] as String?,
-    status: LeadStatus.values.firstWhere(
-      (e) => e.name == json['status'],
-      orElse: () => LeadStatus.novo,
-    ),
+    ayaAtivo: json['aya_ativo'] as bool? ?? true,
+    origem: json['origem'] != null ? LeadOrigem.fromSnakeCase(json['origem'] as String) : null,
+    status: LeadStatus.fromSnakeCase(json['status'] as String? ?? 'novo'),
     score: LeadScore.values.firstWhere(
       (e) => e.name == json['score'],
       orElse: () => LeadScore.frio,
@@ -96,7 +99,8 @@ class Lead extends Equatable {
     'name': name,
     'phone': phone,
     'email': email,
-    'status': status.name,
+    'aya_ativo': ayaAtivo,
+    'status': status.name.replaceAllMapped(RegExp(r'[A-Z]'), (match) => '_${match.group(0)!.toLowerCase()}'),
     'score': score.name,
     'completude_pct': completudePct,
     'destino': destino,
@@ -119,14 +123,15 @@ class Lead extends Equatable {
 
   @override
   List<Object?> get props => [
-    id, 
-    name, 
-    phone, 
-    status, 
-    score, 
-    completudePct, 
-    assignedTo, 
-    consultorNome, 
+    id,
+    name,
+    phone,
+    status,
+    score,
+    completudePct,
+    ayaAtivo,
+    assignedTo,
+    consultorNome,
     consultorAvatar,
     imageUrl,
   ];
@@ -139,10 +144,47 @@ enum LeadStatus {
   agendado,
   proposta,
   fechado,
-  perdido,
+  perdido;
+
+  static LeadStatus fromSnakeCase(String value) {
+    return LeadStatus.values.firstWhere(
+      (e) => e.name == value || 
+             e.name.replaceAllMapped(RegExp(r'[A-Z]'), (match) => '_${match.group(0)!.toLowerCase()}') == value,
+      orElse: () => LeadStatus.novo,
+    );
+  }
+
+  String toSnakeCase() {
+    return name.replaceAllMapped(RegExp(r'[A-Z]'), (match) => '_${match.group(0)!.toLowerCase()}');
+  }
 }
 
 enum LeadScore { quente, morno, frio }
+
+enum LeadOrigem {
+  indicacao('Indicação'),
+  telefone('Telefone'),
+  presencial('Presencial'),
+  redeSocial('Rede Social'),
+  outro('Outro'),
+  manual('Manual'),
+  offerInterest('Oferta');
+
+  final String label;
+  const LeadOrigem(this.label);
+
+  static LeadOrigem fromSnakeCase(String value) {
+    return LeadOrigem.values.firstWhere(
+      (e) => e.name == value || 
+             e.name.replaceAllMapped(RegExp(r'[A-Z]'), (match) => '_${match.group(0)!.toLowerCase()}') == value,
+      orElse: () => LeadOrigem.manual,
+    );
+  }
+
+  String toSnakeCase() {
+    return name.replaceAllMapped(RegExp(r'[A-Z]'), (match) => '_${match.group(0)!.toLowerCase()}');
+  }
+}
 
 class CreateLeadRequest extends Equatable {
   const CreateLeadRequest({
@@ -166,5 +208,64 @@ class CreateLeadRequest extends Equatable {
 
   @override
   List<Object?> get props => [name, phone, email, destino];
+}
+
+class ManualLeadCreate extends Equatable {
+  const ManualLeadCreate({
+    required this.name,
+    required this.phone,
+    this.email,
+    this.origem = LeadOrigem.manual,
+    this.consultorId,
+    this.forceCreate = false,
+    this.destino,
+    this.dataIda,
+    this.numPessoas,
+    this.orcamentoFaixa,
+    this.preferencias,
+  });
+
+  final String name;
+  final String phone;
+  final String? email;
+  final LeadOrigem origem;
+  final String? consultorId;
+  final bool forceCreate;
+  
+  // Briefing inicial (opcional na criação manual)
+  final String? destino;
+  final DateTime? dataIda;
+  final int? numPessoas;
+  final String? orcamentoFaixa;
+  final String? preferencias;
+
+  Map<String, dynamic> toJson() => {
+    'name': name,
+    'phone': phone,
+    'email': email,
+    'origem': origem.toSnakeCase(),
+    'consultor_id': consultorId,
+    'force_create': forceCreate,
+    'destino': destino,
+    'data_ida': dataIda?.toIso8601String(),
+    'num_pessoas': numPessoas,
+    'orcamento_faixa': orcamentoFaixa,
+    'preferencias': preferencias,
+  };
+
+  @override
+  List<Object?> get props => [
+    name, 
+    phone, 
+    email, 
+    origem, 
+    consultorId, 
+    forceCreate,
+    destino,
+    dataIda,
+    numPessoas,
+    orcamentoFaixa,
+    preferencias,
+  ];
 }
 

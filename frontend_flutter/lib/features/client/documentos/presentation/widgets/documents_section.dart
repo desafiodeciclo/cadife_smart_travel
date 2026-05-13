@@ -1,6 +1,5 @@
 import 'package:cadife_smart_travel/features/client/documentos/domain/entities/documento.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 class DocumentsSection extends StatelessWidget {
   const DocumentsSection({super.key, this.documents = const []});
@@ -12,38 +11,10 @@ class DocumentsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'DOCUMENTOS',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.5,
-                  color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.6),
-                ),
-              ),
-              GestureDetector(
-                onTap: () => context.go('/client/documentos'),
-                child: Text(
-                  'Ver todos',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          if (documents.isEmpty)
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (documents.isEmpty)
             Container(
               height: 96,
               width: double.infinity,
@@ -75,7 +46,6 @@ class DocumentsSection extends StatelessWidget {
               ),
             ),
         ],
-      ),
     );
   }
 }

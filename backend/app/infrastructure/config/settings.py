@@ -60,19 +60,39 @@ class Settings(BaseSettings):
     )
     OPENROUTER_MODEL: str = Field(
         default="google/gemini-2.0-flash-001",
-        description="Modelo OpenRouter para chat (texto)",
+        description="Modelo principal para chat/lógica conversacional (Gemini 2.0 Flash estável)",
     )
     OPENROUTER_AUDIO_MODEL: str = Field(
-        default="google/gemini-2.0-flash-001",
-        description="Modelo OpenRouter para transcrição de áudio (via chat completions multimodal)",
+        default="openai/gpt-4o-audio-preview",
+        description="Modelo para transcrição de áudio via input_audio no /chat/completions (aceita WAV/MP3)",
     )
     OPENROUTER_VISION_MODEL: str = Field(
         default="google/gemini-2.0-flash-001",
-        description="Modelo OpenRouter para análise de imagens/visão",
+        description="Modelo para análise de fotos/prints enviados pelo cliente (preferências de viagem)",
     )
     OPENROUTER_EMBEDDING_MODEL: str = Field(
         default="google/gemini-embedding-2-preview",
-        description="Modelo OpenRouter para embeddings RAG",
+        description="Modelo para embeddings RAG (base de conhecimento Cadife)",
+    )
+    OPENROUTER_TRIAGEM_MODEL: str = Field(
+        default="qwen/qwen-2.5-72b-instruct:free",
+        description="TriagemAgent — extração JSON estruturado do CRM (identificação cliente novo/recorrente)",
+    )
+    OPENROUTER_CONVERSION_MODEL: str = Field(
+        default="google/gemini-2.0-flash-001",
+        description="OrquestradorAgent — raciocínio conversacional RAG-aware com LangGraph",
+    )
+    OPENROUTER_WHISPER_MODEL: str = Field(
+        default="openai/whisper-large-v3",
+        description="Modelo Whisper primário para transcrição de áudio via /audio/transcriptions",
+    )
+    OPENROUTER_IMAGE_GEN_MODEL: str = Field(
+        default="recraft-ai/recraft-v3",
+        description="Modelo de geração de imagens inspiracionais ao final do briefing (recraft-v4 quando disponível via OpenRouter)",
+    )
+    OPENROUTER_FALLBACK_MODEL: str = Field(
+        default="qwen/qwen-2.5-72b-instruct:free",
+        description="Modelo fallback econômico para redundância quando cadeia principal falha",
     )
 
     # ── Google Gemini (mantido para compatibilidade — não mais necessário) ─

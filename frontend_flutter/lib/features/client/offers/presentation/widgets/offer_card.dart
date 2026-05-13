@@ -14,140 +14,173 @@ class OfferCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currencyFormatter = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
-    final formattedPrice = currencyFormatter.format(offer.estimatedPrice);
-    final theme = ShadTheme.of(context);
+    final currencyFormatter =
+        NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
+    final formattedPrice = currencyFormatter.format(offer.finalPrice);
+    final cadife = context.cadife;
 
-    return InkWell(
+    return CadifeCard(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: theme.colorScheme.border),
-          color: theme.colorScheme.background,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Imagem e Badge de Categoria
-            Stack(
-              children: [
-                AspectRatio(
-                  aspectRatio: 16 / 10,
-                  child: Hero(
-                    tag: 'offer_hero_${offer.id}',
+      padding: EdgeInsets.zero,
+      borderRadius: 16,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Imagem e Badge de Categoria
+          Stack(
+            children: [
+              AspectRatio(
+                aspectRatio: 1.3,
+                child: Hero(
+                  tag: 'offer_hero_${offer.id}',
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                     child: Image.network(
-                      offer.imageUrl,
+                      offer.destinationImageUrl,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
                         return Container(
-                          color: theme.colorScheme.border,
+                          color: cadife.muted,
                           child: Center(
-                            child: Icon(Icons.image_not_supported, color: theme.colorScheme.mutedForeground),
+                            child: Icon(Icons.image_not_supported,
+                                color: cadife.textSecondary),
                           ),
                         );
                       },
                     ),
                   ),
                 ),
+              ),
+              // Badge de categoria
+              Positioned(
+                top: 8,
+                left: 8,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: cadife.primary,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    offer.category,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 10,
+                    ),
+                  ),
+                ),
+              ),
+              // Badge de desconto
+              if (offer.hasDiscount)
                 Positioned(
                   top: 8,
-                  left: 8,
+                  right: 8,
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withValues(alpha: 0.9),
-                      borderRadius: BorderRadius.circular(8),
+                      color: Colors.orange,
+                      borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      offer.category,
-                      style: theme.textTheme.small.copyWith(
+                      '-${offer.discountPercent.toStringAsFixed(0)}%',
+                      style: const TextStyle(
                         color: Colors.white,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w800,
                         fontSize: 10,
                       ),
                     ),
                   ),
                 ),
-              ],
-            ),
-            
-            // Informações
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Destino
-                    Row(
-                      children: [
-                        Icon(Icons.location_on, size: 14, color: theme.colorScheme.mutedForeground),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            offer.destination,
-                            style: theme.textTheme.small.copyWith(
-                              color: theme.colorScheme.mutedForeground,
-                              fontWeight: FontWeight.w500,
-                              fontSize: 12,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+              // Overlay de vagas esgotadas
+              if (!offer.availableSpot)
+                Positioned.fill(
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                    child: Container(
+                      color: Colors.black.withValues(alpha: 0.5),
+                      child: const Center(
+                        child: Text(
+                          'VAGAS\nESGOTADAS',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 12,
+                            letterSpacing: 0.5,
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    
-                    // Título
-                    Text(
-                      offer.title,
-                      style: theme.textTheme.p.copyWith(
-                        fontWeight: FontWeight.w600,
-                        height: 1.2,
-                        fontSize: 14,
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                    const Spacer(),
-                    
-                    // Preço
-                    Row(
-                      children: [
-                        Text(
-                          'A partir de',
-                          style: theme.textTheme.small.copyWith(
-                            color: AppColors.zinc500,
-                            fontSize: 10,
-                          ),
+                  ),
+                ),
+            ],
+          ),
+
+          // Informações
+          Padding(
+            padding: const EdgeInsets.all(10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Destino
+                Row(
+                  children: [
+                    Icon(Icons.location_on, size: 12, color: cadife.textSecondary),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        offer.destination,
+                        style: TextStyle(
+                          color: cadife.textSecondary,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 11,
                         ),
-                      ],
-                    ),
-                    Text(
-                      formattedPrice,
-                      style: theme.textTheme.h4.copyWith(
-                        color: theme.colorScheme.primary,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
                 ),
-              ),
+                const SizedBox(height: 8),
+
+                // Título
+                Text(
+                  offer.title,
+                  style: TextStyle(
+                    color: cadife.textPrimary,
+                    fontWeight: FontWeight.w800,
+                    height: 1.2,
+                    fontSize: 13,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 10),
+
+                // Preço
+                Text(
+                  'A partir de',
+                  style: TextStyle(
+                    color: cadife.textSecondary,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  formattedPrice,
+                  style: TextStyle(
+                    color: cadife.primary,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

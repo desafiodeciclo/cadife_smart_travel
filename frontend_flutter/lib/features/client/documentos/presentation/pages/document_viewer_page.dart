@@ -21,15 +21,22 @@ class DocumentViewerPage extends StatefulWidget {
 
 class _DocumentViewerPageState extends State<DocumentViewerPage> {
   bool _isDownloading = false;
+  // Scoped Dio for file downloads — bypasses API interceptors intentionally
+  final _dio = Dio();
+
+  @override
+  void dispose() {
+    _dio.close();
+    super.dispose();
+  }
 
   Future<void> _shareDocument() async {
     try {
-      final dio = Dio();
       final tempDir = await getTemporaryDirectory();
       final extension = widget.document.type == DocumentType.pdf ? 'pdf' : 'jpg';
       final tempPath = '${tempDir.path}/${widget.document.id}.$extension';
-      
-      await dio.download(widget.document.url, tempPath);
+
+      await _dio.download(widget.document.url, tempPath);
       
       // ignore: deprecated_member_use
       await Share.shareXFiles([XFile(tempPath)], text: widget.document.name);
@@ -41,7 +48,6 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
   Future<void> _downloadDocument() async {
     setState(() => _isDownloading = true);
     try {
-      final dio = Dio();
       Directory? directory;
       
       if (Platform.isAndroid) {
@@ -57,7 +63,7 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
       final fileName = '${widget.document.name.replaceAll(' ', '_')}.$extension';
       final savePath = '${directory!.path}/$fileName';
 
-      await dio.download(widget.document.url, savePath);
+      await _dio.download(widget.document.url, savePath);
       
       await Fluttertoast.showToast(msg: 'Documento salvo em: $savePath');
     } on Exception catch (_) {
@@ -75,14 +81,14 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
         showProfile: false,
         actions: [
           IconButton(
-            icon: const Icon(Icons.share_outlined, color: Colors.white),
+            icon: const Icon(Icons.share_outlined, color: AppColors.white),
             onPressed: _shareDocument,
             tooltip: 'Compartilhar',
           ),
           IconButton(
             icon: _isDownloading 
-              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-              : const Icon(Icons.download_outlined, color: Colors.white),
+              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.white))
+              : const Icon(Icons.download_outlined, color: AppColors.white),
             onPressed: _isDownloading ? null : _downloadDocument,
             tooltip: 'Baixar',
           ),

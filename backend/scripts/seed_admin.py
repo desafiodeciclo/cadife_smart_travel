@@ -29,7 +29,7 @@ from app.models.user import User, UserPerfil
 logger = structlog.get_logger()
 
 
-async def seed_admin(session: AsyncSession, email: str, nome: str, password: str) -> None:
+async def seed_admin(session: AsyncSession, email: str, nome: str, password: str, telefone: str = "") -> None:
     result = await session.execute(select(User).where(User.email == email))
     existing = result.scalar_one_or_none()
 
@@ -44,6 +44,7 @@ async def seed_admin(session: AsyncSession, email: str, nome: str, password: str
         hashed_password=hashed,
         perfil=UserPerfil.admin,
         is_active=True,
+        telefone=telefone or None,
     )
     session.add(admin)
     await session.commit()
@@ -57,6 +58,7 @@ async def main() -> None:
     print("=== Cadife Smart Travel — Seed Admin ===")
     email = input("Admin e-mail [admin@cadifetoure.com.br]: ").strip() or "admin@cadifetoure.com.br"
     nome = input("Admin name [Administrador]: ").strip() or "Administrador"
+    telefone = input("Admin phone [+5511999999999]: ").strip() or "+5511999999999"
     password = getpass.getpass("Password: ")
     if len(password) < 8:
         print("[ERROR] Password must be at least 8 characters.")
@@ -66,7 +68,7 @@ async def main() -> None:
     SessionLocal = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
     async with SessionLocal() as session:
-        await seed_admin(session, email, nome, password)
+        await seed_admin(session, email, nome, password, telefone)
 
     await engine.dispose()
 

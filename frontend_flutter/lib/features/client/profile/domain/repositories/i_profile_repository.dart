@@ -9,5 +9,8 @@ abstract class IProfileRepository {
     List<String>? tipoViagem,
     List<String>? preferencias,
     bool? temPassaporte,
+    String? bio,
+    String? avatarUrl,
+    String? phone,
   });
 }

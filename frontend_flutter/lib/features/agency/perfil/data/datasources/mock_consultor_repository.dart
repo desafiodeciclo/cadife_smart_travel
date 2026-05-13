@@ -5,19 +5,20 @@ import 'package:cadife_smart_travel/features/agency/perfil/domain/entities/consu
 import 'package:cadife_smart_travel/features/agency/perfil/domain/repositories/i_consultor_repository.dart';
 import 'package:fpdart/fpdart.dart';
 
+/// Dados alinhados com backend/scripts/db/seeds/01_users.py (Daniela Costa)
 class MockConsultorRepository implements IConsultorRepository {
   ConsultorProfile _profile = const ConsultorProfile(
-    id: 'consultor-001',
-    name: 'Jakeline Ferreira',
-    email: 'jakeline@cadifetravel.com.br',
-    bio: 'Especialista em viagens internacionais e cruzeiros há 8 anos. '
-        'Apaixonada por criar experiências únicas para cada cliente.',
-    phone: '+55 11 99876-5432',
+    id: 'daniela-costa',
+    name: 'Daniela Costa',
+    email: 'daniela.costa@cadifetoure.com.br',
+    bio: 'Especialista em viagens internacionais e destinos europeus há 10 anos. '
+        'Apaixonada por criar roteiros personalizados que transformam sonhos em memórias inesquecíveis.',
+    phone: '+55 11 97777-7777',
     avatarUrl: null,
     totalSales: 142,
-    conversionRate: 0.68,
-    activeMonths: 38,
-    cargo: 'Consultora de Viagens',
+    conversionRate: 0.75,
+    activeMonths: 48,
+    cargo: 'Consultora Sênior de Viagens',
     agencia: 'Cadife Tour — São Paulo',
   );
 
@@ -38,10 +39,10 @@ class MockConsultorRepository implements IConsultorRepository {
   Future<Either<Failure, ConsultantMetrics>> getMetrics() async {
     await Future.delayed(const Duration(milliseconds: 400));
     return Right(ConsultantMetrics(
-      totalLeadsAtendidos: 45,
-      taxaConversao: 24.5,
-      receitaGerada: 125000.0,
-      leadsAtivosAgora: 8,
+      totalLeadsAtendidos: 42,
+      taxaConversao: 75.0,
+      receitaGerada: 148000.0,
+      leadsAtivosAgora: 2,
       ultimaAtualizacao: DateTime.now(),
     ));
   }
@@ -65,23 +66,23 @@ class MockConsultorRepository implements IConsultorRepository {
       SaleGoal(
         month: now.month,
         year: now.year,
-        target: 12,
-        achieved: 8,
-        receita: 42000,
+        target: 10,
+        achieved: 7,
+        receita: 38500,
       ),
       SaleGoal(
         month: prevMonth(1),
         year: prevYear(1),
         target: 10,
         achieved: 10,
-        receita: 58000,
+        receita: 52000,
       ),
       SaleGoal(
         month: prevMonth(2),
         year: prevYear(2),
-        target: 10,
-        achieved: 7,
-        receita: 31500,
+        target: 8,
+        achieved: 6,
+        receita: 29800,
       ),
     ]);
   }
@@ -92,7 +93,6 @@ class MockConsultorRepository implements IConsultorRepository {
     String fileName,
   ) async {
     await Future.delayed(const Duration(seconds: 1));
-    // Mock: return with a placeholder remote URL
     _profile = _profile.copyWith(
       avatarUrl: 'https://i.pravatar.cc/512?u=${_profile.id}',
     );

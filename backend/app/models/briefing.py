@@ -1,15 +1,35 @@
+import unicodedata
 import uuid
 from datetime import date
 from typing import TYPE_CHECKING, Optional
-
 from sqlalchemy import Boolean, Date, Enum as SAEnum, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from pydantic import BaseModel, Field
+# RESOLUÇÃO: Usando ConfigDict da developer
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.infrastructure.persistence.types import GUID, StringArray
 
 from app.core.database import Base
 from app.domain.entities.enums import PerfilViagem, OrcamentoPerfil as OrcamentoNivel
+
+# Aliases the LLM commonly returns (accented, translated, or misspelled).
+# Maps variant → canonical DB enum value (no accents, as defined in PerfilViagem/OrcamentoPerfil).
+_PERFIL_ALIASES: dict[str, str] = {
+    "família": "familia",
+    "famíla": "familia",
+    "family": "familia",
+    "group": "grupo",
+    "couple": "casal",
+    "alone": "solo",
+    "friends": "amigos",
+    "grupo de amigos": "amigos",
+}
+_ORCAMENTO_ALIASES: dict[str, str] = {
+    "médio": "medio",
+    "medium": "medio",
+    "low": "baixo",
+    "high": "alto",
+}
 
 if TYPE_CHECKING:
     from app.models.lead import Lead
@@ -43,13 +63,23 @@ class Briefing(Base):
     duracao_dias: Mapped[Optional[int]] = mapped_column(Integer)
     qtd_pessoas: Mapped[Optional[int]] = mapped_column(Integer)
     perfil: Mapped[Optional[PerfilViagem]] = mapped_column(
-        SAEnum(PerfilViagem, name="perfil_viagem_enum", create_type=False),
+        SAEnum(
+            PerfilViagem,
+            name="perfil_viagem_enum",
+            create_type=False,
+            values_callable=lambda obj: [e.value for e in obj],
+        ),
         nullable=True,
     )
     tipo_viagem: Mapped[Optional[list[str]]] = mapped_column(StringArray())
     preferencias: Mapped[Optional[list[str]]] = mapped_column(StringArray())
     orcamento: Mapped[Optional[OrcamentoNivel]] = mapped_column(
-        SAEnum(OrcamentoNivel, name="orcamento_perfil_enum", create_type=False),
+        SAEnum(
+            OrcamentoNivel,
+            name="orcamento_perfil_enum",
+            create_type=False,
+            values_callable=lambda obj: [e.value for e in obj],
+        ),
         nullable=True,
     )
     tem_passaporte: Mapped[Optional[bool]] = mapped_column(Boolean)
@@ -59,49 +89,20 @@ class Briefing(Base):
     lead: Mapped["Lead"] = relationship("Lead", back_populates="briefing")
 
 
-REQUIRED_FIELDS = ["destino", "data_ida", "orcamento", "perfil"]
-OPTIONAL_FIELDS = [
-    "data_volta",
-    "qtd_pessoas",
-    "tipo_viagem",
-    "preferencias",
-    "tem_passaporte",
-]
-
-
 def calculate_completude(briefing_data: dict) -> int:
-    """
-    Calcula o percentual de completude do briefing.
-    Campos obrigatórios (destino, data, orçamento, perfil) têm peso maior.
-    """
-    total_required = len(REQUIRED_FIELDS)
-    filled_required = sum(
-        1
-        for field in REQUIRED_FIELDS
-        if briefing_data.get(field) not in (None, [], "", 0)
+    """Calcula o percentual de completude do briefing (9 campos obrigatórios, peso uniforme)."""
+    from app.infrastructure.persistence.models.briefing_model import (
+        calculate_completude as _canonical,
     )
-
-    # Se todos os obrigatórios estiverem preenchidos, temos pelo menos 80%
-    # Os outros 20% vêm dos campos opcionais
-    base_pct = (filled_required / total_required) * 80
-
-    total_optional = len(OPTIONAL_FIELDS)
-    filled_optional = sum(
-        1
-        for field in OPTIONAL_FIELDS
-        if briefing_data.get(field) not in (None, [], "", 0)
-    )
-
-    extra_pct = (filled_optional / total_optional) * 20 if total_optional > 0 else 0
-
-    return min(100, round(base_pct + extra_pct))
+    return _canonical(briefing_data)
 
 
 # Pydantic schemas
 
-
 class BriefingExtracted(BaseModel):
     """Schema para Structured Outputs API — extração automática pela IA."""
+
+    model_config = ConfigDict(extra="forbid")
 
     destino: Optional[str] = Field(
         None,
@@ -122,7 +123,7 @@ class BriefingExtracted(BaseModel):
         None, description="Número total de passageiros (adultos + crianças)."
     )
     perfil: Optional[PerfilViagem] = Field(
-        None, description="Composição do grupo: casal, família, solo, grupo ou amigos."
+        None, description="Composição do grupo: casal, familia, solo, grupo ou amigos."
     )
     tipo_viagem: list[str] = Field(
         default_factory=list,
@@ -134,7 +135,7 @@ class BriefingExtracted(BaseModel):
     )
     orcamento: Optional[OrcamentoNivel] = Field(
         None,
-        description="Nível de investimento: baixo (econômico), médio (padrão), alto (conforto) ou premium (luxo).",
+        description="Nível de investimento: baixo (econômico), medio (padrão), alto (conforto) ou premium (luxo).",
     )
     tem_passaporte: Optional[bool] = Field(
         None,
@@ -144,6 +145,31 @@ class BriefingExtracted(BaseModel):
         None,
         description="Notas adicionais, restrições alimentares, celebrações ou pedidos especiais.",
     )
+    campos_inferidos: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Lista de campos cujo valor foi inferido pelo contexto, "
+            "não mencionados explicitamente pelo cliente. "
+            "Não afeta o score — apenas rastreabilidade."
+        ),
+    )
+
+    @field_validator("perfil", mode="before")
+    @classmethod
+    def _normalize_perfil(cls, v: object) -> object:
+        if isinstance(v, str):
+            # NFC-normalize before lookup to handle NFD strings from LLM responses
+            key = unicodedata.normalize("NFC", v.lower().strip())
+            return _PERFIL_ALIASES.get(key, key)
+        return v
+
+    @field_validator("orcamento", mode="before")
+    @classmethod
+    def _normalize_orcamento(cls, v: object) -> object:
+        if isinstance(v, str):
+            key = unicodedata.normalize("NFC", v.lower().strip())
+            return _ORCAMENTO_ALIASES.get(key, key)
+        return v
 
 
 class BriefingUpdate(BaseModel):
@@ -176,4 +202,4 @@ class BriefingResponse(BaseModel):
     observacoes: Optional[str]
     completude_pct: int
 
-    model_config = {"from_attributes": True}
+    model_config = ConfigDict(from_attributes=True)
