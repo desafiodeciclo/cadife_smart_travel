@@ -3,6 +3,7 @@ import 'package:cadife_smart_travel/features/agency/leads/domain/entities/briefi
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/conversation_summary.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/shared/domain/entities/interacao.dart';
+import 'package:cadife_smart_travel/features/agency/leads/domain/entities/leads_list_response.dart';
 import 'package:fpdart/fpdart.dart';
 
 /// Contrato do Repositório de Leads.
@@ -11,8 +12,14 @@ import 'package:fpdart/fpdart.dart';
 abstract class ILeadsRepository {
   // --- Consultas (Read) ---
 
-  /// Lista leads com filtros, convertendo modelos da API para entidades de domínio.
-  Future<Either<Failure, List<Lead>>> getLeads({LeadStatus? status, LeadScore? score});
+  /// Lista leads com filtros e paginação.
+  Future<Either<Failure, LeadsListResponse>> getLeads({
+    int? page,
+    int? size,
+    String? status,
+    String? score,
+    String? search,
+  });
   
   /// Busca detalhes de um lead por ID.
   Future<Either<Failure, Lead>> getLeadById(String id);

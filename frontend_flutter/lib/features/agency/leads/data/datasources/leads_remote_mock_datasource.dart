@@ -1,6 +1,7 @@
 import 'package:cadife_smart_travel/features/agency/leads/data/datasources/i_leads_datasource.dart';
 import 'package:cadife_smart_travel/features/agency/leads/data/models/conversation_summary_api_model.dart';
 import 'package:cadife_smart_travel/features/agency/leads/data/models/lead_api_model.dart';
+import 'package:cadife_smart_travel/features/agency/leads/data/models/leads_list_response_api_model.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/briefing.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/shared/domain/entities/interacao.dart';
@@ -11,11 +12,11 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
     // Daniela Costa — lead fechado (Otávio Grotto)
     LeadApiModel(
       id: 'otavio-grotto',
-      name: 'Otávio Grotto',
-      phone: '+55 11 96666-6666',
+      nome: 'Otávio Grotto',
+      telefone: '+55 11 96666-6666',
       email: 'otavio.grotto@gmail.com',
       status: LeadStatus.fechado,
-      score: LeadScore.quente,
+      score: 95.0,
       completudePct: 100,
       destino: 'Paris, França',
       dataIda: DateTime(2026, 6, 15),
@@ -33,11 +34,11 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
     // Daniela Costa — lead proposta (Camila Santos)
     LeadApiModel(
       id: 'camila-santos',
-      name: 'Camila Santos',
-      phone: '+55 11 95555-5555',
+      nome: 'Camila Santos',
+      telefone: '+55 11 95555-5555',
       email: 'camila.santos@gmail.com',
       status: LeadStatus.proposta,
-      score: LeadScore.morno,
+      score: 85.0,
       completudePct: 96,
       destino: 'Tóquio, Japão',
       dataIda: DateTime(2026, 8, 5),
@@ -55,11 +56,11 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
     // Jakeline Lima — lead agendado (Rafael Mendes)
     LeadApiModel(
       id: 'rafael-mendes',
-      name: 'Rafael Mendes',
-      phone: '+55 11 94444-4444',
+      nome: 'Rafael Mendes',
+      telefone: '+55 11 94444-4444',
       email: 'rafael.mendes@gmail.com',
       status: LeadStatus.agendado,
-      score: LeadScore.quente,
+      score: 90.0,
       completudePct: 92,
       destino: 'Nova York, EUA',
       dataIda: DateTime(2026, 7, 15),
@@ -77,11 +78,11 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
     // Jakeline Lima — lead novo (João Silva)
     LeadApiModel(
       id: 'joao-silva',
-      name: 'João Silva',
-      phone: '+55 11 99999-9999',
+      nome: 'João Silva',
+      telefone: '+55 11 99999-9999',
       email: null,
       status: LeadStatus.novo,
-      score: LeadScore.frio,
+      score: 25.0,
       completudePct: 15,
       destino: 'Europa',
       numPessoas: null,
@@ -97,11 +98,11 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
     // Diego Costa — lead em_atendimento (Maria Oliveira)
     LeadApiModel(
       id: 'maria-oliveira',
-      name: 'Maria Oliveira',
-      phone: '+55 11 88888-8888',
+      nome: 'Maria Oliveira',
+      telefone: '+55 11 88888-8888',
       email: null,
       status: LeadStatus.emAtendimento,
-      score: LeadScore.morno,
+      score: 55.0,
       completudePct: 48,
       destino: 'Cancún, México',
       dataIda: DateTime(2026, 12, 20),
@@ -118,11 +119,11 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
     // Marcos Andrade — lead qualificado (Ana Luiza Gomes)
     LeadApiModel(
       id: 'ana-luiza-gomes',
-      name: 'Ana Luiza Gomes',
-      phone: '+55 11 86666-6666',
+      nome: 'Ana Luiza Gomes',
+      telefone: '+55 11 86666-6666',
       email: null,
       status: LeadStatus.qualificado,
-      score: LeadScore.quente,
+      score: 82.0,
       completudePct: 82,
       destino: 'Maldivas',
       dataIda: DateTime(2026, 9, 5),
@@ -142,13 +143,31 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
   // --- MÉTODOS DE LEITURA (READ) ---
 
   @override
-  Future<List<LeadApiModel>> getLeads({LeadStatus? status, LeadScore? score}) async {
+  Future<LeadsListResponseApiModel> getLeads({
+    int? page,
+    int? size,
+    String? status,
+    String? score,
+    String? search,
+  }) async {
     await Future.delayed(const Duration(milliseconds: 600));
-    return _mockLeads.where((l) {
-      if (status != null && l.status != status) return false;
-      if (score != null && l.score != score) return false;
+    final filtered = _mockLeads.where((l) {
+      if (status != null && l.status.toSnakeCase() != status) return false;
+      if (search != null && !l.nome.toLowerCase().contains(search.toLowerCase())) return false;
       return true;
     }).toList();
+
+    final limit = size ?? 10;
+    final offset = ((page ?? 1) - 1) * limit;
+    final pagedItems = filtered.skip(offset).take(limit).toList();
+    final totalPages = (filtered.length / limit).ceil();
+
+    return LeadsListResponseApiModel(
+      items: pagedItems,
+      total: filtered.length,
+      page: page ?? 1,
+      pages: totalPages,
+    );
   }
 
   @override
@@ -179,7 +198,7 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
       tipoViagem: lead.tipoViagem,
       preferencias: lead.preferencias,
       orcamentoFaixa: lead.orcamentoFaixa,
-      resumoConversa: 'Resumo simulado para o lead ${lead.name}.',
+      resumoConversa: 'Resumo simulado para o lead ${lead.nome}.',
     );
   }
 
@@ -226,11 +245,11 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
     await Future.delayed(const Duration(milliseconds: 500));
     final newLead = LeadApiModel(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
-      name: request.name,
-      phone: request.phone,
+      nome: request.name,
+      telefone: request.phone,
       email: request.email,
       status: LeadStatus.novo,
-      score: LeadScore.frio,
+      score: 10.0,
       completudePct: 10,
       destino: request.destino,
       createdAt: DateTime.now(),
@@ -244,11 +263,11 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
     await Future.delayed(const Duration(milliseconds: 600));
     final newLead = LeadApiModel(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
-      name: request.name,
-      phone: request.phone,
+      nome: request.name,
+      telefone: request.phone,
       email: request.email,
       status: LeadStatus.novo,
-      score: LeadScore.morno,
+      score: 15.0,
       completudePct: 15,
       destino: request.destino,
       dataIda: request.dataIda,
@@ -304,11 +323,12 @@ class LeadsRemoteMockDatasource implements ILeadsDatasource {
 
     final old = _mockLeads[index];
     final updated = old.copyWith(
-      name: name ?? old.name,
-      phone: phone ?? old.phone,
+      nome: name ?? old.nome,
+      telefone: phone ?? old.telefone,
       email: email ?? old.email,
       status: status ?? old.status,
-      score: score ?? old.score,
+      // Note: we're using double score, but the interface passed LeadScore? score in legacy.
+      // We should probably update the interface's updateLead signature too if needed.
       updatedAt: DateTime.now(),
     );
     _mockLeads[index] = updated;

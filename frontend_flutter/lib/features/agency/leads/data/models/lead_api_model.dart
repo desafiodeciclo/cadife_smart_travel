@@ -3,8 +3,8 @@ import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.d
 class LeadApiModel extends Lead {
   const LeadApiModel({
     required super.id,
-    required super.name,
-    required super.phone,
+    required super.nome,
+    required super.telefone,
     required super.status,
     required super.score,
     required super.completudePct,
@@ -32,15 +32,12 @@ class LeadApiModel extends Lead {
   factory LeadApiModel.fromJson(Map<String, dynamic> json) {
     return LeadApiModel(
       id: json['id'] as String,
-      name: json['name'] as String,
-      phone: json['phone'] as String,
+      nome: json['nome'] as String? ?? json['name'] as String? ?? '',
+      telefone: json['telefone'] as String? ?? json['phone'] as String? ?? '',
       email: json['email'] as String?,
       ayaAtivo: json['aya_ativo'] as bool? ?? true,
       status: LeadStatus.fromSnakeCase(json['status'] as String? ?? 'novo'),
-      score: LeadScore.values.firstWhere(
-        (e) => e.name == json['score'],
-        orElse: () => LeadScore.frio,
-      ),
+      score: (json['score'] as num?)?.toDouble() ?? 0.0,
       completudePct: json['completude_pct'] as int? ?? 0,
       origem: json['origem'] != null ? LeadOrigem.fromSnakeCase(json['origem'] as String) : null,
       destino: json['destino'] as String?,
@@ -73,12 +70,12 @@ class LeadApiModel extends Lead {
   @override
   Map<String, dynamic> toJson() => {
         'id': id,
-        'name': name,
-        'phone': phone,
+        'nome': nome,
+        'telefone': telefone,
         'email': email,
         'aya_ativo': ayaAtivo,
         'status': status.toSnakeCase(),
-        'score': score.name,
+        'score': score,
         'completude_pct': completudePct,
         'origem': origem?.name,
         'destino': destino,
@@ -101,12 +98,12 @@ class LeadApiModel extends Lead {
 
   LeadApiModel copyWith({
     String? id,
-    String? name,
-    String? phone,
+    String? nome,
+    String? telefone,
     String? email,
     bool? ayaAtivo,
     LeadStatus? status,
-    LeadScore? score,
+    double? score,
     int? completudePct,
     LeadOrigem? origem,
     String? destino,
@@ -128,8 +125,8 @@ class LeadApiModel extends Lead {
   }) {
     return LeadApiModel(
       id: id ?? this.id,
-      name: name ?? this.name,
-      phone: phone ?? this.phone,
+      nome: nome ?? this.nome,
+      telefone: telefone ?? this.telefone,
       email: email ?? this.email,
       ayaAtivo: ayaAtivo ?? this.ayaAtivo,
       status: status ?? this.status,

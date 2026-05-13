@@ -1,5 +1,6 @@
 import 'package:cadife_smart_travel/features/agency/leads/data/models/conversation_summary_api_model.dart';
 import 'package:cadife_smart_travel/features/agency/leads/data/models/lead_api_model.dart';
+import 'package:cadife_smart_travel/features/agency/leads/data/models/leads_list_response_api_model.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/briefing.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/shared/domain/entities/interacao.dart';
@@ -9,8 +10,14 @@ import 'package:cadife_smart_travel/shared/domain/entities/interacao.dart';
 abstract class ILeadsDatasource {
   // --- Consultas (Read) ---
   
-  /// Lista leads com filtros opcionais de status e pontuação.
-  Future<List<LeadApiModel>> getLeads({LeadStatus? status, LeadScore? score});
+  /// Lista leads com filtros e paginação.
+  Future<LeadsListResponseApiModel> getLeads({
+    int? page,
+    int? size,
+    String? status,
+    String? score,
+    String? search,
+  });
 
   /// Busca os detalhes completos de um lead específico.
   Future<LeadApiModel> getLeadById(String id);

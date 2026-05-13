@@ -3,8 +3,8 @@ import 'package:equatable/equatable.dart';
 class Lead extends Equatable {
   const Lead({
     required this.id,
-    required this.name,
-    required this.phone,
+    required this.nome,
+    required this.telefone,
     required this.status,
     required this.score,
     required this.completudePct,
@@ -30,13 +30,13 @@ class Lead extends Equatable {
   });
 
   final String id;
-  final String name;
-  final String phone;
+  final String nome;
+  final String telefone;
   final String? email;
   final bool ayaAtivo;
   final LeadOrigem? origem;
   final LeadStatus status;
-  final LeadScore score;
+  final double score;
   final int completudePct;
   final String? destino;
   final DateTime? dataIda;
@@ -57,16 +57,13 @@ class Lead extends Equatable {
 
   factory Lead.fromJson(Map<String, dynamic> json) => Lead(
     id: json['id'] as String,
-    name: json['name'] as String,
-    phone: json['phone'] as String,
+    nome: json['nome'] as String? ?? json['name'] as String? ?? '',
+    telefone: json['telefone'] as String? ?? json['phone'] as String? ?? '',
     email: json['email'] as String?,
     ayaAtivo: json['aya_ativo'] as bool? ?? true,
     origem: json['origem'] != null ? LeadOrigem.fromSnakeCase(json['origem'] as String) : null,
     status: LeadStatus.fromSnakeCase(json['status'] as String? ?? 'novo'),
-    score: LeadScore.values.firstWhere(
-      (e) => e.name == json['score'],
-      orElse: () => LeadScore.frio,
-    ),
+    score: (json['score'] as num?)?.toDouble() ?? 0.0,
     completudePct: json['completude_pct'] as int? ?? 0,
     destino: json['destino'] as String?,
     dataIda: json['data_ida'] != null
@@ -96,12 +93,12 @@ class Lead extends Equatable {
 
   Map<String, dynamic> toJson() => {
     'id': id,
-    'name': name,
-    'phone': phone,
+    'nome': nome,
+    'telefone': telefone,
     'email': email,
     'aya_ativo': ayaAtivo,
-    'status': status.name.replaceAllMapped(RegExp(r'[A-Z]'), (match) => '_${match.group(0)!.toLowerCase()}'),
-    'score': score.name,
+    'status': status.toSnakeCase(),
+    'score': score,
     'completude_pct': completudePct,
     'destino': destino,
     'data_ida': dataIda?.toIso8601String(),
@@ -124,8 +121,8 @@ class Lead extends Equatable {
   @override
   List<Object?> get props => [
     id,
-    name,
-    phone,
+    nome,
+    telefone,
     status,
     score,
     completudePct,

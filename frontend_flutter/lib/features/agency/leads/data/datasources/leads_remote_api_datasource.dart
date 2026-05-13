@@ -21,32 +21,41 @@ class LeadsRemoteApiDatasource implements ILeadsDatasource {
   static const _cacheKeyPrefix = 'leads';
 
   @override
-  Future<List<LeadApiModel>> getLeads({LeadStatus? status, LeadScore? score}) async {
+  Future<LeadsListResponseApiModel> getLeads({
+    int? page,
+    int? size,
+    String? status,
+    String? score,
+    String? search,
+  }) async {
     try {
       final response = await _dio.get(
         ApiConstants.leads,
         queryParameters: {
-          if (status != null) 'status': status.name,
-          if (score != null) 'score': score.name,
+          if (page != null) 'page': page,
+          if (size != null) 'size': size,
+          if (status != null) 'status': status,
+          if (score != null) 'score': score,
+          if (search != null) 'search': search,
         },
       );
-      final leads = (response.data as List)
-          .map((e) => LeadApiModel.fromJson(e as Map<String, dynamic>))
-          .toList();
+      final result = LeadsListResponseApiModel.fromJson(
+        response.data as Map<String, dynamic>,
+      );
 
       await _offlineManager.saveToCache(
-        '$_cacheKeyPrefix:list:${status?.name ?? "all"}:${score?.name ?? "all"}',
+        '$_cacheKeyPrefix:list:${status ?? "all"}:${score ?? "all"}:p$page:s$size',
         response.data,
       );
-      return leads;
+      return result;
     } on DioException {
       final cached = _offlineManager.getFromCacheOffline(
-        '$_cacheKeyPrefix:list:${status?.name ?? "all"}:${score?.name ?? "all"}',
+        '$_cacheKeyPrefix:list:${status ?? "all"}:${score ?? "all"}:p$page:s$size',
       );
       if (cached != null) {
-        return (cached as List)
-            .map((e) => LeadApiModel.fromJson(e as Map<String, dynamic>))
-            .toList();
+        return LeadsListResponseApiModel.fromJson(
+          cached as Map<String, dynamic>,
+        );
       }
       rethrow;
     }
@@ -206,8 +215,8 @@ class LeadsRemoteApiDatasource implements ILeadsDatasource {
     final response = await _dio.patch(
       ApiConstants.leadById(id),
       data: {
-        'name': name,
-        'phone': phone,
+        'nome': name,
+        'telefone': phone,
         'email': email,
         'status': status?.name,
         'score': score?.name,

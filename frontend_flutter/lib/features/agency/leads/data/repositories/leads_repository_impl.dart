@@ -13,9 +13,21 @@ class LeadsRepositoryImpl implements ILeadsRepository {
   LeadsRepositoryImpl(this._datasource);
 
   @override
-  Future<Either<Failure, List<Lead>>> getLeads({LeadStatus? status, LeadScore? score}) async {
+  Future<Either<Failure, LeadsListResponse>> getLeads({
+    int? page,
+    int? size,
+    String? status,
+    String? score,
+    String? search,
+  }) async {
     try {
-      final result = await _datasource.getLeads(status: status, score: score);
+      final result = await _datasource.getLeads(
+        page: page,
+        size: size,
+        status: status,
+        score: score,
+        search: search,
+      );
       return Right(result);
     } on Object catch (e) {
       return Left(ServerFailure(e.toString()));
