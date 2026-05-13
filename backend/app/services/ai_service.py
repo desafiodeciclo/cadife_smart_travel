@@ -8,14 +8,15 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.output_parsers import JsonOutputParser
 from pydantic import BaseModel, Field
 
-from app.config import settings
+from app.core.config import get_settings
+settings = get_settings()
 from app.services.memory_service import SimpleWindowMemory
-from app.services.rag_service import get_relevant_context
+from app.services.rag_service import retrieve_context
 from app.services.briefing_service import extract_briefing_structured
-from app.core.logging import get_logger
-from app.core.langfuse_config import langfuse_context
+import structlog
+from app.services.observability import get_callbacks_for_chain
 
-logger = get_logger(__name__)
+logger = structlog.get_logger()
 
 # --- Configurações de Memória ---
 _memories: dict[str, SimpleWindowMemory] = {}
@@ -72,7 +73,7 @@ class AyaService:
         chat_history = memory.load_memory_variables({})["chat_history"]
 
         # 1. Recuperar Contexto Relevante (RAG)
-        context = await get_relevant_context(message_text)
+        context = await retrieve_context(message_text)
 
         # 2. Preparar o Prompt
         prompt = ChatPromptTemplate.from_messages([
@@ -88,7 +89,7 @@ class AyaService:
             # 3. Gerar Resposta com Trace do Langfuse
             response = await chain.ainvoke(
                 {"input": message_text, "chat_history": chat_history},
-                config={"callbacks": [langfuse_context.get_callback_handler()]}
+                config={"callbacks": get_callbacks_for_chain()}
             )
             
             response_content = response.content

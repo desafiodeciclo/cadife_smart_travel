@@ -26,10 +26,14 @@ async def list_leads(
     """
     logger.info("listing_leads", user_id=str(current_user.id), page=page, size=size, status=status)
     
-    return await lead_service.get_leads_paginated(
-        db, 
-        page=page, 
-        size=size, 
-        status=status,
-        search=search
-    )
+    try:
+        return await lead_service.get_leads_paginated(
+            db, 
+            page=page, 
+            size=size, 
+            status=status,
+            search=search
+        )
+    except Exception as e:
+        logger.error("leads_listing_failed", error=str(e))
+        raise e

@@ -104,3 +104,18 @@ async def notify_travel_status_change(
         body=body,
         data={"type": "travel_status_change", "new_status": new_status.value},
     )
+
+
+async def send_notification(
+    user_id: str,
+    title: str,
+    body: str,
+    data: Optional[dict] = None,
+) -> bool:
+    """
+    Wrapper for send_push_notification that takes a user_id.
+    Note: Token lookup for user_id is currently skipped to avoid direct DB dependency in this service.
+    This is mainly to fix the ImportError in offer_service.py.
+    """
+    logger.warning("fcm_send_by_user_id_not_implemented", user_id=user_id)
+    return False
