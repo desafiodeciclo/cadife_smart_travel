@@ -64,13 +64,13 @@ _DEFAULT_HEADERS = {
 
 # Cadeias de fallback por agente — percorridas em 429/503
 _TRIAGEM_FREE_MODELS: list[str] = [
-    "qwen/qwen-2-72b-instruct:free",
-    "meta-llama/llama-3.1-8b-instruct:free",
+    "qwen/qwen-2.5-72b-instruct:free",
+    "meta-llama/llama-3.3-70b-instruct:free",
 ]
 _ORCHESTRATOR_FREE_MODELS: list[str] = [
     settings.OPENROUTER_FALLBACK_MODEL,
     "nvidia/llama-3.1-nemotron-ultra-253b-v1:free",
-    "mistralai/mistral-small-3.1-24b-instruct:free",
+    "meta-llama/llama-3.3-70b-instruct:free",
 ]
 _RETRIABLE_STATUS_CODES = frozenset({429, 503})
 
@@ -161,8 +161,8 @@ _ORCHESTRATOR_TOOLS: list[dict[str, Any]] = [
                         "description": (
                             "Campos a salvar: destino (str), data_ida (YYYY-MM-DD), "
                             "data_volta (YYYY-MM-DD), qtd_pessoas (int), "
-                            "perfil (casal|família|solo|grupo|amigos), "
-                            "orcamento (baixo|médio|alto|premium), "
+                            "perfil (casal|familia|solo|grupo|amigos), "
+                            "orcamento (baixo|medio|alto|premium), "
                             "tem_passaporte (bool), observacoes (str)"
                         ),
                         "additionalProperties": True,

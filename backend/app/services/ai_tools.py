@@ -209,12 +209,12 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
                             "qtd_pessoas": {"type": "integer", "description": "Número total de viajantes."},
                             "perfil": {
                                 "type": "string",
-                                "enum": ["casal", "família", "solo", "grupo", "amigos"],
+                                "enum": ["casal", "familia", "solo", "grupo", "amigos"],
                                 "description": "Perfil do grupo viajante.",
                             },
                             "orcamento": {
                                 "type": "string",
-                                "enum": ["baixo", "médio", "alto", "premium"],
+                                "enum": ["baixo", "medio", "alto", "premium"],
                                 "description": "Nível de orçamento do cliente.",
                             },
                             "tem_passaporte": {"type": "boolean", "description": "Cliente possui passaporte válido."},

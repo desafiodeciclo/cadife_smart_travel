@@ -90,9 +90,10 @@ async def execute(payload: dict, db: AsyncSession) -> None:
             new_status=LeadStatus.em_atendimento,
         )
 
-    # Cache lead_id antes de qualquer branch — após rollback o SQLAlchemy expira
-    # todos os atributos do lead (inclusive id), causando MissingGreenlet se acessado.
+    # Cache lead_id e status antes de qualquer branch — após commit/rollback o SQLAlchemy
+    # expira todos os atributos do lead, causando MissingGreenlet se acessados depois.
     lead_id = lead.id
+    status_antes = lead.status
 
     # ── Step 2.5: Carrega histórico do DB (restart-resilient) ────────────────
     interacoes_list = await lead_service.get_recent_interacoes(db, lead_id, limit=20)
@@ -161,8 +162,12 @@ async def execute(payload: dict, db: AsyncSession) -> None:
             db=db,
         )
 
+        # Tool calls inside orchestrate may commit the session, expiring `lead`.
+        # Refresh so subsequent attribute accesses (lead.status, lead.nome) don't
+        # raise MissingGreenlet.
+        await db.refresh(lead)
+
         lead_id_str = str(lead_id)
-        status_antes = lead.status
 
         try:
             # ── Step 5: Extrai briefing & atualiza score ──────────────────

@@ -1,6 +1,7 @@
+import unicodedata
 import uuid
 from datetime import date
-from typing import TYPE_CHECKING, Optional, Any
+from typing import TYPE_CHECKING, Optional
 from sqlalchemy import Boolean, Date, Enum as SAEnum, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 # RESOLUÇÃO: Usando ConfigDict da developer
@@ -11,11 +12,12 @@ from app.infrastructure.persistence.types import GUID, StringArray
 from app.core.database import Base
 from app.domain.entities.enums import PerfilViagem, OrcamentoPerfil as OrcamentoNivel
 
-# Aliases the LLM commonly returns (without accent or in English).
-# Used as pre-validators so both the extraction and tool paths are covered.
+# Aliases the LLM commonly returns (accented, translated, or misspelled).
+# Maps variant → canonical DB enum value (no accents, as defined in PerfilViagem/OrcamentoPerfil).
 _PERFIL_ALIASES: dict[str, str] = {
-    "familia": "família",
-    "famíla": "família",
+    "família": "familia",
+    "famíla": "familia",
+    "family": "familia",
     "group": "grupo",
     "couple": "casal",
     "alone": "solo",
@@ -23,8 +25,8 @@ _PERFIL_ALIASES: dict[str, str] = {
     "grupo de amigos": "amigos",
 }
 _ORCAMENTO_ALIASES: dict[str, str] = {
-    "medio": "médio",
-    "medium": "médio",
+    "médio": "medio",
+    "medium": "medio",
     "low": "baixo",
     "high": "alto",
 }
@@ -87,37 +89,12 @@ class Briefing(Base):
     lead: Mapped["Lead"] = relationship("Lead", back_populates="briefing")
 
 
-REQUIRED_FIELDS = ["destino", "data_ida", "orcamento", "perfil"]
-OPTIONAL_FIELDS = [
-    "data_volta",
-    "qtd_pessoas",
-    "tipo_viagem",
-    "preferencias",
-    "tem_passaporte",
-]
-
-
 def calculate_completude(briefing_data: dict) -> int:
-    """Calcula o percentual de completude do briefing."""
-    total_required = len(REQUIRED_FIELDS)
-    filled_required = sum(
-        1
-        for field in REQUIRED_FIELDS
-        if briefing_data.get(field) not in (None, [], "", 0)
+    """Calcula o percentual de completude do briefing (9 campos obrigatórios, peso uniforme)."""
+    from app.infrastructure.persistence.models.briefing_model import (
+        calculate_completude as _canonical,
     )
-
-    base_pct = (filled_required / total_required) * 80
-
-    total_optional = len(OPTIONAL_FIELDS)
-    filled_optional = sum(
-        1
-        for field in OPTIONAL_FIELDS
-        if briefing_data.get(field) not in (None, [], "", 0)
-    )
-
-    extra_pct = (filled_optional / total_optional) * 20 if total_optional > 0 else 0
-
-    return min(100, round(base_pct + extra_pct))
+    return _canonical(briefing_data)
 
 
 # Pydantic schemas
@@ -180,17 +157,18 @@ class BriefingExtracted(BaseModel):
     @field_validator("perfil", mode="before")
     @classmethod
     def _normalize_perfil(cls, v: object) -> object:
-        # RESOLUÇÃO: Mantendo a lógica de aliases da developer
         if isinstance(v, str):
-            return _PERFIL_ALIASES.get(v.lower().strip(), v)
+            # NFC-normalize before lookup to handle NFD strings from LLM responses
+            key = unicodedata.normalize("NFC", v.lower().strip())
+            return _PERFIL_ALIASES.get(key, key)
         return v
 
     @field_validator("orcamento", mode="before")
     @classmethod
     def _normalize_orcamento(cls, v: object) -> object:
-        # RESOLUÇÃO: Mantendo a lógica de aliases da developer
         if isinstance(v, str):
-            return _ORCAMENTO_ALIASES.get(v.lower().strip(), v)
+            key = unicodedata.normalize("NFC", v.lower().strip())
+            return _ORCAMENTO_ALIASES.get(key, key)
         return v
 
 

@@ -534,8 +534,6 @@ async def update_briefing_from_extraction(
             "lead_qualified", lead_id=str(lead.id), completude=briefing.completude_pct
         )
 
-    lead.briefing = briefing
-
     interacoes_result = await db.execute(
         select(Interacao).where(Interacao.lead_id == lead.id).order_by(Interacao.timestamp.desc()).limit(2)
     )
@@ -545,6 +543,7 @@ async def update_briefing_from_extraction(
 
     await db.commit()
     await db.refresh(briefing)
+    await db.refresh(lead)
 
     all_fields = ["destino", "data_ida", "data_volta", "qtd_pessoas", "perfil",
                   "tipo_viagem", "preferencias", "orcamento", "tem_passaporte"]
