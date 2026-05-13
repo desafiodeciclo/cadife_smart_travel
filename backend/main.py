@@ -36,7 +36,7 @@ from app.jobs.conversation_summary_retry_job import run_conversation_summary_ret
 from app.jobs.aya_alert_job import alert_aya_disabled_leads
 
 # Routers
-from app.routes import admin, agenda, auth, documents, ia, leads, offers, propostas, webhook, suitcase, diary, travels
+from app.routes import admin, agency_settings, agenda, auth, consultor_profile, documents, documentos, ia, leads, mala, offers, propostas, webhook, suitcase, diary, travels
 
 # Middlewares
 from app.presentation.middlewares.request_id import RequestIdMiddleware
@@ -148,13 +148,17 @@ app.include_router(leads.router)
 app.include_router(ia.router)
 app.include_router(agenda.router)
 app.include_router(propostas.router)
-app.include_router(documents.router)
+app.include_router(documentos.router)  # canonical PT
+app.include_router(documents.router)  # deprecated EN alias (parity gap §3.11)
 app.include_router(auth.router)
 app.include_router(admin.router)
-app.include_router(suitcase.router)
+app.include_router(mala.router)  # canonical PT
+app.include_router(suitcase.router)  # deprecated EN alias (parity gap §3.11)
 app.include_router(offers.router)
 app.include_router(diary.router)
 app.include_router(travels.router)
+app.include_router(agency_settings.router)  # PRD: settings + templates
+app.include_router(consultor_profile.router)  # PRD: bio, foto, métricas, metas
 
 @app.get("/health", tags=["Health"])
 async def health():
