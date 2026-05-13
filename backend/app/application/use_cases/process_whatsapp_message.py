@@ -225,7 +225,7 @@ async def execute(payload: dict, db: AsyncSession) -> None:
     )
 
     if interacao.status_envio == "sent":
-        logger.info("skipping_replay_reply", lead_id=str(lead.id), message_id=message_id)
+        logger.info("skipping_replay_reply", lead_id=str(lead_id), message_id=message_id)
         return
 
     # ── Step 8: Reply via WhatsApp ──────────────────────────────────────
@@ -238,12 +238,12 @@ async def execute(payload: dict, db: AsyncSession) -> None:
     try:
         from app.services.conversation_summary_service import summarise_closed_sessions
 
-        all_interacoes = await lead_service.get_recent_interacoes(db, lead.id, limit=500)
-        await summarise_closed_sessions(db, lead.id, all_interacoes)
+        all_interacoes = await lead_service.get_recent_interacoes(db, lead_id, limit=500)
+        await summarise_closed_sessions(db, lead_id, all_interacoes)
     except Exception as exc:
         logger.warning(
             "conversation_summary_trigger_failed",
-            lead_id=str(lead.id),
+            lead_id=str(lead_id),
             error=str(exc),
         )
 

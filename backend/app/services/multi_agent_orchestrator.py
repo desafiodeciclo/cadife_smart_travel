@@ -869,7 +869,7 @@ async def _node_confusion_tracker(state: OrchestratorState) -> dict[str, Any]:
 
 def _route_security(state: OrchestratorState) -> str:
     """Se bloqueado, encerra imediatamente sem chamar LLM."""
-    return END if state["blocked"] else "triagem"
+    return END if state["blocked"] else "crm_lookup"
 
 
 # ── Compilação do grafo ────────────────────────────────────────────────────────
@@ -881,7 +881,7 @@ def _build_graph():
     graph: StateGraph = StateGraph(OrchestratorState)
 
     graph.add_node("security_gate", _node_security_gate)
-    graph.add_node("triagem", _node_triagem)
+    graph.add_node("crm_lookup", _node_triagem)
     graph.add_node("rag_mandatory", _node_rag_mandatory)
     graph.add_node("build_context", _node_build_context)
     graph.add_node("orchestrator", _node_orchestrator)
@@ -894,11 +894,11 @@ def _build_graph():
     graph.add_conditional_edges(
         "security_gate",
         _route_security,
-        {END: END, "triagem": "triagem"},
+        {END: END, "crm_lookup": "crm_lookup"},
     )
 
     # Pipeline RAG-first garantido pela sequência de edges
-    graph.add_edge("triagem", "rag_mandatory")       # RAG ANTES do LLM
+    graph.add_edge("crm_lookup", "rag_mandatory")    # RAG ANTES do LLM
     graph.add_edge("rag_mandatory", "build_context")  # Contexto com RAG injetado
     graph.add_edge("build_context", "orchestrator")
     graph.add_edge("orchestrator", "validate_output")

@@ -8,17 +8,14 @@ if TYPE_CHECKING:
     from app.presentation.schemas.leads import ManualLeadCreate
 
 import structlog
-from sqlalchemy import and_, func, or_, select, tuple_
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from sqlalchemy.exc import IntegrityError, ProgrammingError
 from sqlalchemy.dialects.postgresql import insert
 from app.application.services.lead_state_machine import LeadStateMachine
-from app.application.services.lead_scoring_service import (
-    lead_scoring_service,
-    ScoringContext,
-)
+from app.application.services.lead_scoring_service import lead_scoring_service
 from app.domain.entities.enums import LeadOrigem, LeadScore, LeadStatus, TipoMensagem
 from app.infrastructure.security.pii_encryption import hmac_hash
 from app.models.briefing import Briefing, BriefingExtracted, calculate_completude
@@ -555,10 +552,7 @@ async def update_briefing_from_extraction(
     if briefing.completude_pct > 40 and filled >= 5:
         from app.services.checkpoint_service import activate_checkpoint, SISTEMA
         from app.domain.entities.enums import TravelCheckpoint
-        import asyncio
-        asyncio.ensure_future(
-            activate_checkpoint(db, lead.id, TravelCheckpoint.briefing_coletado, SISTEMA)
-        )
+        await activate_checkpoint(db, lead.id, TravelCheckpoint.briefing_coletado, SISTEMA)
 
     return briefing
 
@@ -622,7 +616,11 @@ async def get_recent_interacoes(
     result = await db.execute(stmt)
     rows = list(result.scalars().all())
     return [
-        {"mensagem_cliente": r.mensagem_cliente, "mensagem_ia": r.mensagem_ia}
+        {
+            "mensagem_cliente": r.mensagem_cliente,
+            "mensagem_ia": r.mensagem_ia,
+            "timestamp": r.timestamp,
+        }
         for r in reversed(rows)
     ]
 
