@@ -295,8 +295,8 @@ def _load_external_secrets(settings: Settings) -> Settings:
     This hook is intentionally empty for MVP — the interface is ready for extension.
     """
     if settings.APP_ENV == "production":
-        # TODO(devops-backlog): Implement production secret loading via AWS Secrets Manager / Vault.
-        # Requires issue criada no repo desafiodeciclo/cadife-smart-travel antes de deploy prod.
+        # TODO: Implement production secret loading strategy here.
+        # Options: AWS Secrets Manager, HashiCorp Vault, GCP Secret Manager.
         pass
     return settings
 
