@@ -18,10 +18,10 @@ from typing import Union
 
 import sqlalchemy as sa
 from alembic import op
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import ENUM as PG_ENUM, UUID
 
 revision: str = "h2i3j4k5l6m7"
-down_revision: Union[str, None] = "g1h2i3j4k5l6"
+down_revision: Union[str, None] = "k5l6m7n8o9p0"
 branch_labels = None
 depends_on = None
 
@@ -37,11 +37,16 @@ CHECKPOINT_VALUES = (
 
 
 def upgrade() -> None:
-    op.execute(
-        "CREATE TYPE travel_checkpoint_enum AS ENUM ("
-        + ", ".join(f"'{v}'" for v in CHECKPOINT_VALUES)
-        + ")"
-    )
+    conn = op.get_bind()
+    type_exists = conn.execute(
+        sa.text("SELECT EXISTS(SELECT 1 FROM pg_type WHERE typname = 'travel_checkpoint_enum')")
+    ).scalar()
+    if not type_exists:
+        op.execute(
+            "CREATE TYPE travel_checkpoint_enum AS ENUM ("
+            + ", ".join(f"'{v}'" for v in CHECKPOINT_VALUES)
+            + ")"
+        )
 
     op.create_table(
         "travel_checkpoints",
@@ -59,7 +64,7 @@ def upgrade() -> None:
         ),
         sa.Column(
             "checkpoint",
-            sa.Enum(*CHECKPOINT_VALUES, name="travel_checkpoint_enum", create_type=False),
+            PG_ENUM(*CHECKPOINT_VALUES, name="travel_checkpoint_enum", create_type=False),
             nullable=False,
         ),
         sa.Column(
