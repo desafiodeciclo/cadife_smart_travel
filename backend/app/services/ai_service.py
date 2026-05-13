@@ -6,6 +6,7 @@ from typing import Optional
 import structlog
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_openai import ChatOpenAI
+from langchain_classic.memory import ConversationBufferWindowMemory
 
 from app.core.config import get_settings
 from app.models.briefing import BriefingExtracted, calculate_completude
@@ -116,9 +117,7 @@ class SimpleWindowMemory:
         return {self.memory_key: messages}
 
 
-_memories: dict[str, SimpleWindowMemory] = {}
-_memory_last_access: dict[str, float] = {}
-_MEMORY_TTL_SECONDS = 3600 * 4  # 4 hours of inactivity clears memory
+_memories: dict[str, ConversationBufferWindowMemory] = {}
 _llm: Optional[ChatOpenAI] = None
 
 
@@ -148,32 +147,14 @@ def get_llm() -> ChatOpenAI:
     return _llm
 
 
-def _evict_stale_memories() -> None:
-    now = time.time()
-    stale = [k for k, t in _memory_last_access.items() if now - t > _MEMORY_TTL_SECONDS]
-    for k in stale:
-        _memories.pop(k, None)
-        _memory_last_access.pop(k, None)
-    if stale:
-        logger.info("memory_evicted", count=len(stale))
-
-
-def get_memory(phone: str) -> SimpleWindowMemory:
-    _evict_stale_memories()
+def get_memory(phone: str) -> ConversationBufferWindowMemory:
     if phone not in _memories:
-        _memories[phone] = SimpleWindowMemory(
+        _memories[phone] = ConversationBufferWindowMemory(
             k=_MEMORY_WINDOW_K,
             memory_key="chat_history",
             return_messages=True,
         )
-    _memory_last_access[phone] = time.time()
     return _memories[phone]
-
-
-def clear_memory(phone: str) -> None:
-    """Explicitly clear memory for a lead (call when lead is archived)."""
-    _memories.pop(phone, None)
-    _memory_last_access.pop(phone, None)
 
 
 def preload_memory_from_db(
@@ -541,15 +522,7 @@ async def extract_briefing(conversation: list[dict]) -> BriefingExtracted:
                 raw_json = re.sub(r"```(?:json)?", "", raw_json).strip()
                 raw_json = re.sub(r"```$", "", raw_json).strip()
 
-        try:
-            parsed = json.loads(raw_json)
-        except json.JSONDecodeError as json_exc:
-            logger.error(
-                "briefing_json_decode_failed",
-                raw_snippet=raw_json[:200],
-                error=str(json_exc),
-            )
-            raise
+        parsed = json.loads(raw_json)
         briefing = BriefingExtracted.model_validate(parsed)
 
         briefing_data = briefing.model_dump()
