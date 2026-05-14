@@ -127,8 +127,8 @@ class Settings(BaseSettings):
 
     # ── JWT Auth (spec.md §12.2 — 1h access, 7d refresh) ──────────────────
     JWT_SECRET_KEY: str = Field(
-        default="change-me-in-production",
-        description="JWT signing secret — MUST be overridden in production",
+        ...,
+        description="JWT signing secret — OBRIGATÓRIO em todos os ambientes",
     )
     JWT_ALGORITHM: str = Field(default="HS256")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=60, ge=1)
@@ -222,13 +222,12 @@ class Settings(BaseSettings):
     @field_validator("JWT_SECRET_KEY")
     @classmethod
     def validate_jwt_secret(cls, v: str, info) -> str:
-        """Warn loudly in production if JWT secret is still the default placeholder."""
-        # Access APP_ENV via info.data if already validated
+        """Ensure JWT secret is strong enough (>= 32 hex chars = 256 bits)."""
         app_env = info.data.get("APP_ENV", "development")
-        if app_env == "production" and v == "change-me-in-production":
+        if app_env == "production" and len(v) < 32:
             raise ValueError(
-                "JWT_SECRET_KEY must be set to a secure random value in production. "
-                'Generate one with: python -c "import secrets; print(secrets.token_hex(32))"'
+                "JWT_SECRET_KEY must be at least 32 characters long in production. "
+                'Generate one with: python -c \"import secrets; print(secrets.token_hex(32))\"'
             )
         return v
 
