@@ -364,6 +364,12 @@ async def create_agendamento(
             consultor_id=current_user.id,
         )
         db.add(ag)
+        
+        # Sincronização de status do Lead (Pipeline CRM §3.3)
+        await lead_service.update_lead_status(
+            db, lead, LeadStatus.agendado, triggered_by="agendamento_criado"
+        )
+        
         await db.commit()
         await db.refresh(ag)
     except IntegrityError as exc:

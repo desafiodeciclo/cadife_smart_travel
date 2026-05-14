@@ -147,6 +147,12 @@ async def create_proposta(
         expiration_hours=body.expiration_hours,
     )
     db.add(proposta)
+    
+    # Sincronização de status do Lead (Pipeline CRM §3.3)
+    await lead_service.update_lead_status(
+        db, lead, LeadStatus.proposta, triggered_by="proposta_criada"
+    )
+
     await db.flush()  # populate proposta.id before snapshot
     await proposta_versao_service.snapshot(
         db, proposta, motivo="criacao", by=current_user.id
@@ -466,6 +472,14 @@ async def enviar_proposta(
 
     proposta.status = PropostaStatus.enviada
     proposta.enviado_em = datetime.now(timezone.utc)
+    
+    # Sincronização de status do Lead (Pipeline CRM §3.3)
+    lead = await lead_service.get_lead_by_id(db, proposta.lead_id)
+    if lead:
+        await lead_service.update_lead_status(
+            db, lead, LeadStatus.proposta, triggered_by="proposta_enviada"
+        )
+
     await db.commit()
     await db.refresh(proposta)
 

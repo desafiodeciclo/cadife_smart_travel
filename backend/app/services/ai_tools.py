@@ -257,6 +257,32 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "query_published_offers",
+            "description": (
+                "Busca ofertas de viagem publicadas na vitrine da Cadife. "
+                "Retorna: título, destino, preço final, duração e destaques. "
+                "Use para sugerir pacotes prontos quando o perfil do cliente bater "
+                "com alguma oferta ativa ou quando ele pedir sugestões de pacotes econômicos."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "destination": {
+                        "type": "string",
+                        "description": "Cidade ou país para filtrar (opcional).",
+                    },
+                    "max_price": {
+                        "type": "number",
+                        "description": "Preço máximo em BRL (opcional).",
+                    }
+                },
+                "required": [],
+            },
+        },
+    },
 ]
 
 
@@ -589,6 +615,45 @@ async def _generate_travel_image(
         return json.dumps({"success": False, "reason": "unexpected_error"})
 
 
+async def _query_published_offers(
+    db: Optional[AsyncSession],
+    destination: Optional[str] = None,
+    max_price: Optional[float] = None,
+) -> str:
+    if not db:
+        return json.dumps({"success": False, "reason": "db_unavailable"})
+    try:
+        from app.services.offer_service import list_offers
+        
+        offers, total = await list_offers(
+            db,
+            destination=destination,
+            max_price=max_price,
+            limit=5
+        )
+        
+        if not offers:
+            return "Nenhuma oferta publicada encontrada para estes filtros."
+            
+        result = []
+        for o in offers:
+            result.append({
+                "id": str(o.id),
+                "titulo": o.title,
+                "destino": o.destination,
+                "preco": float(o.final_price),
+                "moeda": o.currency,
+                "duracao": f"{o.duration_days} dias",
+                "saida": o.departure_date.strftime("%d/%m/%Y"),
+                "destaques": o.highlights[:3]
+            })
+            
+        return json.dumps({"success": True, "total": total, "offers": result}, ensure_ascii=False)
+    except Exception as exc:
+        logger.error("tool_query_offers_failed", error=str(exc))
+        return json.dumps({"success": False, "error": "offers_lookup_failed"})
+
+
 # ── Dispatcher ────────────────────────────────────────────────────────────────
 
 
@@ -624,6 +689,13 @@ async def execute_tool(
             destino=tool_args["destino"],
             perfil=tool_args.get("perfil"),
             estilo=tool_args.get("estilo", "luxo"),
+        )
+
+    if tool_name == "query_published_offers":
+        return await _query_published_offers(
+            db,
+            destination=tool_args.get("destination"),
+            max_price=tool_args.get("max_price"),
         )
 
     logger.warning("tool_unknown", tool=tool_name)
