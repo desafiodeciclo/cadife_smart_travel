@@ -34,7 +34,7 @@ async def create_user(db: AsyncSession, data: RegisterRequest, role: str = UserP
 
 async def update_password(db: AsyncSession, user: User, new_password_plain: str) -> User:
     user.hashed_password = hash_password(new_password_plain)
-    user.global_logout_at = datetime.now(timezone.utc)
+    user.global_logout_at = datetime.now(timezone.utc).replace(microsecond=0)
     await db.commit()
     await db.refresh(user)
     return user

@@ -53,6 +53,9 @@ from app.infrastructure.persistence.models.itinerary_model import (
 from app.infrastructure.persistence.models.revoked_token_model import (
     RevokedTokenModel,
 )  # noqa: F401
+from app.infrastructure.persistence.models.sale_goal_model import (
+    SaleGoalModel,
+)  # noqa: F401
 
 # Notification queue models (side-effect imports to register metadata)
 from app.models.notification_queue import NotificationQueue  # noqa: F401
@@ -76,6 +79,7 @@ __all__ = [
     "TravelModel",
     "ItineraryItemModel",
     "RevokedTokenModel",
+    "SaleGoalModel",
     "NotificationQueue",
     "DeadLetterQueue",
 ]

@@ -130,6 +130,16 @@ async def refresh_token(body: RefreshRequest, db: AsyncSession = Depends(get_db)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuário não encontrado"
         )
+        
+    # Check if refresh token was issued before a global logout
+    iat = payload.get("iat")
+    if iat and user.global_logout_at:
+        token_issued_at = datetime.fromtimestamp(iat, tz=timezone.utc)
+        if token_issued_at <= user.global_logout_at:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Sessão revogada (logout global)"
+            )
 
     return TokenResponse(
         access_token=create_access_token(str(user.id)),
@@ -175,7 +185,7 @@ async def logout_all_devices(
     user = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    user.global_logout_at = datetime.now(timezone.utc)
+    user.global_logout_at = datetime.now(timezone.utc).replace(microsecond=0)
     await db.commit()
     logger.info("auth_logout_all", user_id=str(user.id))
     return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -259,7 +269,7 @@ async def change_password(
     user = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    if not verify_password(body.old_password, user.hashed_password):
+    if not verify_password(body.current_password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Senha antiga incorreta"
         )
