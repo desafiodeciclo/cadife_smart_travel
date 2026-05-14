@@ -125,6 +125,34 @@ async def test_get_leads_cursor_pagination(async_client):
         assert ids1.isdisjoint(ids2), "Cursor pagination não deve retornar duplicatas"
 
 
+@pytest.mark.asyncio
+async def test_get_leads_offset_pagination(async_client):
+    """Paginação offset-based deve retornar total, page e pages."""
+    phones = [f"+5511900002{i:02d}" for i in range(5)]
+    for p in phones:
+        await _create_lead(async_client, p)
+
+    r = await async_client.get("/leads?page=1&size=2")
+    assert r.status_code == 200
+    data = r.json()
+    assert "items" in data
+    assert "total" in data
+    assert "page" in data
+    assert "pages" in data
+    assert data["page"] == 1
+    assert data["limit"] == 2
+    assert len(data["items"]) <= 2
+
+    # Página 2
+    r2 = await async_client.get("/leads?page=2&size=2")
+    assert r2.status_code == 200
+    data2 = r2.json()
+    assert data2["page"] == 2
+    ids1 = {i["id"] for i in data["items"]}
+    ids2 = {i["id"] for i in data2["items"]}
+    assert ids1.isdisjoint(ids2), "Offset pagination não deve retornar duplicatas"
+
+
 def test_cursor_invalido_levanta_value_error():
     """Cursor corrompido deve levantar ValueError na camada de serviço (422 via HTTP)."""
     from app.services.lead_service import _decode_cursor
