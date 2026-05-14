@@ -82,4 +82,9 @@ class AuthRemoteApiDatasource implements IAuthDatasource {
       },
     );
   }
+
+  @override
+  Future<void> logoutAllDevices() async {
+    await _dio.post('/auth/logout-all-devices');
+  }
 }

@@ -1,10 +1,10 @@
 import 'dart:convert';
+import 'dart:developer';
 
 import 'package:cadife_smart_travel/core/constants/api_constants.dart';
 import 'package:cadife_smart_travel/core/di/service_locator.dart';
 import 'package:cadife_smart_travel/features/client/itinerary/domain/entities/itinerary_item.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ItineraryService {
@@ -33,7 +33,7 @@ class ItineraryService {
       await _saveToCache(leadId, items);
       return items;
     } on DioException catch (e) {
-      debugPrint('ItineraryService.fetchItinerary error: $e');
+      log('fetchItinerary error', name: 'ItineraryService', error: e);
       return _loadFromCache(leadId);
     }
   }
@@ -100,7 +100,7 @@ class ItineraryService {
       );
       await _removePendingNote(leadId, date);
     } on DioException catch (e) {
-      debugPrint('ItineraryService.saveNote offline – will retry: $e');
+      log('saveNote offline – will retry', name: 'ItineraryService', error: e);
     }
   }
 
@@ -119,7 +119,7 @@ class ItineraryService {
         );
         await _removePendingNote(leadId, date);
       } on DioException catch (e) {
-        debugPrint('syncPendingNotes failed for $date: $e');
+        log('syncPendingNotes failed for $date', name: 'ItineraryService', error: e);
       }
     }
   }

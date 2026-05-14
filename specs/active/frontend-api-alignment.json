@@ -1,0 +1,95 @@
+{
+  "id": "frontend-api-alignment",
+  "title": "Frontend: Alinhar Endpoints com Backend (Paths PT, Endpoints Faltando)",
+  "status": "in-progress",
+  "owner": "Jakeline / Otávio Grotto",
+  "created_at": "2026-05-14",
+  "sprint": "frontend-debt-phase1",
+  "depends_on": ["frontend-logging-security", "frontend-storage-security"],
+  "blocks": ["frontend-try-catch-logging"],
+  "description": "Remover 9 débitos P1: alinhar paths em português (interactions→interacoes, suitcase→mala), e criar 5 endpoints faltando no backend (forgot-password, change-password, logout-all-devices, GET checkpoints, GET travels/me/active). Coordenação backend necessária.",
+  "user_story": "Como desenvolvedor, quero que frontend e backend usem convenções de nomenclatura consistentes (português), e quero que todos os endpoints necessários existam no backend para que o app possa funcionar com dados reais.",
+  "acceptance_criteria": [
+    "Paths em português: /leads/{id}/interacoes, /mala/itens (em vez de /interactions, /suitcase)",
+    "5 endpoints criados no backend: POST /auth/forgot-password, POST /auth/change-password, POST /auth/logout-all-devices, GET /leads/{id}/checkpoints, GET /travels/me/active",
+    "Frontend datasources atualizados para chamar endpoints corretos",
+    "Testes E2E validam integração frontend↔backend para cada endpoint",
+    "Nenhuma chamada para endpoint EN em vez de PT",
+    "Backend retorna schemas corretos conforme contrato API"
+  ],
+  "steps": [
+    {
+      "id": 1,
+      "description": "BACKEND: Criar POST /auth/forgot-password (envia email de reset)",
+      "status": "pending",
+      "file": "backend/app/routes/auth.py",
+      "effort_hours": 1,
+      "owner_backend": "Nikolas",
+      "details": "Validar email existe, gerar token de reset, enviar email com link"
+    },
+    {
+      "id": 2,
+      "description": "BACKEND: Criar POST /auth/change-password (requer token + nova senha)",
+      "status": "pending",
+      "file": "backend/app/routes/auth.py",
+      "effort_hours": 1,
+      "owner_backend": "Nikolas",
+      "details": "Validar token, validar força de nova senha, atualizar BD"
+    },
+    {
+      "id": 3,
+      "description": "BACKEND: Criar POST /auth/logout-all-devices (logout de todas as sessões)",
+      "status": "pending",
+      "file": "backend/app/routes/auth.py",
+      "effort_hours": 1,
+      "owner_backend": "Nikolas",
+      "details": "Invalidar todos os refresh tokens do usuário"
+    },
+    {
+      "id": 4,
+      "description": "BACKEND: Criar GET /leads/{id}/checkpoints (lista checkpoints de viagem)",
+      "status": "done",
+      "file": "backend/app/routes/leads.py",
+      "effort_hours": 1,
+      "owner_backend": "Nikolas",
+      "details": "Retornar lista de TravelCheckpoint para o lead"
+    },
+    {
+      "id": 5,
+      "description": "BACKEND: Criar GET /travels/me/active (próxima viagem ativa do usuário)",
+      "status": "done",
+      "file": "backend/app/routes/travels.py",
+      "effort_hours": 1,
+      "owner_backend": "Nikolas",
+      "details": "Retornar viagem com status=ATIVA mais próxima"
+    },
+    {
+      "id": 6,
+      "description": "FRONTEND: Atualizar /interactions → /interacoes em leads_remote_api_datasource",
+      "status": "pending",
+      "file": "lib/features/agency/leads/data/datasources/leads_remote_api_datasource.dart:116",
+      "effort_hours": 0.5
+    },
+    {
+      "id": 7,
+      "description": "FRONTEND: Atualizar /suitcase → /mala em api_constants",
+      "status": "pending",
+      "file": "lib/core/constants/api_constants.dart:123",
+      "effort_hours": 0.3
+    },
+    {
+      "id": 8,
+      "description": "FRONTEND: Criar datasources para 5 endpoints novos (auth, checkpoints, travels)",
+      "status": "pending",
+      "file": "lib/features/*/data/datasources/",
+      "effort_hours": 1.5
+    },
+    {
+      "id": 9,
+      "description": "TESTE E2E: Validar integração ponta a ponta para cada endpoint",
+      "status": "pending",
+      "file": "integration_test/",
+      "effort_hours": 1
+    }
+  ]
+}

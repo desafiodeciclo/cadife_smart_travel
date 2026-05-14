@@ -132,6 +132,38 @@ async def get_lead(
     return map_lead_to_detail(lead)
 
 
+# ── GET /leads/{id}/checkpoints ────────────────────────────────────────────
+
+@router.get(
+    "/{lead_id}/checkpoints",
+    response_model=CheckpointListResponse,
+    summary="Listar checkpoints de um lead",
+    description=(
+        "Retorna lista de checkpoints (marcos de viagem) ativados para este lead, "
+        "ordenados por data de ativação. Usados no acompanhamento de status da viagem."
+    ),
+    dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))],
+    responses={
+        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
+        403: {"description": "Sem permissão", "model": HTTPErrorResponse},
+        404: {"description": "Lead não encontrado", "model": HTTPErrorResponse},
+    },
+)
+async def list_lead_checkpoints(
+    lead_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+) -> CheckpointListResponse:
+    lead = await lead_service.get_lead_by_id(db, lead_id)
+    if not lead:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead não encontrado")
+    records = await checkpoint_service.get_checkpoints(db, lead_id)
+    return CheckpointListResponse(
+        checkpoints=[CheckpointResponse.model_validate(r) for r in records],
+        total=len(records),
+    )
+
+
 # ── GET /leads/metrics ─────────────────────────────────────────────────────
 
 @router.get(

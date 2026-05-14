@@ -5,7 +5,7 @@ from typing import Optional
 
 from sqlalchemy import Boolean, DateTime, String, func
 from sqlalchemy.orm import Mapped, mapped_column
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 
 from app.core.database import Base
 from app.infrastructure.persistence.types import GUID, StringArray
@@ -103,3 +103,12 @@ class RegisterRequest(BaseModel):
     password: str = Field(min_length=8)
 
     model_config = {"str_strip_whitespace": True}
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str = Field(min_length=8)

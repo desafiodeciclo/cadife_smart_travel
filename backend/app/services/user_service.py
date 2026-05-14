@@ -69,3 +69,11 @@ async def update_avatar_url(db: AsyncSession, user: User, url: str) -> User:
     await db.commit()
     await db.refresh(user)
     return user
+
+
+async def update_password(db: AsyncSession, user: User, new_password: str) -> User:
+    """Updates user password."""
+    user.hashed_password = hash_password(new_password)
+    await db.commit()
+    await db.refresh(user)
+    return user
