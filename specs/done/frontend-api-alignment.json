@@ -1,7 +1,7 @@
 {
   "id": "frontend-api-alignment",
   "title": "Frontend: Alinhar Endpoints com Backend (Paths PT, Endpoints Faltando)",
-  "status": "in-progress",
+  "status": "done",
   "owner": "Jakeline / Otávio Grotto",
   "created_at": "2026-05-14",
   "sprint": "frontend-debt-phase1",
@@ -21,7 +21,7 @@
     {
       "id": 1,
       "description": "BACKEND: Criar POST /auth/forgot-password (envia email de reset)",
-      "status": "pending",
+      "status": "done",
       "file": "backend/app/routes/auth.py",
       "effort_hours": 1,
       "owner_backend": "Nikolas",
@@ -30,7 +30,7 @@
     {
       "id": 2,
       "description": "BACKEND: Criar POST /auth/change-password (requer token + nova senha)",
-      "status": "pending",
+      "status": "done",
       "file": "backend/app/routes/auth.py",
       "effort_hours": 1,
       "owner_backend": "Nikolas",
@@ -39,7 +39,7 @@
     {
       "id": 3,
       "description": "BACKEND: Criar POST /auth/logout-all-devices (logout de todas as sessões)",
-      "status": "pending",
+      "status": "done",
       "file": "backend/app/routes/auth.py",
       "effort_hours": 1,
       "owner_backend": "Nikolas",
@@ -66,28 +66,28 @@
     {
       "id": 6,
       "description": "FRONTEND: Atualizar /interactions → /interacoes em leads_remote_api_datasource",
-      "status": "pending",
+      "status": "done",
       "file": "lib/features/agency/leads/data/datasources/leads_remote_api_datasource.dart:116",
       "effort_hours": 0.5
     },
     {
       "id": 7,
       "description": "FRONTEND: Atualizar /suitcase → /mala em api_constants",
-      "status": "pending",
+      "status": "done",
       "file": "lib/core/constants/api_constants.dart:123",
       "effort_hours": 0.3
     },
     {
       "id": 8,
       "description": "FRONTEND: Criar datasources para 5 endpoints novos (auth, checkpoints, travels)",
-      "status": "pending",
+      "status": "done",
       "file": "lib/features/*/data/datasources/",
       "effort_hours": 1.5
     },
     {
       "id": 9,
       "description": "TESTE E2E: Validar integração ponta a ponta para cada endpoint",
-      "status": "pending",
+      "status": "done",
       "file": "integration_test/",
       "effort_hours": 1
     }

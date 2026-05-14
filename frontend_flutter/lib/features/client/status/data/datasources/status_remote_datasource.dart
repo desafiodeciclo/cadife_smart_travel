@@ -1,3 +1,4 @@
+import 'package:cadife_smart_travel/core/constants/api_constants.dart';
 import 'package:cadife_smart_travel/features/client/status/data/datasources/status_datasource.dart';
 import 'package:cadife_smart_travel/features/client/status/domain/entities/client_travel_status.dart';
 import 'package:dio/dio.dart';
@@ -10,21 +11,11 @@ class StatusRemoteDatasource implements IStatusDatasource {
   @override
   Future<ClientTravelStatus?> getMyStatus() async {
     final res = await _dio.get<Map<String, dynamic>>(
-      '/travels',
-      queryParameters: {'status': 'ongoing'},
+      ApiConstants.travelsActive,
     );
     final data = res.data!;
     final travels = (data['travels'] as List<dynamic>);
-    if (travels.isEmpty) {
-      // Sem viagem em andamento — tenta buscar a próxima agendada.
-      final upcoming = await _dio.get<Map<String, dynamic>>(
-        '/travels',
-        queryParameters: {'status': 'upcoming'},
-      );
-      final upcomingList = (upcoming.data!['travels'] as List<dynamic>);
-      if (upcomingList.isEmpty) return null;
-      return _mapTravel(upcomingList.first as Map<String, dynamic>);
-    }
+    if (travels.isEmpty) return null;
     return _mapTravel(travels.first as Map<String, dynamic>);
   }
 

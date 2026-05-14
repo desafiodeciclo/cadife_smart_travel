@@ -1,0 +1,51 @@
+{
+  "id": "frontend-storage-security",
+  "title": "Frontend: Migrar SharedPreferences → flutter_secure_storage para Profile",
+  "status": "in_progress",
+  "owner": "Otávio Grotto",
+  "created_at": "2026-05-14",
+  "sprint": "frontend-debt-phase1",
+  "depends_on": ["frontend-logging-security"],
+  "blocks": ["frontend-color-centralization"],
+  "description": "Remover 1 débito P1 crítico: profile data (email, telefone, biografia) está armazenado em SharedPreferences sem criptografia. Migrar para flutter_secure_storage e atualizar ProfileNotifier para usar novo SecureStorageService.",
+  "user_story": "Como usuário, quero que meus dados de perfil sensíveis sejam criptografados no armazenamento local, não em texto plano em SharedPreferences.",
+  "acceptance_criteria": [
+    "SecureStorageService criado e gerencia acesso ao flutter_secure_storage",
+    "Profile data (email, telefone, nome, etc) armazenado em SecureStorage, não SharedPreferences",
+    "SharedPreferences usado apenas para dados não-sensíveis (tema, idioma, etc)",
+    "ProfileNotifier atualizado para chamar SecureStorageService",
+    "Migration script transfere dados antigos de SharedPreferences → SecureStorage se existirem",
+    "Logout limpa dados de SecureStorage completamente",
+    "Teste validando dados sensíveis não aparecem em SharedPreferences"
+  ],
+  "steps": [
+    {
+      "id": 1,
+      "description": "Criar SecureStorageService com métodos read/write/delete para dados sensíveis",
+      "status": "done",
+      "file": "lib/core/services/secure_storage_service.dart",
+      "effort_hours": 0.5
+    },
+    {
+      "id": 2,
+      "description": "Atualizar ProfileNotifier para chamar SecureStorageService em vez de SharedPreferences",
+      "status": "done",
+      "file": "lib/features/agency/perfil/presentation/providers/profile_notifier.dart",
+      "effort_hours": 0.3
+    },
+    {
+      "id": 3,
+      "description": "Criar migration script para transferir dados antigos (se existirem)",
+      "status": "done",
+      "file": "lib/core/migrations/migrate_shared_prefs_to_secure.dart",
+      "effort_hours": 0.2
+    },
+    {
+      "id": 4,
+      "description": "Teste: validar dados sensíveis não existem em SharedPreferences",
+      "status": "done",
+      "file": "lib/core/services/test/secure_storage_service_test.dart",
+      "effort_hours": 0
+    }
+  ]
+}
