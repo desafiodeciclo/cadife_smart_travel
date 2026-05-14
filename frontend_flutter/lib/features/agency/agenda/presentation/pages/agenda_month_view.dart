@@ -133,7 +133,7 @@ class _CalendarGrid extends ConsumerWidget {
                 a.dateTime.year == date.year &&
                 a.dateTime.month == date.month &&
                 a.dateTime.day == date.day &&
-                a.status != 'bloqueado' &&
+                a.tipo != 'bloqueio' &&
                 a.status != 'cancelado',
           )
           .length;

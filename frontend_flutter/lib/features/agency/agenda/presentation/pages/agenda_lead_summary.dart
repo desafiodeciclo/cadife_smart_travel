@@ -453,8 +453,6 @@ class _LeadSelectSheetState extends ConsumerState<_LeadSelectSheet> {
     final ok = await ref.read(agendaProvider.notifier).scheduleSlot(
           leadId: lead.id,
           dateTime: widget.slotStart,
-          nomeCliente: lead.name,
-          destinoViagem: lead.destino,
         );
 
     if (mounted) {
