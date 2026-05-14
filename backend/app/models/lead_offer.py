@@ -1,4 +1,5 @@
 import uuid
+from app.infrastructure.persistence.types import GUID
 from datetime import datetime
 from typing import Optional
 
@@ -20,19 +21,19 @@ class LeadOffer(Base):
     __tablename__ = "lead_offers"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+        GUID(), primary_key=True, default=uuid.uuid4
     )
     offer_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("offers.id", ondelete="CASCADE"), nullable=False
+        GUID(), ForeignKey("offers.id", ondelete="CASCADE"), nullable=False
     )
     client_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+        GUID(), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     lead_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("leads.id", ondelete="CASCADE"), nullable=False
+        GUID(), ForeignKey("leads.id", ondelete="CASCADE"), nullable=False
     )
     agency_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+        GUID(), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

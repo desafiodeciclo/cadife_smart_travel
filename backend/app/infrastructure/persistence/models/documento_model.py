@@ -1,4 +1,5 @@
 import uuid
+from app.infrastructure.persistence.types import GUID
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -21,13 +22,13 @@ class Documento(Base):
     __table_args__ = {"extend_existing": True}
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+        GUID(), primary_key=True, default=uuid.uuid4
     )
     lead_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("leads.id", ondelete="CASCADE"), index=True
+        GUID(), ForeignKey("leads.id", ondelete="CASCADE"), index=True
     )
     travel_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("travels.id", ondelete="SET NULL"), nullable=True, index=True
+        GUID(), ForeignKey("travels.id", ondelete="SET NULL"), nullable=True, index=True
     )
     nome: Mapped[str] = mapped_column(String(255), nullable=False)
     s3_key: Mapped[str] = mapped_column(String(512), nullable=False)
@@ -38,7 +39,7 @@ class Documento(Base):
     mimetype: Mapped[str] = mapped_column(String(100), nullable=False)
 
     enviado_por: Mapped[Optional[uuid.UUID]] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+        GUID(), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
 
     criado_em: Mapped[datetime] = mapped_column(

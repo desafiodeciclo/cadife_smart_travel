@@ -7,6 +7,7 @@ See PRD `docs/prd/PRD-agency-settings-and-consultor-profile.md` §3.2.4.
 """
 
 import uuid
+from app.infrastructure.persistence.types import GUID
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
@@ -22,7 +23,6 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.infrastructure.persistence.database import Base
-from app.infrastructure.persistence.types import GUID
 
 if TYPE_CHECKING:
     from app.infrastructure.persistence.models.user_model import UserModel

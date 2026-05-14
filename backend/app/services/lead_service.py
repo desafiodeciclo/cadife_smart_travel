@@ -207,6 +207,10 @@ async def create_manual_lead(db: AsyncSession, data: "ManualLeadCreate") -> Lead
     try:
         await db.commit()
         await db.refresh(lead)
+        from app.services import metrics_service
+        if lead.consultor_id:
+            await metrics_service.invalidate_metrics_cache(lead.consultor_id)
+        
         logger.info("manual_lead_created", lead_id=str(lead.id), phone=data.telefone, score=lead.score)
         return lead
     except Exception as e:
@@ -428,6 +432,10 @@ async def update_lead_status(
     lead.status = new_status
     await db.commit()
     await db.refresh(lead)
+
+    from app.services import metrics_service
+    if lead.consultor_id:
+        await metrics_service.invalidate_metrics_cache(lead.consultor_id)
 
     logger.info(
         "lead_status_transition",

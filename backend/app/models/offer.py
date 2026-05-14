@@ -1,4 +1,5 @@
 import uuid
+from app.infrastructure.persistence.types import GUID
 from datetime import datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING, Optional, List, Dict
@@ -30,10 +31,10 @@ class Offer(Base):
     __table_args__ = {"extend_existing": True}
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+        GUID(), primary_key=True, default=uuid.uuid4
     )
     agency_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True
+        GUID(), ForeignKey("users.id"), nullable=False, index=True
     )
     title: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     description: Mapped[str] = mapped_column(Text, nullable=False)

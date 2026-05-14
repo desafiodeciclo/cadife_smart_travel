@@ -7,6 +7,7 @@ for the most frequent query patterns in the CRM dashboard.
 """
 
 import uuid
+from app.infrastructure.persistence.types import GUID
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
@@ -74,7 +75,7 @@ class LeadModel(Base):
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+        GUID(), primary_key=True, default=uuid.uuid4
     )
     nome: Mapped[Optional[str]] = mapped_column(EncryptedString(512))
     telefone: Mapped[str] = mapped_column(
@@ -95,13 +96,13 @@ class LeadModel(Base):
         DateTime(timezone=True), nullable=True
     )
     consultor_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL")
+        GUID(), ForeignKey("users.id", ondelete="SET NULL")
     )
     client_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+        GUID(), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
     offer_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("offers.id", ondelete="SET NULL"), nullable=True
+        GUID(), ForeignKey("offers.id", ondelete="SET NULL"), nullable=True
     )
     budget: Mapped[Optional[Numeric]] = mapped_column(Numeric(12, 2), nullable=True)
     aya_ativo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, server_default="true")

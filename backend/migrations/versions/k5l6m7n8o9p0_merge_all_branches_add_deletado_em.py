@@ -28,6 +28,9 @@ def upgrade() -> None:
     op.execute(
         "ALTER TABLE leads ADD COLUMN IF NOT EXISTS deletado_em TIMESTAMPTZ NULL"
     )
+    op.execute(
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS global_logout_at TIMESTAMPTZ NULL"
+    )
 
 
 def downgrade() -> None:

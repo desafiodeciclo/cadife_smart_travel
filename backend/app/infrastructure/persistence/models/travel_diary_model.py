@@ -6,6 +6,7 @@ Captures memories (photo + note) associated with a specific lead/trip.
 """
 
 import uuid
+from app.infrastructure.persistence.types import GUID
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
@@ -35,12 +36,12 @@ class TravelDiaryEntryModel(Base):
     __tablename__ = "travel_diary_entries"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+        GUID(), primary_key=True, default=uuid.uuid4
     )
     
     # Association with a specific lead (trip)
     lead_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), 
+        GUID(), 
         ForeignKey("leads.id", ondelete="CASCADE"),
         nullable=False,
         index=True
@@ -48,7 +49,7 @@ class TravelDiaryEntryModel(Base):
     
     # Ownership - redundant but faster for GET /users/me/diary
     user_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        GUID(),
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
         index=True

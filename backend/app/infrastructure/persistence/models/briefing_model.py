@@ -12,6 +12,7 @@ Constraints:
 """
 
 import uuid
+from app.infrastructure.persistence.types import GUID, StringArray
 from datetime import date
 from typing import TYPE_CHECKING, Optional
 
@@ -27,7 +28,6 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.infrastructure.persistence.types import GUID, StringArray
 
 from app.domain.entities.enums import OrcamentoPerfil, PerfilViagem
 from app.infrastructure.persistence.database import Base

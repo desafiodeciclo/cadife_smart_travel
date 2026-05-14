@@ -1,4 +1,5 @@
 import uuid
+from app.infrastructure.persistence.types import GUID, StringArray
 from datetime import datetime
 from enum import Enum
 from typing import Optional
@@ -9,7 +10,6 @@ from pydantic import BaseModel, EmailStr, Field, SecretStr, field_validator
 import re
 
 from app.core.database import Base
-from app.infrastructure.persistence.types import GUID, StringArray
 
 
 class UserPerfil(str, Enum):

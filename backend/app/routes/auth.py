@@ -202,8 +202,9 @@ async def forgot_password(request: Request, body: ForgotPasswordRequest, db: Asy
     user = await get_user_by_email(db, body.email)
     if user and user.is_active:
         reset_token = create_reset_token(str(user.id))
-        # Futuramente: enviar para fila SQS/RabbitMQ para disparo de e-mail
-        logger.info("auth_forgot_password_token", user_id=str(user.id), reset_token=reset_token)
+        from app.services.email_service import send_password_reset_email
+        await send_password_reset_email(body.email, reset_token)
+        logger.info("auth_forgot_password_email_sent", user_id=str(user.id))
     
     # Sempre retorna sucesso para não confirmar se o e-mail existe
     return {"message": "Se o e-mail existir, um link de recuperação foi enviado."}

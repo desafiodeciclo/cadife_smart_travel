@@ -12,6 +12,7 @@ Response field mapping (DB column → JSON key):
 """
 
 import uuid
+from app.infrastructure.persistence.types import GUID
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
@@ -44,11 +45,11 @@ class ItineraryItemModel(Base):
     __tablename__ = "itinerary_items"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+        GUID(), primary_key=True, default=uuid.uuid4
     )
 
     lead_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        GUID(),
         ForeignKey("leads.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
@@ -56,7 +57,7 @@ class ItineraryItemModel(Base):
 
     # Consultant who created this item
     criado_por: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        GUID(),
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=False,
         index=True,

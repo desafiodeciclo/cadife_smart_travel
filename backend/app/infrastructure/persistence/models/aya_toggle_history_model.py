@@ -6,6 +6,7 @@ Each row records who toggled, to which state, with what reason, and when.
 """
 
 import uuid
+from app.infrastructure.persistence.types import GUID
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
@@ -23,10 +24,10 @@ class AyaToggleHistoryModel(Base):
     __tablename__ = "aya_toggle_history"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+        GUID(), primary_key=True, default=uuid.uuid4
     )
     lead_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        GUID(),
         ForeignKey("leads.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
@@ -34,7 +35,7 @@ class AyaToggleHistoryModel(Base):
     ativo: Mapped[bool] = mapped_column(Boolean, nullable=False)
     motivo: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     alterado_por: Mapped[Optional[uuid.UUID]] = mapped_column(
-        UUID(as_uuid=True),
+        GUID(),
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
     )

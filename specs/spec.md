@@ -324,10 +324,24 @@ Fluxo principal de ponta a ponta (WhatsApp → App):
 | Método | Endpoint | Descrição | Módulo |
 |---|---|---|---|
 | **POST** | `/auth/login` | Login com e-mail e senha, retorna JWT | Auth |
+| **POST** | `/auth/register` | Registro de novos clientes com hash Argon2 | Auth |
 | **POST** | `/auth/refresh` | Renova token JWT | Auth |
+| **POST** | `/auth/logout` | Invalidação de token (Blacklist) | Auth |
+| **POST** | `/auth/logout-all-devices` | Revogação global de sessões | Auth |
+| **POST** | `/auth/forgot-password` | Solicitação de reset via e-mail | Auth |
+| **POST** | `/auth/reset-password` | Redefinição de senha com token | Auth |
+| **POST** | `/auth/change-password` | Troca de senha para usuário logado | Auth |
 | **GET** | `/users/me` | Retorna perfil do usuário autenticado | Auth |
 | **PATCH** | `/users/me` | Atualiza perfil do usuário autenticado | Auth |
 | **POST** | `/users/fcm-token` | Registra token FCM do dispositivo | Auth |
+
+#### 5.7.1 — Extensão de Identidade (Auth Extension)
+
+Esta subseção detalha os requisitos de segurança aplicados aos novos fluxos:
+- **Hash de Senha:** Obrigatório o uso de Argon2id para armazenamento.
+- **Complexidade:** Mínimo 8 caracteres, contendo letras e números.
+- **Sessão:** O logout global (`logout-all-devices`) invalida todos os Refresh Tokens emitidos anteriormente ao timestamp da ação.
+- **Recuperação:** Tokens de reset possuem expiração estrita de 30 minutos.
 
 ### 5.8 Health Check
 
