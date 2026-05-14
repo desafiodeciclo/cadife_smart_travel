@@ -168,7 +168,7 @@ def _orcamento_nivel_valor(orcamento: Optional[OrcamentoNivel]) -> int:
     """Retorna o valor numérico do nível de orçamento."""
     if orcamento is None:
         return 0
-    return _ORCAMENTO_NIVEL.get(orcamento.value, 0)
+    return _ORCAMENTO_NIVEL.get(orcamento, 0)
 
 
 def _destino_eh_alto_custo(destino: str) -> bool:
@@ -243,7 +243,7 @@ class BriefingValidator:
             logger.warning(
                 "domain_validation_failed",
                 destino=briefing.destino,
-                orcamento=briefing.orcamento.value if briefing.orcamento else None,
+                orcamento=briefing.orcamento,
                 data_ida=str(briefing.data_ida) if briefing.data_ida else None,
                 data_volta=str(briefing.data_volta) if briefing.data_volta else None,
                 errors=result.errors,

@@ -594,6 +594,8 @@ async def update_interacao_send_result(
     interacao.enviado_em = datetime.now(timezone.utc) if result.success else None
     interacao.status_envio = "sent" if result.success else "failed"
     interacao.erro_envio = result.error if not result.success else None
+    # audit §7.3 — explicit bool so CRM can filter messages the client never received
+    interacao.enviado = result.success
     await db.commit()
 
 

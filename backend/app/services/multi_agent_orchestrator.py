@@ -20,14 +20,14 @@ Fluxo LangGraph:
                  · query_project_scope — RAG on-demand
                  · persist_lead_data   — salva briefing no PostgreSQL
                  · check_availability  — slots de curadoria
-                 · generate_travel_image — recraft-v4 ao fim do briefing
+                 · generate_travel_image — recraft-v3 ao fim do briefing
   validate_output: bloqueia alucinações + code leak antes de enviar ao cliente
   confusion_tracker: detecta campo repetido → alerta silencioso ao time
 
 Tier de modelos:
   Chat/Lógica : google/gemini-2.0-flash-001
-  Triagem     : mistralai/mistral-small-3.1-24b-instruct:free
-  Fallback    : baidu/ernie-4.5-turbo-preview:free → llama-3.1-8b
+  Triagem     : qwen/qwen-2.5-72b-instruct:free
+  Fallback    : qwen/qwen-2.5-72b-instruct:free → llama-3.3-70b
 """
 
 from __future__ import annotations
@@ -37,15 +37,19 @@ import json
 import re
 import time
 from datetime import datetime, timezone
-from typing import Any, Optional, TypedDict
+from typing import Any, Literal, Optional, TypedDict
+
+from pydantic import BaseModel, ValidationError
 
 import httpx
 import structlog
 from langgraph.graph import StateGraph, END
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.infrastructure.cache.redis_client import get_redis
 from app.infrastructure.config.settings import get_settings
 from app.services import rag_service
+from app.services.metadata_tagger import extract_tags, resolve_destino_tag, resolve_perfil_tag
 from app.services.prompt_security import (
     sanitize_user_input,
     should_block,
@@ -77,6 +81,33 @@ _RETRIABLE_STATUS_CODES = frozenset({429, 503})
 # ── LangGraph State ────────────────────────────────────────────────────────────
 
 
+# TTL do cache RAG no Redis — compartilhado entre todos os workers uvicorn
+_RAG_CACHE_TTL_S = 1800  # 30 minutos
+_RAG_CACHE_KEY_PREFIX = "rag:"
+
+
+async def _rag_cache_get(cache_key: str) -> Optional[str]:
+    """Lê contexto RAG do Redis. Retorna None em caso de miss ou falha."""
+    try:
+        redis = get_redis()
+        return await redis.get(f"{settings.REDIS_PREFIX}{_RAG_CACHE_KEY_PREFIX}{cache_key}")
+    except Exception:
+        return None
+
+
+async def _rag_cache_set(cache_key: str, ctx: str) -> None:
+    """Armazena contexto RAG no Redis com TTL."""
+    try:
+        redis = get_redis()
+        await redis.setex(
+            f"{settings.REDIS_PREFIX}{_RAG_CACHE_KEY_PREFIX}{cache_key}",
+            _RAG_CACHE_TTL_S,
+            ctx,
+        )
+    except Exception:
+        pass
+
+
 class OrchestratorState(TypedDict):
     """Estado completo do grafo — passado entre nós sem mutação."""
 
@@ -86,6 +117,14 @@ class OrchestratorState(TypedDict):
     conversation_history: list[dict[str, str]]
     db: Optional[Any]  # AsyncSession — não serializável, só memória
 
+    # Briefing pré-carregado antes do grafo (evita tool call redundante)
+    pre_validated_briefing: Optional[dict]
+    validation_errors: list[str]
+
+    # Injetados externamente (bypass do LLM — mais confiáveis)
+    last_interaction_at: Optional[str]   # ISO8601 timestamp da última interação no DB
+    lead_status_db: Optional[str]        # Status do lead direto do DB (ex: "agendado")
+
     # Computed por cada nó
     safe_message: str
     blocked: bool
@@ -93,6 +132,7 @@ class OrchestratorState(TypedDict):
     rag_context: str
     crm_block: str
     system_prompt: str
+    memory_summary: str  # Resumo comprimido de mensagens mais antigas (SimpleWindowMemory)
     response: str
     hallucination_detected: bool
     confusion_count: int
@@ -162,6 +202,8 @@ _ORCHESTRATOR_TOOLS: list[dict[str, Any]] = [
                             "Campos a salvar: destino (str), data_ida (YYYY-MM-DD), "
                             "data_volta (YYYY-MM-DD), qtd_pessoas (int), "
                             "perfil (casal|familia|solo|grupo|amigos), "
+                            "ocasiao (ferias|lua_de_mel|aniversario|familia|negocios|intercambio|outro) "
+                            "— APENAS quando confirmado explicitamente pelo cliente, "
                             "orcamento (baixo|medio|alto|premium), "
                             "tem_passaporte (bool), observacoes (str)"
                         ),
@@ -177,7 +219,7 @@ _ORCHESTRATOR_TOOLS: list[dict[str, Any]] = [
         "function": {
             "name": "check_availability",
             "description": (
-                "Verifica slots disponíveis para curadoria com consultor. "
+                "Verifica slots disponíveis para curadoria consultando a agenda real. "
                 "Use quando briefing estiver completo (completude ≥ 60%) e for hora de agendar."
             ),
             "parameters": {
@@ -187,11 +229,6 @@ _ORCHESTRATOR_TOOLS: list[dict[str, Any]] = [
                         "type": "string",
                         "description": "Data preferida pelo cliente (YYYY-MM-DD), opcional",
                     },
-                    "duration_minutes": {
-                        "type": "integer",
-                        "description": "Duração em minutos (padrão: 45)",
-                        "default": 45,
-                    },
                 },
                 "required": [],
             },
@@ -200,9 +237,38 @@ _ORCHESTRATOR_TOOLS: list[dict[str, Any]] = [
     {
         "type": "function",
         "function": {
+            "name": "confirm_scheduling",
+            "description": (
+                "Confirma o agendamento de curadoria após o cliente escolher um slot. "
+                "Use SOMENTE quando o cliente confirmar explicitamente um dos horários oferecidos. "
+                "Cria o agendamento no sistema e gera o link do Google Meet automaticamente."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "wa_id": {
+                        "type": "string",
+                        "description": "WhatsApp ID do cliente (número internacional sem '+').",
+                    },
+                    "data_curadoria": {
+                        "type": "string",
+                        "description": "Data confirmada no formato YYYY-MM-DD.",
+                    },
+                    "hora_curadoria": {
+                        "type": "string",
+                        "description": "Hora confirmada no formato HH:MM (ex: '09:00').",
+                    },
+                },
+                "required": ["wa_id", "data_curadoria", "hora_curadoria"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "generate_travel_image",
             "description": (
-                "Gera uma imagem inspiracional do destino de viagem do cliente usando IA. "
+                "Gera uma imagem inspiracional do destino de viagem do cliente usando recraft-v3. "
                 "Use SOMENTE ao final do briefing (completude ≥ 60%) para encantar o cliente "
                 "com uma prévia visual da experiência. Retorna URL da imagem gerada."
             ),
@@ -233,6 +299,13 @@ _ORCHESTRATOR_TOOLS: list[dict[str, Any]] = [
 
 _HALLUCINATION_PATTERNS = [
     (re.compile(r"(custa|preço|valor|fica)\s*r?\$\s*[\d.,]+", re.I), "price_generated"),
+    # Valores escritos por extenso — ex: "dois mil reais", "quinze mil dólares"
+    (re.compile(
+        r"(custa|preço|valor|fica|por)\s+(um|dois|três|quatro|cinco|seis|sete|oito|nove|dez"
+        r"|onze|doze|quinze|vinte|trinta|quarenta|cinquenta|cem|duzentos|trezentos|quatrocentos"
+        r"|quinhentos|mil)\s+\w*(reais|dólares|euros|libras)",
+        re.I,
+    ), "price_generated_extenso"),
     (re.compile(r"(disponível|disponibilidade|tem voo|tem hotel)", re.I), "availability_confirmed"),
     (re.compile(r"(reservo|confirmo sua vaga|garanto)", re.I), "booking_promised"),
 ]
@@ -247,9 +320,39 @@ _HALLUCINATION_FALLBACK = (
 _CODE_LEAK_RE = re.compile(r'(?:print\s*\(|default_api\.|functions\.\w+\s*\()', re.I)
 _TEXT_TOOL_CALL_RE = re.compile(r'(?:default_api|functions)\.(\w+)\(')
 
-# Rastreia repetição de campo por cliente para detectar confusão
-_field_repetition_tracker: dict[str, tuple[str, int]] = {}
+# Rastreia repetição de campo por cliente para detectar confusão (Redis — compartilhado entre workers)
 _CONFUSION_THRESHOLD = 2
+_CONFUSION_KEY_PREFIX = "confusion:"
+_CONFUSION_TTL_S = 3600  # 1 hora — expira automaticamente leads inativos
+
+# ── Mapa de fases legíveis para saudação de retomada ─────────────────────────
+
+_FASE_LEGIVEL_BRIEFING: dict[str, str] = {
+    "destino": "escolha do destino",
+    "data_ida": "escolha das datas",
+    "qtd_pessoas": "número de viajantes",
+    "perfil": "perfil da viagem",
+    "orcamento": "faixa de investimento",
+    "tem_passaporte": "verificação do passaporte",
+    "completo": "agendamento da curadoria",
+}
+
+_FASE_LEGIVEL_STATUS: dict[str, str] = {
+    "agendado": "confirmação da curadoria agendada",
+    "proposta": "avaliação da proposta de viagem",
+    "qualificado": "agendamento da curadoria",
+}
+
+
+def _resolve_fase_atual(
+    triagem: dict[str, Any], lead_status_db: Optional[str] = None
+) -> str:
+    """Retorna nome legível da fase atual do lead para saudação de retomada."""
+    status = lead_status_db or triagem.get("status") or ""
+    if status in _FASE_LEGIVEL_STATUS:
+        return _FASE_LEGIVEL_STATUS[status]
+    next_field = triagem.get("next_field_to_collect", "destino")
+    return _FASE_LEGIVEL_BRIEFING.get(next_field, "preenchimento do briefing")
 
 
 # ── Helpers compartilhados ────────────────────────────────────────────────────
@@ -304,14 +407,23 @@ def _check_hallucinations(text: str) -> list[str]:
     return [label for pattern, label in _HALLUCINATION_PATTERNS if pattern.search(text)]
 
 
-def _update_confusion_counter(wa_id: str, next_field: str) -> int:
-    prev_field, count = _field_repetition_tracker.get(wa_id, ("", 0))
-    if next_field == prev_field and next_field not in ("completo", ""):
-        count += 1
-    else:
-        count = 1
-    _field_repetition_tracker[wa_id] = (next_field, count)
-    return count
+async def _update_confusion_counter(wa_id: str, next_field: str) -> int:
+    redis_key = f"{settings.REDIS_PREFIX}{_CONFUSION_KEY_PREFIX}{wa_id}"
+    try:
+        redis = get_redis()
+        if next_field in ("completo", ""):
+            await redis.delete(redis_key)
+            return 0
+        raw = await redis.get(redis_key)
+        if raw:
+            prev_field, count = raw.split(":", 1)[0], int(raw.split(":", 1)[1])
+        else:
+            prev_field, count = "", 0
+        count = count + 1 if next_field == prev_field else 1
+        await redis.setex(redis_key, _CONFUSION_TTL_S, f"{next_field}:{count}")
+        return count
+    except Exception:
+        return 0
 
 
 # ── Core: runner de agente com loop de tool calling ───────────────────────────
@@ -332,17 +444,19 @@ async def _run_agent(
     }
     current_messages = list(messages)
 
-    for round_idx in range(max_tool_rounds):
-        payload: dict[str, Any] = {
-            "model": model,
-            "messages": current_messages,
-            "temperature": temperature,
-        }
-        if tools:
-            payload["tools"] = tools
-            payload["tool_choice"] = "auto"
+    # AsyncClient criado uma única vez fora do loop — reutiliza o connection pool
+    # entre todos os rounds de tool calling, evitando overhead de SSL handshake.
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        for round_idx in range(max_tool_rounds):
+            payload: dict[str, Any] = {
+                "model": model,
+                "messages": current_messages,
+                "temperature": temperature,
+            }
+            if tools:
+                payload["tools"] = tools
+                payload["tool_choice"] = "auto"
 
-        async with httpx.AsyncClient(timeout=30.0) as client:
             resp = await client.post(
                 f"{_BASE}/chat/completions",
                 json=payload,
@@ -350,47 +464,47 @@ async def _run_agent(
             )
             resp.raise_for_status()
 
-        data = resp.json()
-        choice = data["choices"][0]
-        msg = choice["message"]
-        finish_reason = choice.get("finish_reason", "stop")
-        tool_calls: list[dict] = msg.get("tool_calls") or []
+            data = resp.json()
+            choice = data["choices"][0]
+            msg = choice["message"]
+            finish_reason = choice.get("finish_reason", "stop")
+            tool_calls: list[dict] = msg.get("tool_calls") or []
 
-        if finish_reason != "tool_calls" and not tool_calls:
-            content = msg.get("content") or ""
-            if tools:
-                parsed = _try_parse_text_tool_call(content)
-                if parsed:
-                    logger.warning(
-                        "agent_text_tool_call_detected",
-                        round=round_idx,
-                        model=model,
-                        fn=parsed["function"]["name"],
-                    )
-                    msg = {"role": "assistant", "content": None, "tool_calls": [parsed]}
-                    tool_calls = [parsed]
+            if finish_reason != "tool_calls" and not tool_calls:
+                content = msg.get("content") or ""
+                if tools:
+                    parsed = _try_parse_text_tool_call(content)
+                    if parsed:
+                        logger.warning(
+                            "agent_text_tool_call_detected",
+                            round=round_idx,
+                            model=model,
+                            fn=parsed["function"]["name"],
+                        )
+                        msg = {"role": "assistant", "content": None, "tool_calls": [parsed]}
+                        tool_calls = [parsed]
+                    else:
+                        return content
                 else:
                     return content
-            else:
-                return content
 
-        current_messages.append(msg)
+            current_messages.append(msg)
 
-        for tc in tool_calls:
-            fn_name = tc["function"]["name"]
-            try:
-                fn_args = json.loads(tc["function"]["arguments"])
-            except (json.JSONDecodeError, KeyError):
-                fn_args = {}
+            for tc in tool_calls:
+                fn_name = tc["function"]["name"]
+                try:
+                    fn_args = json.loads(tc["function"]["arguments"])
+                except (json.JSONDecodeError, KeyError):
+                    fn_args = {}
 
-            logger.info("agent_tool_call", round=round_idx, tool=fn_name, model=model)
-            result = await _dispatch_tool(fn_name, fn_args, db)
-            if len(result) > 3000:
-                logger.warning("tool_result_truncated", tool=fn_name, original_len=len(result))
-                result = result[:3000]
-            current_messages.append(
-                {"role": "tool", "tool_call_id": tc["id"], "content": result}
-            )
+                logger.info("agent_tool_call", round=round_idx, tool=fn_name, model=model)
+                result = await _dispatch_tool(fn_name, fn_args, db)
+                if len(result) > 3000:
+                    logger.warning("tool_result_truncated", tool=fn_name, original_len=len(result))
+                    result = result[:3000]
+                current_messages.append(
+                    {"role": "tool", "tool_call_id": tc["id"], "content": result}
+                )
 
     logger.warning("agent_max_tool_rounds_reached", model=model, rounds=max_tool_rounds)
     return ""
@@ -447,6 +561,33 @@ async def _run_agent_with_retry_chain(
 
 # ── Tier 1: TriagemAgent ───────────────────────────────────────────────────────
 
+_BRIEFING_FIELD_ORDER: list[str] = [
+    "destino", "data_ida", "qtd_pessoas", "perfil", "orcamento", "tem_passaporte"
+]
+
+
+def _infer_next_field(briefing: dict[str, Any]) -> str:
+    """Retorna o próximo campo a coletar com base nos campos já preenchidos."""
+    for field in _BRIEFING_FIELD_ORDER:
+        val = briefing.get(field)
+        if val is None or val == "" or val is False and field != "tem_passaporte":
+            return field
+    return "completo"
+
+
+class _TriagemResult(BaseModel):
+    exists: bool
+    nome: Optional[str] = None
+    status: Optional[str] = None
+    briefing: dict[str, Any] = {}
+    next_field_to_collect: Literal[
+        "destino", "data_ida", "qtd_pessoas", "perfil",
+        "orcamento", "tem_passaporte", "completo"
+    ] = "destino"
+    is_new_lead: bool = True
+    last_interaction_at: Optional[str] = None
+
+
 _TRIAGEM_SYSTEM = """\
 Você é um agente de triagem da Cadife Tour. Sua ÚNICA função é obter o contexto do
 cliente no CRM e retornar um JSON estruturado — sem conversar, sem adicionar texto extra.
@@ -491,16 +632,36 @@ async def _run_triagem(wa_id: str, db: Optional[AsyncSession]) -> dict[str, Any]
             match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", raw, re.DOTALL)
             raw = match.group(1) if match else re.sub(r"```\w*", "", raw).strip()
 
-        result = json.loads(raw)
+        parsed = _TriagemResult.model_validate(json.loads(raw))
         logger.info(
             "triagem_completed",
             wa_id=wa_id,
-            exists=result.get("exists"),
-            next_field=result.get("next_field_to_collect"),
+            exists=parsed.exists,
+            next_field=parsed.next_field_to_collect,
         )
-        return result
-    except Exception as exc:
+        return parsed.model_dump()
+    except (ValidationError, Exception) as exc:
         logger.warning("triagem_agent_failed", wa_id=wa_id, error=str(exc))
+        # Fallback: consultar o DB diretamente para não tratar cliente recorrente como novo
+        if db:
+            try:
+                from app.services.ai_tools import _get_lead_context_by_wa_id
+                ctx = json.loads(await _get_lead_context_by_wa_id(wa_id, db))
+                if ctx.get("exists"):
+                    briefing = ctx.get("briefing", {})
+                    next_field = _infer_next_field(briefing)
+                    logger.info("triagem_fallback_db_success", wa_id=wa_id, next_field=next_field)
+                    return {
+                        "exists": True,
+                        "nome": ctx.get("nome"),
+                        "status": ctx.get("status"),
+                        "briefing": briefing,
+                        "next_field_to_collect": next_field,
+                        "is_new_lead": False,
+                        "last_interaction_at": None,
+                    }
+            except Exception as db_exc:
+                logger.warning("triagem_fallback_db_failed", wa_id=wa_id, error=str(db_exc))
         return {
             "exists": False,
             "nome": None,
@@ -556,8 +717,20 @@ LINGUAGEM — FRASES PROIBIDAS (nunca use):
 USE em vez disso expressões naturais:
 - Confirmação curta (3-4 palavras): "Anotado!", "Perfeito!", "Boa escolha!"
 - Escuta ativa — repita um detalhe antes de perguntar o próximo:
-    · "Lua de mel em Portugal — que combinação incrível! Já tem data em mente?"
+    · "Portugal em dezembro — ótima escolha! Já tem data em mente?"
     · "Família de 4 em Cancún — show! Isso é para quando?"
+
+═══════════════════════════════════════════════════════════
+REGRA CRÍTICA — NUNCA INFERIR OCASIÃO DA VIAGEM (INVIOLÁVEL):
+═══════════════════════════════════════════════════════════
+· NUNCA assuma que uma viagem é "lua de mel", "aniversário", "férias", etc.
+· SEMPRE pergunte explicitamente após coletar destino + perfil de viajantes:
+  "Essa viagem tem alguma ocasião especial? Como férias, lua de mel,
+   aniversário, negócios, intercâmbio ou outro motivo?"
+· A ocasião especial é um CAMPO DO BRIEFING — nunca uma inferência sua.
+· Isso vale para QUALQUER destino e QUALQUER combinação de viajantes.
+· Se o cliente já informou espontaneamente a ocasião, salve via
+  persist_lead_data (campo "ocasiao") sem re-perguntar.
 
 ═══════════════════════════════════════════════════════════
 REGRAS DE CONCISÃO — OBRIGATÓRIAS:
@@ -615,19 +788,28 @@ _FIELD_QUESTIONS: dict[str, str] = {
 }
 
 
-def _build_crm_block(triagem: dict[str, Any]) -> str:
+def _build_crm_block(
+    triagem: dict[str, Any],
+    override_last_interaction_at: Optional[str] = None,
+    override_lead_status: Optional[str] = None,
+) -> str:
     briefing = triagem.get("briefing", {})
     nome = triagem.get("nome")
     next_field = triagem.get("next_field_to_collect", "destino")
     is_new_lead = triagem.get("is_new_lead", not triagem.get("exists", False))
-    last_interaction_at: str | None = triagem.get("last_interaction_at")
+
+    # Preferência: timestamp vindo do DB (bypass LLM); fallback: o que o TriagemAgent retornou
+    effective_last_interaction = override_last_interaction_at or triagem.get("last_interaction_at")
 
     lines: list[str] = []
 
     hours_elapsed: float | None = None
-    if last_interaction_at:
+    if effective_last_interaction:
         try:
-            last_dt = datetime.fromisoformat(last_interaction_at.replace("Z", "+00:00"))
+            last_dt = datetime.fromisoformat(effective_last_interaction.replace("Z", "+00:00"))
+            # Garante timezone-aware para comparação
+            if last_dt.tzinfo is None:
+                last_dt = last_dt.replace(tzinfo=timezone.utc)
             hours_elapsed = (datetime.now(timezone.utc) - last_dt).total_seconds() / 3600
         except (ValueError, TypeError):
             pass
@@ -640,11 +822,31 @@ def _build_crm_block(triagem: dict[str, Any]) -> str:
                 "da Cadife Tour e inicie o briefing."
             )
         else:
+            fase = _resolve_fase_atual(triagem, override_lead_status)
+            nome_str = f", {nome}" if nome else ""
             h = int(hours_elapsed) if hours_elapsed is not None else 24
-            lines.append(
-                f"SAUDAÇÃO BREVE: Cliente retornou após {h}h de ausência — "
-                "cumprimente rapidamente e retome de onde parou."
-            )
+
+            if h >= 48:
+                # Longa ausência: perguntar se quer continuar ou recomeçar
+                lines.append(
+                    f"RETOMADA APÓS LONGA PAUSA ({h}h): O cliente estava na fase de '{fase}'. "
+                    f"Saudação calorosa reconhecendo a pausa e oferecendo escolha. "
+                    f"Tom sugerido (adapte — NÃO copie literalmente): "
+                    f"'Oi{nome_str}! Tudo bem? Faz um tempinho que a gente não se falava 😊 "
+                    f"Eu estava por aqui lembrando que a gente tinha parado na {fase}. "
+                    f"Quer continuar de onde a gente estava ou prefere recomeçar do zero?' "
+                    f"AGUARDE a resposta do cliente antes de prosseguir."
+                )
+            else:
+                # Ausência de 1-2 dias: retomada direta com menção à fase
+                lines.append(
+                    f"RETOMADA APÓS {h}H: O cliente estava na fase de '{fase}'. "
+                    f"Saudação breve e natural mencionando a fase. "
+                    f"Tom sugerido (adapte — NÃO copie literalmente): "
+                    f"'Oi{nome_str}! De volta por aqui — a gente estava na {fase}, né? "
+                    f"Vamos continuar!' "
+                    f"Retome diretamente sem esperar confirmação."
+                )
     else:
         h = int(hours_elapsed) if hours_elapsed is not None else 0
         lines.append(
@@ -656,10 +858,11 @@ def _build_crm_block(triagem: dict[str, Any]) -> str:
         lines.append(f"CLIENTE: {nome}.")
 
     filled = {k: v for k, v in briefing.items() if v not in (None, "", [], 0)}
+    completude = filled.pop("completude_pct", None)
+    if completude is not None:
+        lines.append(f"COMPLETUDE DO BRIEFING: {completude}%")
     if filled:
-        fields_repr = ", ".join(
-            f"{k}='{v}'" for k, v in filled.items() if k != "completude_pct"
-        )
+        fields_repr = ", ".join(f"{k}='{v}'" for k, v in filled.items())
         lines.append(f"DADOS JÁ NO CRM — NÃO PERGUNTE NOVAMENTE: {fields_repr}")
 
     next_instruction = _FIELD_QUESTIONS.get(next_field, "")
@@ -704,14 +907,28 @@ async def _node_rag_mandatory(state: OrchestratorState) -> dict[str, Any]:
     """
     RAG Obrigatório — Regra de Ouro.
 
-    Executa ANTES do LLM. Enriquece a query com briefing atual (destino, perfil)
-    para que a busca semântica retorne chunks mais relevantes ao contexto do cliente.
-    Usa Hybrid Search (vetorial + keyword + RRF) para garantir precisão máxima.
+    Executa ANTES do LLM com duas correções críticas:
+    - Zona B: tenta extrair destino/perfil da mensagem ATUAL antes de usar o briefing
+      salvo (que reflete o turno anterior), evitando que o RAG use contexto desatualizado.
+    - Zona A: resolve o destino free-text (ex: "Maceió") para a categoria de taxonomia
+      (ex: "Nordeste") antes de aplicar o filtro de metadata no ChromaDB, garantindo
+      que o filtro encontre chunks corretamente taggeados na ingestão.
     """
     safe_message = state["safe_message"]
     briefing_ctx = state.get("triagem", {}).get("briefing", {})
 
-    # Query enriquecida com contexto do briefing para retrieval mais preciso
+    # Zona B — Prioridade 1: extrair tags da mensagem ATUAL (não do DB)
+    msg_tags = extract_tags(safe_message)
+    destino_tag: str | None = msg_tags.topico_destino or None
+    perfil_tag: str | None = msg_tags.topico_perfil or None
+
+    # Zona A — Prioridade 2: fallback para briefing do DB resolvido via taxonomia
+    if not destino_tag:
+        destino_tag = resolve_destino_tag(briefing_ctx.get("destino"))
+    if not perfil_tag:
+        perfil_tag = resolve_perfil_tag(briefing_ctx.get("perfil"))
+
+    # Query enriquecida com destino/perfil para sinal semântico extra
     rag_query_parts = [safe_message]
     if briefing_ctx.get("destino"):
         rag_query_parts.append(f"destino {briefing_ctx['destino']}")
@@ -720,13 +937,27 @@ async def _node_rag_mandatory(state: OrchestratorState) -> dict[str, Any]:
     rag_query = " ".join(rag_query_parts)
 
     ctx = ""
+    cache_key = f"{destino_tag or ''}:{perfil_tag or ''}:{rag_query[:80]}"
+    cached = await _rag_cache_get(cache_key)
+    if cached is not None:
+        logger.info("rag_cache_hit", wa_id=state["wa_id"], key_prefix=cache_key[:40])
+        return {"rag_context": cached}
+
     try:
-        ctx = rag_service.retrieve_context(rag_query, k=4)
+        ctx = rag_service.retrieve_with_metadata_filter(
+            rag_query,
+            k=4,
+            destino=destino_tag,
+            perfil=perfil_tag,
+        )
+        await _rag_cache_set(cache_key, ctx)
         logger.info(
             "rag_mandatory_retrieved",
             wa_id=state["wa_id"],
             query_preview=rag_query[:80],
             context_chars=len(ctx),
+            destino_tag=destino_tag,
+            perfil_tag=perfil_tag,
         )
     except Exception as exc:
         logger.warning("rag_mandatory_failed", wa_id=state["wa_id"], error=str(exc))
@@ -738,8 +969,14 @@ async def _node_build_context(state: OrchestratorState) -> dict[str, Any]:
     """Monta o system prompt stage-aware combinando CRM + RAG pré-carregado."""
     triagem = state.get("triagem", {})
     rag_ctx = state.get("rag_context", "")
+    pre_briefing = state.get("pre_validated_briefing")
+    val_errors = state.get("validation_errors") or []
 
-    crm_block = _build_crm_block(triagem)
+    crm_block = _build_crm_block(
+        triagem,
+        override_last_interaction_at=state.get("last_interaction_at"),
+        override_lead_status=state.get("lead_status_db"),
+    )
     system_prompt = _ORCHESTRATOR_SYSTEM_TEMPLATE.format(
         crm_block=(
             crm_block
@@ -752,13 +989,40 @@ async def _node_build_context(state: OrchestratorState) -> dict[str, Any]:
             else "Nenhum contexto adicional recuperado. Use query_project_scope se o cliente perguntar sobre destinos."
         ),
     )
+
+    # Injeta resumo de conversas antigas (gerado por SimpleWindowMemory quando buffer > k)
+    memory_summary = state.get("memory_summary", "")
+    if memory_summary:
+        system_prompt += (
+            "\n\n═══════════════════════════════════════════════════════════\n"
+            "HISTÓRICO ANTERIOR RESUMIDO (mensagens mais antigas, comprimidas):\n"
+            "═══════════════════════════════════════════════════════════\n"
+            f"{memory_summary}"
+        )
+
+    # Hint pré-carregado: evita tool call get_lead_context_by_wa_id quando briefing
+    # já foi validado antes do grafo (economiza 1 round-trip de LLM)
+    if pre_briefing and pre_briefing.get("completude_pct", 0) >= 60:
+        system_prompt += (
+            "\n\nDADOS PRÉ-CARREGADOS: Briefing completo "
+            f"({pre_briefing['completude_pct']}% de completude). "
+            "NÃO chame get_lead_context_by_wa_id — dados já estão no CRM_BLOCK acima. "
+            "Chame check_availability DIRETAMENTE e ofereça os horários disponíveis."
+        )
+    elif val_errors:
+        errors_text = "; ".join(val_errors)
+        system_prompt += (
+            f"\n\nATENÇÃO DADOS INCONSISTENTES: {errors_text}. "
+            "Solicite esclarecimento ao cliente antes de prosseguir com agendamento."
+        )
+
     return {"crm_block": crm_block, "system_prompt": system_prompt}
 
 
 async def _node_orchestrator(state: OrchestratorState) -> dict[str, Any]:
     """Tier 2: OrquestradorAgent — resposta stage-aware com RAG + CRM + function calling."""
     messages: list[dict[str, Any]] = [{"role": "system", "content": state["system_prompt"]}]
-    messages.extend(state["conversation_history"][-20:])
+    messages.extend(state["conversation_history"][-10:])
     messages.append({"role": "user", "content": state["safe_message"]})
 
     response = ""
@@ -778,14 +1042,49 @@ async def _node_orchestrator(state: OrchestratorState) -> dict[str, Any]:
             wa_id=state["wa_id"],
             status=exc.response.status_code,
         )
+        from app.services.kafka_producer import produce as _kafka_produce
+        from datetime import datetime, timezone as _tz
+        await _kafka_produce(
+            topic="leads.orchestrator.errors",
+            key=state["wa_id"],
+            value={
+                "wa_id": state["wa_id"],
+                "error_type": "http_error",
+                "status_code": exc.response.status_code,
+                "timestamp": datetime.now(_tz.utc).isoformat(),
+            },
+        )
     except httpx.TimeoutException:
         logger.error("orchestrator_timeout", wa_id=state["wa_id"])
+        from app.services.kafka_producer import produce as _kafka_produce
+        from datetime import datetime, timezone as _tz
+        await _kafka_produce(
+            topic="leads.orchestrator.errors",
+            key=state["wa_id"],
+            value={
+                "wa_id": state["wa_id"],
+                "error_type": "timeout",
+                "timestamp": datetime.now(_tz.utc).isoformat(),
+            },
+        )
     except Exception as exc:
         logger.error(
             "orchestrator_unexpected_error",
             wa_id=state["wa_id"],
             error=str(exc),
             error_type=type(exc).__name__,
+        )
+        from app.services.kafka_producer import produce as _kafka_produce
+        from datetime import datetime, timezone as _tz
+        await _kafka_produce(
+            topic="leads.orchestrator.errors",
+            key=state["wa_id"],
+            value={
+                "wa_id": state["wa_id"],
+                "error_type": type(exc).__name__,
+                "error": str(exc),
+                "timestamp": datetime.now(_tz.utc).isoformat(),
+            },
         )
 
     return {"response": response or _fallback_reply()}
@@ -823,7 +1122,7 @@ async def _node_confusion_tracker(state: OrchestratorState) -> dict[str, Any]:
     """Detecta campo repetido consecutivo — transbordo silencioso ao time se atingir threshold."""
     triagem = state.get("triagem", {})
     next_field = triagem.get("next_field_to_collect", "")
-    confusion_count = _update_confusion_counter(state["wa_id"], next_field)
+    confusion_count = await _update_confusion_counter(state["wa_id"], next_field)
 
     if confusion_count >= _CONFUSION_THRESHOLD:
         logger.warning(
@@ -917,6 +1216,11 @@ async def orchestrate(
     message: str,
     conversation_history: list[dict[str, str]],
     db: Optional[AsyncSession] = None,
+    pre_validated_briefing: Optional[dict] = None,
+    validation_errors: Optional[list[str]] = None,
+    memory_summary: str = "",
+    last_interaction_at: Optional[str] = None,
+    lead_status_db: Optional[str] = None,
 ) -> str:
     """
     Ponto de entrada do orquestrador LangGraph multi-agente.
@@ -935,6 +1239,9 @@ async def orchestrate(
         message: Mensagem atual (texto ou transcrição de áudio/imagem).
         conversation_history: Histórico [{role, content}, ...], mais antigo primeiro.
         db: AsyncSession para queries PostgreSQL.
+        pre_validated_briefing: Briefing já lido do DB antes do grafo — evita
+            tool call redundante get_lead_context_by_wa_id quando completo.
+        validation_errors: Erros de domínio detectados no briefing pré-carregado.
 
     Returns:
         Resposta da AYA pronta para envio via WhatsApp.
@@ -951,6 +1258,11 @@ async def orchestrate(
         "message": message,
         "conversation_history": conversation_history,
         "db": db,
+        "pre_validated_briefing": pre_validated_briefing,
+        "validation_errors": validation_errors or [],
+        # Passados direto do DB (bypass LLM — mais confiáveis)
+        "last_interaction_at": last_interaction_at,
+        "lead_status_db": lead_status_db,
         # Defaults — preenchidos por cada nó
         "safe_message": "",
         "blocked": False,
@@ -958,6 +1270,7 @@ async def orchestrate(
         "rag_context": "",
         "crm_block": "",
         "system_prompt": "",
+        "memory_summary": memory_summary,
         "response": "",
         "hallucination_detected": False,
         "confusion_count": 0,

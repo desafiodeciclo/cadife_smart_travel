@@ -1,12 +1,11 @@
 import structlog
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
 from app.application.use_cases import process_whatsapp_message
-from app.core.dependencies import get_db
 from app.presentation.schemas.common_errors import HTTPErrorResponse
 from app.services import whatsapp_service
+from app.services.kafka_producer import produce as kafka_produce
 
 logger = structlog.get_logger()
 router = APIRouter(prefix="/webhook", tags=["Webhook"])
@@ -86,11 +85,30 @@ async def receive_whatsapp(
     request: Request,
     background_tasks: BackgroundTasks,
     _body: bytes = Depends(require_meta_signature),
-    db: AsyncSession = Depends(get_db),
+    settings: Settings = Depends(get_settings),
 ):
     try:
         payload = await request.json()
-        background_tasks.add_task(process_whatsapp_message.execute, payload, db)
+        if settings.KAFKA_ENABLED:
+            # Durabilidade via Kafka — consumer cria sua própria sessão DB
+            # Usa extract_message_from_payload para centralizar a extração do phone (Fix 7.4)
+            extracted = whatsapp_service.extract_message_from_payload(payload)
+            phone = extracted["phone"] if extracted else "unknown"
+            from datetime import datetime, timezone
+            await kafka_produce(
+                topic="whatsapp.messages.incoming",
+                key=phone,
+                value={
+                    "payload": payload,
+                    "received_at": datetime.now(timezone.utc).isoformat(),
+                },
+            )
+        else:
+            # execute_with_new_session cria sua própria AsyncSession — evita
+            # passar a sessão do request para a BackgroundTask (Fix 7.1)
+            background_tasks.add_task(
+                process_whatsapp_message.execute_with_new_session, payload
+            )
     except Exception as exc:
         logger.error("webhook_parse_error", error=str(exc))
 

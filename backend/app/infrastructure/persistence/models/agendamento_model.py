@@ -18,6 +18,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Index,
+    String,
     Time,
     UniqueConstraint,
     func,
@@ -82,6 +83,9 @@ class AgendamentoModel(Base):
     )
     consultor_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL")
+    )
+    meet_link: Mapped[Optional[str]] = mapped_column(
+        String(512), nullable=True, default=None
     )
     criado_em: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

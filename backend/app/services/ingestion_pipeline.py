@@ -11,6 +11,7 @@ Features:
   - Triggerable on-demand via API endpoint (BackgroundTasks) or daily scheduler
 """
 
+import asyncio
 import hashlib
 import json
 from datetime import datetime, timezone
@@ -164,12 +165,12 @@ def _compute_hash(content: str) -> str:
     return "sha256:" + hashlib.sha256(versioned.encode("utf-8")).hexdigest()
 
 
-def _read_file(filepath: Path) -> Optional[str]:
+async def _read_file(filepath: Path) -> Optional[str]:
     loader = _LOADERS.get(filepath.suffix.lower())
     if loader is None:
         return None
     try:
-        return loader(filepath)
+        return await asyncio.to_thread(loader, filepath)
     except Exception as exc:
         logger.error("file_read_error", filepath=str(filepath), error=str(exc))
         return None
@@ -293,7 +294,7 @@ class IngestionPipeline:
             None  — file skipped (unchanged, cache hit)
             False — error during processing
         """
-        content = _read_file(filepath)
+        content = await _read_file(filepath)
         if content is None:
             return False
 

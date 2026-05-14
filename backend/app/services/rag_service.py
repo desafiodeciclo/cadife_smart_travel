@@ -294,6 +294,9 @@ def _join(docs: list[Document]) -> str:
 
 def _try_count(vs: Chroma) -> int:
     try:
-        return vs._collection.count()
+        # similarity_search com k=1 e query vazia retorna lista cujo len indica
+        # se há documentos; para contagem real usamos get() com include vazio.
+        result = vs.get(include=[])
+        return len(result.get("ids", []))
     except Exception:
         return 0

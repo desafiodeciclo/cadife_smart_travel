@@ -20,6 +20,8 @@ from __future__ import annotations
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from sqlalchemy import select
+
 from app.domain.entities.enums import LeadStatus, TipoMensagem
 from app.models.lead import Lead
 from app.models.user import User
@@ -36,9 +38,10 @@ from app.services.domain_validator import BriefingValidator
 
 logger = structlog.get_logger()
 
-# Message for audio messages specifically (task requirement)
+# Fallback when audio transcription fails — friendly, not misleading
 AUDIO_FALLBACK_REPLY = (
-    "Áudio não suportado nestes momentos, prefira o meio texto."
+    "Recebi seu áudio! Infelizmente não consegui processá-lo desta vez. "
+    "Pode me enviar sua mensagem em texto? Vou continuar te ajudando! 😊"
 )
 
 # Message for other unsupported media types (spec.md §12.3)
@@ -57,7 +60,18 @@ async def execute(payload: dict, db: AsyncSession) -> None:
     """
     msg = whatsapp_service.extract_message_from_payload(payload)
     if not msg:
-        logger.debug("webhook_payload_ignored", reason="no_message_extracted")
+        # Distinguish status events (delivered, read, failed) from truly empty payloads
+        statuses = whatsapp_service.extract_status_from_payload(payload)
+        if statuses:
+            for s in statuses:
+                logger.info(
+                    "whatsapp_status_event",
+                    status=s.get("status"),
+                    wamid=s.get("id"),
+                    recipient=s.get("recipient_id"),
+                )
+        else:
+            logger.debug("webhook_payload_ignored", reason="no_message_extracted")
         return
 
     phone: str = msg["phone"]
@@ -97,19 +111,56 @@ async def execute(payload: dict, db: AsyncSession) -> None:
 
     # ── Step 2.5: Carrega histórico do DB (restart-resilient) ────────────────
     interacoes_list = await lead_service.get_recent_interacoes(db, lead_id, limit=20)
-    ai_service.preload_memory_from_db(phone, interacoes_list)
+    await ai_service.preload_memory_from_db(phone, interacoes_list)
+    _memory = ai_service.get_memory(phone)
+    _memory_summary = _memory._summary  # Resumo comprimido; restaurado do Redis se worker novo
 
-    # Formata histórico para o orquestrador — interleave correto user + assistant.
-    # Cada row de interacao contém AMBAS as mensagens (cliente e IA), então cada
-    # row gera até dois turnos no histórico, preservando a alternância real.
-    conversation_history: list[dict[str, str]] = []
-    for row in interacoes_list:
-        cliente_msg = row.get("mensagem_cliente")
-        ia_msg = row.get("mensagem_ia")
-        if cliente_msg:
-            conversation_history.append({"role": "user", "content": cliente_msg})
-        if ia_msg:
-            conversation_history.append({"role": "assistant", "content": ia_msg})
+    # Timestamp da interação mais recente passado direto do DB — mais confiável
+    # do que confiar na extração do TriagemAgent (LLM pode errar o parse).
+    _last_interaction_at: str | None = None
+    if interacoes_list:
+        _last_ts = interacoes_list[-1].get("timestamp")
+        if _last_ts is not None:
+            _last_interaction_at = (
+                _last_ts.isoformat() if hasattr(_last_ts, "isoformat") else str(_last_ts)
+            )
+
+    # ── Step 2.6: Verificação pré-orquestrador ────────────────────────────────
+    # Lê o briefing ANTES do LangGraph para que o system prompt chegue informado,
+    # eliminando a tool call get_lead_context_by_wa_id quando o briefing já está completo.
+    from app.infrastructure.persistence.repositories.briefing_repository import (
+        BriefingRepository,
+    )
+
+    _briefing_pre = await BriefingRepository(db).get_by_lead(lead_id)
+    _pre_validated_briefing: dict | None = None
+    _validation_errors: list[str] = []
+
+    if _briefing_pre:
+        _pre_validated_briefing = {
+            "completude_pct": _briefing_pre.completude_pct,
+            "destino": _briefing_pre.destino,
+            "data_ida": str(_briefing_pre.data_ida) if _briefing_pre.data_ida else None,
+            "data_volta": str(_briefing_pre.data_volta) if _briefing_pre.data_volta else None,
+            "qtd_pessoas": _briefing_pre.qtd_pessoas,
+            "perfil": _briefing_pre.perfil,
+            "orcamento": _briefing_pre.orcamento,
+            "tem_passaporte": _briefing_pre.tem_passaporte,
+        }
+        _validation_errors = _validator.validate(_briefing_pre)
+        logger.info(
+            "pre_orchestrator_briefing_loaded",
+            lead_id=str(lead_id),
+            completude_pct=_briefing_pre.completude_pct,
+            has_errors=bool(_validation_errors),
+        )
+
+    # Histórico via SimpleWindowMemory — inclui pares recentes (até k=20) sem a
+    # mensagem de sistema do resumo (que vai separada em memory_summary).
+    _mem_vars = _memory.load_memory_variables({})
+    conversation_history: list[dict[str, str]] = [
+        m for m in _mem_vars.get("chat_history", []) if m["role"] != "system"
+    ]
 
     # ── Step 3: Resolução de mídia — transcreve áudio antes de processar ─────
     # wa_id = phone (número WhatsApp sem '+') usado como chave de lookup CRM
@@ -160,55 +211,88 @@ async def execute(payload: dict, db: AsyncSession) -> None:
             message=text,
             conversation_history=conversation_history,
             db=db,
+            pre_validated_briefing=_pre_validated_briefing,
+            validation_errors=_validation_errors,
+            memory_summary=_memory_summary,
+            last_interaction_at=_last_interaction_at,
+            lead_status_db=status_antes.value if status_antes else None,
         )
 
-        # Tool calls inside orchestrate may commit the session, expiring `lead`.
-        # Refresh so subsequent attribute accesses (lead.status, lead.nome) don't
-        # raise MissingGreenlet.
-        await db.refresh(lead)
+        # Tool calls inside orchestrate may commit the session, expiring all ORM
+        # attributes. Re-read by lead_id instead of refresh to avoid loading
+        # partial state if an internal commit failed (audit §4.3).
+        _result = await db.execute(select(Lead).where(Lead.id == lead_id))
+        lead = _result.scalar_one()
 
         lead_id_str = str(lead_id)
 
         try:
-            # ── Step 5: Extrai briefing & atualiza score ──────────────────
-            # Passa o histórico COMPLETO (não só a mensagem atual) para que o
-            # extrator acumule dados de turnos anteriores corretamente.
-            full_conv_for_briefing = conversation_history + [
-                {"role": "user", "content": text}
-            ]
-            extracted = await ai_service.extract_briefing(full_conv_for_briefing)
-            briefing = await lead_service.update_briefing_from_extraction(
-                db, lead, extracted
+            # ── Step 5: Lê briefing atualizado pelo orquestrador ──────────
+            # O orquestrador já persiste campos via persist_lead_data tool.
+            # Buscar direto do DB evita a race condition que existia quando
+            # ai_service.extract_briefing re-escrevia campos que o orquestrador
+            # acabara de salvar com valores divergentes (Zona C).
+            from app.infrastructure.persistence.repositories.briefing_repository import (
+                BriefingRepository,
             )
+            briefing = await BriefingRepository(db).get_by_lead_id(lead_id)
 
-            # ── Step 6: Enfileira notificação FCM se lead qualificar ──────
-            if briefing.completude_pct >= 60 and lead.status == LeadStatus.qualificado:
-                await _enqueue_qualified_notification(db, lead, briefing)
+            if briefing:
+                # ── Step 6: Enfileira notificação FCM se lead qualificar ──
+                if briefing.completude_pct >= 60 and lead.status == LeadStatus.qualificado:
+                    await _enqueue_qualified_notification(db, lead, briefing)
 
-            # ── Step 6b: Oferta de curadoria quando recém-qualificado ─────
-            if curadoria_service.deve_oferecer_curadoria(
-                status_antes, lead.status, briefing.completude_pct
-            ):
-                if not await curadoria_service.lead_tem_agendamento_ativo(db, lead.id):
-                    slots = await curadoria_service.get_proximos_slots_disponiveis(
-                        db, quantidade=3
+                    from app.services.kafka_producer import produce as _kafka_produce
+                    from datetime import datetime, timezone as _tz
+                    await _kafka_produce(
+                        topic="leads.qualified",
+                        key=str(lead_id),
+                        value={
+                            "lead_id": str(lead_id),
+                            "phone": phone,
+                            "completude_pct": briefing.completude_pct,
+                            "destino": briefing.destino,
+                            "timestamp": datetime.now(_tz.utc).isoformat(),
+                        },
                     )
-                    reply = curadoria_service.gerar_mensagem_oferta_curadoria(
-                        slots, nome_cliente=lead.nome
-                    )
-                    logger.info(
-                        "curadoria_offered",
-                        lead_id=lead_id_str,
-                        slots_count=len(slots),
-                    )
-                else:
-                    logger.info(
-                        "curadoria_skipped_already_scheduled",
-                        lead_id=lead_id_str,
-                    )
+
+                # ── Step 6b: Oferta de curadoria quando recém-qualificado ─
+                if curadoria_service.deve_oferecer_curadoria(
+                    status_antes, lead.status, briefing.completude_pct
+                ):
+                    if not await curadoria_service.lead_tem_agendamento_ativo(db, lead.id):
+                        # Só sobrescreve se o orquestrador NÃO já incluiu slots ou Meet link
+                        import re as _re
+                        _reply_has_scheduling = bool(
+                            _re.search(
+                                r"meet\.google\.com|curadoria|agend[ao]|\d{1,2}h\d{2}|\d{2}/\d{2}/\d{4}",
+                                reply,
+                                _re.IGNORECASE,
+                            )
+                        )
+                        if not _reply_has_scheduling:
+                            slots = await curadoria_service.get_proximos_slots_disponiveis(
+                                db, quantidade=3
+                            )
+                            reply = curadoria_service.gerar_mensagem_oferta_curadoria(
+                                slots, nome_cliente=lead.nome
+                            )
+                            logger.info(
+                                "curadoria_offered",
+                                lead_id=lead_id_str,
+                                slots_count=len(slots),
+                            )
+                        else:
+                            logger.info(
+                                "curadoria_skipped_orchestrator_already_offered",
+                                lead_id=lead_id_str,
+                            )
+                    else:
+                        logger.info(
+                            "curadoria_skipped_already_scheduled",
+                            lead_id=lead_id_str,
+                        )
         except Exception as exc:
-            # Rollback explícito para limpar qualquer transação pendente antes
-            # de continuar — evita PendingRollbackError nas etapas seguintes.
             try:
                 await db.rollback()
             except Exception:
@@ -226,6 +310,15 @@ async def execute(payload: dict, db: AsyncSession) -> None:
         tipo=tipo,
     )
 
+    # ── Step 7: Atualiza buffer de memória com a interação recém-concluída ──
+    # Mantém o buffer crescendo corretamente no fluxo do orquestrador
+    # (process_message não é chamado nesse path). Se o buffer transbordar,
+    # compress_pending gera o summary e persiste no Redis automaticamente.
+    if text and reply:
+        _memory.save_context({"input": text}, {"output": reply})
+        if _memory.has_pending_summary():
+            await _memory.compress_pending(ai_service.get_llm())
+
     # ── Step 8: Reply to client via WhatsApp; persist send outcome ────────
     send_result = await whatsapp_service.send_message(phone, reply)
     await lead_service.update_interacao_send_result(db, interacao, send_result)
@@ -237,6 +330,56 @@ async def execute(payload: dict, db: AsyncSession) -> None:
         latency_ms=send_result.latency_ms,
         retries=send_result.retries_used,
     )
+
+
+async def execute_with_new_session(payload: dict) -> None:
+    """Entry point for BackgroundTask: creates an isolated DB session per invocation.
+
+    Avoids passing the FastAPI request-scoped AsyncSession to a BackgroundTask,
+    which can expire mid-flight and cause silent failures (audit §7.1).
+
+    Also serializes processing per wa_id via a Redis distributed lock (audit §8)
+    to prevent race conditions when a client sends multiple messages in rapid succession.
+    Falls back to unguarded execution if Redis is unavailable (degraded mode).
+    """
+    from app.infrastructure.persistence.database import AsyncSessionLocal
+
+    wa_id: str = "unknown"
+    try:
+        extracted = whatsapp_service.extract_message_from_payload(payload)
+        if extracted:
+            wa_id = extracted["phone"]
+    except Exception:
+        pass
+
+    lock_acquired = False
+    redis_lock = None
+    try:
+        from app.infrastructure.cache.redis_client import get_redis
+        redis = get_redis()
+        redis_lock = redis.lock(
+            f"lock:wa:{wa_id}",
+            timeout=60,        # auto-release after 60s even if worker crashes
+            blocking_timeout=120,  # wait up to 2 min for a queued message to get the lock
+        )
+        lock_acquired = await redis_lock.acquire()
+    except Exception as exc:
+        logger.warning(
+            "whatsapp_redis_lock_unavailable",
+            wa_id=wa_id,
+            error=str(exc),
+            fallback="processing_without_lock",
+        )
+
+    try:
+        async with AsyncSessionLocal() as db:
+            await execute(payload, db)
+    finally:
+        if lock_acquired and redis_lock is not None:
+            try:
+                await redis_lock.release()
+            except Exception:
+                pass
 
 
 async def _enqueue_qualified_notification(

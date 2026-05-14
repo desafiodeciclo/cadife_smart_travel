@@ -59,10 +59,8 @@ import app.infrastructure.persistence.models.suitcase_model  # noqa: F401
 import app.infrastructure.persistence.models.offer_model  # noqa: F401
 import app.infrastructure.persistence.models.travel_diary_model  # noqa: F401
 
-# --- RESOLUÇÃO DO CONFLITO: Incluindo ambos os modelos ---
 import app.infrastructure.persistence.models.travel_model  # noqa: F401
 import app.infrastructure.persistence.models.conversation_summary_model  # noqa: F401
-# ---------------------------------------------------------
 
 from main import app
 from app.infrastructure.persistence.database import Base

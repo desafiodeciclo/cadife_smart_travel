@@ -30,6 +30,9 @@ from app.jobs.lead_expiration_job import expire_stale_leads
 from app.jobs.proposta_expiration_job import expire_stale_propostas_job
 from app.jobs.notification_worker import NotificationWorker, WORKER_INTERVAL_SECONDS
 
+# Kafka
+from app.services.kafka_producer import close_producer
+
 # Routers
 from app.routes import agenda, auth, ia, leads, propostas, webhook
 
@@ -56,7 +59,7 @@ _scheduler = AsyncIOScheduler(timezone="UTC")
 # -------------------------------------------------------------------
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_app: FastAPI):
     logger.info(
         "startup_begin",
         env=settings.APP_ENV,
@@ -114,15 +117,37 @@ async def lifespan(app: FastAPI):
 
     _scheduler.start()
     logger.info(
-        "scheduler_started", 
-        jobs=["lead_expiration", "proposta_expiration", "notification_worker"]
+        "scheduler_started",
+        jobs=["lead_expiration", "proposta_expiration", "notification_worker"],
+    )
+
+    # Kafka — consumer de agendamentos como background task in-process
+    # (apenas quando KAFKA_ENABLED=True; caso contrário _run() retorna imediatamente)
+    import asyncio as _asyncio
+    from app.application.workers.agendamento_consumer import _run as _agendamento_run
+
+    _agendamento_stop = _asyncio.Event()
+    _agendamento_task = _asyncio.create_task(
+        _agendamento_run(_agendamento_stop),
+        name="agendamento_consumer",
     )
 
     logger.info("startup_complete", version="1.0.0")
 
     yield
 
+    # Sinaliza shutdown do consumer de agendamentos e aguarda conclusão
+    _agendamento_stop.set()
+    try:
+        await _asyncio.wait_for(_agendamento_task, timeout=10.0)
+    except _asyncio.TimeoutError:
+        logger.warning("agendamento_consumer_shutdown_timeout")
+
     _scheduler.shutdown(wait=False)
+
+    # Fecha o producer Kafka graciosamente (flush de mensagens pendentes)
+    await close_producer()
+
     logger.info("shutdown_complete")
 
 

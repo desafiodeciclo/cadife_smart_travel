@@ -61,6 +61,7 @@ class BriefingRepository(AbstractRepository[BriefingModel], IBriefingRepository)
                     "preferencias",
                     "orcamento",
                     "tem_passaporte",
+                    "ocasiao",
                 ]
             }
             existing.completude_pct = calculate_completude(merged)

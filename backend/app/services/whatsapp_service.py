@@ -25,7 +25,6 @@ import structlog
 from app.core.config import get_settings
 
 logger = structlog.get_logger()
-settings = get_settings()
 
 WHATSAPP_API_URL = "https://graph.facebook.com/v25.0"
 
@@ -85,7 +84,7 @@ def verify_signature(body: bytes, signature_header: str) -> bool:
     """Valida X-Hub-Signature-256 usando META_APP_SECRET conforme spec Meta."""
     if not signature_header.startswith("sha256="):
         return False
-    secret = settings.META_APP_SECRET.encode()
+    secret = get_settings().META_APP_SECRET.encode()
     expected = hmac.new(secret, body, hashlib.sha256).hexdigest()
     return hmac.compare_digest(f"sha256={expected}", signature_header)
 
@@ -128,6 +127,20 @@ def extract_message_from_payload(payload: dict[str, Any]) -> Optional[dict[str, 
         return None
 
 
+def extract_status_from_payload(payload: dict[str, Any]) -> Optional[list[dict]]:
+    """Extract delivery/read status events from a Meta webhook status payload.
+
+    The Meta API sends statuses (sent, delivered, read, failed) as separate
+    webhook events. Returns the list of status objects, or None if absent.
+    """
+    try:
+        value = payload["entry"][0]["changes"][0]["value"]
+        statuses = value.get("statuses", [])
+        return statuses if statuses else None
+    except (KeyError, IndexError):
+        return None
+
+
 async def download_media(media_id: str) -> Optional[bytes]:
     """Download a media file from Meta's Media API by its ID.
 
@@ -138,7 +151,7 @@ async def download_media(media_id: str) -> Optional[bytes]:
     Returns the raw bytes on success, or None on any failure so callers can
     treat this as best-effort (the fallback reply is always sent regardless).
     """
-    headers = {"Authorization": f"Bearer {settings.WHATSAPP_TOKEN}"}
+    headers = {"Authorization": f"Bearer {get_settings().WHATSAPP_TOKEN}"}
 
     async with httpx.AsyncClient(timeout=_MEDIA_TIMEOUT_S) as client:
         # Step 1: resolve the temporary download URL
@@ -192,9 +205,10 @@ async def mark_as_read(phone: str, message_id: str) -> None:
     Best-effort: failures are logged but never raised, so they never block
     the main processing pipeline.
     """
-    url = f"{WHATSAPP_API_URL}/{settings.PHONE_NUMBER_ID}/messages"
+    _s = get_settings()
+    url = f"{WHATSAPP_API_URL}/{_s.PHONE_NUMBER_ID}/messages"
     headers = {
-        "Authorization": f"Bearer {settings.WHATSAPP_TOKEN}",
+        "Authorization": f"Bearer {_s.WHATSAPP_TOKEN}",
         "Content-Type": "application/json",
     }
     payload = {
@@ -229,9 +243,10 @@ async def send_message(phone: str, text: str) -> SendResult:
     Does NOT raise on failure; a failed SendResult is returned instead
     so the background worker can record it without crashing the queue.
     """
-    url = f"{WHATSAPP_API_URL}/{settings.PHONE_NUMBER_ID}/messages"
+    _s = get_settings()
+    url = f"{WHATSAPP_API_URL}/{_s.PHONE_NUMBER_ID}/messages"
     headers = {
-        "Authorization": f"Bearer {settings.WHATSAPP_TOKEN}",
+        "Authorization": f"Bearer {_s.WHATSAPP_TOKEN}",
         "Content-Type": "application/json",
     }
     payload = {

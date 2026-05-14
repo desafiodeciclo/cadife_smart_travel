@@ -118,10 +118,9 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
             "name": "check_availability",
             "description": (
                 "Verifica disponibilidade de horários para curadoria com um consultor Cadife. "
-                "Retorna até 3 slots disponíveis nos próximos dias úteis. "
+                "Retorna até 3 slots disponíveis nos próximos dias úteis consultando a agenda real. "
                 "Use quando o briefing estiver completo (completude ≥ 60%) e for hora de "
-                "oferecer agendamento ao cliente. "
-                "NOTA: integração Google Calendar pendente — retorna slots simulados por ora."
+                "oferecer agendamento ao cliente."
             ),
             "parameters": {
                 "type": "object",
@@ -130,13 +129,39 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
                         "type": "string",
                         "description": "Data preferida pelo cliente no formato YYYY-MM-DD (opcional).",
                     },
-                    "duration_minutes": {
-                        "type": "integer",
-                        "description": "Duração da curadoria em minutos. Padrão: 45.",
-                        "default": 45,
-                    },
                 },
                 "required": [],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "confirm_scheduling",
+            "description": (
+                "Confirma o agendamento de curadoria escolhido pelo cliente. "
+                "Use SOMENTE quando o cliente tiver confirmado explicitamente um dos slots "
+                "oferecidos pelo check_availability (ex: 'quero o dia 15 às 10h', 'opção 2'). "
+                "Cria o agendamento no sistema, gera o link do Google Meet e retorna a mensagem "
+                "de confirmação com o link para enviar ao cliente."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "wa_id": {
+                        "type": "string",
+                        "description": "WhatsApp ID do cliente (número em formato internacional sem '+').",
+                    },
+                    "data_curadoria": {
+                        "type": "string",
+                        "description": "Data confirmada no formato YYYY-MM-DD.",
+                    },
+                    "hora_curadoria": {
+                        "type": "string",
+                        "description": "Hora confirmada no formato HH:MM (ex: '09:00', '14:00').",
+                    },
+                },
+                "required": ["wa_id", "data_curadoria", "hora_curadoria"],
             },
         },
     },
@@ -298,8 +323,8 @@ async def _get_lead_context_by_wa_id(
                     "data_ida": str(briefing.data_ida) if briefing.data_ida else None,
                     "data_volta": str(briefing.data_volta) if briefing.data_volta else None,
                     "qtd_pessoas": briefing.qtd_pessoas,
-                    "perfil": briefing.perfil.value if briefing.perfil else None,
-                    "orcamento": briefing.orcamento.value if briefing.orcamento else None,
+                    "perfil": briefing.perfil,
+                    "orcamento": briefing.orcamento,
                     "tem_passaporte": briefing.tem_passaporte,
                     "completude_pct": getattr(briefing, "completude_pct", None),
                 }
@@ -334,58 +359,52 @@ async def _get_lead_context_by_wa_id(
         return json.dumps({"exists": False, "error": "crm_lookup_failed"})
 
 
-async def _check_availability(args: dict[str, Any]) -> str:
+async def _check_availability(args: dict[str, Any], db: Optional[Any]) -> str:
     """
-    Placeholder para integração com Google Calendar.
-    Retorna slots simulados até GOOGLE_CALENDAR_CREDENTIALS estiver configurado.
-
-    TODO: substituir pela chamada real à Google Calendar API quando
-    as credenciais estiverem disponíveis em settings.GOOGLE_CALENDAR_CREDENTIALS.
+    Consulta a agenda real (PostgreSQL) e retorna até 3 slots disponíveis.
+    Se o DB não estiver disponível, gera slots conservadores sem verificar conflitos.
     """
-    from datetime import datetime, timedelta
+    from datetime import date as _date, timedelta
 
-    duration = int(args.get("duration_minutes", 45))
     preferred_date_str: Optional[str] = args.get("preferred_date")
 
-    # Gera até 3 slots em dias úteis a partir de amanhã (ou da data preferida)
+    if db is not None:
+        # Caminho principal: consulta slots reais no banco de dados
+        try:
+            from app.services.curadoria_service import get_proximos_slots_disponiveis
+
+            slots_raw = await get_proximos_slots_disponiveis(db, quantidade=3)
+            slots = [
+                {"date": str(s["data"]), "time": s["hora"], "available": True}
+                for s in slots_raw
+            ]
+            return json.dumps({"status": "ok", "slots": slots})
+        except Exception as exc:
+            logger.error("check_availability_db_failed", error=str(exc))
+
+    # Fallback sem DB: slots conservadores a partir de amanhã (ou data preferida)
     try:
         base = (
-            datetime.strptime(preferred_date_str, "%Y-%m-%d")
+            _date.fromisoformat(preferred_date_str)
             if preferred_date_str
-            else datetime.now()
+            else _date.today()
         )
     except ValueError:
-        base = datetime.now()
+        base = _date.today()
 
     slots = []
-    day_offset = 1
-    while len(slots) < 3 and day_offset <= 14:
-        candidate = base + timedelta(days=day_offset)
-        day_offset += 1
-        if candidate.weekday() > 4:  # pula fim de semana
+    offset = 1
+    while len(slots) < 3 and offset <= 14:
+        candidate = base + timedelta(days=offset)
+        offset += 1
+        if candidate.weekday() >= 5:
             continue
-        for hour in [9, 11, 14, 16]:
-            slot_dt = candidate.replace(hour=hour, minute=0, second=0, microsecond=0)
-            slots.append(
-                {
-                    "datetime": slot_dt.strftime("%Y-%m-%d %H:%M"),
-                    "duration_minutes": duration,
-                    "available": True,
-                }
-            )
+        for hour in ["09:00", "11:00", "14:00"]:
+            slots.append({"date": str(candidate), "time": hour, "available": True})
             if len(slots) >= 3:
                 break
 
-    return json.dumps(
-        {
-            "status": "placeholder",
-            "note": (
-                "Integração Google Calendar pendente. "
-                "Slots simulados para dias úteis (09h–16h, Seg–Sex)."
-            ),
-            "slots": slots,
-        }
-    )
+    return json.dumps({"status": "fallback", "slots": slots})
 
 
 async def _query_project_scope(query: str) -> str:
@@ -491,6 +510,148 @@ async def _persist_lead_data(
             pass
         logger.error("tool_persist_lead_data_failed", error=str(exc))
         return json.dumps({"success": False, "error": "persist_failed"})
+
+
+async def _confirm_scheduling(
+    wa_id: str,
+    data_curadoria: str,
+    hora_curadoria: str,
+    db: Optional[Any],
+) -> str:
+    """
+    Confirma o agendamento escolhido pelo cliente:
+      1. Valida lead e slot
+      2. Cria registro em agendamentos
+      3. Gera link Google Meet via Google Calendar
+      4. Persiste meet_link e atualiza status do lead para AGENDADO
+    """
+    if not db:
+        return json.dumps({"success": False, "reason": "db_unavailable"})
+
+    from datetime import date as _date, time as _time
+
+    try:
+        data_obj = _date.fromisoformat(data_curadoria)
+        hora_parts = hora_curadoria.split(":")
+        hora_obj = _time(int(hora_parts[0]), int(hora_parts[1]))
+    except (ValueError, IndexError):
+        return json.dumps({"success": False, "reason": "invalid_date_or_time"})
+
+    try:
+        from app.infrastructure.persistence.repositories.lead_repository import LeadRepository
+        from app.domain.entities.enums import AgendamentoStatus, AgendamentoTipo, LeadStatus
+        from app.models.agendamento import Agendamento
+        from app.services import lead_service
+        from app.services.curadoria_service import get_proximos_slots_disponiveis
+        from app.services.google_calendar_service import criar_evento_curadoria
+        from sqlalchemy.exc import IntegrityError
+
+        repo = LeadRepository(db)
+        lead = await repo.get_by_phone(wa_id)
+        if not lead:
+            return json.dumps({"success": False, "reason": "lead_not_found"})
+
+        # Verifica se o slot ainda está disponível
+        slots = await get_proximos_slots_disponiveis(db, quantidade=10)
+        slot_ok = any(
+            str(s["data"]) == data_curadoria and s["hora"] == hora_curadoria
+            for s in slots
+        )
+        if not slot_ok:
+            return json.dumps({
+                "success": False,
+                "reason": "slot_unavailable",
+                "message": "Este horário não está mais disponível. Vou verificar outras opções para você.",
+            })
+
+        # Cria o agendamento
+        agendamento = Agendamento(
+            lead_id=lead.id,
+            data=data_obj,
+            hora=hora_obj,
+            tipo=AgendamentoTipo.online,
+        )
+        db.add(agendamento)
+        try:
+            await db.commit()
+            await db.refresh(agendamento)
+        except IntegrityError:
+            await db.rollback()
+            return json.dumps({"success": False, "reason": "slot_conflict"})
+
+        # Gera link Google Meet (best-effort)
+        meet_link = await criar_evento_curadoria(
+            lead_nome=lead.nome,
+            data=data_obj,
+            hora=hora_obj,
+        )
+        if meet_link:
+            agendamento.meet_link = meet_link
+            await db.commit()
+
+        # Atualiza status do lead para AGENDADO
+        await lead_service.update_lead_status(db, lead, LeadStatus.agendado)
+
+        data_fmt = data_obj.strftime("%d/%m/%Y")
+        hora_fmt = hora_curadoria
+
+        if meet_link:
+            mensagem = (
+                f"Perfeito! Sua curadoria está confirmada para *{data_fmt} às {hora_fmt}*. 🎉\n\n"
+                f"Aqui está o link da sua reunião Google Meet:\n{meet_link}\n\n"
+                f"Nosso consultor estará esperando por você. Até lá! ✈️"
+            )
+        else:
+            mensagem = (
+                f"Perfeito! Sua curadoria está confirmada para *{data_fmt} às {hora_fmt}*. 🎉\n\n"
+                f"Em breve você receberá o link da videoconferência por aqui. "
+                f"Nosso consultor estará esperando por você. Até lá! ✈️"
+            )
+
+        logger.info(
+            "scheduling_confirmed_via_tool",
+            lead_id=str(lead.id),
+            data=data_curadoria,
+            hora=hora_curadoria,
+            meet_link=meet_link,
+        )
+
+        # Publica evento Kafka para downstream (FCM ao consultor, analytics, CRM sync)
+        try:
+            from datetime import datetime, timezone as _tz
+            from app.services.kafka_producer import produce as _kafka_produce, TOPICS
+            await _kafka_produce(
+                topic=TOPICS.AGENDAMENTOS_CONFIRMADOS,
+                key=str(lead.id),
+                value={
+                    "agendamento_id": str(agendamento.id),
+                    "lead_id": str(lead.id),
+                    "lead_nome": lead.nome,
+                    "phone": wa_id,
+                    "data": data_curadoria,
+                    "hora": hora_curadoria,
+                    "meet_link": meet_link,
+                    "timestamp": datetime.now(_tz.utc).isoformat(),
+                },
+            )
+        except Exception as _kafka_exc:
+            # Kafka nunca deve reverter uma confirmação já persistida no DB
+            logger.warning("agendamento_kafka_publish_failed", error=str(_kafka_exc))
+
+        return json.dumps({
+            "success": True,
+            "agendamento_id": str(agendamento.id),
+            "meet_link": meet_link,
+            "message": mensagem,
+        })
+
+    except Exception as exc:
+        try:
+            await db.rollback()
+        except Exception:
+            pass
+        logger.error("confirm_scheduling_failed", wa_id=wa_id, error=str(exc))
+        return json.dumps({"success": False, "reason": "unexpected_error"})
 
 
 _TRAVEL_IMAGE_STYLE_PROMPTS: dict[str, str] = {
@@ -608,7 +769,15 @@ async def execute_tool(
         return await _get_lead_context_by_wa_id(tool_args["wa_id"], db)
 
     if tool_name == "check_availability":
-        return await _check_availability(tool_args)
+        return await _check_availability(tool_args, db)
+
+    if tool_name == "confirm_scheduling":
+        return await _confirm_scheduling(
+            wa_id=tool_args["wa_id"],
+            data_curadoria=tool_args["data_curadoria"],
+            hora_curadoria=tool_args["hora_curadoria"],
+            db=db,
+        )
 
     if tool_name == "query_project_scope":
         return await _query_project_scope(tool_args["query"])

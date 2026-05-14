@@ -129,12 +129,35 @@ def _fake_interacao():
     return interacao
 
 
-# ── Use-case: audio triggers download and specific reply ──────────────────────
+# ── Use-case: audio triggers transcription attempt and specific reply ─────────
+
+
+def _fake_memory() -> MagicMock:
+    m = MagicMock()
+    m._summary = ""
+    m.load_memory_variables.return_value = {"chat_history": []}
+    m.has_pending_summary.return_value = False
+    m.compress_pending = AsyncMock()
+    return m
+
+
+def _common_ls_setup(mock_ls, lead, interacao):
+    mock_ls.upsert_lead_with_resilience = AsyncMock(return_value=lead)
+    mock_ls.update_lead_status = AsyncMock(return_value=lead)
+    mock_ls.get_recent_interacoes = AsyncMock(return_value=[])
+    mock_ls.save_interacao = AsyncMock(return_value=interacao)
+    mock_ls.update_interacao_send_result = AsyncMock()
+
+
+def _common_ai_setup(mock_ai):
+    mock_ai.preload_memory_from_db = AsyncMock()
+    mock_ai.get_memory.return_value = _fake_memory()
+    mock_ai.get_llm = MagicMock()
 
 
 @pytest.mark.asyncio
-async def test_audio_message_calls_download_media():
-    """Audio message: download_media is called with the correct media_id."""
+async def test_audio_message_calls_route_media_message():
+    """Audio message: model_router.route_media_message is called with correct args."""
     db = AsyncMock()
     lead = _fake_lead()
     interacao = _fake_interacao()
@@ -142,16 +165,14 @@ async def test_audio_message_calls_download_media():
 
     with (
         patch("app.application.use_cases.process_whatsapp_message.lead_service") as mock_ls,
-        patch("app.application.use_cases.process_whatsapp_message.ai_service"),
+        patch("app.application.use_cases.process_whatsapp_message.ai_service") as mock_ai,
         patch("app.application.use_cases.process_whatsapp_message.whatsapp_service") as mock_ws,
-        patch("app.application.use_cases.process_whatsapp_message._enqueue_message_received_notification"),
+        patch("app.application.use_cases.process_whatsapp_message.model_router") as mock_mr,
+        patch("app.infrastructure.persistence.repositories.briefing_repository.BriefingRepository") as mock_br,
+        patch("app.application.use_cases.process_whatsapp_message._enqueue_qualified_notification", new=AsyncMock()),
     ):
-        mock_ls.upsert_lead_with_resilience = AsyncMock(return_value=lead)
-        mock_ls.update_lead_status = AsyncMock(return_value=lead)
-        mock_ls.get_recent_interacoes = AsyncMock(return_value=[])
-        mock_ls.save_interacao = AsyncMock(return_value=interacao)
-        mock_ls.update_interacao_send_result = AsyncMock()
-
+        mock_ws.mark_as_read = AsyncMock()
+        mock_ws.send_message = AsyncMock(return_value=send_result)
         mock_ws.extract_message_from_payload = MagicMock(return_value={
             "phone": "5584999990001",
             "text": None,
@@ -160,17 +181,22 @@ async def test_audio_message_calls_download_media():
             "message_id": "wamid.audio001",
             "media_id": "audio_media_id_001",
         })
-        mock_ws.download_media = AsyncMock(return_value=b"fake_audio_bytes")
-        mock_ws.send_message = AsyncMock(return_value=send_result)
+
+        _common_ls_setup(mock_ls, lead, interacao)
+        _common_ai_setup(mock_ai)
+        mock_br.return_value.get_by_lead = AsyncMock(return_value=None)
+        mock_br.return_value.get_by_lead_id = AsyncMock(return_value=None)
+
+        mock_mr.route_media_message = AsyncMock(return_value=None)  # no transcription
 
         await process_whatsapp_message.execute(_audio_payload(), db)
 
-    mock_ws.download_media.assert_awaited_once_with("audio_media_id_001")
+    mock_mr.route_media_message.assert_awaited_once_with("audio", "audio_media_id_001", "audio/ogg")
 
 
 @pytest.mark.asyncio
 async def test_audio_message_sends_audio_fallback_reply():
-    """Audio message: AUDIO_FALLBACK_REPLY is sent, NOT the generic media fallback."""
+    """Audio without transcription → AUDIO_FALLBACK_REPLY sent, NOT generic media fallback."""
     db = AsyncMock()
     lead = _fake_lead()
     interacao = _fake_interacao()
@@ -178,16 +204,14 @@ async def test_audio_message_sends_audio_fallback_reply():
 
     with (
         patch("app.application.use_cases.process_whatsapp_message.lead_service") as mock_ls,
-        patch("app.application.use_cases.process_whatsapp_message.ai_service"),
+        patch("app.application.use_cases.process_whatsapp_message.ai_service") as mock_ai,
         patch("app.application.use_cases.process_whatsapp_message.whatsapp_service") as mock_ws,
-        patch("app.application.use_cases.process_whatsapp_message._enqueue_message_received_notification"),
+        patch("app.application.use_cases.process_whatsapp_message.model_router") as mock_mr,
+        patch("app.infrastructure.persistence.repositories.briefing_repository.BriefingRepository") as mock_br,
+        patch("app.application.use_cases.process_whatsapp_message._enqueue_qualified_notification", new=AsyncMock()),
     ):
-        mock_ls.upsert_lead_with_resilience = AsyncMock(return_value=lead)
-        mock_ls.update_lead_status = AsyncMock(return_value=lead)
-        mock_ls.get_recent_interacoes = AsyncMock(return_value=[])
-        mock_ls.save_interacao = AsyncMock(return_value=interacao)
-        mock_ls.update_interacao_send_result = AsyncMock()
-
+        mock_ws.mark_as_read = AsyncMock()
+        mock_ws.send_message = AsyncMock(return_value=send_result)
         mock_ws.extract_message_from_payload = MagicMock(return_value={
             "phone": "5584999990001",
             "text": None,
@@ -196,20 +220,23 @@ async def test_audio_message_sends_audio_fallback_reply():
             "message_id": "wamid.audio001",
             "media_id": "audio_media_id_001",
         })
-        mock_ws.download_media = AsyncMock(return_value=b"bytes")
-        mock_ws.send_message = AsyncMock(return_value=send_result)
+
+        _common_ls_setup(mock_ls, lead, interacao)
+        _common_ai_setup(mock_ai)
+        mock_br.return_value.get_by_lead = AsyncMock(return_value=None)
+        mock_br.return_value.get_by_lead_id = AsyncMock(return_value=None)
+        mock_mr.route_media_message = AsyncMock(return_value=None)  # transcription failed
 
         await process_whatsapp_message.execute(_audio_payload(), db)
 
     sent_text: str = mock_ws.send_message.call_args[0][1]
     assert sent_text == AUDIO_FALLBACK_REPLY
-    assert "Áudio não suportado" in sent_text
     assert sent_text != MEDIA_FALLBACK_REPLY
 
 
 @pytest.mark.asyncio
-async def test_audio_message_no_media_id_skips_download():
-    """Audio message without media_id: download is skipped, reply still sent."""
+async def test_audio_message_no_media_id_skips_transcription():
+    """Audio message without media_id: transcription skipped, fallback reply still sent."""
     db = AsyncMock()
     lead = _fake_lead()
     interacao = _fake_interacao()
@@ -217,37 +244,38 @@ async def test_audio_message_no_media_id_skips_download():
 
     with (
         patch("app.application.use_cases.process_whatsapp_message.lead_service") as mock_ls,
-        patch("app.application.use_cases.process_whatsapp_message.ai_service"),
+        patch("app.application.use_cases.process_whatsapp_message.ai_service") as mock_ai,
         patch("app.application.use_cases.process_whatsapp_message.whatsapp_service") as mock_ws,
-        patch("app.application.use_cases.process_whatsapp_message._enqueue_message_received_notification"),
+        patch("app.application.use_cases.process_whatsapp_message.model_router") as mock_mr,
+        patch("app.infrastructure.persistence.repositories.briefing_repository.BriefingRepository") as mock_br,
+        patch("app.application.use_cases.process_whatsapp_message._enqueue_qualified_notification", new=AsyncMock()),
     ):
-        mock_ls.upsert_lead_with_resilience = AsyncMock(return_value=lead)
-        mock_ls.update_lead_status = AsyncMock(return_value=lead)
-        mock_ls.get_recent_interacoes = AsyncMock(return_value=[])
-        mock_ls.save_interacao = AsyncMock(return_value=interacao)
-        mock_ls.update_interacao_send_result = AsyncMock()
-
+        mock_ws.mark_as_read = AsyncMock()
+        mock_ws.send_message = AsyncMock(return_value=send_result)
         mock_ws.extract_message_from_payload = MagicMock(return_value={
             "phone": "5584999990001",
             "text": None,
             "type": "audio",
             "name": "Carlos",
             "message_id": "wamid.audio001",
-            "media_id": None,  # missing media_id
+            "media_id": None,
         })
-        mock_ws.download_media = AsyncMock(return_value=None)
-        mock_ws.send_message = AsyncMock(return_value=send_result)
+
+        _common_ls_setup(mock_ls, lead, interacao)
+        _common_ai_setup(mock_ai)
+        mock_br.return_value.get_by_lead = AsyncMock(return_value=None)
+        mock_br.return_value.get_by_lead_id = AsyncMock(return_value=None)
 
         await process_whatsapp_message.execute(_audio_payload(), db)
 
-    mock_ws.download_media.assert_not_awaited()
+    mock_mr.route_media_message.assert_not_called()
     mock_ws.send_message.assert_awaited_once()
     assert mock_ws.send_message.call_args[0][1] == AUDIO_FALLBACK_REPLY
 
 
 @pytest.mark.asyncio
-async def test_audio_download_failure_reply_still_sent():
-    """download_media returns None: reply must still be sent (best-effort download)."""
+async def test_audio_transcription_failure_reply_still_sent():
+    """route_media_message returns None: reply must still be sent (best-effort)."""
     db = AsyncMock()
     lead = _fake_lead()
     interacao = _fake_interacao()
@@ -255,16 +283,14 @@ async def test_audio_download_failure_reply_still_sent():
 
     with (
         patch("app.application.use_cases.process_whatsapp_message.lead_service") as mock_ls,
-        patch("app.application.use_cases.process_whatsapp_message.ai_service"),
+        patch("app.application.use_cases.process_whatsapp_message.ai_service") as mock_ai,
         patch("app.application.use_cases.process_whatsapp_message.whatsapp_service") as mock_ws,
-        patch("app.application.use_cases.process_whatsapp_message._enqueue_message_received_notification"),
+        patch("app.application.use_cases.process_whatsapp_message.model_router") as mock_mr,
+        patch("app.infrastructure.persistence.repositories.briefing_repository.BriefingRepository") as mock_br,
+        patch("app.application.use_cases.process_whatsapp_message._enqueue_qualified_notification", new=AsyncMock()),
     ):
-        mock_ls.upsert_lead_with_resilience = AsyncMock(return_value=lead)
-        mock_ls.update_lead_status = AsyncMock(return_value=lead)
-        mock_ls.get_recent_interacoes = AsyncMock(return_value=[])
-        mock_ls.save_interacao = AsyncMock(return_value=interacao)
-        mock_ls.update_interacao_send_result = AsyncMock()
-
+        mock_ws.mark_as_read = AsyncMock()
+        mock_ws.send_message = AsyncMock(return_value=send_result)
         mock_ws.extract_message_from_payload = MagicMock(return_value={
             "phone": "5584999990001",
             "text": None,
@@ -273,10 +299,13 @@ async def test_audio_download_failure_reply_still_sent():
             "message_id": "wamid.audio001",
             "media_id": "audio_fail_id",
         })
-        mock_ws.download_media = AsyncMock(return_value=None)  # download failed
-        mock_ws.send_message = AsyncMock(return_value=send_result)
 
-        # Must not raise
+        _common_ls_setup(mock_ls, lead, interacao)
+        _common_ai_setup(mock_ai)
+        mock_br.return_value.get_by_lead = AsyncMock(return_value=None)
+        mock_br.return_value.get_by_lead_id = AsyncMock(return_value=None)
+        mock_mr.route_media_message = AsyncMock(return_value=None)
+
         await process_whatsapp_message.execute(_audio_payload(), db)
 
     mock_ws.send_message.assert_awaited_once_with("5584999990001", AUDIO_FALLBACK_REPLY)
@@ -292,16 +321,13 @@ async def test_image_message_uses_generic_fallback_not_audio_reply():
 
     with (
         patch("app.application.use_cases.process_whatsapp_message.lead_service") as mock_ls,
-        patch("app.application.use_cases.process_whatsapp_message.ai_service"),
+        patch("app.application.use_cases.process_whatsapp_message.ai_service") as mock_ai,
         patch("app.application.use_cases.process_whatsapp_message.whatsapp_service") as mock_ws,
-        patch("app.application.use_cases.process_whatsapp_message._enqueue_message_received_notification"),
+        patch("app.infrastructure.persistence.repositories.briefing_repository.BriefingRepository") as mock_br,
+        patch("app.application.use_cases.process_whatsapp_message._enqueue_qualified_notification", new=AsyncMock()),
     ):
-        mock_ls.upsert_lead_with_resilience = AsyncMock(return_value=lead)
-        mock_ls.update_lead_status = AsyncMock(return_value=lead)
-        mock_ls.get_recent_interacoes = AsyncMock(return_value=[])
-        mock_ls.save_interacao = AsyncMock(return_value=interacao)
-        mock_ls.update_interacao_send_result = AsyncMock()
-
+        mock_ws.mark_as_read = AsyncMock()
+        mock_ws.send_message = AsyncMock(return_value=send_result)
         mock_ws.extract_message_from_payload = MagicMock(return_value={
             "phone": "5584999990001",
             "text": None,
@@ -310,20 +336,22 @@ async def test_image_message_uses_generic_fallback_not_audio_reply():
             "message_id": "wamid.img001",
             "media_id": "img_001",
         })
-        mock_ws.download_media = AsyncMock(return_value=None)
-        mock_ws.send_message = AsyncMock(return_value=send_result)
+
+        _common_ls_setup(mock_ls, lead, interacao)
+        _common_ai_setup(mock_ai)
+        mock_br.return_value.get_by_lead = AsyncMock(return_value=None)
+        mock_br.return_value.get_by_lead_id = AsyncMock(return_value=None)
 
         await process_whatsapp_message.execute(_image_payload(), db)
 
     sent_text: str = mock_ws.send_message.call_args[0][1]
     assert sent_text == MEDIA_FALLBACK_REPLY
     assert sent_text != AUDIO_FALLBACK_REPLY
-    mock_ws.download_media.assert_not_awaited()
 
 
 @pytest.mark.asyncio
 async def test_text_message_unaffected_by_audio_changes():
-    """Text messages still go through AI and are not affected by audio handling."""
+    """Text messages go through orchestrator; audio handling code is not triggered."""
     db = AsyncMock()
     lead = _fake_lead()
     interacao = _fake_interacao()
@@ -334,22 +362,13 @@ async def test_text_message_unaffected_by_audio_changes():
         patch("app.application.use_cases.process_whatsapp_message.lead_service") as mock_ls,
         patch("app.application.use_cases.process_whatsapp_message.ai_service") as mock_ai,
         patch("app.application.use_cases.process_whatsapp_message.whatsapp_service") as mock_ws,
-        patch("app.application.use_cases.process_whatsapp_message._enqueue_message_received_notification"),
-        patch("app.application.use_cases.process_whatsapp_message.curadoria_service") as mock_cs,
+        patch("app.application.use_cases.process_whatsapp_message.multi_agent_orchestrator") as mock_orc,
+        patch("app.application.use_cases.process_whatsapp_message.model_router") as mock_mr,
+        patch("app.infrastructure.persistence.repositories.briefing_repository.BriefingRepository") as mock_br,
+        patch("app.application.use_cases.process_whatsapp_message._enqueue_qualified_notification", new=AsyncMock()),
     ):
-        mock_ls.upsert_lead_with_resilience = AsyncMock(return_value=lead)
-        mock_ls.update_lead_status = AsyncMock(return_value=lead)
-        mock_ls.get_recent_interacoes = AsyncMock(return_value=[])
-        mock_ls.update_briefing_from_extraction = AsyncMock(
-            return_value=MagicMock(completude_pct=30, destino=None)
-        )
-        mock_ls.save_interacao = AsyncMock(return_value=interacao)
-        mock_ls.update_interacao_send_result = AsyncMock()
-
-        mock_ai.process_message = AsyncMock(return_value=ai_reply)
-        mock_ai.extract_briefing = AsyncMock(return_value=MagicMock())
-        mock_ai.preload_memory_from_db = MagicMock()
-
+        mock_ws.mark_as_read = AsyncMock()
+        mock_ws.send_message = AsyncMock(return_value=send_result)
         mock_ws.extract_message_from_payload = MagicMock(return_value={
             "phone": "5584999990001",
             "text": "Quero viajar",
@@ -358,15 +377,17 @@ async def test_text_message_unaffected_by_audio_changes():
             "message_id": "wamid.text001",
             "media_id": None,
         })
-        mock_ws.download_media = AsyncMock()
-        mock_ws.send_message = AsyncMock(return_value=send_result)
 
-        mock_cs.deve_oferecer_curadoria = MagicMock(return_value=False)
+        _common_ls_setup(mock_ls, lead, interacao)
+        _common_ai_setup(mock_ai)
+        mock_br.return_value.get_by_lead = AsyncMock(return_value=None)
+        mock_br.return_value.get_by_lead_id = AsyncMock(return_value=None)
+        mock_orc.orchestrate = AsyncMock(return_value=ai_reply)
 
         await process_whatsapp_message.execute(_text_payload(), db)
 
     mock_ws.send_message.assert_awaited_once_with("5584999990001", ai_reply)
-    mock_ws.download_media.assert_not_awaited()
+    mock_mr.route_media_message.assert_not_called()
 
 
 # ── download_media unit tests ─────────────────────────────────────────────────
@@ -375,7 +396,9 @@ async def test_text_message_unaffected_by_audio_changes():
 @pytest.mark.asyncio
 async def test_download_media_success(monkeypatch):
     """Two-step fetch succeeds → bytes returned."""
-    monkeypatch.setattr("app.services.whatsapp_service.settings.WHATSAPP_TOKEN", "tok")
+    mock_settings = MagicMock()
+    mock_settings.WHATSAPP_TOKEN = "tok"
+    monkeypatch.setattr("app.services.whatsapp_service.get_settings", lambda: mock_settings)
 
     audio_bytes = b"FAKE_AUDIO_DATA"
 
@@ -398,7 +421,9 @@ async def test_download_media_success(monkeypatch):
 @pytest.mark.asyncio
 async def test_download_media_step1_http_error_returns_none(monkeypatch):
     """Step-1 (URL resolution) HTTP error → returns None without raising."""
-    monkeypatch.setattr("app.services.whatsapp_service.settings.WHATSAPP_TOKEN", "tok")
+    mock_settings = MagicMock()
+    mock_settings.WHATSAPP_TOKEN = "tok"
+    monkeypatch.setattr("app.services.whatsapp_service.get_settings", lambda: mock_settings)
 
     async def mock_get(self, url, **kwargs):
         resp = MagicMock()
@@ -415,7 +440,9 @@ async def test_download_media_step1_http_error_returns_none(monkeypatch):
 @pytest.mark.asyncio
 async def test_download_media_step2_http_error_returns_none(monkeypatch):
     """Step-2 (actual download) HTTP error → returns None without raising."""
-    monkeypatch.setattr("app.services.whatsapp_service.settings.WHATSAPP_TOKEN", "tok")
+    mock_settings = MagicMock()
+    mock_settings.WHATSAPP_TOKEN = "tok"
+    monkeypatch.setattr("app.services.whatsapp_service.get_settings", lambda: mock_settings)
 
     call_count = 0
 
@@ -440,7 +467,9 @@ async def test_download_media_step2_http_error_returns_none(monkeypatch):
 @pytest.mark.asyncio
 async def test_download_media_network_error_returns_none(monkeypatch):
     """Network/connection error during step-1 → returns None without raising."""
-    monkeypatch.setattr("app.services.whatsapp_service.settings.WHATSAPP_TOKEN", "tok")
+    mock_settings = MagicMock()
+    mock_settings.WHATSAPP_TOKEN = "tok"
+    monkeypatch.setattr("app.services.whatsapp_service.get_settings", lambda: mock_settings)
 
     async def mock_get(self, url, **kwargs):
         raise httpx.ConnectError("Connection refused")
@@ -454,7 +483,9 @@ async def test_download_media_network_error_returns_none(monkeypatch):
 @pytest.mark.asyncio
 async def test_download_media_missing_url_in_response_returns_none(monkeypatch):
     """Step-1 returns 200 but no `url` key → returns None."""
-    monkeypatch.setattr("app.services.whatsapp_service.settings.WHATSAPP_TOKEN", "tok")
+    mock_settings = MagicMock()
+    mock_settings.WHATSAPP_TOKEN = "tok"
+    monkeypatch.setattr("app.services.whatsapp_service.get_settings", lambda: mock_settings)
 
     async def mock_get(self, url, **kwargs):
         resp = MagicMock()

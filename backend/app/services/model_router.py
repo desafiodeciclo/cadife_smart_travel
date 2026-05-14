@@ -19,8 +19,8 @@ Spec references:
 
 from __future__ import annotations
 
+import asyncio
 import base64
-import subprocess
 from typing import Optional
 
 import httpx
@@ -70,24 +70,24 @@ def select_model(msg_type: str) -> str:
     return settings.OPENROUTER_MODEL
 
 
-def _convert_to_wav(audio_bytes: bytes, src_format: str) -> bytes:
-    """Converte áudio para WAV via ffmpeg (pipe stdin→stdout, sem arquivo em disco)."""
+async def _convert_to_wav(audio_bytes: bytes, src_format: str) -> bytes:
+    """Converte áudio para WAV via ffmpeg sem bloquear o event loop."""
     cmd = [
         "ffmpeg",
-        "-f", src_format,   # formato de entrada explícito
-        "-i", "pipe:0",     # lê do stdin
-        "-ar", "16000",     # 16 kHz
-        "-ac", "1",         # mono
+        "-f", src_format,
+        "-i", "pipe:0",
+        "-ar", "16000",
+        "-ac", "1",
         "-f", "wav",
-        "pipe:1",           # escreve no stdout
+        "pipe:1",
         "-loglevel", "error",
     ]
     try:
-        result = subprocess.run(
-            cmd,
-            input=audio_bytes,
-            capture_output=True,
-            timeout=30,
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
         )
     except FileNotFoundError as exc:
         raise RuntimeError(
@@ -95,19 +95,25 @@ def _convert_to_wav(audio_bytes: bytes, src_format: str) -> bytes:
             "ou verifique o Dockerfile (apt-get install ffmpeg)."
         ) from exc
 
-    if result.returncode != 0 or not result.stdout:
+    try:
+        stdout, stderr = await asyncio.wait_for(proc.communicate(audio_bytes), timeout=30)
+    except asyncio.TimeoutError as exc:
+        proc.kill()
+        raise RuntimeError("ffmpeg excedeu timeout de 30s na conversão de áudio.") from exc
+
+    if proc.returncode != 0 or not stdout:
         raise RuntimeError(
             f"ffmpeg falhou ao converter {src_format}→wav: "
-            f"{result.stderr.decode(errors='replace')[:300]}"
+            f"{stderr.decode(errors='replace')[:300]}"
         )
 
     logger.info(
         "audio_converted_to_wav",
         src_format=src_format,
         src_bytes=len(audio_bytes),
-        wav_bytes=len(result.stdout),
+        wav_bytes=len(stdout),
     )
-    return result.stdout
+    return stdout
 
 
 async def _transcribe_with_gpt4o_audio(audio_b64: str, audio_fmt: str) -> str:
@@ -186,7 +192,7 @@ async def transcribe_audio(audio_bytes: bytes, mime_type: str) -> str:
             src_format=src_fmt,
             mime_type=normalized_mime,
         )
-        audio_wav = _convert_to_wav(audio_bytes, src_fmt)
+        audio_wav = await _convert_to_wav(audio_bytes, src_fmt)
         audio_fmt = "wav"
 
     audio_b64 = base64.b64encode(audio_wav).decode()
@@ -257,7 +263,6 @@ async def route_media_message(
     try:
         media_bytes = await download_media(media_id)
         
-        # RESOLUÇÃO DO CONFLITO: Usando a lógica mais robusta da developer
         if not media_bytes:
             logger.warning("media_download_empty", msg_type=msg_type, media_id=media_id)
             return None

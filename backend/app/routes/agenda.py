@@ -22,7 +22,7 @@ from app.models.agendamento import (
 )
 from app.models.user import User
 from app.presentation.schemas.common_errors import HTTPErrorResponse
-from app.services import lead_service
+from app.services import google_calendar_service, lead_service
 
 logger = structlog.get_logger()
 
@@ -230,11 +230,23 @@ async def create_agendamento(
             detail="Erro de integridade ao salvar. O horário pode ter sido ocupado.",
         )
 
+    # Gera link Google Meet e persiste no agendamento (best-effort — não bloqueia)
+    meet_link = await google_calendar_service.criar_evento_curadoria(
+        lead_nome=lead.nome if lead else None,
+        data=body.data,
+        hora=body.hora,
+    )
+    if meet_link:
+        agendamento.meet_link = meet_link
+        await db.commit()
+        await db.refresh(agendamento)
+
     logger.info(
         "agendamento_created",
         agendamento_id=str(agendamento.id),
         lead_id=str(body.lead_id),
         user_id=str(current_user.id),
+        meet_link=meet_link,
     )
     return AgendamentoResponse.model_validate(agendamento)
 

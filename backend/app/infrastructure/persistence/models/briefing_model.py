@@ -21,6 +21,7 @@ from sqlalchemy import (
     Date,
     Enum as SAEnum,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
@@ -29,7 +30,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.infrastructure.persistence.types import GUID, StringArray
 
-from app.domain.entities.enums import OrcamentoPerfil, PerfilViagem
+from app.domain.entities.enums import OcasiaoViagem, OrcamentoPerfil, PerfilViagem
 from app.infrastructure.persistence.database import Base
 
 if TYPE_CHECKING:
@@ -80,6 +81,8 @@ class BriefingModel(Base):
         CheckConstraint(
             "duracao_dias IS NULL OR duracao_dias >= 1", name="ck_briefings_duracao_min"
         ),
+        # audit §4.4 — speeds up queries filtering by qualification threshold
+        Index("ix_briefings_completude_pct", "completude_pct"),
         {"extend_existing": True},
     )
 
@@ -102,6 +105,11 @@ class BriefingModel(Base):
     preferencias: Mapped[Optional[list[str]]] = mapped_column(StringArray())
     orcamento: Mapped[Optional[str]] = mapped_column(orcamento_perfil_enum)
     tem_passaporte: Mapped[Optional[bool]] = mapped_column(Boolean)
+    # audit §4.1 — structured field prevents LLM from hallucinating occasion into observacoes
+    ocasiao: Mapped[Optional[str]] = mapped_column(
+        SAEnum(*[e.value for e in OcasiaoViagem], name="ocasiao_viagem_enum", create_type=False),
+        nullable=True,
+    )
     observacoes: Mapped[Optional[str]] = mapped_column(Text)
     completude_pct: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 

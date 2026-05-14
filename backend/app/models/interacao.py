@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text, func
 from sqlalchemy.dialects.postgresql import ENUM as PgEnum, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from pydantic import BaseModel
@@ -48,6 +48,8 @@ class Interacao(Base):
         String(10), nullable=True
     )  # "sent" | "failed"
     erro_envio: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    # audit §7.3 — explicit flag so CRM consultors know if client actually received the message
+    enviado: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     lead: Mapped["Lead"] = relationship("Lead", back_populates="interacoes")
 

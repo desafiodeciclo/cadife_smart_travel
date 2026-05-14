@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from typing import Optional
 
 from sqlalchemy import DateTime, ForeignKey, Integer, Text, func
 from sqlalchemy import JSON
@@ -31,4 +32,9 @@ class DeadLetterQueue(Base):
     )
     failed_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
+    )
+    # audit §4.5 — retry mechanism fields
+    tentativas: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    proximo_retry: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
     )

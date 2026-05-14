@@ -6,12 +6,11 @@ from typing import Optional
 import structlog
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_openai import ChatOpenAI
-from langchain_classic.memory import ConversationBufferWindowMemory
 
 from app.core.config import get_settings
 from app.models.briefing import BriefingExtracted, calculate_completude
 from app.services import rag_service, alert_service
-from app.services.metadata_tagger import DESTINO_KEYWORDS
+from app.services.metadata_tagger import resolve_destino_tag, resolve_perfil_tag
 from app.services.observability import get_callbacks_for_chain, flush_langfuse
 from app.services.prompt_security import (
     EXTRACTION_SYSTEM_PROMPT_SECURE,
@@ -25,6 +24,8 @@ logger = structlog.get_logger()
 settings = get_settings()
 
 _MEMORY_WINDOW_K = 20  # Mantém as últimas 20 interações como contexto
+_SUMMARY_REDIS_KEY = "memory:summary:{phone}"
+_SUMMARY_REDIS_TTL = 86_400  # 24 horas
 _SUMMARY_SYSTEM_PROMPT = """
 You are a helpful assistant that summarizes a conversation between a customer and a travel agency.
 Include the main topics discussed and any important details.
@@ -51,10 +52,12 @@ class SimpleWindowMemory:
         k: int = 20,
         memory_key: str = "chat_history",
         return_messages: bool = True,
+        phone: str | None = None,
     ) -> None:
         self.k = k
         self.memory_key = memory_key
         self.return_messages = return_messages
+        self._phone = phone
         self._buffer: list[tuple[str, str]] = []
         self._summary: str = ""
         self._pending_for_summary: list[tuple[str, str]] = []
@@ -97,6 +100,8 @@ class SimpleWindowMemory:
                 else:
                     self._summary = summary_chunk
                 logger.info("memory_summary_generated", chars=len(summary_chunk))
+                if self._phone:
+                    await _persist_summary_to_redis(self._phone, self._summary)
         except Exception as exc:
             logger.warning("memory_summary_failed", error=str(exc))
 
@@ -117,8 +122,31 @@ class SimpleWindowMemory:
         return {self.memory_key: messages}
 
 
-_memories: dict[str, ConversationBufferWindowMemory] = {}
+_memories: dict[str, SimpleWindowMemory] = {}
 _llm: Optional[ChatOpenAI] = None
+
+
+async def _load_summary_from_redis(phone: str) -> str:
+    """Carrega summary persistido no Redis (compartilhado entre workers)."""
+    try:
+        from app.infrastructure.cache.redis_client import get_redis
+        redis = get_redis()
+        stored = await redis.get(_SUMMARY_REDIS_KEY.format(phone=phone))
+        return stored or ""
+    except Exception as exc:
+        logger.warning("memory_summary_redis_load_failed", phone=phone, error=str(exc))
+        return ""
+
+
+async def _persist_summary_to_redis(phone: str, summary: str) -> None:
+    """Persiste summary no Redis para sobreviver a restarts e troca de worker."""
+    try:
+        from app.infrastructure.cache.redis_client import get_redis
+        redis = get_redis()
+        await redis.setex(_SUMMARY_REDIS_KEY.format(phone=phone), _SUMMARY_REDIS_TTL, summary)
+        logger.info("memory_summary_redis_persisted", phone=phone, chars=len(summary))
+    except Exception as exc:
+        logger.warning("memory_summary_redis_persist_failed", phone=phone, error=str(exc))
 
 
 def get_llm() -> ChatOpenAI:
@@ -147,17 +175,18 @@ def get_llm() -> ChatOpenAI:
     return _llm
 
 
-def get_memory(phone: str) -> ConversationBufferWindowMemory:
+def get_memory(phone: str) -> SimpleWindowMemory:
     if phone not in _memories:
-        _memories[phone] = ConversationBufferWindowMemory(
+        _memories[phone] = SimpleWindowMemory(
             k=_MEMORY_WINDOW_K,
             memory_key="chat_history",
             return_messages=True,
+            phone=phone,
         )
     return _memories[phone]
 
 
-def preload_memory_from_db(
+async def preload_memory_from_db(
     phone: str,
     interacoes: list[dict],
 ) -> None:
@@ -165,6 +194,8 @@ def preload_memory_from_db(
 
     Call this at the start of a conversation when memory is
     empty (e.g. after a server restart/cache clear) to restore the AI's context.
+    Also restores the compressed summary from Redis so context persists across
+    worker restarts and multi-worker deployments (audit §6 — memory store compartilhado).
 
     Args:
         phone: Customer phone number (used as memory key).
@@ -174,8 +205,11 @@ def preload_memory_from_db(
     memory = get_memory(phone)
     history = memory.load_memory_variables({})
 
-    # If the history already has messages, we don't need to preload
     if history.get("chat_history"):
+        # Buffer already populated for this worker; still sync the summary from Redis
+        # in case it was generated in a different worker/process.
+        if not memory._summary:
+            memory._summary = await _load_summary_from_redis(phone)
         return
 
     for row in interacoes[-_MEMORY_WINDOW_K:]:
@@ -184,36 +218,11 @@ def preload_memory_from_db(
         if cliente or ia:
             memory.save_context({"input": cliente}, {"output": ia})
 
+    # Restore persisted summary so older context survives cross-worker invocations.
+    if not memory._summary:
+        memory._summary = await _load_summary_from_redis(phone)
+
     logger.info("memory_preloaded_from_db", phone=phone, rows=len(interacoes))
-
-
-def _resolve_destino_tag(destino: Optional[str]) -> Optional[str]:
-    """
-    Map a free-text destination (from briefing) to a taxonomy tag for metadata filtering.
-    Returns None if no category matches (avoids over-filtering).
-    """
-    if not destino:
-        return None
-    normalized = destino.lower()
-    for category, keywords in DESTINO_KEYWORDS.items():
-        if any(kw in normalized for kw in keywords):
-            return category
-    return None
-
-
-def _resolve_perfil_tag(perfil: Optional[str]) -> Optional[str]:
-    """Map briefing perfil enum value to metadata taxonomy tag."""
-    if not perfil:
-        return None
-    _PERFIL_MAP = {
-        "casal": "Casal",
-        "família": "Família",
-        "familia": "Família",
-        "solo": "Solo",
-        "grupo": "Grupo",
-        "amigos": "Grupo",
-    }
-    return _PERFIL_MAP.get(perfil.lower())
 
 
 def _retrieve_context(
@@ -227,9 +236,9 @@ def _retrieve_context(
     is narrowed via hard-constraint metadata tags to keep context assertive.
     """
     try:
-        destino_tag = _resolve_destino_tag(briefing.destino if briefing else None)
-        perfil_tag = _resolve_perfil_tag(
-            briefing.perfil.value if briefing and briefing.perfil else None
+        destino_tag = resolve_destino_tag(briefing.destino if briefing else None)
+        perfil_tag = resolve_perfil_tag(
+            briefing.perfil if briefing and briefing.perfil else None
         )
 
         if destino_tag or perfil_tag:
@@ -283,6 +292,10 @@ async def process_message(
     try:
         llm = get_llm()
         memory = get_memory(phone)
+
+        # Comprime histórico overflow antes de processar — evita perda de contexto
+        if memory.has_pending_summary():
+            await memory.compress_pending(llm)
 
         # 1. Sanitizar entrada do usuário contra prompt injection
         safe_message = sanitize_user_input(message)
@@ -444,11 +457,12 @@ async def extract_briefing(conversation: list[dict]) -> BriefingExtracted:
         )
 
     # -----------------------------------------------------------------------
-    # TENTATIVA 2 — Fallback: autocorreção com prompt explícito (Gemini)
+    # TENTATIVA 2 — Fallback: autocorreção com modelo diferente (FALLBACK_MODEL)
+    # Usa modelo distinto do primário para contornar falhas estruturais do provider.
     # -----------------------------------------------------------------------
     try:
         fallback_llm = ChatOpenAI(
-            model=settings.OPENROUTER_MODEL,
+            model=settings.OPENROUTER_FALLBACK_MODEL,
             temperature=0.0,
             timeout=15,
             max_retries=1,

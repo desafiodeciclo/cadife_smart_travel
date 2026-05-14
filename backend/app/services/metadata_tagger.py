@@ -562,6 +562,47 @@ def build_chroma_filter(
 
 
 # ---------------------------------------------------------------------------
+# Public resolvers — map free-text values to taxonomy categories
+# ---------------------------------------------------------------------------
+
+_PERFIL_BRIEFING_MAP: dict[str, str] = {
+    "casal": "Casal",
+    "família": "Família",
+    "familia": "Família",
+    "solo": "Solo",
+    "grupo": "Grupo",
+    "amigos": "Grupo",
+}
+
+
+def resolve_destino_tag(destino: str | None) -> str | None:
+    """
+    Map a free-text destination string (from briefing) to a taxonomy category
+    suitable for ChromaDB metadata filtering.
+
+    Returns None when no category matches (avoids over-filtering on unknown destinations).
+    """
+    if not destino:
+        return None
+    normalized = destino.lower()
+    for category, keywords in DESTINO_KEYWORDS.items():
+        if any(kw in normalized for kw in keywords):
+            return category
+    return None
+
+
+def resolve_perfil_tag(perfil: str | None) -> str | None:
+    """
+    Map a briefing perfil enum value to a taxonomy category for ChromaDB filtering.
+
+    Returns None when perfil is absent or unrecognised.
+    """
+    if not perfil:
+        return None
+    return _PERFIL_BRIEFING_MAP.get(perfil.lower())
+
+
+# ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 

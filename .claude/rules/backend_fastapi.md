@@ -40,7 +40,8 @@ Exemplo Aceito:
 async def verify_whatsapp_signature(request: Request, settings: Settings = Depends(get_settings)):
     signature = request.headers.get("X-Hub-Signature-256", "")
     body = await request.body()
-    expected = hmac.new(settings.WHATSAPP_TOKEN.encode(), body, hashlib.sha256).hexdigest()
+    # HMAC usa META_APP_SECRET (segredo do app Meta), NÃO o WHATSAPP_TOKEN (token de acesso)
+    expected = hmac.new(settings.META_APP_SECRET.encode(), body, hashlib.sha256).hexdigest()
     if not hmac.compare_digest(f"sha256={expected}", signature):
         raise HTTPException(status_code=403, detail="Invalid signature")
 ```

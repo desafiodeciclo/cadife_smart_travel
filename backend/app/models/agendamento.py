@@ -2,7 +2,7 @@ import uuid
 from datetime import date, datetime, time
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import Date, DateTime, ForeignKey, Time, func
+from sqlalchemy import Date, DateTime, ForeignKey, String, Time, func
 from sqlalchemy.dialects.postgresql import ENUM as PgEnum, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from pydantic import BaseModel, Field
@@ -39,6 +39,9 @@ class Agendamento(Base):
     consultor_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id")
     )
+    meet_link: Mapped[Optional[str]] = mapped_column(
+        String(512), nullable=True, default=None
+    )
     criado_em: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -69,6 +72,7 @@ class AgendamentoResponse(BaseModel):
     status: AgendamentoStatus
     tipo: AgendamentoTipo
     consultor_id: Optional[uuid.UUID]
+    meet_link: Optional[str] = None
     criado_em: datetime
 
     model_config = {"from_attributes": True}

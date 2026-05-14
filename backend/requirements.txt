@@ -16,7 +16,6 @@ pytest
 pytest-asyncio
 langchain
 langchain-community
-langchain-classic
 langchain-openai
 langchain-google-genai
 chromadb
@@ -26,6 +25,7 @@ langfuse
 rank-bm25
 python-dotenv
 tiktoken
+pypdf>=4.0.0
 pytest-cov
 pytest-mock
 aiosqlite
@@ -34,3 +34,4 @@ langgraph>=0.2.0
 google-api-python-client>=2.100.0
 google-auth-httplib2>=0.2.0
 google-auth-oauthlib>=1.1.0
+aiokafka>=0.11.0

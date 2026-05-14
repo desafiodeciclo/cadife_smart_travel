@@ -163,6 +163,18 @@ class OfferCategoria(str, Enum):
     outros = "outros"
 
 
+class OcasiaoViagem(str, Enum):
+    """Travel occasion / trip purpose (audit §4.1 — prevents LLM hallucination)."""
+
+    ferias = "ferias"
+    lua_de_mel = "lua_de_mel"
+    aniversario = "aniversario"
+    familia = "familia"
+    negocios = "negocios"
+    intercambio = "intercambio"
+    outro = "outro"
+
+
 class ItineraryItemType(str, Enum):
     """
     Itinerary item types (mirrors ItineraryItemType enum in Flutter).

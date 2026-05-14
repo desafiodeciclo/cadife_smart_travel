@@ -140,6 +140,20 @@ class Settings(BaseSettings):
         description="Path to Firebase Admin JSON credentials file",
     )
 
+    # ── Google Calendar / Meet ─────────────────────────────────────────────
+    GOOGLE_SERVICE_ACCOUNT_PATH: str = Field(
+        default="./google_service_account.json",
+        description="Path to Google service account JSON (Calendar + Meet)",
+    )
+    GOOGLE_CALENDAR_ID: str = Field(
+        default="primary",
+        description="ID do Google Calendar onde os eventos de curadoria são criados",
+    )
+    GOOGLE_CALENDAR_DELEGATE_EMAIL: str = Field(
+        default="",
+        description="E-mail do usuário a ser impersonado via domain-wide delegation (opcional)",
+    )
+
     # ── RAG / ChromaDB (spec.md §3.3) ─────────────────────────────────────
     CHROMA_PERSIST_DIR: str = Field(default="./chroma_db")
     KNOWLEDGE_BASE_DIR: str = Field(default="./knowledge_base")
@@ -168,6 +182,19 @@ class Settings(BaseSettings):
     ENCRYPTION_KEY: str = Field(default="", description="Fernet key for PII encryption")
     HASH_KEY: str = Field(
         default="", description="HMAC-SHA256 key for searchable phone hash"
+    )
+
+    # ── Kafka (mensageria assíncrona) ─────────────────────────────────────
+    KAFKA_BOOTSTRAP_SERVERS: str = Field(
+        default="localhost:9092",
+        description="Kafka broker — host:port (múltiplos separados por vírgula)",
+    )
+    KAFKA_ENABLED: bool = Field(
+        default=False,
+        description=(
+            "Habilita produtores/consumidores Kafka. "
+            "False em dev (usa BackgroundTasks); True em staging/prod."
+        ),
     )
 
     # ── Notification Queue & DLQ ──────────────────────────────────────────

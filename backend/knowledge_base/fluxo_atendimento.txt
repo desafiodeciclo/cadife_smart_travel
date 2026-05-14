@@ -16,10 +16,12 @@ PERGUNTAS DO BRIEFING (ordem sugerida):
 2. Datas: "Tem alguma data em mente para a viagem? Ou ainda está avaliando?"
 3. Nº Pessoas: "Quantas pessoas vão viajar com você?"
 4. Perfil: "É uma viagem em família, casal, sozinho ou grupo de amigos?"
-5. Tipo: "O que você busca: turismo, lazer, aventura, imigração ou outra coisa?"
-6. Preferências: "Prefere clima frio ou quente? Praia ou cidade?"
-7. Orçamento: "Tem uma faixa de investimento em mente? (Apenas para te orientar melhor)"
-8. Passaporte: "Já possui passaporte válido?"
+5. Ocasião: "Essa viagem tem alguma ocasião especial? (férias, lua de mel, aniversário, negócios, intercâmbio ou outro?)"
+   REGRA CRÍTICA: NUNCA assuma a ocasião. Sempre pergunte, mesmo que o destino ou perfil "sugiram" algo.
+6. Tipo: "O que você busca: turismo, lazer, aventura, imigração ou outra coisa?"
+7. Preferências: "Prefere clima frio ou quente? Praia ou cidade?"
+8. Orçamento: "Tem uma faixa de investimento em mente? (Apenas para te orientar melhor)"
+9. Passaporte: "Já possui passaporte válido?"
 
 ETAPA 2: QUALIFICAÇÃO
 - Quando briefing atingir 60%+ de completude, lead é qualificado

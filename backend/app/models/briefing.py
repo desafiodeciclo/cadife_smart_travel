@@ -10,7 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from app.infrastructure.persistence.types import GUID, StringArray
 
 from app.core.database import Base
-from app.domain.entities.enums import PerfilViagem, OrcamentoPerfil as OrcamentoNivel
+from app.domain.entities.enums import OcasiaoViagem, OrcamentoPerfil as OrcamentoNivel, PerfilViagem
 
 # Aliases the LLM commonly returns (accented, translated, or misspelled).
 # Maps variant → canonical DB enum value (no accents, as defined in PerfilViagem/OrcamentoPerfil).
@@ -83,6 +83,15 @@ class Briefing(Base):
         nullable=True,
     )
     tem_passaporte: Mapped[Optional[bool]] = mapped_column(Boolean)
+    ocasiao: Mapped[Optional[OcasiaoViagem]] = mapped_column(
+        SAEnum(
+            OcasiaoViagem,
+            name="ocasiao_viagem_enum",
+            create_type=False,
+            values_callable=lambda obj: [e.value for e in obj],
+        ),
+        nullable=True,
+    )
     observacoes: Mapped[Optional[str]] = mapped_column(Text)
     completude_pct: Mapped[int] = mapped_column(Integer, default=0)
 
@@ -141,6 +150,13 @@ class BriefingExtracted(BaseModel):
         None,
         description="True se o cliente confirmou que possui passaporte válido, False se disse que não tem.",
     )
+    ocasiao: Optional[OcasiaoViagem] = Field(
+        None,
+        description=(
+            "Motivo ou ocasião da viagem: ferias, lua_de_mel, aniversario, familia, "
+            "negocios, intercambio ou outro. Extraia APENAS se mencionado explicitamente."
+        ),
+    )
     observacoes: Optional[str] = Field(
         None,
         description="Notas adicionais, restrições alimentares, celebrações ou pedidos especiais.",
@@ -183,6 +199,7 @@ class BriefingUpdate(BaseModel):
     preferencias: Optional[list[str]] = None
     orcamento: Optional[OrcamentoNivel] = None
     tem_passaporte: Optional[bool] = None
+    ocasiao: Optional[OcasiaoViagem] = None
     observacoes: Optional[str] = None
 
 
@@ -199,6 +216,7 @@ class BriefingResponse(BaseModel):
     preferencias: Optional[list[str]]
     orcamento: Optional[str]
     tem_passaporte: Optional[bool]
+    ocasiao: Optional[str]
     observacoes: Optional[str]
     completude_pct: int
 

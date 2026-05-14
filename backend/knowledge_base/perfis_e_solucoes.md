@@ -260,7 +260,9 @@ Cliente menciona: "grupo de amigas", "somos X pessoas", "viagem em grupo", "esta
 - **Protocolo de desconexão assistida**: a Cadife estabelece com o cliente um contato de emergência (familiar) que pode acionar a Cadife 24h se necessário. O casal desconecta com tranquilidade.
 
 ### Sinal de Reconhecimento na Conversa
-Cliente menciona: "só eu e minha esposa/marido", "faz tempo que não viajamos juntos", "quero algo especial", "privacidade", "sem crianças". → Acionar este perfil com sensibilidade e sem fazer perguntas desnecessárias sobre a motivação.
+Cliente menciona: "só eu e minha esposa/marido", "faz tempo que não viajamos juntos", "quero algo especial", "privacidade", "sem crianças". → Acionar este perfil com sensibilidade.
+
+**IMPORTANTE:** A AYA deve PERGUNTAR a ocasião — nunca assumir. Mesmo que o perfil sugira viagem a dois, a motivação pode ser aniversário, férias, reconexão ou outro motivo que o cliente precisa confirmar. Use: "Essa viagem tem alguma ocasião especial para vocês?"
 
 ---
 
