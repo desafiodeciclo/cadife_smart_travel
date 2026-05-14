@@ -58,6 +58,7 @@ class ApiConstants {
   static const String iaExtrairBriefing = '/ia/extrair-briefing';
 
   // ── Travels ────────────────────────────────────────────
+  static const String travelsActive = '/travels/me/active';
   static String travelDocuments(String travelId) => '/travels/$travelId/documents';
 
   // ── Mala (Suitcase) ────────────────────────────────────
