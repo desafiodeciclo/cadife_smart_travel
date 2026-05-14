@@ -24,7 +24,7 @@ class Interacao(Base):
         GUID(), primary_key=True, default=uuid.uuid4
     )
     lead_id: Mapped[uuid.UUID] = mapped_column(
-        GUID(), ForeignKey("leads.id"), nullable=False, index=True
+        GUID(), ForeignKey("leads.id", ondelete="CASCADE"), nullable=False, index=True
     )
     mensagem_cliente: Mapped[Optional[str]] = mapped_column(Text)
     mensagem_ia: Mapped[Optional[str]] = mapped_column(Text)

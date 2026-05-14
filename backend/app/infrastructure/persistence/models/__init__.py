@@ -62,6 +62,9 @@ from app.infrastructure.persistence.models.proposta_versao_model import (
 from app.infrastructure.persistence.models.audit_log_model import (
     AuditLog,
 )  # noqa: F401
+from app.infrastructure.persistence.models.password_reset_token_model import (
+    PasswordResetTokenModel,
+)  # noqa: F401
 
 # Notification queue models (side-effect imports to register metadata)
 from app.models.notification_queue import NotificationQueue  # noqa: F401
@@ -87,6 +90,7 @@ __all__ = [
     "RevokedTokenModel",
     "SaleGoalModel",
     "PropostaVersaoModel",
+    "PasswordResetTokenModel",
     "NotificationQueue",
     "DeadLetterQueue",
     "AuditLog",
