@@ -20,23 +20,35 @@ class AgendaRepositoryImpl implements IAgendaRepository {
 
   @override
   Future<Either<Failure, List<Agendamento>>> getAgenda({DateTime? date}) async {
+    // Backend canonical query param is `data` (PT). The legacy `date` (EN)
+    // is still accepted server-side but emits a deprecation warning — we
+    // already use `data` here so no warning is raised.
+    final dataParam = date != null
+        ? '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}'
+        : null;
     try {
       final response = await _dio.get(
         ApiConstants.agenda,
-        queryParameters: {if (date != null) 'date': date.toIso8601String()},
+        queryParameters: {'data': ?dataParam},
       );
-      final items = (response.data as List)
+      // Backend now returns AgendamentoListResponse: { items, total, data }
+      // Old contract returned a bare list — accept both for transition period.
+      final raw = response.data;
+      final List<dynamic> rawItems = raw is Map<String, dynamic>
+          ? (raw['items'] as List<dynamic>? ?? const <dynamic>[])
+          : (raw as List<dynamic>);
+      final items = rawItems
           .map((e) => Agendamento.fromJson(e as Map<String, dynamic>))
           .toList();
 
       await _offlineManager.saveToCache(
-        '$_cacheKeyPrefix:list:${date?.toIso8601String() ?? 'all'}',
-        response.data,
+        '$_cacheKeyPrefix:list:${dataParam ?? 'all'}',
+        rawItems,
       );
       return Right(items);
     } on DioException catch (e) {
       final cached = _offlineManager.getFromCacheOffline(
-        '$_cacheKeyPrefix:list:${date?.toIso8601String() ?? 'all'}',
+        '$_cacheKeyPrefix:list:${dataParam ?? 'all'}',
       );
       if (cached != null) {
         return Right((cached as List)
@@ -134,45 +146,65 @@ class AgendaRepositoryImpl implements IAgendaRepository {
 
   @override
   Future<Either<Failure, List<TimeSlotModel>>> getAvailableSlots(DateTime date) async {
+    // Canonical endpoint is /agenda/disponibilidade. The legacy /agenda/slots
+    // is kept as a deprecated alias on the backend; we already migrated here.
+    final dataParam =
+        '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
     try {
       final response = await _dio.get(
-        '${ApiConstants.agenda}/slots',
-        queryParameters: {'date': date.toIso8601String()},
+        '${ApiConstants.agenda}/disponibilidade',
+        queryParameters: {'data': dataParam},
       );
-      final slots = (response.data as List)
-          .map(
-            (e) => TimeSlotModel(
-              startTime: DateTime.parse(e['start_time'] as String),
-              endTime: DateTime.parse(e['end_time'] as String),
-              available: e['available'] as bool,
-            ),
-          )
+      // Backend payload: { "slots": [{ "data", "hora": "HH:00", "disponivel": bool }] }
+      final raw = response.data;
+      final slotsList = raw is Map<String, dynamic>
+          ? (raw['slots'] as List<dynamic>? ?? const <dynamic>[])
+          : (raw as List<dynamic>);
+      final slots = slotsList
+          .map((e) => _slotFromBackend(e as Map<String, dynamic>, date))
           .toList();
 
       await _offlineManager.saveToCache(
-        '$_cacheKeyPrefix:slots:${date.toIso8601String()}',
-        response.data,
+        '$_cacheKeyPrefix:slots:$dataParam',
+        slotsList,
       );
       return Right(slots);
     } on DioException catch (e) {
       final cached = _offlineManager.getFromCacheOffline(
-        '$_cacheKeyPrefix:slots:${date.toIso8601String()}',
+        '$_cacheKeyPrefix:slots:$dataParam',
       );
       if (cached != null) {
         return Right((cached as List)
-            .map(
-              (e) => TimeSlotModel(
-                startTime: DateTime.parse(e['start_time'] as String),
-                endTime: DateTime.parse(e['end_time'] as String),
-                available: e['available'] as bool,
-              ),
-            )
+            .map((e) => _slotFromBackend(e as Map<String, dynamic>, date))
             .toList());
       }
       return Left(_handleDioError(e));
     } on Exception catch (e) {
       return Left(GenericFailure(e.toString()));
     }
+  }
+
+  /// Maps the backend `SlotDisponivel` shape (data + hora "HH:00" + disponivel)
+  /// to the front's `TimeSlotModel` (startTime + endTime + available).
+  /// Slot duration is the canonical 60min step from spec §8.1.
+  TimeSlotModel _slotFromBackend(Map<String, dynamic> e, DateTime referenceDate) {
+    final hora = e['hora'] as String; // "HH:MM"
+    final parts = hora.split(':');
+    final hour = int.parse(parts[0]);
+    final minute = parts.length > 1 ? int.parse(parts[1]) : 0;
+    final start = DateTime(
+      referenceDate.year,
+      referenceDate.month,
+      referenceDate.day,
+      hour,
+      minute,
+    );
+    final end = start.add(const Duration(hours: 1));
+    return TimeSlotModel(
+      startTime: start,
+      endTime: end,
+      available: e['disponivel'] as bool? ?? false,
+    );
   }
 
   Failure _handleDioError(DioException e) {

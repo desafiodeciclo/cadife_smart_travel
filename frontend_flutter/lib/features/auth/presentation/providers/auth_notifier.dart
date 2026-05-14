@@ -19,7 +19,7 @@ class AuthNotifier extends AsyncNotifier<AuthUser?> {
       (failure) => null,
       (logged) async {
         if (!logged) return null;
-        final userResult = await _repository.getCurrentUser();
+        final userResult = await _repository.getUserProfile();
         return userResult.fold((_) => null, (user) => user);
       },
     );

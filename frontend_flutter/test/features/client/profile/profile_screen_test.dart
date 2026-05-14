@@ -20,7 +20,7 @@ class _FakeProfileRepository implements IProfileRepository {
   _FakeProfileRepository({AuthUser? user}) : _user = user;
 
   @override
-  Future<Either<Failure, AuthUser>> getCurrentUser() async => Right(_user!);
+  Future<Either<Failure, AuthUser>> getUserProfile() async => Right(_user!);
 
   @override
   Future<Either<Failure, AuthUser>> updateProfile({
