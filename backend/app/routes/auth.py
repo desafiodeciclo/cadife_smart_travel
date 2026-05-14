@@ -14,17 +14,67 @@ from app.models.user import (
     FcmTokenResponse,
     LoginRequest,
     RefreshRequest,
+    RegisterRequest,
     TokenResponse,
+    User,
     UserResponse,
 )
 from app.presentation.schemas.common_errors import HTTPErrorResponse
 from app.services.user_service import (
+    create_user,
     get_user_by_email,
     get_user_by_id,
 )
 from app.infrastructure.security.rate_limiter import limiter
 
 router = APIRouter(tags=["Auth"])
+
+
+@router.post(
+    "/auth/register",
+    response_model=TokenResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Cadastro de novo usuário",
+    description="Cria uma conta de cliente e retorna um par de tokens JWT.",
+    responses={
+        409: {"description": "E-mail já cadastrado", "model": HTTPErrorResponse},
+        422: {"description": "Erro de validação no body", "model": HTTPErrorResponse},
+        429: {"description": "Too Many Requests - Rate Limit excedido"},
+    },
+)
+@limiter.limit("5/minute")
+async def register(
+    request: Request,
+    body: RegisterRequest,
+    db: AsyncSession = Depends(get_db),
+) -> TokenResponse:
+    existing = await get_user_by_email(db, body.email)
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="E-mail já cadastrado",
+        )
+    user = await create_user(db, nome=body.nome, email=body.email, password=body.password)
+    return TokenResponse(
+        access_token=create_access_token(str(user.id)),
+        refresh_token=create_refresh_token(str(user.id)),
+    )
+
+
+@router.post(
+    "/auth/logout",
+    status_code=status.HTTP_200_OK,
+    summary="Logout de usuário",
+    description=(
+        "Encerra a sessão. JWT é stateless — o cliente deve descartar os tokens localmente. "
+        "Endpoint existe para garantir compatibilidade com o contrato da API."
+    ),
+)
+async def logout(
+    _: Request,
+    current_user: User = Depends(verify_jwt),
+) -> dict:
+    return {"detail": "Logout realizado com sucesso"}
 
 
 @router.post(

@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:cadife_smart_travel/core/constants/api_constants.dart';
 import 'package:cadife_smart_travel/core/di/service_locator.dart';
-import 'package:cadife_smart_travel/features/client/home/infrastructure/mocks/client_home_mocks.dart';
 import 'package:cadife_smart_travel/features/client/itinerary/domain/entities/itinerary_item.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -23,10 +22,6 @@ class ItineraryService {
   static String _pendingKey(String leadId) => 'day_note_${leadId}_pending';
 
   Future<List<ItineraryItem>> fetchItinerary(String leadId) async {
-    if (leadId.startsWith('trip') || leadId == 'mock-lead-123' || leadId.isEmpty) {
-      return ClientHomeMocks.mockItineraryItems(leadId.isEmpty ? 'trip-1' : leadId);
-    }
-
     try {
       final response = await _dio.get(ApiConstants.leadItinerary(leadId));
       final data = response.data as Map<String, dynamic>;

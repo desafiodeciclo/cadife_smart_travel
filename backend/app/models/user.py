@@ -5,7 +5,7 @@ from typing import Optional
 
 from sqlalchemy import Boolean, DateTime, String, func
 from sqlalchemy.orm import Mapped, mapped_column
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.core.database import Base
 from app.infrastructure.persistence.types import GUID, StringArray
@@ -95,3 +95,11 @@ class FcmTokenRequest(BaseModel):
 
 class FcmTokenResponse(BaseModel):
     message: str
+
+
+class RegisterRequest(BaseModel):
+    nome: str
+    email: str
+    password: str = Field(min_length=8)
+
+    model_config = {"str_strip_whitespace": True}

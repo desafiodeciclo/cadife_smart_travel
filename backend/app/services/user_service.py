@@ -4,7 +4,22 @@ from typing import Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.security import hash_password
 from app.models.user import User, UserProfileUpdate
+
+
+async def create_user(
+    db: AsyncSession, *, nome: str, email: str, password: str
+) -> User:
+    user = User(
+        nome=nome,
+        email=email,
+        hashed_password=hash_password(password),
+    )
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    return user
 
 
 async def get_user_by_email(db: AsyncSession, email: str) -> Optional[User]:
