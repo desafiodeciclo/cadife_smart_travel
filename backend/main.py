@@ -5,6 +5,7 @@ FastAPI application factory following Clean Architecture.
 Registers middlewares, routers, and startup/shutdown lifecycle hooks.
 """
 
+import re
 from contextlib import asynccontextmanager
 
 import structlog
@@ -163,6 +164,16 @@ app.add_middleware(
 )
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(AuditTrailMiddleware)
+
+
+# Normaliza barras duplas vindas de proxies upstream (ex: AlphaEdtech //health → /health)
+@app.middleware("http")
+async def normalize_double_slash(request, call_next):
+    if "//" in request.url.path:
+        scope = request.scope
+        scope["path"] = re.sub(r"/+", "/", scope["path"])
+        scope["raw_path"] = scope["path"].encode()
+    return await call_next(request)
 
 # -------------------------------------------------------------------
 # Routers
