@@ -75,7 +75,7 @@ class Settings(BaseSettings):
         description="Modelo para embeddings RAG (base de conhecimento Cadife)",
     )
     OPENROUTER_TRIAGEM_MODEL: str = Field(
-        default="qwen/qwen-2.5-72b-instruct:free",
+        default="qwen/qwen3-next-80b-a3b-instruct:free",
         description="TriagemAgent — extração JSON estruturado do CRM (identificação cliente novo/recorrente)",
     )
     OPENROUTER_CONVERSION_MODEL: str = Field(
@@ -91,7 +91,7 @@ class Settings(BaseSettings):
         description="Modelo de geração de imagens inspiracionais ao final do briefing (recraft-v4 quando disponível via OpenRouter)",
     )
     OPENROUTER_FALLBACK_MODEL: str = Field(
-        default="qwen/qwen-2.5-72b-instruct:free",
+        default="qwen/qwen3-next-80b-a3b-instruct:free",
         description="Modelo fallback econômico para redundância quando cadeia principal falha",
     )
 

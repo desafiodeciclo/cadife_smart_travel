@@ -64,7 +64,7 @@ _DEFAULT_HEADERS = {
 
 # Cadeias de fallback por agente — percorridas em 429/503
 _TRIAGEM_FREE_MODELS: list[str] = [
-    "qwen/qwen-2.5-72b-instruct:free",
+    "qwen/qwen3-next-80b-a3b-instruct:free",
     "meta-llama/llama-3.3-70b-instruct:free",
 ]
 _ORCHESTRATOR_FREE_MODELS: list[str] = [
