@@ -10,11 +10,11 @@ from app.presentation.schemas.leads import (
 from .lead_schema import LeadCreateSchema, LeadUpdateSchema, LeadResponseSchema
 from .briefing_schema import BriefingSchema, BriefingResponse
 from .offer_schema import (
-    OfferCreate,
-    OfferListItem,
-    OfferListResponse,
+    OfferCreateRequest,
+    OfferUpdateRequest,
+    OffersListResponse,
     OfferResponse,
-    OfferUpdate,
+    OfferDetailResponse,
 )
 
 __all__ = [
@@ -29,9 +29,9 @@ __all__ = [
     "LeadResponseSchema",
     "BriefingSchema",
     "BriefingResponse",
-    "OfferCreate",
-    "OfferUpdate",
+    "OfferCreateRequest",
+    "OfferUpdateRequest",
     "OfferResponse",
-    "OfferListItem",
-    "OfferListResponse",
+    "OfferDetailResponse",
+    "OffersListResponse",
 ]

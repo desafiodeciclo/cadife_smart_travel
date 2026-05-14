@@ -7,8 +7,6 @@ import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:cadife_smart_travel/features/settings/application/theme_notifier.dart';
-import 'package:cadife_smart_travel/providers/auth_provider.dart';
-import 'package:cadife_smart_travel/services/api_service.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -64,37 +62,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     final email = _emailController.text.trim();
     final password = _passwordController.text;
-    debugPrint('LOGIN SCREEN: email="$email", password="$password"');
 
-    // 1. Call existing AuthNotifier login (handles BLoC state)
+    // AuthNotifier login handles the HTTP request, token storage, and state update.
+    // GoRouter redirect automatically navigates to the correct dashboard on success.
     await ref.read(authNotifierProvider.notifier).login(email, password);
-
-    // 2. If login succeeded, also save token via ApiService and fetch /users/me
-    final authResult = ref.read(authNotifierProvider);
-    if (!authResult.hasError && !authResult.isLoading) {
-      try {
-        final apiService = ref.read(apiServiceProvider);
-        final response = await apiService.post('/auth/login', {
-          'email': email,
-          'password': password,
-        });
-        // 3. Save token to secure storage
-        final token = response['access_token'] as String;
-        await apiService.saveToken(token);
-        // 4. Invalidate currentUserProvider to fetch fresh data
-        ref.invalidate(currentUserProvider);
-        // 5. Navigate to home
-        if (context.mounted) {
-          context.go('/home');
-        }
-      } catch (e) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Login failed: $e')),
-          );
-        }
-      }
-    }
   }
 
   @override

@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 """
 Test Configuration — Pytest fixtures for database, auth, and client setup.
 ========================================================================
@@ -7,7 +5,6 @@ This file configures the test suite to use an in-memory SQLite database
 (via aiosqlite) instead of PostgreSQL, allowing for fast, isolated tests.
 """
 
->>>>>>> origin/developer
 import asyncio
 import os
 import uuid
@@ -35,25 +32,21 @@ os.environ["ENCRYPTION_KEY"] = "858iXm1S2iXN5sH3W6V-q7W_U8U7z6T5S4R3Q2P1O0N="
 os.environ["HASH_KEY"] = "f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7"
 os.environ["REDIS_PREFIX"] = "CACHE"
 
-<<<<<<< HEAD
 # ── Import ALL models to avoid 'name not defined' errors ────────────────
-# Import infrastructure models (Clean Architecture)
-import app.infrastructure.persistence.models.user_model  # noqa: F401
-=======
-# Eagerly import all ORM models to avoid relationship mapper errors
+# Import legacy models (Core)
 import app.models.lead  # noqa: F401
+import app.models.user  # noqa: F401
 import app.models.briefing  # noqa: F401
 import app.models.interacao  # noqa: F401
 import app.models.agendamento  # noqa: F401
 import app.models.proposta  # noqa: F401
-import app.models.user  # noqa: F401
 import app.models.offer  # noqa: F401
 import app.models.notification_queue  # noqa: F401
 import app.models.dead_letter_queue  # noqa: F401
 import app.models.lead_score_history  # noqa: F401
 
-# Import persistence models (Sync Base.metadata)
->>>>>>> origin/developer
+# Import infrastructure models (Clean Architecture)
+import app.infrastructure.persistence.models.user_model  # noqa: F401
 import app.infrastructure.persistence.models.lead_model  # noqa: F401
 import app.infrastructure.persistence.models.briefing_model  # noqa: F401
 import app.infrastructure.persistence.models.interacao_model  # noqa: F401
@@ -63,29 +56,12 @@ import app.infrastructure.persistence.models.documento_model  # noqa: F401
 import app.infrastructure.persistence.models.suitcase_model  # noqa: F401
 import app.infrastructure.persistence.models.offer_model  # noqa: F401
 import app.infrastructure.persistence.models.travel_diary_model  # noqa: F401
-<<<<<<< HEAD
+import app.infrastructure.persistence.models.travel_model  # noqa: F401
 import app.infrastructure.persistence.models.conversation_summary_model  # noqa: F401
 import app.infrastructure.persistence.models.itinerary_model  # noqa: F401
 import app.infrastructure.persistence.models.aya_toggle_history_model  # noqa: F401
 import app.infrastructure.persistence.models.lead_score_history_model  # noqa: F401
 
-# Import legacy models (Core)
-import app.models.lead  # noqa: F401
-import app.models.user  # noqa: F401
-import app.models.briefing  # noqa: F401
-import app.models.interacao  # noqa: F401
-import app.models.agendamento  # noqa: F401
-import app.models.proposta  # noqa: F401
-import app.models.offer  # noqa: F401
-
-=======
-
-# --- RESOLUÇÃO DO CONFLITO: Incluindo ambos os modelos ---
-import app.infrastructure.persistence.models.travel_model  # noqa: F401
-import app.infrastructure.persistence.models.conversation_summary_model  # noqa: F401
-# ---------------------------------------------------------
-
->>>>>>> origin/developer
 from main import app
 from app.infrastructure.persistence.database import Base as InfraBase
 from app.core.database import Base as CoreBase
@@ -96,10 +72,6 @@ from app.infrastructure.config.settings import get_settings
 
 settings = get_settings()
 
-<<<<<<< HEAD
-test_engine = create_async_engine(settings.DATABASE_URL, echo=False, future=True)
-TestSessionLocal = async_sessionmaker(test_engine, class_=AsyncSession, expire_on_commit=False)
-=======
 # ── Test Database Engine ────────────────────────────────────────────────
 test_engine = create_async_engine(
     settings.DATABASE_URL,
@@ -114,7 +86,6 @@ TestSessionLocal = async_sessionmaker(
     autocommit=False,
     autoflush=False,
 )
->>>>>>> origin/developer
 
 @pytest.fixture(scope="session")
 def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
@@ -124,10 +95,7 @@ def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
 
 @pytest.fixture(scope="function")
 def setup_database(event_loop) -> None:
-<<<<<<< HEAD
-=======
     """Create and drop all tables in the test database."""
->>>>>>> origin/developer
     async def _setup() -> None:
         async with test_engine.begin() as conn:
             # Create tables from InfraBase first (primary)
@@ -154,18 +122,12 @@ def setup_database(event_loop) -> None:
 
 @pytest.fixture()
 async def db_session(setup_database) -> AsyncGenerator[AsyncSession, None]:
-<<<<<<< HEAD
-=======
     """Create a new database session for a test."""
->>>>>>> origin/developer
     async with TestSessionLocal() as session:
         yield session
         await session.rollback()
 
-<<<<<<< HEAD
-=======
 # ── FastAPI Dependency Overrides ───────────────────────────────────────
->>>>>>> origin/developer
 @pytest.fixture()
 def override_get_db(db_session: AsyncSession):
     async def _get_db():
@@ -193,37 +155,24 @@ def override_get_current_user():
     yield mock_user
     app.dependency_overrides.pop(get_current_user, None)
 
-<<<<<<< HEAD
-=======
 # ── Test Clients ────────────────────────────────────────────────────────
->>>>>>> origin/developer
 @pytest.fixture()
 def client(override_get_db, override_get_current_user) -> TestClient:
     return TestClient(app)
 
 @pytest.fixture()
-<<<<<<< HEAD
-async def async_client(override_get_db, override_get_current_user) -> AsyncGenerator[AsyncClient, None]:
-=======
 async def async_client(
     override_get_db, override_get_current_user
 ) -> AsyncGenerator[AsyncClient, None]:
->>>>>>> origin/developer
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
 
-<<<<<<< HEAD
-@pytest.fixture()
-def valid_jwt_token() -> str:
-    return create_access_token("deadeade-dead-dead-dead-deadeadeadea")
-=======
 # ── JWT Fixtures ────────────────────────────────────────────────────────
 @pytest.fixture()
 def valid_jwt_token() -> str:
     user_id = "deadeade-dead-dead-dead-deadeadeadea"
     return create_access_token(user_id)
->>>>>>> origin/developer
 
 @pytest.fixture()
 def expired_jwt_token() -> str:
@@ -237,8 +186,4 @@ def expired_jwt_token() -> str:
 @pytest.fixture()
 def invalid_jwt_token() -> str:
     payload = {"sub": "deadeade-dead-dead-dead-deadeadeadea", "type": "access"}
-<<<<<<< HEAD
     return jwt.encode(payload, "wrong-secret-key", algorithm=settings.JWT_ALGORITHM)
-=======
-    return jwt.encode(payload, "wrong-secret-key", algorithm=settings.JWT_ALGORITHM)
->>>>>>> origin/developer

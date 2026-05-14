@@ -19,10 +19,16 @@ async def verify_jwt(credentials: HTTPAuthorizationCredentials = Depends(securit
             algorithms=[settings.JWT_ALGORITHM]
         )
         user_id = payload.get("sub")
+        token_type = payload.get("type")
         if user_id is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Token inválido ou expirado"
+            )
+        if token_type != "access":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token de tipo inválido"
             )
         return user_id
     except JWTError:

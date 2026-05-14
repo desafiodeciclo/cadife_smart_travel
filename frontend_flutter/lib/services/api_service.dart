@@ -1,145 +1,101 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:riverpod/riverpod.dart';
+import 'package:cadife_smart_travel/core/security/secure_config.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get_it/get_it.dart';
 
-const String API_BASE_URL = "http://10.0.2.2:8000"; // Mudar para localhost se estiver no Web ou Desktop
-
+/// Service wrapper around the project's Dio client.
+///
+/// Uses the shared [Dio] instance from [GetIt] (already configured with
+/// certificate pinning, auth interceptor, error interceptor and offline
+/// interceptor via the Dio client factory).
+///
+/// Token persistence is delegated to [SecureConfig].
 class ApiService {
-  final FlutterSecureStorage _secureStorage;
-  final http.Client _client;
-
   ApiService({
-    FlutterSecureStorage? secureStorage,
-    http.Client? client,
-  })  : _secureStorage = secureStorage ?? const FlutterSecureStorage(),
-        _client = client ?? http.Client();
+    Dio? dio,
+    SecureConfig? secureConfig,
+  })  : _dio = dio ?? GetIt.I<Dio>(),
+        _secureConfig = secureConfig ?? GetIt.I<SecureConfig>();
 
-  /// Get JWT token from secure storage
-  Future<String?> getToken() async {
-    return await _secureStorage.read(key: 'jwt_token');
-  }
+  final Dio _dio;
+  final SecureConfig _secureConfig;
 
-  /// Save JWT token to secure storage
-  Future<void> saveToken(String token) async {
-    await _secureStorage.write(key: 'jwt_token', value: token);
-  }
+  /// Clear all stored tokens.
+  Future<void> clearToken() => _secureConfig.clearTokens();
 
-  /// Clear JWT token
-  Future<void> clearToken() async {
-    await _secureStorage.delete(key: 'jwt_token');
-  }
-
-  /// Make HTTP GET request with JWT
-  Future<dynamic> get(String endpoint) async {
+  /// Generic HTTP GET.
+  Future<Map<String, dynamic>> get(String endpoint) async {
     try {
-      final token = await getToken();
-      if (token == null) {
-        throw Exception("No token found");
-      }
-      final response = await _client.get(
-        Uri.parse('$API_BASE_URL$endpoint'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      ).timeout(const Duration(seconds: 10));
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else if (response.statusCode == 401) {
-        // Token expired or invalid
+      final response = await _dio.get<Map<String, dynamic>>(endpoint);
+      return response.data ?? {};
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401) {
         await clearToken();
-        throw Exception("Unauthorized - token invalid");
-      } else {
-        throw Exception("HTTP ${response.statusCode}: ${response.body}");
+        throw Exception('Unauthorized - token invalid');
       }
-    } catch (e) {
-      print("GET Error: $e");
+      debugPrint('GET Error: $e');
       rethrow;
     }
   }
 
-  /// Make HTTP POST request with JWT
-  Future<dynamic> post(String endpoint, Map<String, dynamic> body) async {
+  /// Generic HTTP POST.
+  Future<Map<String, dynamic>> post(
+    String endpoint, {
+    Map<String, dynamic>? data,
+  }) async {
     try {
-      final token = await getToken();
-      final response = await _client.post(
-        Uri.parse('$API_BASE_URL$endpoint'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': token != null ? 'Bearer $token' : '',
-        },
-        body: jsonEncode(body),
-      ).timeout(const Duration(seconds: 10));
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return jsonDecode(response.body);
-      } else if (response.statusCode == 401) {
+      final response = await _dio.post<Map<String, dynamic>>(
+        endpoint,
+        data: data,
+      );
+      return response.data ?? {};
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401) {
         await clearToken();
-        throw Exception("Unauthorized - token invalid");
-      } else {
-        throw Exception("HTTP ${response.statusCode}: ${response.body}");
+        throw Exception('Unauthorized - token invalid');
       }
-    } catch (e) {
-      print("POST Error: $e");
+      debugPrint('POST Error: $e');
       rethrow;
     }
   }
 
-  /// Make HTTP PATCH request with JWT
-  Future<dynamic> patch(String endpoint, Map<String, dynamic> body) async {
+  /// Generic HTTP PATCH.
+  Future<Map<String, dynamic>> patch(
+    String endpoint, {
+    Map<String, dynamic>? data,
+  }) async {
     try {
-      final token = await getToken();
-      final response = await _client.patch(
-        Uri.parse('$API_BASE_URL$endpoint'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode(body),
-      ).timeout(const Duration(seconds: 10));
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else if (response.statusCode == 401) {
+      final response = await _dio.patch<Map<String, dynamic>>(
+        endpoint,
+        data: data,
+      );
+      return response.data ?? {};
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401) {
         await clearToken();
-        throw Exception("Unauthorized - token invalid");
-      } else {
-        throw Exception("HTTP ${response.statusCode}: ${response.body}");
+        throw Exception('Unauthorized - token invalid');
       }
-    } catch (e) {
-      print("PATCH Error: $e");
+      debugPrint('PATCH Error: $e');
       rethrow;
     }
   }
 
-  /// Make HTTP DELETE request with JWT
-  Future<dynamic> delete(String endpoint) async {
+  /// Generic HTTP DELETE.
+  Future<Map<String, dynamic>?> delete(String endpoint) async {
     try {
-      final token = await getToken();
-      final response = await _client.delete(
-        Uri.parse('$API_BASE_URL$endpoint'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      ).timeout(const Duration(seconds: 10));
-
-      if (response.statusCode == 200 || response.statusCode == 204) {
-        return response.body.isNotEmpty ? jsonDecode(response.body) : null;
-      } else if (response.statusCode == 401) {
+      final response = await _dio.delete<Map<String, dynamic>>(endpoint);
+      return response.data;
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401) {
         await clearToken();
-        throw Exception("Unauthorized - token invalid");
-      } else {
-        throw Exception("HTTP ${response.statusCode}: ${response.body}");
+        throw Exception('Unauthorized - token invalid');
       }
-    } catch (e) {
-      print("DELETE Error: $e");
+      debugPrint('DELETE Error: $e');
       rethrow;
     }
   }
 }
 
 // Riverpod provider
-final apiServiceProvider = Provider((ref) => ApiService());
+final apiServiceProvider = Provider<ApiService>((ref) => ApiService());

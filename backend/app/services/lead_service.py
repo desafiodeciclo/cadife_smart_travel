@@ -321,4 +321,45 @@ async def update_briefing_from_extraction(db: AsyncSession, lead: Lead, extracte
     await db.refresh(briefing)
     return briefing
 
-# (As demais funções save_interacao, soft_delete, etc., permanecem as mesmas do arquivo original)
+async def mark_stale_leads_as_perdido(db: AsyncSession, inactivity_days: int) -> int:
+    """
+    Mark leads inactive for more than *inactivity_days* as PERDIDO.
+    Leads already in PERDIDO, FECHADO, or archived are ignored.
+    Returns the number of leads transitioned.
+    """
+    cutoff = datetime.now(timezone.utc) - timedelta(days=inactivity_days)
+
+    # Query: leads not PERDIDO/FECHADO, not archived,
+    # with last interaction older than cutoff (or no interactions and created before cutoff)
+    from sqlalchemy.orm import joinedload
+
+    result = await db.execute(
+        select(Lead)
+        .options(joinedload(Lead.interacoes))
+        .where(
+            Lead.status.not_in([LeadStatus.perdido, LeadStatus.fechado]),
+            Lead.is_archived.is_(False),
+            or_(
+                and_(
+                    Lead.interacoes.any(),
+                    ~Lead.interacoes.any(Interacao.timestamp >= cutoff),
+                ),
+                and_(
+                    ~Lead.interacoes.any(),
+                    Lead.criado_em < cutoff,
+                ),
+            ),
+        )
+    )
+    stale_leads = result.unique().scalars().all()
+
+    count = 0
+    for lead in stale_leads:
+        LeadStateMachine.validate_transition(lead.status, LeadStatus.perdido)
+        lead.status = LeadStatus.perdido
+        count += 1
+
+    if count > 0:
+        await db.commit()
+
+    return count

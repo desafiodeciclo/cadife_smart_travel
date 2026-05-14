@@ -14,7 +14,6 @@ class AuthRemoteApiDatasource implements IAuthDatasource {
   Future<Map<String, dynamic>> login(String email, String password, {UserRole? profileHint}) async {
     const url = ApiConstants.login;
     developer.log('LOGIN REQUEST: POST $url', name: 'AuthRemote');
-    developer.log('LOGIN PAYLOAD: email=$email password=$password', name: 'AuthRemote');
     try {
       final response = await _dio.post(
         url,

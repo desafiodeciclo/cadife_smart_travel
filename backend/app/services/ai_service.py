@@ -8,9 +8,10 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.output_parsers import JsonOutputParser
 from pydantic import BaseModel, Field
 
-from app.config import settings
+from app.infrastructure.config.settings import get_settings
+settings = get_settings()
 from app.services.memory_service import SimpleWindowMemory
-from app.services.rag_service import get_relevant_context
+from app.services.rag_service import retrieve_context
 from app.services.briefing_service import extract_briefing_structured
 from app.core.logging import get_logger
 from app.core.langfuse_config import langfuse_context
@@ -72,7 +73,7 @@ class AyaService:
         chat_history = memory.load_memory_variables({})["chat_history"]
 
         # 1. Recuperar Contexto Relevante (RAG)
-        context = await get_relevant_context(message_text)
+        context = await retrieve_context(message_text)
 
         # 2. Preparar o Prompt
         prompt = ChatPromptTemplate.from_messages([
@@ -127,5 +128,5 @@ class AyaService:
             return True
         return False
 
-# Instância Singleton
-aya_service = AyaService()
+# NOTE: Não instanciar AyaService no import para evitar erro sem OPENAI_API_KEY.
+# Quem precisar, cria a instância manualmente: aya = AyaService()

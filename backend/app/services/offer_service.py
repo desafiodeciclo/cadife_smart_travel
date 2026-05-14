@@ -15,7 +15,7 @@ from app.models.offer import Offer
 from app.models.lead_offer import LeadOffer
 from app.presentation.schemas.offer_schema import OfferCreateRequest, OfferUpdateRequest
 from app.services import lead_service
-from app.services.fcm_service import send_notification
+from app.services.fcm_service import send_push_notification as send_notification
 
 logger = structlog.get_logger()
 

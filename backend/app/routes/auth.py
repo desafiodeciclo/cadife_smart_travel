@@ -21,11 +21,7 @@ from app.presentation.schemas.common_errors import HTTPErrorResponse
 from app.services.user_service import (
     get_user_by_email,
     get_user_by_id,
-    update_user_profile, # Adicionado
-    update_fcm_token # Adicionado
 )
-from app.models.user import UserProfileUpdate # Adicionado
-from app.core.dependencies import get_current_user # Adicionado
 from app.infrastructure.security.rate_limiter import limiter
 
 router = APIRouter(tags=["Auth"])
@@ -97,39 +93,3 @@ async def refresh_token(body: RefreshRequest, db: AsyncSession = Depends(get_db)
 
 
 
-
-@router.patch(
-    "/users/me",
-    response_model=UserResponse,
-    summary="Atualização de perfil",
-    description="Atualiza campos editáveis do perfil do usuário autenticado.",
-    responses={
-        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
-    },
-)
-async def update_me(
-    body: UserProfileUpdate,
-    db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
-):
-    updated = await update_user_profile(db, current_user, body)
-    return UserResponse.model_validate(updated)
-
-
-@router.post(
-    "/users/fcm-token",
-    response_model=FcmTokenResponse,
-    summary="Registro de token FCM",
-    description="Registra ou atualiza o token Firebase Cloud Messaging do dispositivo para notificações push.",
-    responses={
-        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
-        422: {"description": "Erro de validação no body", "model": HTTPErrorResponse},
-    },
-)
-async def register_fcm_token(
-    body: FcmTokenRequest,
-    db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
-) -> FcmTokenResponse:
-    await update_fcm_token(db, current_user, body.fcm_token)
-    return FcmTokenResponse(message="Token FCM registrado com sucesso")
