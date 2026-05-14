@@ -28,7 +28,7 @@ class Proposta(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     lead_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("leads.id"), nullable=False, index=True
+        UUID(as_uuid=True), ForeignKey("leads.id", ondelete="CASCADE"), nullable=False, index=True
     )
     descricao: Mapped[str] = mapped_column(Text, nullable=False)
     valor_estimado: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2))
@@ -38,7 +38,7 @@ class Proposta(Base):
         default=PropostaStatus.rascunho,
     )
     consultor_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id")
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
     expiration_hours: Mapped[int] = mapped_column(
         Integer, nullable=False, server_default="48"

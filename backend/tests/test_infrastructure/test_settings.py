@@ -11,6 +11,7 @@ def test_settings_load_defaults(monkeypatch):
     monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://user:pass@localhost/db")
     monkeypatch.setenv("VERIFY_TOKEN", "test_verify")
     monkeypatch.setenv("APP_ENV", "development")
+    monkeypatch.setenv("JWT_SECRET_KEY", "a" * 32)  # obrigatório — mínimo 32 chars
 
     settings = Settings()
     assert settings.APP_ENV == "development"
@@ -18,11 +19,9 @@ def test_settings_load_defaults(monkeypatch):
 
 
 def test_settings_production_invalid_jwt(monkeypatch):
-    """Testa se o validador rejeita a secret padrão em produção."""
+    """Testa se o validador rejeita secrets curtas em produção."""
     monkeypatch.setenv("APP_ENV", "production")
-    monkeypatch.setenv(
-        "JWT_SECRET_KEY", "change-me-in-production"
-    )  # Valor proibido em prod
+    monkeypatch.setenv("JWT_SECRET_KEY", "short")  # Muito curto para produção
     monkeypatch.setenv("WHATSAPP_TOKEN", "test")
     monkeypatch.setenv("PHONE_NUMBER_ID", "test")
     monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://u:p@h/d")
@@ -32,7 +31,7 @@ def test_settings_production_invalid_jwt(monkeypatch):
     with pytest.raises(ValidationError) as exc:
         Settings()
 
-    assert "JWT_SECRET_KEY must be set to a secure random value in production" in str(
+    assert "JWT_SECRET_KEY must be at least 32 characters long in production" in str(
         exc.value
     )
 
@@ -45,6 +44,7 @@ def test_settings_invalid_db_driver(monkeypatch):
     monkeypatch.setenv("WHATSAPP_TOKEN", "test")
     monkeypatch.setenv("GEMINI_API_KEY", "test")
     monkeypatch.setenv("VERIFY_TOKEN", "test")
+    monkeypatch.setenv("JWT_SECRET_KEY", "a" * 32)  # obrigatório
 
     with pytest.raises(ValidationError) as exc:
         Settings()
