@@ -14,7 +14,7 @@ from typing import Optional
 
 import structlog
 from langchain_core.documents import Document
-from langchain_chroma import Chroma
+from langchain_postgres import PGVector
 from langchain_openai import OpenAIEmbeddings
 
 from app.core.config import get_settings
@@ -24,7 +24,7 @@ from app.services.context_guardrails import apply_guardrails
 logger = structlog.get_logger()
 settings = get_settings()
 
-_vectorstore: Optional[Chroma] = None
+_vectorstore: Optional[PGVector] = None
 
 
 # ---------------------------------------------------------------------------
@@ -50,24 +50,17 @@ def _get_embeddings() -> OpenAIEmbeddings:
     )
 
 
-def get_vectorstore() -> Chroma:
-    """
-    Return (or lazily create) the shared ChromaDB vectorstore.
-
-    On first call:
-      - If persist_dir exists and has data → opens existing collection.
-      - Otherwise → creates empty collection; ingestion_pipeline will populate it.
-    """
+def get_vectorstore() -> PGVector:
     global _vectorstore
     if _vectorstore is None:
         embeddings = _get_embeddings()
-        persist_dir = settings.CHROMA_PERSIST_DIR
-        _vectorstore = Chroma(
-            persist_directory=persist_dir,
-            embedding_function=embeddings,
+        _vectorstore = PGVector(
+            embeddings=embeddings,
+            collection_name="cadife_knowledge_base",
+            connection=settings.PGVECTOR_CONNECTION_STRING,
+            use_jsonb=True,
         )
-        count = _try_count(_vectorstore)
-        logger.info("vectorstore_ready", path=persist_dir, chunks=count)
+        logger.info("vectorstore_ready", backend="pgvector")
     return _vectorstore
 
 
@@ -292,8 +285,5 @@ def _join(docs: list[Document]) -> str:
     return "\n\n".join(d.page_content for d in docs)
 
 
-def _try_count(vs: Chroma) -> int:
-    try:
-        return vs._collection.count()
-    except Exception:
-        return 0
+def _try_count(_: PGVector) -> int:
+    return 0  # PGVector não expõe API pública de contagem; chunks são logados na ingestão

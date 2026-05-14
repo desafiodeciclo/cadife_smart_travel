@@ -19,8 +19,8 @@ langchain-community
 langchain-classic
 langchain-openai
 langchain-google-genai
-chromadb
-langchain-chroma
+langchain-postgres>=0.0.12
+psycopg[binary]>=3.2.0
 firebase-admin
 langfuse
 rank-bm25

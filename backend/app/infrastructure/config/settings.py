@@ -140,10 +140,13 @@ class Settings(BaseSettings):
         description="Path to Firebase Admin JSON credentials file",
     )
 
-    # ── RAG / ChromaDB (spec.md §3.3) ─────────────────────────────────────
-    CHROMA_PERSIST_DIR: str = Field(default="./chroma_db")
+    # ── RAG / PGVector (produção) ──────────────────────────────────────────
+    PGVECTOR_CONNECTION_STRING: str = Field(
+        default="postgresql+psycopg://cadife:cadife@localhost:5432/cadife_db",
+        description="Sync psycopg3 connection para PGVector (langchain-postgres)",
+    )
     KNOWLEDGE_BASE_DIR: str = Field(default="./knowledge_base")
-    INGESTION_CACHE_PATH: str = Field(default="./chroma_db/ingestion_cache.json")
+    INGESTION_CACHE_PATH: str = Field(default="./ingestion_cache.json")
 
     # ── CORS (spec.md §12.2) ──────────────────────────────────────────────
     ALLOWED_ORIGINS: str = Field(

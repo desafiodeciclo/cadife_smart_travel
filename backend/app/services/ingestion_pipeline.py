@@ -21,7 +21,7 @@ import structlog
 import tiktoken
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_chroma import Chroma
+from langchain_postgres import PGVector
 from langchain_openai import OpenAIEmbeddings
 
 from app.core.config import get_settings
@@ -190,13 +190,13 @@ class IngestionPipeline:
     def __init__(
         self,
         knowledge_base_dir: str,
-        chroma_persist_dir: str,
+        pgvector_connection: str,
         cache_path: str,
         openrouter_api_key: str = "",
         embedding_model: str = "google/gemini-embedding-2-preview",
     ) -> None:
         self._kb_dir = Path(knowledge_base_dir)
-        self._persist_dir = chroma_persist_dir
+        self._pgvector_connection = pgvector_connection
         self._cache = IngestionCache(cache_path)
         if not openrouter_api_key:
             raise RuntimeError("Nenhuma OPENROUTER_API_KEY configurada para ingestão.")
@@ -207,17 +207,19 @@ class IngestionPipeline:
             check_embedding_ctx_length=False,
             model_kwargs={"encoding_format": "float"},
         )
-        self._vectorstore: Optional[Chroma] = None
+        self._vectorstore: Optional[PGVector] = None
 
     # ------------------------------------------------------------------
     # Vectorstore accessor — lazy init
     # ------------------------------------------------------------------
 
-    def _get_vectorstore(self) -> Chroma:
+    def _get_vectorstore(self) -> PGVector:
         if self._vectorstore is None:
-            self._vectorstore = Chroma(
-                persist_directory=self._persist_dir,
-                embedding_function=self._embeddings,
+            self._vectorstore = PGVector(
+                embeddings=self._embeddings,
+                collection_name="cadife_knowledge_base",
+                connection=self._pgvector_connection,
+                use_jsonb=True,
             )
         return self._vectorstore
 
@@ -343,7 +345,7 @@ class IngestionPipeline:
         if chunk_ids:
             try:
                 vs = self._get_vectorstore()
-                vs._collection.delete(ids=chunk_ids)
+                vs.delete(ids=chunk_ids)
                 self._invalidate_vectorstore()
                 logger.info(
                     "document_removed", filename=filename, chunks=len(chunk_ids)
@@ -368,7 +370,7 @@ def get_ingestion_pipeline() -> IngestionPipeline:
         settings = get_settings()
         _pipeline = IngestionPipeline(
             knowledge_base_dir=settings.KNOWLEDGE_BASE_DIR,
-            chroma_persist_dir=settings.CHROMA_PERSIST_DIR,
+            pgvector_connection=settings.PGVECTOR_CONNECTION_STRING,
             cache_path=settings.INGESTION_CACHE_PATH,
             openrouter_api_key=settings.OPENROUTER_API_KEY,
             embedding_model=settings.OPENROUTER_EMBEDDING_MODEL,
