@@ -20,6 +20,7 @@ from app.models.user import (
     RefreshRequest,
     ForgotPasswordRequest,
     ResetPasswordRequest,
+    ChangePasswordRequest,
     TokenResponse,
     UserResponse,
 )
@@ -240,6 +241,32 @@ async def reset_password(body: ResetPasswordRequest, db: AsyncSession = Depends(
     await update_password(db, user, body.new_password.get_secret_value())
     
     logger.info("auth_reset_password_success", user_id=str(user.id))
+    return {"message": "Senha atualizada com sucesso"}
+
+
+@router.post(
+    "/auth/change-password",
+    status_code=status.HTTP_200_OK,
+    summary="Altera a senha do usuário logado",
+    description="Exige a senha antiga para confirmar a identidade e atualiza para a nova senha forte. Ao redefinir, desloga o usuário de todos os aparelhos.",
+    responses={
+        400: {"description": "Senha antiga incorreta", "model": HTTPErrorResponse},
+        422: {"description": "Nova senha não atende aos requisitos de força", "model": HTTPErrorResponse},
+    }
+)
+async def change_password(
+    body: ChangePasswordRequest, 
+    user = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    if not verify_password(body.old_password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Senha antiga incorreta"
+        )
+        
+    await update_password(db, user, body.new_password.get_secret_value())
+    
+    logger.info("auth_change_password_success", user_id=str(user.id))
     return {"message": "Senha atualizada com sucesso"}
 
 

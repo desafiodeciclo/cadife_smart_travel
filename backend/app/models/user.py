@@ -81,6 +81,19 @@ class ResetPasswordRequest(BaseModel):
         return v
 
 
+class ChangePasswordRequest(BaseModel):
+    old_password: str
+    new_password: SecretStr = Field(min_length=8, max_length=128)
+
+    @field_validator("new_password")
+    @classmethod
+    def password_strength(cls, v: SecretStr) -> SecretStr:
+        pwd = v.get_secret_value()
+        if not re.search(r"\d", pwd) or not re.search(r"[A-Za-z]", pwd):
+            raise ValueError("password must contain letters and digits")
+        return v
+
+
 class LoginRequest(BaseModel):
     email: str
     password: str
