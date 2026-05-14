@@ -7,13 +7,12 @@ import 'package:cadife_smart_travel/features/client/profile/presentation/widgets
 import 'package:cadife_smart_travel/features/client/profile/presentation/widgets/suitcase_widgets.dart';
 import 'package:cadife_smart_travel/features/settings/application/theme_notifier.dart';
 import 'package:cadife_smart_travel/features/settings/domain/entities/user_preferences.dart';
+import 'package:cadife_smart_travel/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:cadife_smart_travel/providers/auth_provider.dart'; // Importado
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:intl/intl.dart'; // Importado para formatar datas
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({this.initialTabIndex = 0, super.key});

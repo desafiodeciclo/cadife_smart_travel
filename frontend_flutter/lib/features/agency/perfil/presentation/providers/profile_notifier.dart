@@ -170,8 +170,11 @@ final consultantMetricsProvider =
 );
 
 class ConsultantMetricsNotifier extends AsyncNotifier<ConsultantMetrics> {
+  late SecureStorageService _secureStorage;
+
   @override
   Future<ConsultantMetrics> build() async {
+    _secureStorage = ref.read(secureStorageServiceProvider);
     final cached = await _loadFromCache();
     if (cached != null) {
       _refreshInBackground();
@@ -203,8 +206,7 @@ class ConsultantMetricsNotifier extends AsyncNotifier<ConsultantMetrics> {
 
   Future<ConsultantMetrics?> _loadFromCache() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final jsonStr = prefs.getString(_kMetricsKey);
+      final jsonStr = await _secureStorage.read(key: _kMetricsKey);
       if (jsonStr == null) return null;
       return ConsultantMetrics.fromJson(
         jsonDecode(jsonStr) as Map<String, dynamic>,
@@ -216,8 +218,10 @@ class ConsultantMetricsNotifier extends AsyncNotifier<ConsultantMetrics> {
 
   Future<void> _saveToCache(ConsultantMetrics metrics) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_kMetricsKey, jsonEncode(metrics.toJson()));
+      await _secureStorage.write(
+        key: _kMetricsKey,
+        value: jsonEncode(metrics.toJson()),
+      );
     } on Exception catch (_) {}
   }
 

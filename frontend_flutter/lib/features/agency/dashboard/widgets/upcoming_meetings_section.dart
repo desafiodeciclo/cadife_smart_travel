@@ -64,7 +64,7 @@ class _MeetingRow extends StatelessWidget {
     return GestureDetector(
       onTap: () => context.goNamed(
         'agency_lead_details',
-        pathParameters: {'leadId': agendamento.leadId},
+        pathParameters: {'leadId': agendamento.leadId ?? ''},
       ),
       child: CadifeCard(
         padding: const EdgeInsets.all(12),

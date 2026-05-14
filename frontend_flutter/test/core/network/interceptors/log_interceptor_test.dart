@@ -20,7 +20,7 @@ void main() {
       });
 
       test('mascara JWT completo para Bearer xxxx...XXXXXXXX', () {
-        final fullJwt = 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';
+        const fullJwt = 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';
         final masked = CadifeLogInterceptor.maskToken(fullJwt);
 
         expect(masked, startsWith('Bearer xxxx...'));
@@ -34,7 +34,7 @@ void main() {
       });
 
       test('mostra apenas últimos 8 caracteres do token', () {
-        final jwt = 'Bearer 0123456789abcdefghij';
+        const jwt = 'Bearer 0123456789abcdefghij';
         final masked = CadifeLogInterceptor.maskToken(jwt);
 
         expect(masked, equals('Bearer xxxx...cdefghij'));

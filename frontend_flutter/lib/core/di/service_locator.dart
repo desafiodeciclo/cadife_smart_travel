@@ -30,8 +30,8 @@ import 'package:cadife_smart_travel/features/agency/propostas/data/repositories/
 import 'package:cadife_smart_travel/features/agency/propostas/domain/repositories/i_proposals_repository.dart';
 import 'package:cadife_smart_travel/features/agency/settings/data/repositories/agency_settings_repository_impl.dart';
 import 'package:cadife_smart_travel/features/agency/settings/domain/repositories/i_agency_settings_repository.dart';
-import 'package:cadife_smart_travel/features/auth/data/datasources/i_auth_datasource.dart';
 import 'package:cadife_smart_travel/features/auth/data/datasources/auth_remote_api_datasource.dart';
+import 'package:cadife_smart_travel/features/auth/data/datasources/i_auth_datasource.dart';
 import 'package:cadife_smart_travel/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:cadife_smart_travel/features/auth/domain/repositories/i_auth_repository.dart';
 import 'package:cadife_smart_travel/features/client/itinerary/data/services/itinerary_service.dart';
@@ -51,7 +51,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 
 /// Service Locator global — get_it com registro explícito e lifecycle controlado.
 final sl = GetIt.instance;

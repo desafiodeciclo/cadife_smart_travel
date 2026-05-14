@@ -82,6 +82,11 @@ class AuthRemoteMockDatasource implements IAuthDatasource {
     }
   }
 
+  @override
+  Future<void> logoutAllDevices() async {
+    await Future.delayed(const Duration(milliseconds: 200));
+  }
+
   String _buildMockJwt(String userId, UserRole role, {int hours = 24}) {
     final header = base64Url
         .encode(utf8.encode('{"alg":"none","typ":"JWT"}'))
