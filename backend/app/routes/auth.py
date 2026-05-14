@@ -223,7 +223,7 @@ async def forgot_password(
 )
 @limiter.limit("3/minute")
 async def logout_all_devices(
-    _: Request,
+    request: Request,
     current_user: User = Depends(verify_jwt),
 ) -> dict:
     # TODO: Implementar invalidação de tokens via Redis
