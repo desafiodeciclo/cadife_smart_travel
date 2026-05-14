@@ -1,5 +1,6 @@
 import structlog
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
+from fastapi.responses import PlainTextResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
@@ -60,7 +61,7 @@ async def verify_webhook(
 
     if mode == "subscribe" and token == settings.VERIFY_TOKEN:
         logger.info("webhook_verified")
-        return int(challenge) if challenge else 0
+        return PlainTextResponse(challenge or "")
 
     logger.warning("webhook_verify_failed", mode=mode)
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
