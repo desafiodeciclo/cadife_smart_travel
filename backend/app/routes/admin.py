@@ -245,3 +245,20 @@ async def reassign_lead(
         old_consultor_id=result["old_consultor_id"],
         new_consultor_id=result["new_consultor_id"],
     )
+
+
+@router.get(
+    "/metrics/conversion",
+    summary="Métricas de conversão por consultor",
+    description="Retorna o ranking de conversão (leads totais vs fechados) de todos os consultores ativos.",
+    dependencies=[Depends(RequiresRole("admin"))],
+    responses={
+        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
+        403: {"description": "Sem permissão", "model": HTTPErrorResponse},
+    },
+)
+async def get_conversion_metrics(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return await admin_service.get_conversion_metrics(db)

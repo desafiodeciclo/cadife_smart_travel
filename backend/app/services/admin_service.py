@@ -308,3 +308,43 @@ async def reassign_lead(
         "old_consultor_id": old_consultor_id,
         "new_consultor_id": new_consultor_id,
     }
+async def get_conversion_metrics(db: AsyncSession) -> list[dict]:
+    """
+    Calcula métricas de conversão detalhadas por consultor.
+    """
+    # Lista todos os consultores ativos
+    result = await db.execute(
+        select(User).where(
+            User.perfil.in_([UserPerfil.consultor, UserPerfil.agencia]),
+            User.is_active == True
+        )
+    )
+    consultores = result.scalars().all()
+    
+    metrics = []
+    for c in consultores:
+        # Total de leads (não arquivados)
+        total_stmt = select(func.count(Lead.id)).where(
+            Lead.consultor_id == c.id,
+            Lead.is_archived == False
+        )
+        total = (await db.execute(total_stmt)).scalar_one() or 0
+        
+        # Leads fechados
+        closed_stmt = total_stmt.where(Lead.status == "fechado")
+        closed = (await db.execute(closed_stmt)).scalar_one() or 0
+        
+        # Taxa de conversão
+        conversion_rate = (closed / total * 100) if total > 0 else 0.0
+        
+        metrics.append({
+            "consultor_id": str(c.id),
+            "consultor_nome": c.nome,
+            "total_leads": total,
+            "leads_fechados": closed,
+            "taxa_conversao": round(conversion_rate, 2)
+        })
+        
+    # Ordena por melhor taxa de conversão
+    metrics.sort(key=lambda x: x["taxa_conversao"], reverse=True)
+    return metrics
