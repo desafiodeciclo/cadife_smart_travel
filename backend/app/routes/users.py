@@ -59,7 +59,14 @@ async def get_me(
             status_code=status.HTTP_404_NOT_FOUND, 
             detail="Usuário não encontrado"
         )
-    return UserResponse.model_validate(user)
+    return UserResponse(
+        id=str(user.id),
+        name=user.nome,
+        email=user.email,
+        role=_ROLE_MAP.get(user.perfil, UserRole.CLIENT),
+        avatar_url=user.avatar_url,
+        bio=user.bio
+    )
 
 class FcmTokenResponse(BaseModel):
     message: str

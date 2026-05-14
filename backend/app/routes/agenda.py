@@ -44,7 +44,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import get_current_user, get_db
-from app.domain.entities.enums import AgendamentoStatus, AgendamentoTipo
+from app.domain.entities.enums import AgendamentoStatus, AgendamentoTipo, LeadStatus
 from app.infrastructure.security.dependencies import RequiresRole
 from app.infrastructure.security.scope_check import check_lead_access
 from app.models.agendamento import (
@@ -308,6 +308,7 @@ async def create_agendamento(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> AgendamentoResponse:
+    lead = None
     # 1. Date / time validation (also applies to bloqueio — same window).
     if body.data.weekday() >= 5:
         raise HTTPException(
@@ -367,9 +368,10 @@ async def create_agendamento(
         db.add(ag)
         
         # Sincronização de status do Lead (Pipeline CRM §3.3)
-        await lead_service.update_lead_status(
-            db, lead, LeadStatus.agendado, triggered_by="agendamento_criado"
-        )
+        if lead:
+            await lead_service.update_lead_status(
+                db, lead, LeadStatus.agendado, triggered_by="agendamento_criado"
+            )
         
         await db.commit()
         await db.refresh(ag)

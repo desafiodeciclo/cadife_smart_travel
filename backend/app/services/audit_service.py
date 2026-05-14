@@ -36,9 +36,9 @@ async def log_event(
         
         logger.info(
             "audit_event_recorded",
-            event=event_type,
+            audit_event_type=event_type,
             resource=f"{resource_type}:{resource_id}",
             user=str(user_id) if user_id else "anonymous",
         )
     except Exception as exc:
-        logger.error("audit_log_failed", error=str(exc), event=event_type)
+        logger.error("audit_log_failed", error=str(exc), audit_event_type=event_type)

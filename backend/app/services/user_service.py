@@ -33,6 +33,7 @@ async def create_user(db: AsyncSession, data: RegisterRequest, role: str = UserP
 
 
 async def update_password(db: AsyncSession, user: User, new_password_plain: str) -> User:
+    user = await db.merge(user)
     user.hashed_password = hash_password(new_password_plain)
     user.global_logout_at = datetime.now(timezone.utc).replace(microsecond=0)
     await db.commit()
@@ -41,6 +42,7 @@ async def update_password(db: AsyncSession, user: User, new_password_plain: str)
 
 
 async def update_fcm_token(db: AsyncSession, user: User, fcm_token: str) -> User:
+    user = await db.merge(user)
     user.fcm_token = fcm_token
     await db.commit()
     await db.refresh(user)
@@ -48,6 +50,7 @@ async def update_fcm_token(db: AsyncSession, user: User, fcm_token: str) -> User
 
 
 async def update_user_avatar(db: AsyncSession, user: User, avatar_url: str) -> User:
+    user = await db.merge(user)
     user.avatar_url = avatar_url
     await db.commit()
     await db.refresh(user)
@@ -57,6 +60,7 @@ async def update_user_avatar(db: AsyncSession, user: User, avatar_url: str) -> U
 async def update_user_profile(
     db: AsyncSession, user: User, data: UserProfileUpdate
 ) -> User:
+    user = await db.merge(user)
     if data.nome is not None:
         user.nome = data.nome
     if data.tipo_viagem is not None:
@@ -76,6 +80,7 @@ async def update_user_profile(
 
 async def update_bio(db: AsyncSession, user: User, bio: str) -> User:
     """Updates consultor bio (max 500 chars enforced by schema)."""
+    user = await db.merge(user)
     user.bio = bio
     await db.commit()
     await db.refresh(user)
@@ -84,6 +89,7 @@ async def update_bio(db: AsyncSession, user: User, bio: str) -> User:
 
 async def update_avatar_url(db: AsyncSession, user: User, url: str) -> User:
     """Updates avatar URL after a successful profile-photo upload."""
+    user = await db.merge(user)
     user.avatar_url = url
     await db.commit()
     await db.refresh(user)
