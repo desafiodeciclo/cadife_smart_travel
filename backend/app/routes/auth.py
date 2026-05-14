@@ -13,6 +13,7 @@ from app.models.user import (
     FcmTokenRequest,
     FcmTokenResponse,
     LoginRequest,
+    RegisterRequest,
     RefreshRequest,
     TokenResponse,
     UserResponse,
@@ -21,8 +22,16 @@ from app.presentation.schemas.common_errors import HTTPErrorResponse
 from app.services.user_service import (
     get_user_by_email,
     get_user_by_id,
+    create_user,
 )
 from app.infrastructure.security.rate_limiter import limiter
+import structlog
+import hashlib
+
+logger = structlog.get_logger()
+
+def hash_pii(email: str) -> str:
+    return hashlib.sha256(email.lower().strip().encode()).hexdigest()
 
 router = APIRouter(tags=["Auth"])
 
@@ -50,6 +59,35 @@ async def login(request: Request, response: Response, body: LoginRequest, db: As
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuário inativo"
         )
 
+    return TokenResponse(
+        access_token=create_access_token(str(user.id)),
+        refresh_token=create_refresh_token(str(user.id)),
+    )
+
+
+@router.post(
+    "/auth/register",
+    response_model=TokenResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Registro de novo usuário",
+    description="Cria uma nova conta de usuário (cliente) e retorna um par de tokens JWT.",
+    responses={
+        409: {"description": "E-mail já registrado", "model": HTTPErrorResponse},
+        422: {"description": "Erro de validação no body (senha fraca, etc)", "model": HTTPErrorResponse},
+        429: {"description": "Too Many Requests"},
+    },
+)
+@limiter.limit("5/minute")
+async def register(request: Request, response: Response, body: RegisterRequest, db: AsyncSession = Depends(get_db)):
+    existing = await get_user_by_email(db, body.email)
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="email_already_registered"
+        )
+    
+    user = await create_user(db, body, role="cliente")
+    logger.info("auth_register", user_id=str(user.id), email_hash=hash_pii(body.email))
+    
     return TokenResponse(
         access_token=create_access_token(str(user.id)),
         refresh_token=create_refresh_token(str(user.id)),

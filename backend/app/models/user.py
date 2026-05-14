@@ -5,7 +5,8 @@ from typing import Optional
 
 from sqlalchemy import Boolean, DateTime, String, func
 from sqlalchemy.orm import Mapped, mapped_column
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, Field, SecretStr, field_validator
+import re
 
 from app.core.database import Base
 from app.infrastructure.persistence.types import GUID, StringArray
@@ -46,6 +47,20 @@ class User(Base):
 
 
 # Pydantic schemas
+
+
+class RegisterRequest(BaseModel):
+    name: str = Field(min_length=2, max_length=120)
+    email: EmailStr
+    password: SecretStr = Field(min_length=8, max_length=128)
+
+    @field_validator("password")
+    @classmethod
+    def password_strength(cls, v: SecretStr) -> SecretStr:
+        pwd = v.get_secret_value()
+        if not re.search(r"\d", pwd) or not re.search(r"[A-Za-z]", pwd):
+            raise ValueError("password must contain letters and digits")
+        return v
 
 
 class LoginRequest(BaseModel):

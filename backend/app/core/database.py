@@ -8,9 +8,5 @@ from app.infrastructure.persistence.database import (  # noqa: F401
     AsyncSessionLocal,
     create_tables,
     engine,
+    Base,
 )
-from sqlalchemy.orm import DeclarativeBase
-
-
-class Base(DeclarativeBase):
-    pass

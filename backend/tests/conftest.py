@@ -33,34 +33,9 @@ os.environ["HASH_KEY"] = "f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2
 os.environ["REDIS_PREFIX"] = "CACHE"
 
 # ── Import ALL models to avoid 'name not defined' errors ────────────────
-# Import legacy models (Core)
-import app.models.lead  # noqa: F401
-import app.models.user  # noqa: F401
-import app.models.briefing  # noqa: F401
-import app.models.interacao  # noqa: F401
-import app.models.agendamento  # noqa: F401
-import app.models.proposta  # noqa: F401
-import app.models.offer  # noqa: F401
-import app.models.notification_queue  # noqa: F401
-import app.models.dead_letter_queue  # noqa: F401
-import app.models.lead_score_history  # noqa: F401
-
-# Import infrastructure models (Clean Architecture)
-import app.infrastructure.persistence.models.user_model  # noqa: F401
-import app.infrastructure.persistence.models.lead_model  # noqa: F401
-import app.infrastructure.persistence.models.briefing_model  # noqa: F401
-import app.infrastructure.persistence.models.interacao_model  # noqa: F401
-import app.infrastructure.persistence.models.agendamento_model  # noqa: F401
-import app.infrastructure.persistence.models.proposta_model  # noqa: F401
-import app.infrastructure.persistence.models.documento_model  # noqa: F401
-import app.infrastructure.persistence.models.suitcase_model  # noqa: F401
-import app.infrastructure.persistence.models.offer_model  # noqa: F401
-import app.infrastructure.persistence.models.travel_diary_model  # noqa: F401
-import app.infrastructure.persistence.models.travel_model  # noqa: F401
-import app.infrastructure.persistence.models.conversation_summary_model  # noqa: F401
-import app.infrastructure.persistence.models.itinerary_model  # noqa: F401
-import app.infrastructure.persistence.models.aya_toggle_history_model  # noqa: F401
-import app.infrastructure.persistence.models.lead_score_history_model  # noqa: F401
+# The centralized __init__.py handles the correct import order and prevents
+# duplication between legacy Core models and new Infrastructure models.
+import app.infrastructure.persistence.models  # noqa: F401
 
 from main import app
 from app.infrastructure.persistence.database import Base as InfraBase
@@ -98,26 +73,24 @@ def setup_database(event_loop) -> None:
     """Create and drop all tables in the test database."""
     async def _setup() -> None:
         async with test_engine.begin() as conn:
-            # Create tables from InfraBase first (primary)
+            # Clean duplicate indexes caused by extend_existing=True across legacy/infra models
+            for table in InfraBase.metadata.tables.values():
+                unique_indexes = set()
+                deduped_indexes = set()
+                for idx in table.indexes:
+                    if idx.name not in unique_indexes:
+                        unique_indexes.add(idx.name)
+                        deduped_indexes.add(idx)
+                table.indexes = deduped_indexes
+            
+            # Create all tables once
             await conn.run_sync(InfraBase.metadata.create_all)
-            # Try to create tables from CoreBase, but ignore duplicates
-            # because they likely overlap with InfraBase
-            for table in CoreBase.metadata.sorted_tables:
-                try:
-                    async with test_engine.begin() as conn2:
-                        await conn2.run_sync(table.create)
-                except Exception:
-                    pass # Table/Index likely already exists from InfraBase
 
     event_loop.run_until_complete(_setup())
     yield
     async def _teardown() -> None:
         async with test_engine.begin() as conn:
             await conn.run_sync(InfraBase.metadata.drop_all)
-            try:
-                await conn.run_sync(CoreBase.metadata.drop_all)
-            except Exception:
-                pass
     event_loop.run_until_complete(_teardown())
 
 @pytest.fixture()
