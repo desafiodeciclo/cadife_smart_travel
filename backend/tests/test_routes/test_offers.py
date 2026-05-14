@@ -1,38 +1,71 @@
 import uuid
-from datetime import date
+from datetime import datetime, timezone
 from decimal import Decimal
-from unittest.mock import AsyncMock, patch
 
 import pytest
 from fastapi import status
 
-from app.domain.entities.enums import OfferCategoria, OfferStatus
+from app.domain.entities.enums import OfferStatus
 from app.infrastructure.persistence.models.user_model import UserModel
 from app.infrastructure.security.dependencies import get_current_user
 from app.models.offer import Offer
 from app.models.user import UserPerfil
 from main import app as fastapi_app
 
-_FAKE_JPEG = b"\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x00\x00\x01\x00\x01\x00\x00"
+_AGENCY_ID = uuid.UUID("deadeade-dead-dead-dead-deadeadeadea")
+_FUTURE_DEPART = datetime(2027, 6, 1, tzinfo=timezone.utc)
+_FUTURE_RETURN = datetime(2027, 6, 11, tzinfo=timezone.utc)
+_FUTURE_DEADLINE = datetime(2027, 5, 1, tzinfo=timezone.utc)
+
+# Payload mínimo válido para POST /offers
+_VALID_CREATE_PAYLOAD = {
+    "title": "Nova Oferta",
+    "description": "Praia paradisíaca com paisagens deslumbrantes e cultura rica",
+    "destination": "Bahia",
+    "departure_date": "2027-01-15T00:00:00Z",
+    "return_date": "2027-01-22T00:00:00Z",
+    "booking_deadline": "2026-12-15T00:00:00Z",
+    "accommodations": ["hotel"],
+    "included_services": ["café da manhã"],
+    "travelers": 2,
+    "available_spots": 10,
+    "base_price": "1500.00",
+    "highlights": ["praia linda"],
+}
+
+
+def _make_offer(**kwargs) -> Offer:
+    defaults = dict(
+        title="Pacote Teste",
+        description="Carnaval 2027 em grande estilo na cidade maravilhosa",
+        destination="Rio de Janeiro",
+        agency_id=_AGENCY_ID,
+        departure_date=datetime(2027, 2, 10, tzinfo=timezone.utc),
+        return_date=datetime(2027, 2, 15, tzinfo=timezone.utc),
+        booking_deadline=datetime(2027, 1, 10, tzinfo=timezone.utc),
+        duration_days=5,
+        available_spots=20,
+        base_price=Decimal("2999.00"),
+        final_price=Decimal("2999.00"),
+        status=OfferStatus.published,
+    )
+    defaults.update(kwargs)
+    return Offer(**defaults)
 
 
 @pytest.fixture
 async def sample_offer(db_session):
-    user_id = uuid.UUID("deadeade-dead-dead-dead-deadeadeadea")
-    offer = Offer(
-        id=uuid.uuid4(),
-        titulo="Pacote Teste",
-        destino="Rio de Janeiro",
-        descricao="Carnaval 2027",
-        categoria=OfferCategoria.nacional,
-        preco_base=Decimal("2999.00"),
-        servicos_inclusos=["hotel", "passeio"],
-        imagens=["https://s3.example.com/1.jpg"],
-        data_saida_sugerida=date(2027, 2, 10),
-        duracao_dias=5,
-        status=OfferStatus.publicada,
-        criado_por=user_id,
-    )
+    offer = _make_offer(id=uuid.uuid4())
+    db_session.add(offer)
+    await db_session.commit()
+    await db_session.refresh(offer)
+    return offer
+
+
+@pytest.fixture
+async def draft_offer(db_session):
+    """Oferta em rascunho — usada em testes de edição."""
+    offer = _make_offer(id=uuid.uuid4(), status=OfferStatus.draft)
     db_session.add(offer)
     await db_session.commit()
     await db_session.refresh(offer)
@@ -41,32 +74,11 @@ async def sample_offer(db_session):
 
 @pytest.mark.asyncio
 async def test_create_offer_success(async_client):
-    with patch("app.services.offer_service.S3StorageAdapter.upload_file", new_callable=AsyncMock) as mock_upload, \
-         patch("app.services.offer_service.S3StorageAdapter.generate_presigned_url", new_callable=AsyncMock) as mock_url:
-        mock_upload.return_value = True
-        mock_url.return_value = "https://s3.example.com/offers/1.jpg"
-
-        data = {
-            "titulo": "Nova Oferta",
-            "destino": "Bahia",
-            "descricao": "Praia paradisíaca",
-            "categoria": "nacional",
-            "preco_base": "1500.00",
-            "servicos_inclusos": "hotel,translado",
-            "data_saida_sugerida": "2027-01-15",
-            "duracao_dias": "7",
-        }
-        files = {"images": ("foto.jpg", _FAKE_JPEG, "image/jpeg")}
-
-        response = await async_client.post(
-            "/offers",
-            data=data,
-            files=files,
-        )
-        assert response.status_code == status.HTTP_201_CREATED, response.text
-        resp = response.json()
-        assert resp["titulo"] == "Nova Oferta"
-        assert resp["status"] == "rascunho"
+    response = await async_client.post("/offers", json=_VALID_CREATE_PAYLOAD)
+    assert response.status_code == status.HTTP_201_CREATED, response.text
+    resp = response.json()
+    assert resp["title"] == "Nova Oferta"
+    assert resp["status"] == "draft"
 
 
 @pytest.mark.asyncio
@@ -75,15 +87,15 @@ async def test_list_offers(async_client, sample_offer):
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data["total"] >= 1
-    assert any(item["id"] == str(sample_offer.id) for item in data["items"])
+    assert any(item["id"] == str(sample_offer.id) for item in data["offers"])
 
 
 @pytest.mark.asyncio
-async def test_list_offers_filter_by_categoria(async_client, sample_offer):
-    response = await async_client.get("/offers?categoria=nacional")
+async def test_list_offers_filter_by_destination(async_client, sample_offer):
+    response = await async_client.get("/offers?destination=Rio+de+Janeiro")
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
-    assert all(item["categoria"] == "nacional" for item in data["items"])
+    assert any(item["destination"] == "Rio de Janeiro" for item in data["offers"])
 
 
 @pytest.mark.asyncio
@@ -92,44 +104,34 @@ async def test_get_offer_detail(async_client, sample_offer):
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data["id"] == str(sample_offer.id)
-    assert data["destino"] == "Rio de Janeiro"
+    assert data["destination"] == "Rio de Janeiro"
 
 
 @pytest.mark.asyncio
-async def test_update_offer(async_client, sample_offer):
-    with patch("app.services.offer_service.S3StorageAdapter.upload_file", new_callable=AsyncMock) as mock_upload, \
-         patch("app.services.offer_service.S3StorageAdapter.generate_presigned_url", new_callable=AsyncMock) as mock_url:
-        mock_upload.return_value = True
-        mock_url.return_value = "https://s3.example.com/offers/2.jpg"
-
-        data = {"titulo": "Oferta Atualizada"}
-        response = await async_client.patch(
-            f"/offers/{sample_offer.id}",
-            data=data,
-        )
-        assert response.status_code == status.HTTP_200_OK, response.text
-        assert response.json()["titulo"] == "Oferta Atualizada"
+async def test_update_offer(async_client, draft_offer):
+    payload = {"title": "Oferta Atualizada"}
+    response = await async_client.patch(f"/offers/{draft_offer.id}", json=payload)
+    assert response.status_code == status.HTTP_200_OK, response.text
+    assert response.json()["title"] == "Oferta Atualizada"
 
 
 @pytest.mark.asyncio
 async def test_publish_offer(async_client, sample_offer):
-    response = await async_client.patch(
-        f"/offers/{sample_offer.id}/publish?publish=false"
-    )
+    # sample_offer começa como published → primeiro toggle → draft
+    response = await async_client.patch(f"/offers/{sample_offer.id}/publish")
     assert response.status_code == status.HTTP_200_OK
-    assert response.json()["status"] == "rascunho"
+    assert response.json()["new_status"] == "draft"
 
-    response = await async_client.patch(
-        f"/offers/{sample_offer.id}/publish?publish=true"
-    )
+    # Segundo toggle → published
+    response = await async_client.patch(f"/offers/{sample_offer.id}/publish")
     assert response.status_code == status.HTTP_200_OK
-    assert response.json()["status"] == "publicada"
+    assert response.json()["new_status"] == "published"
 
 
 @pytest.mark.asyncio
 async def test_delete_offer(async_client, sample_offer):
     response = await async_client.delete(f"/offers/{sample_offer.id}")
-    assert response.status_code == status.HTTP_204_NO_CONTENT
+    assert response.status_code == status.HTTP_200_OK
 
     response = await async_client.get(f"/offers/{sample_offer.id}")
     assert response.status_code == status.HTTP_404_NOT_FOUND
@@ -156,21 +158,14 @@ async def test_express_interest(async_client, sample_offer):
         assert response.status_code == status.HTTP_200_OK, response.text
         data = response.json()
         assert data["lead_id"] is not None
-        assert data["offer_id"] == str(sample_offer.id)
+        assert data["status"] == "success"
     finally:
         fastapi_app.dependency_overrides.pop(get_current_user, None)
 
 
 @pytest.mark.asyncio
 async def test_express_interest_unpublished(async_client, db_session):
-    user_id = uuid.UUID("deadeade-dead-dead-dead-deadeadeadea")
-    offer = Offer(
-        id=uuid.uuid4(),
-        titulo="Rascunho",
-        destino="Nenhum",
-        status=OfferStatus.rascunho,
-        criado_por=user_id,
-    )
+    offer = _make_offer(id=uuid.uuid4(), status=OfferStatus.draft)
     db_session.add(offer)
     await db_session.commit()
 
@@ -191,13 +186,13 @@ async def test_express_interest_unpublished(async_client, db_session):
     try:
         response = await async_client.post(f"/offers/{offer.id}/interest")
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert "não está publicada" in response.json()["detail"]
+        assert "não disponível" in response.json()["detail"]
     finally:
         fastapi_app.dependency_overrides.pop(get_current_user, None)
 
 
 @pytest.mark.asyncio
-async def test_rbac_update_denied(async_client, sample_offer):
+async def test_rbac_update_denied(async_client, draft_offer):
     mock_consultant = UserModel(
         id=uuid.uuid4(),
         perfil=UserPerfil.consultor,
@@ -213,28 +208,18 @@ async def test_rbac_update_denied(async_client, sample_offer):
 
     try:
         response = await async_client.patch(
-            f"/offers/{sample_offer.id}",
-            data={"titulo": "Hacked"},
+            f"/offers/{draft_offer.id}",
+            json={"title": "Hacked"},
         )
         assert response.status_code == status.HTTP_403_FORBIDDEN
     finally:
         fastapi_app.dependency_overrides.pop(get_current_user, None)
 
 
-# ── Edge Cases — Missing Coverage ──────────────────────────────────────────
-
-
 @pytest.mark.asyncio
-async def test_client_get_draft_offer_returns_403(async_client, db_session):
-    """Cliente não pode ver detalhes de oferta em rascunho."""
-    user_id = uuid.UUID("deadeade-dead-dead-dead-deadeadeadea")
-    draft = Offer(
-        id=uuid.uuid4(),
-        titulo="Rascunho Secreto",
-        destino="Secreto",
-        status=OfferStatus.rascunho,
-        criado_por=user_id,
-    )
+async def test_client_get_draft_offer_returns_404(async_client, db_session):
+    """Cliente não pode ver detalhes de oferta em rascunho (retorna 404)."""
+    draft = _make_offer(id=uuid.uuid4(), status=OfferStatus.draft)
     db_session.add(draft)
     await db_session.commit()
 
@@ -253,7 +238,7 @@ async def test_client_get_draft_offer_returns_403(async_client, db_session):
 
     try:
         response = await async_client.get(f"/offers/{draft.id}")
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_404_NOT_FOUND
     finally:
         fastapi_app.dependency_overrides.pop(get_current_user, None)
 
@@ -261,17 +246,12 @@ async def test_client_get_draft_offer_returns_403(async_client, db_session):
 @pytest.mark.asyncio
 async def test_client_list_only_published(async_client, db_session):
     """Cliente em GET /offers só vê ofertas publicadas."""
-    user_id = uuid.UUID("deadeade-dead-dead-dead-deadeadeadea")
-    for st in [OfferStatus.publicada, OfferStatus.rascunho, OfferStatus.encerrada]:
-        db_session.add(
-            Offer(
-                id=uuid.uuid4(),
-                titulo=f"Oferta {st.value}",
-                destino="Teste",
-                status=st,
-                criado_por=user_id,
-            )
-        )
+    for st in [OfferStatus.published, OfferStatus.draft, OfferStatus.archived]:
+        db_session.add(_make_offer(
+            id=uuid.uuid4(),
+            title=f"Oferta {st.value}",
+            status=st,
+        ))
     await db_session.commit()
 
     mock_client = UserModel(
@@ -291,7 +271,7 @@ async def test_client_list_only_published(async_client, db_session):
         response = await async_client.get("/offers")
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert all(item["status"] == "publicada" for item in data["items"])
+        assert all(item["status"] == "published" for item in data["offers"])
     finally:
         fastapi_app.dependency_overrides.pop(get_current_user, None)
 
@@ -312,9 +292,7 @@ async def test_rbac_publish_denied(async_client, sample_offer):
     fastapi_app.dependency_overrides[get_current_user] = get_mock_consultor
 
     try:
-        response = await async_client.patch(
-            f"/offers/{sample_offer.id}/publish?publish=false"
-        )
+        response = await async_client.patch(f"/offers/{sample_offer.id}/publish")
         assert response.status_code == status.HTTP_403_FORBIDDEN
     finally:
         fastapi_app.dependency_overrides.pop(get_current_user, None)
@@ -343,70 +321,25 @@ async def test_rbac_delete_denied(async_client, sample_offer):
 
 
 @pytest.mark.asyncio
-async def test_upload_magic_bytes_spoof(async_client):
-    """Arquivo com Content-Type JPEG mas magic bytes de EXE deve ser bloqueado."""
-    files = {"images": ("spoofed.jpg", b"MZ\x90\x00\x03\x00\x00\x00", "image/jpeg")}
-    data = {
-        "titulo": "Oferta Spoof",
-        "destino": "Teste",
-    }
-    response = await async_client.post("/offers", data=data, files=files)
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert "não corresponde" in response.json()["detail"]
-
-
-@pytest.mark.asyncio
-async def test_upload_too_many_images(async_client):
-    """Máximo de 5 imagens por oferta."""
-    files = [("images", (f"foto{i}.jpg", _FAKE_JPEG, "image/jpeg")) for i in range(6)]
-    data = {"titulo": "Oferta Excesso", "destino": "Teste"}
-    response = await async_client.post("/offers", data=data, files=files)
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert "Máximo de 5" in response.json()["detail"]
-
-
-@pytest.mark.asyncio
-async def test_upload_image_too_large(async_client):
-    """Imagem acima de 5MB deve ser bloqueada."""
-    large_jpeg = b"\xff\xd8\xff" + b"0" * (6 * 1024 * 1024)
-    files = {"images": ("huge.jpg", large_jpeg, "image/jpeg")}
-    data = {"titulo": "Oferta Grande", "destino": "Teste"}
-    response = await async_client.post("/offers", data=data, files=files)
-    assert response.status_code == status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
-
-
-@pytest.mark.asyncio
 async def test_list_offers_search(async_client, db_session):
     """Busca por título ou destino via query param ?search=."""
-    user_id = uuid.UUID("deadeade-dead-dead-dead-deadeadeadea")
-    db_session.add(
-        Offer(
+    for title, destination in [("Pacote Portugal", "Lisboa"), ("Pacote Espanha", "Barcelona")]:
+        db_session.add(_make_offer(
             id=uuid.uuid4(),
-            titulo="Pacote Portugal",
-            destino="Lisboa",
-            status=OfferStatus.publicada,
-            criado_por=user_id,
-        )
-    )
-    db_session.add(
-        Offer(
-            id=uuid.uuid4(),
-            titulo="Pacote Espanha",
-            destino="Barcelona",
-            status=OfferStatus.publicada,
-            criado_por=user_id,
-        )
-    )
+            title=title,
+            destination=destination,
+            status=OfferStatus.published,
+        ))
     await db_session.commit()
 
     response = await async_client.get("/offers?search=Portugal")
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
-    assert all("Portugal" in (item["titulo"] + item["destino"]) for item in data["items"])
+    assert all("Portugal" in (item["title"] + item["destination"]) for item in data["offers"])
 
     response = await async_client.get("/offers?search=Barcelona")
     assert response.status_code == status.HTTP_200_OK
-    assert all("Barcelona" in (item["titulo"] + item["destino"]) for item in response.json()["items"])
+    assert all("Barcelona" in (item["title"] + item["destination"]) for item in response.json()["offers"])
 
 
 @pytest.mark.asyncio

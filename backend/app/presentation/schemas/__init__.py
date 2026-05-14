@@ -11,10 +11,10 @@ from .lead_schema import LeadCreateSchema, LeadUpdateSchema, LeadResponseSchema
 from .briefing_schema import BriefingSchema, BriefingResponse
 from .offer_schema import (
     OfferCreateRequest,
-    OfferUpdateRequest,
+    OfferDetailResponse,
     OffersListResponse,
     OfferResponse,
-    OfferDetailResponse,
+    OfferUpdateRequest,
 )
 
 __all__ = [
