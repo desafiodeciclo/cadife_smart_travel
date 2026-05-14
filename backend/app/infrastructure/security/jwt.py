@@ -30,7 +30,9 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 def _create_token(data: dict[str, Any], expires_delta: timedelta) -> str:
     payload = data.copy()
-    payload["exp"] = datetime.now(timezone.utc) + expires_delta
+    now = datetime.now(timezone.utc)
+    payload["iat"] = now
+    payload["exp"] = now + expires_delta
     return jwt.encode(
         payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM
     )

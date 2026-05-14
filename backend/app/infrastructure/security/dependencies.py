@@ -15,6 +15,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.persistence.database import AsyncSessionLocal
 from app.infrastructure.security.jwt import decode_token
+from app.infrastructure.persistence.models.revoked_token_model import RevokedTokenModel
+from sqlalchemy import select
+from datetime import datetime, timezone
 
 bearer_scheme = HTTPBearer()
 
@@ -43,6 +46,12 @@ async def get_current_user(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido"
         )
+        
+    is_revoked = await db.scalar(select(RevokedTokenModel).where(RevokedTokenModel.token == credentials.credentials))
+    if is_revoked:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Token revogado"
+        )
 
     from app.services.user_service import (
         get_user_by_id,
@@ -53,6 +62,15 @@ async def get_current_user(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuário não encontrado"
         )
+        
+    iat_timestamp = payload.get("iat")
+    if iat_timestamp and user.global_logout_at:
+        iat_dt = datetime.fromtimestamp(iat_timestamp, tz=timezone.utc)
+        if iat_dt < user.global_logout_at:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Sessão expirada (logout global)"
+            )
+            
     return user
 
 
@@ -73,12 +91,23 @@ async def get_optional_user(
 
     if payload.get("type") != "access":
         return None
+        
+    is_revoked = await db.scalar(select(RevokedTokenModel).where(RevokedTokenModel.token == credentials.credentials))
+    if is_revoked:
+        return None
 
     from app.services.user_service import get_user_by_id
 
     user = await get_user_by_id(db, payload["sub"])
     if not user or not user.is_active:
         return None
+        
+    iat_timestamp = payload.get("iat")
+    if iat_timestamp and user.global_logout_at:
+        iat_dt = datetime.fromtimestamp(iat_timestamp, tz=timezone.utc)
+        if iat_dt < user.global_logout_at:
+            return None
+            
     return user
 
 

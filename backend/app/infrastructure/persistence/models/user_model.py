@@ -40,3 +40,4 @@ class UserModel(Base):
     tipo_viagem: Mapped[Optional[list]] = mapped_column(StringArray())
     preferencias: Mapped[Optional[list]] = mapped_column(StringArray())
     tem_passaporte: Mapped[Optional[bool]] = mapped_column(Boolean)
+    global_logout_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))

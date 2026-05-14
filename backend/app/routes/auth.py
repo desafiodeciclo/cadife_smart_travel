@@ -1,7 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import datetime, timezone, timedelta
 
 from app.core.dependencies import get_db
+from app.infrastructure.security.dependencies import get_current_user, bearer_scheme
+from app.infrastructure.persistence.models.revoked_token_model import RevokedTokenModel
 from app.middleware.auth import verify_jwt
 from app.core.security import (
     create_access_token,
@@ -128,6 +132,50 @@ async def refresh_token(body: RefreshRequest, db: AsyncSession = Depends(get_db)
         access_token=create_access_token(str(user.id)),
         refresh_token=create_refresh_token(str(user.id)),
     )
+
+
+@router.post(
+    "/auth/logout",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Encerra a sessão atual (Logout)",
+    description="Adiciona o Access Token atual na lista negra para impedir novas requisições.",
+)
+async def logout(
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+    user = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    try:
+        payload = decode_token(credentials.credentials)
+        exp_timestamp = payload.get("exp")
+        expires_at = datetime.fromtimestamp(exp_timestamp, tz=timezone.utc) if exp_timestamp else (datetime.now(timezone.utc) + timedelta(hours=1))
+    except Exception:
+        expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
+        
+    revoked = RevokedTokenModel(
+        token=credentials.credentials,
+        expires_at=expires_at
+    )
+    db.add(revoked)
+    await db.commit()
+    logger.info("auth_logout", user_id=str(user.id))
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post(
+    "/auth/logout-all-devices",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Desconecta de todos os dispositivos",
+    description="Atualiza a data de logout global do usuário, invalidando todos os tokens gerados anteriormente.",
+)
+async def logout_all_devices(
+    user = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    user.global_logout_at = datetime.now(timezone.utc)
+    await db.commit()
+    logger.info("auth_logout_all", user_id=str(user.id))
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 
