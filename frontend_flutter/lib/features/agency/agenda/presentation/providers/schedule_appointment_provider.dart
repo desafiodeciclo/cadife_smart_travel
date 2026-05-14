@@ -88,11 +88,16 @@ class ScheduleAppointmentNotifier
     if (state.selectedSlot == null) return false;
 
     state = state.copyWith(isLoading: true, error: null);
+    final slot = state.selectedSlot!;
+    final data = DateTime(slot.startTime.year, slot.startTime.month, slot.startTime.day);
+    final hora =
+        '${slot.startTime.hour.toString().padLeft(2, '0')}:${slot.startTime.minute.toString().padLeft(2, '0')}';
     final request = CreateAgendaRequest(
       leadId: leadId,
-      dateTime: state.selectedSlot!.startTime,
-      durationMinutes: 60, // De acordo com a resposta do usuário
-      notes: notes,
+      data: data,
+      hora: hora,
+      tipo: 'online',
+      notas: notes,
     );
     
     final result = await _agendaRepository.createAgenda(request);

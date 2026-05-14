@@ -1,16 +1,25 @@
 ﻿import 'package:equatable/equatable.dart';
 
-enum StatusAgendamento { agendado, pendente, realizado, cancelado, bloqueado }
+enum StatusAgendamento { pendente, confirmado, realizado, cancelado }
+
+enum TipoAgendamento { online, presencial, bloqueio }
 
 enum MotivoBloqueio { pausa, reuniaoInterna, indisponibilidade, outro }
 
 extension StatusAgendamentoExt on StatusAgendamento {
   String get label => switch (this) {
-        StatusAgendamento.agendado => 'Agendado',
         StatusAgendamento.pendente => 'Pendente',
+        StatusAgendamento.confirmado => 'Confirmado',
         StatusAgendamento.realizado => 'Realizado',
         StatusAgendamento.cancelado => 'Cancelado',
-        StatusAgendamento.bloqueado => 'Bloqueado',
+      };
+}
+
+extension TipoAgendamentoExt on TipoAgendamento {
+  String get label => switch (this) {
+        TipoAgendamento.online => 'Online',
+        TipoAgendamento.presencial => 'Presencial',
+        TipoAgendamento.bloqueio => 'Bloqueio',
       };
 }
 
@@ -23,49 +32,73 @@ extension MotivoBloqueioExt on MotivoBloqueio {
       };
 }
 
+/// Constrói um [DateTime] a partir de uma data e uma string de hora "HH:mm".
+DateTime _buildDateTime(DateTime data, String hora) {
+  final parts = hora.split(':');
+  final hour = int.parse(parts[0]);
+  final minute = parts.length > 1 ? int.parse(parts[1]) : 0;
+  return DateTime(data.year, data.month, data.day, hour, minute);
+}
+
 class Agendamento extends Equatable {
   const Agendamento({
     required this.id,
-    required this.leadId,
+    this.leadId,
     required this.consultorId,
-    required this.dateTime,
-    required this.durationMinutes,
+    required this.data,
+    required this.hora,
+    this.tipo = 'online',
     required this.status,
     this.nomeCliente,
     this.destinoViagem,
     this.motivoBloqueio,
-    this.notes,
-    this.createdAt,
-    this.updatedAt,
+    this.notas,
+    this.criadoEm,
+    this.canceladoEm,
+    this.motivoCancelamento,
   });
 
   final String id;
-  final String leadId;
+  final String? leadId;
   final String consultorId;
-  final DateTime dateTime;
-  final int durationMinutes;
+  final DateTime data;
+  final String hora;
+  final String tipo;
   final String status;
   final String? nomeCliente;
   final String? destinoViagem;
   final MotivoBloqueio? motivoBloqueio;
-  final String? notes;
-  final DateTime? createdAt;
-  final DateTime? updatedAt;
+  final String? notas;
+  final DateTime? criadoEm;
+  final DateTime? canceladoEm;
+  final String? motivoCancelamento;
 
-  bool get isBloqueado => status == 'bloqueado';
+  /// Helper que monta o DateTime completo a partir de [data] + [hora].
+  DateTime get dateTime => _buildDateTime(data, hora);
+
+  /// Duração fixa de 60 min conforme spec do backend.
+  int get durationMinutes => 60;
+
+  bool get isBloqueado => tipo == 'bloqueio';
   bool get isCancelado => status == 'cancelado';
 
   StatusAgendamento get statusEnum => StatusAgendamento.values.firstWhere(
         (e) => e.name == status,
-        orElse: () => StatusAgendamento.agendado,
+        orElse: () => StatusAgendamento.pendente,
+      );
+
+  TipoAgendamento get tipoEnum => TipoAgendamento.values.firstWhere(
+        (e) => e.name == tipo,
+        orElse: () => TipoAgendamento.online,
       );
 
   factory Agendamento.fromJson(Map<String, dynamic> json) => Agendamento(
         id: json['id'] as String,
-        leadId: json['lead_id'] as String,
+        leadId: json['lead_id'] as String?,
         consultorId: json['consultor_id'] as String,
-        dateTime: DateTime.parse(json['date_time'] as String),
-        durationMinutes: json['duration_minutes'] as int,
+        data: DateTime.parse(json['data'] as String),
+        hora: json['hora'] as String,
+        tipo: json['tipo'] as String? ?? 'online',
         status: json['status'] as String,
         nomeCliente: json['nome_cliente'] as String?,
         destinoViagem: json['destino_viagem'] as String?,
@@ -75,41 +108,48 @@ class Agendamento extends Equatable {
                 orElse: () => MotivoBloqueio.outro,
               )
             : null,
-        notes: json['notes'] as String?,
-        createdAt: json['created_at'] != null
-            ? DateTime.parse(json['created_at'] as String)
+        notas: json['notas'] as String?,
+        criadoEm: json['criado_em'] != null
+            ? DateTime.parse(json['criado_em'] as String)
             : null,
-        updatedAt: json['updated_at'] != null
-            ? DateTime.parse(json['updated_at'] as String)
+        canceladoEm: json['cancelado_em'] != null
+            ? DateTime.parse(json['cancelado_em'] as String)
             : null,
+        motivoCancelamento: json['motivo_cancelamento'] as String?,
       );
 
   Agendamento copyWith({
     String? nomeCliente,
     String? destinoViagem,
     String? status,
-    String? notes,
-    DateTime? dateTime,
-    int? durationMinutes,
+    String? notas,
+    DateTime? data,
+    String? hora,
+    String? tipo,
+    MotivoBloqueio? motivoBloqueio,
+    DateTime? canceladoEm,
+    String? motivoCancelamento,
   }) {
     return Agendamento(
       id: id,
       leadId: leadId,
       consultorId: consultorId,
-      dateTime: dateTime ?? this.dateTime,
-      durationMinutes: durationMinutes ?? this.durationMinutes,
+      data: data ?? this.data,
+      hora: hora ?? this.hora,
+      tipo: tipo ?? this.tipo,
       status: status ?? this.status,
       nomeCliente: nomeCliente ?? this.nomeCliente,
       destinoViagem: destinoViagem ?? this.destinoViagem,
-      motivoBloqueio: motivoBloqueio,
-      notes: notes ?? this.notes,
-      createdAt: createdAt,
-      updatedAt: DateTime.now(),
+      motivoBloqueio: motivoBloqueio ?? this.motivoBloqueio,
+      notas: notas ?? this.notas,
+      criadoEm: criadoEm,
+      canceladoEm: canceladoEm ?? this.canceladoEm,
+      motivoCancelamento: motivoCancelamento ?? this.motivoCancelamento,
     );
   }
 
   @override
-  List<Object?> get props => [id, leadId, consultorId, dateTime, status];
+  List<Object?> get props => [id, leadId, consultorId, data, hora, status, tipo];
 }
 
 class TimeSlotModel extends Equatable {
@@ -129,58 +169,63 @@ class TimeSlotModel extends Equatable {
 
 class CreateAgendaRequest extends Equatable {
   const CreateAgendaRequest({
-    required this.leadId,
-    required this.dateTime,
-    required this.durationMinutes,
-    this.notes,
-    this.nomeCliente,
-    this.destinoViagem,
+    this.leadId,
+    required this.data,
+    required this.hora,
+    this.tipo = 'online',
+    this.notas,
     this.motivoBloqueio,
   });
 
-  final String leadId;
-  final DateTime dateTime;
-  final int durationMinutes;
-  final String? notes;
-  final String? nomeCliente;
-  final String? destinoViagem;
+  final String? leadId;
+  final DateTime data;
+  final String hora;
+  final String tipo;
+  final String? notas;
   final MotivoBloqueio? motivoBloqueio;
 
   Map<String, dynamic> toJson() => {
-        'lead_id': leadId,
-        'date_time': dateTime.toIso8601String(),
-        'duration_minutes': durationMinutes,
-        if (notes != null) 'notes': notes,
-        if (nomeCliente != null) 'nome_cliente': nomeCliente,
-        if (destinoViagem != null) 'destino_viagem': destinoViagem,
+        if (leadId != null) 'lead_id': leadId,
+        'data':
+            '${data.year.toString().padLeft(4, '0')}-${data.month.toString().padLeft(2, '0')}-${data.day.toString().padLeft(2, '0')}',
+        'hora': hora,
+        'tipo': tipo,
+        if (notas != null) 'notas': notas,
         if (motivoBloqueio != null) 'motivo_bloqueio': motivoBloqueio!.name,
       };
 
   @override
-  List<Object?> get props => [leadId, dateTime, durationMinutes];
+  List<Object?> get props => [leadId, data, hora, tipo];
 }
 
 class UpdateAgendaRequest extends Equatable {
   const UpdateAgendaRequest({
-    this.dateTime,
-    this.durationMinutes,
-    this.notes,
+    this.data,
+    this.hora,
+    this.notas,
     this.status,
+    this.tipo,
+    this.motivoBloqueio,
   });
 
-  final DateTime? dateTime;
-  final int? durationMinutes;
-  final String? notes;
+  final DateTime? data;
+  final String? hora;
+  final String? notas;
   final String? status;
+  final String? tipo;
+  final MotivoBloqueio? motivoBloqueio;
 
   Map<String, dynamic> toJson() => {
-    if (dateTime != null) 'date_time': dateTime!.toIso8601String(),
-    if (durationMinutes != null) 'duration_minutes': durationMinutes,
-    if (notes != null) 'notes': notes,
-    if (status != null) 'status': status,
-  };
+        if (data != null)
+          'data':
+              '${data!.year.toString().padLeft(4, '0')}-${data!.month.toString().padLeft(2, '0')}-${data!.day.toString().padLeft(2, '0')}',
+        if (hora != null) 'hora': hora,
+        if (notas != null) 'notas': notas,
+        if (status != null) 'status': status,
+        if (tipo != null) 'tipo': tipo,
+        if (motivoBloqueio != null) 'motivo_bloqueio': motivoBloqueio!.name,
+      };
 
   @override
-  List<Object?> get props => [dateTime, durationMinutes, notes, status];
+  List<Object?> get props => [data, hora, notas, status, tipo];
 }
-

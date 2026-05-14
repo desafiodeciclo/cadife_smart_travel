@@ -1,6 +1,6 @@
 """agenda_extension — bloqueio manual + soft-cancel + nullable lead_id
 
-Revision ID: k5l6m7n8o9p0
+Revision ID: m8n7o6p5q4r3
 Revises: j4k5l6m7n8o9
 Create Date: 2026-05-12
 
@@ -29,7 +29,7 @@ from sqlalchemy.dialects import postgresql
 
 
 # revision identifiers, used by Alembic.
-revision: str = "k5l6m7n8o9p0"
+revision: str = "m8n7o6p5q4r3"
 down_revision: Union[str, None] = "j4k5l6m7n8o9"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
