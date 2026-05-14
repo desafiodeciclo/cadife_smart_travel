@@ -3,6 +3,7 @@ from typing import Optional
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import datetime, timezone
 
 from app.models.user import User, UserProfileUpdate, RegisterRequest, UserPerfil
 from app.core.security import hash_password
@@ -26,6 +27,14 @@ async def create_user(db: AsyncSession, data: RegisterRequest, role: str = UserP
         perfil=role
     )
     db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+
+async def update_password(db: AsyncSession, user: User, new_password_plain: str) -> User:
+    user.hashed_password = hash_password(new_password_plain)
+    user.global_logout_at = datetime.now(timezone.utc)
     await db.commit()
     await db.refresh(user)
     return user

@@ -54,6 +54,14 @@ def create_refresh_token(user_id: str) -> str:
     )
 
 
+def create_reset_token(user_id: str) -> str:
+    """Create a short-lived token for password reset."""
+    return _create_token(
+        {"sub": user_id, "type": "reset"},
+        timedelta(minutes=30),
+    )
+
+
 def decode_token(token: str) -> dict[str, Any]:
     """Decode and validate a JWT token. Raises ValueError on failure."""
     try:

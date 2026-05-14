@@ -6,11 +6,10 @@ from datetime import datetime, timezone, timedelta
 from app.core.dependencies import get_db
 from app.infrastructure.security.dependencies import get_current_user, bearer_scheme
 from app.infrastructure.persistence.models.revoked_token_model import RevokedTokenModel
-from app.middleware.auth import verify_jwt
+from app.infrastructure.security.jwt import decode_token, create_reset_token
 from app.core.security import (
     create_access_token,
     create_refresh_token,
-    decode_token,
     verify_password,
 )
 from app.models.user import (
@@ -19,6 +18,8 @@ from app.models.user import (
     LoginRequest,
     RegisterRequest,
     RefreshRequest,
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
     TokenResponse,
     UserResponse,
 )
@@ -27,6 +28,7 @@ from app.services.user_service import (
     get_user_by_email,
     get_user_by_id,
     create_user,
+    update_password,
 )
 from app.infrastructure.security.rate_limiter import limiter
 import structlog
@@ -176,6 +178,69 @@ async def logout_all_devices(
     await db.commit()
     logger.info("auth_logout_all", user_id=str(user.id))
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post(
+    "/auth/forgot-password",
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Solicita recuperação de senha",
+    description="Gera um token de recuperação de senha válido por 30 minutos. Impede enumeração de usuários.",
+)
+@limiter.limit("3/minute")
+async def forgot_password(request: Request, body: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)):
+    user = await get_user_by_email(db, body.email)
+    if user and user.is_active:
+        reset_token = create_reset_token(str(user.id))
+        # Futuramente: enviar para fila SQS/RabbitMQ para disparo de e-mail
+        logger.info("auth_forgot_password_token", user_id=str(user.id), reset_token=reset_token)
+    
+    # Sempre retorna sucesso para não confirmar se o e-mail existe
+    return {"message": "Se o e-mail existir, um link de recuperação foi enviado."}
+
+
+@router.post(
+    "/auth/reset-password",
+    status_code=status.HTTP_200_OK,
+    summary="Redefine a senha do usuário",
+    description="Recebe o token temporário e a nova senha forte. Ao redefinir, desloga o usuário de todos os aparelhos por segurança.",
+    responses={
+        401: {"description": "Token inválido, expirado ou sessão encerrada", "model": HTTPErrorResponse},
+        422: {"description": "Senha não atende aos requisitos de força", "model": HTTPErrorResponse},
+    }
+)
+async def reset_password(body: ResetPasswordRequest, db: AsyncSession = Depends(get_db)):
+    try:
+        payload = decode_token(body.token)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido ou expirado"
+        )
+        
+    if payload.get("type") != "reset":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido"
+        )
+        
+    user = await get_user_by_id(db, payload["sub"])
+    if not user or not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuário não encontrado"
+        )
+        
+    # Verifica se o token de reset foi gerado antes de um logout global (proteção extra)
+    iat_timestamp = payload.get("iat")
+    if iat_timestamp and user.global_logout_at:
+        iat_dt = datetime.fromtimestamp(iat_timestamp, tz=timezone.utc)
+        if iat_dt < user.global_logout_at:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Token de recuperação expirado (sessão encerrada)"
+            )
+            
+    # O update_password já chama o global_logout_at para derrubar todas as sessões ativas
+    await update_password(db, user, body.new_password.get_secret_value())
+    
+    logger.info("auth_reset_password_success", user_id=str(user.id))
+    return {"message": "Senha atualizada com sucesso"}
 
 
 
