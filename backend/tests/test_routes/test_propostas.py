@@ -38,6 +38,25 @@ app.include_router(propostas_router)
 
 client = TestClient(app)
 
+
+class _FakeAsyncSessionLocal:
+    """Dummy async_sessionmaker for background task tests."""
+
+    async def __aenter__(self):
+        session = AsyncMock()
+        session.commit = AsyncMock()
+        session.refresh = AsyncMock()
+        session.rollback = AsyncMock()
+        session.add = MagicMock()
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = None
+        session.execute = AsyncMock(return_value=mock_result)
+        return session
+
+    async def __aexit__(self, exc_type, exc, tb):
+        pass
+
+
 # ── Helpers ─────────────────────────────────────────────────────────────────
 
 
@@ -411,6 +430,8 @@ class TestUpdateProposta:
             "app.routes.propostas.lead_service.get_lead_by_id",
             new_callable=AsyncMock,
             return_value=lead,
+        ), patch(
+            "app.infrastructure.persistence.database.AsyncSessionLocal", _FakeAsyncSessionLocal
         ):
             response = client.put(
                 f"/propostas/{proposta_id}",
@@ -467,7 +488,7 @@ class TestUpdateProposta:
             )
 
         assert response.status_code == 403
-        assert "Acesso negado" in response.json()["detail"]
+        assert "apenas_dono_ou_admin" in response.json()["detail"]
 
     def test_update_with_valor_estimado(self):
         consultor_id = uuid.uuid4()

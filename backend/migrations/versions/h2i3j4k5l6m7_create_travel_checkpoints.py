@@ -1,7 +1,7 @@
 """create_travel_checkpoints
 
 Revision ID: h2i3j4k5l6m7
-Revises: g1h2i3j4k5l6
+Revises: k5l6m7n8o9p0
 Create Date: 2026-05-12
 
 Creates the travel_checkpoints table to track ordered milestones in the

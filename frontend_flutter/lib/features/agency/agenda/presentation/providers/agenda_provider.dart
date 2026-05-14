@@ -57,16 +57,23 @@ class AgendaNotifier extends AsyncNotifier<List<Agendamento>> {
     MotivoBloqueio? motivoBloqueio,
   }) async {
     final agendaRepository = ref.read(agendaRepositoryProvider);
+    final data = DateTime(
+      slotDateTime.year,
+      slotDateTime.month,
+      slotDateTime.day,
+    );
+    final hora =
+        '${slotDateTime.hour.toString().padLeft(2, '0')}:${slotDateTime.minute.toString().padLeft(2, '0')}';
     final result = await agendaRepository.createAgenda(
       CreateAgendaRequest(
-        leadId: 'blocked',
-        dateTime: slotDateTime,
-        durationMinutes: 60,
-        notes: notes,
+        data: data,
+        hora: hora,
+        tipo: 'bloqueio',
+        notas: notes,
         motivoBloqueio: motivoBloqueio,
       ),
     );
-    
+
     state = await result.fold(
       (failure) => AsyncError(failure, StackTrace.current),
       (_) async {
@@ -118,20 +125,19 @@ class AgendaNotifier extends AsyncNotifier<List<Agendamento>> {
   Future<bool> scheduleSlot({
     required String leadId,
     required DateTime dateTime,
-    int durationMinutes = 60,
     String? notes,
-    String? nomeCliente,
-    String? destinoViagem,
   }) async {
     final agendaRepository = ref.read(agendaRepositoryProvider);
+    final data = DateTime(dateTime.year, dateTime.month, dateTime.day);
+    final hora =
+        '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
     final result = await agendaRepository.createAgenda(
       CreateAgendaRequest(
         leadId: leadId,
-        dateTime: dateTime,
-        durationMinutes: durationMinutes,
-        notes: notes,
-        nomeCliente: nomeCliente,
-        destinoViagem: destinoViagem,
+        data: data,
+        hora: hora,
+        tipo: 'online',
+        notas: notes,
       ),
     );
 

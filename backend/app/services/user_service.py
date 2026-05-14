@@ -72,3 +72,19 @@ async def update_user_profile(
     await db.commit()
     await db.refresh(user)
     return user
+
+
+async def update_bio(db: AsyncSession, user: User, bio: str) -> User:
+    """Updates consultor bio (max 500 chars enforced by schema)."""
+    user.bio = bio
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+
+async def update_avatar_url(db: AsyncSession, user: User, url: str) -> User:
+    """Updates avatar URL after a successful profile-photo upload."""
+    user.avatar_url = url
+    await db.commit()
+    await db.refresh(user)
+    return user

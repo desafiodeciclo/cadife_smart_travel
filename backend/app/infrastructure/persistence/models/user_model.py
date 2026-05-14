@@ -33,7 +33,7 @@ class UserModel(Base):
     telefone: Mapped[Optional[str]] = mapped_column(String(20))
     fcm_token: Mapped[Optional[str]] = mapped_column(String(500))
     avatar_url: Mapped[Optional[str]] = mapped_column(String(500))
-    bio: Mapped[Optional[str]] = mapped_column(String(1000))
+    bio: Mapped[Optional[str]] = mapped_column(String(500))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     criado_em: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()

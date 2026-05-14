@@ -17,8 +17,13 @@ from io import BytesIO
 from pydantic import Field
 from datetime import datetime, date
 from app.services.user_service import get_user_by_id, update_user_profile, update_fcm_token, update_user_avatar, update_password
-from app.services.metrics_service import get_consultor_metrics
-from app.services.sale_goal_service import get_user_goals
+from app.services.metrics_service import consultor_metrics
+from app.services.sale_goal_service import list_recent
+from app.presentation.schemas.consultor_profile_schema import (
+    BioUpdateRequest,
+    ConsultorMetricsResponse,
+    SaleGoalsListResponse,
+)
 from fastapi import Query
 
 router = APIRouter(prefix="/users", tags=["Users"])
@@ -30,22 +35,6 @@ _ROLE_MAP = {
     "consultor": UserRole.CONSULTANT,
 }
 
-class ConsultorMetricsResponse(BaseModel):
-    leads_total: int
-    leads_qualificados: int
-    propostas_enviadas: int
-    vendas_fechadas: int
-    taxa_conversao: float
-    gerado_em: datetime
-
-class SaleGoalResponse(BaseModel):
-    period_year: int
-    period_month: int
-    target: int
-    achieved: int
-
-class SaleGoalsListResponse(BaseModel):
-    goals: list[SaleGoalResponse]
 
 @router.get(
     "/me",
@@ -127,8 +116,6 @@ async def register_fcm_token(
     await update_fcm_token(db, user, body.fcm_token)
     return FcmTokenResponse(message="Token FCM registrado com sucesso")
 
-class BioUpdateRequest(BaseModel):
-    bio: str = Field(..., min_length=1, max_length=500)
 
 @router.patch(
     "/me/bio",
@@ -231,8 +218,7 @@ async def my_metrics(
     
     # Optional: check if user is consultant or admin
     
-    metrics = await get_consultor_metrics(db, user.id)
-    return ConsultorMetricsResponse(**metrics)
+    return await consultor_metrics(db, user.id)
 
 @router.get(
     "/me/goals",
@@ -249,6 +235,5 @@ async def my_goals(
     if not user:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
         
-    goals = await get_user_goals(db, user.id, months)
-    return SaleGoalsListResponse(goals=goals)
+    return await list_recent(db, user.id, months)
 
