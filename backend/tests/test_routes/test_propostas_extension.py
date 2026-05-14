@@ -33,6 +33,24 @@ app.include_router(propostas_router)
 client = TestClient(app)
 
 
+class _FakeAsyncSessionLocal:
+    """Dummy async_sessionmaker for background task tests."""
+
+    async def __aenter__(self):
+        session = AsyncMock()
+        session.commit = AsyncMock()
+        session.refresh = AsyncMock()
+        session.rollback = AsyncMock()
+        session.add = MagicMock()
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = None
+        session.execute = AsyncMock(return_value=mock_result)
+        return session
+
+    async def __aexit__(self, exc_type, exc, tb):
+        pass
+
+
 # ── Helpers ────────────────────────────────────────────────────────────────
 
 
@@ -309,7 +327,9 @@ class TestEnviarProposta:
         ), patch(
             "app.routes.propostas.proposta_versao_service.snapshot",
             new_callable=AsyncMock,
-        ) as mock_snap:
+        ) as mock_snap, patch(
+            "app.infrastructure.persistence.database.AsyncSessionLocal", _FakeAsyncSessionLocal
+        ):
             response = client.post(f"/propostas/{proposta.id}/enviar")
         assert response.status_code == 200
         assert proposta.status == PropostaStatus.enviada

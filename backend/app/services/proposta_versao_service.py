@@ -32,6 +32,17 @@ MotivoLiteral = Literal[
 ]
 
 
+def _iso_or_str(value) -> Optional[str]:
+    """Return ISO format for datetime, pass-through for str, None otherwise."""
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value.isoformat()
+    if isinstance(value, str):
+        return value
+    return str(value)
+
+
 def _serialize_proposta(proposta: Proposta) -> dict[str, Any]:
     """Build a JSON-safe dict snapshot of all relevant Proposta columns."""
     snap = {
@@ -52,17 +63,9 @@ def _serialize_proposta(proposta: Proposta) -> dict[str, Any]:
             str(proposta.consultor_id) if proposta.consultor_id is not None else None
         ),
         "expiration_hours": proposta.expiration_hours,
-        "criado_em": (
-            proposta.criado_em.isoformat() if proposta.criado_em else None
-        ),
-        "enviado_em": (
-            proposta.enviado_em.isoformat() if getattr(proposta, "enviado_em", None) else None
-        ),
-        "deletado_em": (
-            proposta.deletado_em.isoformat()
-            if getattr(proposta, "deletado_em", None)
-            else None
-        ),
+        "criado_em": _iso_or_str(proposta.criado_em),
+        "enviado_em": _iso_or_str(getattr(proposta, "enviado_em", None)),
+        "deletado_em": _iso_or_str(getattr(proposta, "deletado_em", None)),
     }
     return jsonable_encoder(snap)
 
