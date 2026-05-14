@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import DateTime, ForeignKey, Integer, Text, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Text, func
 from sqlalchemy import JSON
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -12,8 +12,8 @@ from app.infrastructure.persistence.database import Base
 
 class DeadLetterQueue(Base):
     """
-    Dead Letter Queue para notificações push que exauriram todas as tentativas.
-    Preserva payload original e rastro de erro para análise posterior.
+    Dead Letter Queue para mensagens que esgotaram tentativas de processamento.
+    Preserva payload original, rastro de erro e ciclo de vida de resolução.
     """
 
     __tablename__ = "dead_letter_queue"
@@ -33,8 +33,16 @@ class DeadLetterQueue(Base):
     failed_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
-    # audit §4.5 — retry mechanism fields
+    # Retry scheduling fields
     tentativas: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     proximo_retry: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
+    )
+    # Resolution tracking fields (audit §5.2)
+    resolvido: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, index=True)
+    resolvido_por: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id"), nullable=True
+    )
+    resolvido_em: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True
     )

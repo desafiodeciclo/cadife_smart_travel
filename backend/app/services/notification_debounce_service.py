@@ -38,11 +38,26 @@ class NotificationDebounceService:
             )
         return self._redis
 
+    async def try_acquire(self, lead_id: str) -> bool:
+        """
+        Atomicamente verifica e registra o debounce usando SET NX EX.
+        Retorna True se a notificação pode ser enviada (lock adquirido),
+        False se já existe debounce ativo (notificação deve ser suprimida).
+
+        Substitui o par is_allowed()+touch() que sofria de TOCTOU em multi-instância.
+        """
+        redis = await self._get_redis()
+        key = f"{_DEBOUNCE_KEY_PREFIX}:{lead_id}"
+        # SET NX EX: atômico — só seta se a chave não existir
+        was_set = await redis.set(key, "1", nx=True, ex=self._ttl)
+        if was_set:
+            logger.debug("notification_debounce_acquired", lead_id=lead_id, ttl=self._ttl)
+            return True
+        logger.debug("notification_debounce_active", lead_id=lead_id, ttl=self._ttl)
+        return False
+
     async def is_allowed(self, lead_id: str) -> bool:
-        """
-        Retorna True se não houver debounce ativo para o lead_id.
-        Se houver, retorna False (notificação deve ser suprimida).
-        """
+        """Verifica se não há debounce ativo. Prefira try_acquire() para evitar TOCTOU."""
         redis = await self._get_redis()
         key = f"{_DEBOUNCE_KEY_PREFIX}:{lead_id}"
         exists = await redis.exists(key)
@@ -54,7 +69,7 @@ class NotificationDebounceService:
     async def touch(self, lead_id: str) -> None:
         """
         Registra debounce para o lead_id com TTL configurado.
-        Deve ser chamado imediatamente antes de enfileirar/enviar.
+        Prefira try_acquire() para operação atômica sem TOCTOU.
         """
         redis = await self._get_redis()
         key = f"{_DEBOUNCE_KEY_PREFIX}:{lead_id}"

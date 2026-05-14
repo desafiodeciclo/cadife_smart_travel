@@ -41,18 +41,39 @@ class AlertService:
     async def notify_hallucination(
         phone: str, hallucinations: list[str], response_snippet: str
     ):
-        # In a real scenario, this would send an email.
-        # For now, we log it with a specific tag that can be caught by log-based alerts.
+        masked_phone = f"+55...{phone[-4:]}" if len(phone) >= 4 else "***"
         logger.warning(
             "ALERT_HALLUCINATION",
-            phone=phone,
+            phone=masked_phone,
             hallucinations=hallucinations,
             response_snippet=response_snippet,
             target_email="frank@cadife.com",
         )
-        # We could also send a slack alert
         await AlertService.send_slack_alert(
-            f"Alucinação detectada para o telefone {phone}: {hallucinations}. Resposta: {response_snippet[:50]}...",
+            f"Alucinação detectada para {masked_phone}: {hallucinations}. Resposta: {response_snippet[:50]}...",
+            level="warning",
+        )
+
+    @staticmethod
+    async def notify_kafka_lag(topic: str, lag: int, threshold: int = 100):
+        logger.warning("ALERT_KAFKA_LAG", topic=topic, lag=lag, threshold=threshold)
+        await AlertService.send_slack_alert(
+            f"Kafka consumer lag alto no tópico `{topic}`: {lag} mensagens pendentes (limite: {threshold})",
+            level="warning",
+        )
+
+    @staticmethod
+    async def notify_webhook_error_rate(error_count: int, total: int, window_seconds: int = 60):
+        rate_pct = round(error_count / total * 100, 1) if total > 0 else 0
+        logger.warning(
+            "ALERT_WEBHOOK_ERROR_RATE",
+            error_count=error_count,
+            total=total,
+            rate_pct=rate_pct,
+            window_seconds=window_seconds,
+        )
+        await AlertService.send_slack_alert(
+            f"Taxa de erro no webhook alta: {rate_pct}% ({error_count}/{total}) nos últimos {window_seconds}s",
             level="warning",
         )
 

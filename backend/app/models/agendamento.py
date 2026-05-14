@@ -42,6 +42,9 @@ class Agendamento(Base):
     meet_link: Mapped[Optional[str]] = mapped_column(
         String(512), nullable=True, default=None
     )
+    google_event_id: Mapped[Optional[str]] = mapped_column(
+        String(1024), nullable=True, default=None
+    )
     criado_em: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -73,6 +76,7 @@ class AgendamentoResponse(BaseModel):
     tipo: AgendamentoTipo
     consultor_id: Optional[uuid.UUID]
     meet_link: Optional[str] = None
+    google_event_id: Optional[str] = None
     criado_em: datetime
 
     model_config = {"from_attributes": True}

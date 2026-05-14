@@ -67,7 +67,8 @@ class NotificationQueueService:
         """
         lead_id_str = str(lead_id)
 
-        if not await self._debounce.is_allowed(lead_id_str):
+        # try_acquire() é atômico (SET NX EX) — elimina TOCTOU de multi-instância
+        if not await self._debounce.try_acquire(lead_id_str):
             logger.info(
                 "notification_enqueue_blocked_by_debounce",
                 lead_id=lead_id_str,
@@ -109,8 +110,6 @@ class NotificationQueueService:
         db.add(job)
         await db.commit()
         await db.refresh(job)
-
-        await self._debounce.touch(lead_id_str)
 
         logger.info(
             "notification_enqueued",

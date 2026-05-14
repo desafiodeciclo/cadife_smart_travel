@@ -125,6 +125,9 @@ class OrchestratorState(TypedDict):
     last_interaction_at: Optional[str]   # ISO8601 timestamp da última interação no DB
     lead_status_db: Optional[str]        # Status do lead direto do DB (ex: "agendado")
 
+    # Correlation ID propagado do middleware HTTP (rastreio ponta-a-ponta)
+    correlation_id: Optional[str]
+
     # Computed por cada nó
     safe_message: str
     blocked: bool
@@ -562,7 +565,7 @@ async def _run_agent_with_retry_chain(
 # ── Tier 1: TriagemAgent ───────────────────────────────────────────────────────
 
 _BRIEFING_FIELD_ORDER: list[str] = [
-    "destino", "data_ida", "qtd_pessoas", "perfil", "orcamento", "tem_passaporte"
+    "destino", "data_ida", "qtd_pessoas", "perfil", "ocasiao", "orcamento", "tem_passaporte"
 ]
 
 
@@ -581,7 +584,7 @@ class _TriagemResult(BaseModel):
     status: Optional[str] = None
     briefing: dict[str, Any] = {}
     next_field_to_collect: Literal[
-        "destino", "data_ida", "qtd_pessoas", "perfil",
+        "destino", "data_ida", "qtd_pessoas", "perfil", "ocasiao",
         "orcamento", "tem_passaporte", "completo"
     ] = "destino"
     is_new_lead: bool = True
@@ -595,7 +598,7 @@ cliente no CRM e retornar um JSON estruturado — sem conversar, sem adicionar t
 PASSOS OBRIGATÓRIOS:
 1. Chame get_lead_context_by_wa_id com o wa_id fornecido.
 2. Determine next_field_to_collect seguindo esta ordem:
-   destino → data_ida → qtd_pessoas → perfil → orcamento → tem_passaporte → completo
+   destino → data_ida → qtd_pessoas → perfil → ocasiao → orcamento → tem_passaporte → completo
 3. Determine is_new_lead: true se exists=false.
 4. Extraia last_interaction_at: timestamp ISO8601 da interação mais recente (null se não houver).
 5. Retorne APENAS o JSON abaixo, sem markdown, sem comentários:
@@ -605,7 +608,7 @@ PASSOS OBRIGATÓRIOS:
   "nome": <string|null>,
   "status": <string|null>,
   "briefing": {<campos preenchidos>},
-  "next_field_to_collect": <"destino"|"data_ida"|"qtd_pessoas"|"perfil"|"orcamento"|"tem_passaporte"|"completo">,
+  "next_field_to_collect": <"destino"|"data_ida"|"qtd_pessoas"|"perfil"|"ocasiao"|"orcamento"|"tem_passaporte"|"completo">,
   "is_new_lead": <bool>,
   "last_interaction_at": <"2025-06-15T14:30:00Z"|null>
 }\
@@ -712,6 +715,9 @@ LINGUAGEM — FRASES PROIBIDAS (nunca use):
 - "Sinto muito, mas não tenho acesso..."
 - "Processando sua solicitação..."
 - "Claro! Posso ajudá-lo com isso."
+- "Fico feliz em ajudar!" — genérica, robótica
+- "Certamente!" / "Com certeza!" como abertura de frase
+- Saudações de horário ("Bom dia!", "Boa tarde!", "Boa noite!") no meio de conversa ativa
 - Listas numeradas longas com 3+ itens
 
 USE em vez disso expressões naturais:
@@ -733,6 +739,21 @@ REGRA CRÍTICA — NUNCA INFERIR OCASIÃO DA VIAGEM (INVIOLÁVEL):
   persist_lead_data (campo "ocasiao") sem re-perguntar.
 
 ═══════════════════════════════════════════════════════════
+REGRA CRÍTICA — NUNCA INFERIR CARACTERÍSTICAS DO CLIENTE (INVIOLÁVEL):
+═══════════════════════════════════════════════════════════
+· NUNCA assuma características, desejos ou perfil do cliente baseado em
+  palavras-chave isoladas da mensagem.
+· O CONTEXTO DA BASE DE CONHECIMENTO contém GUIAS DE ABORDAGEM para
+  diferentes perfis — são instruções de como atender, NÃO atributos do
+  cliente atual. Exemplo: se o RAG descreve que aposentadas costumam ter
+  medo de viajar sozinhas, isso é uma dica de sensibilidade, NÃO uma
+  afirmação de que esta cliente tem medo.
+· Confirme SEMPRE com o cliente antes de usar qualquer característica
+  de perfil na resposta (ex: "Você prefere roteiros mais tranquilos?").
+· Campos do briefing só podem ser preenchidos via persist_lead_data com
+  dados que o cliente confirmou explicitamente nesta conversa.
+
+═══════════════════════════════════════════════════════════
 REGRAS DE CONCISÃO — OBRIGATÓRIAS:
 ═══════════════════════════════════════════════════════════
 6. Respostas de briefing: máximo 2 frases curtas. Proibido parágrafos longos.
@@ -742,7 +763,18 @@ REGRAS DE CONCISÃO — OBRIGATÓRIAS:
 
 ═══════════════════════════════════════════════════════════
 FLUXO OBRIGATÓRIO (siga SEMPRE nesta ordem):
-  Destino → Datas → Nº de pessoas → Perfil → Orçamento → Passaporte
+  Destino → Datas → Nº de pessoas → Perfil → Ocasião → Orçamento → Passaporte
+═══════════════════════════════════════════════════════════
+
+═══════════════════════════════════════════════════════════
+REGRA CRÍTICA — ATUALIZAÇÃO DE CAMPOS (INVIOLÁVEL):
+═══════════════════════════════════════════════════════════
+· Se o cliente disser explicitamente que mudou de ideia sobre qualquer campo
+  já coletado (ex: "Na verdade prefiro Cancún", "Mudei para agosto"), chame
+  persist_lead_data imediatamente com o novo valor — sobrescrevendo o anterior.
+· O CRM_BLOCK mostrará o valor antigo até a próxima mensagem — confie no
+  que o cliente disse AGORA, não nos dados desatualizados do CRM_BLOCK.
+· Após salvar o novo valor, confirme brevemente e siga o fluxo.
 ═══════════════════════════════════════════════════════════
 
 ═══════════════════════════════════════════════════════════
@@ -778,7 +810,12 @@ _FIELD_QUESTIONS: dict[str, str] = {
     "destino": 'Pergunte o DESTINO em 1 frase: "Já tem um destino em mente?"',
     "data_ida": 'Pergunte as DATAS em 1 frase: "Para qual data você está planejando a viagem?"',
     "qtd_pessoas": 'Pergunte Nº DE PESSOAS em 1 frase: "Quantas pessoas vão viajar?"',
-    "perfil": 'Pergunte o PERFIL em 1 frase: "É em família, casal, solo ou grupo de amigos?"',
+    "perfil": 'Pergunte o PERFIL em 1 frase: "Quantas pessoas vão viajar com você e qual o perfil do grupo?"',
+    "ocasiao": (
+        'Pergunte a OCASIÃO em 2 frases curtas: "Essa viagem tem alguma ocasião especial? '
+        'Férias, lua de mel, aniversário, negócios, intercâmbio ou outro motivo?" '
+        "NUNCA assuma a ocasião — espere o cliente informar."
+    ),
     "orcamento": 'Pergunte o ORÇAMENTO em 1 frase: "Tem uma faixa de investimento em mente?"',
     "tem_passaporte": 'Pergunte o PASSAPORTE em 1 frase: "Já tem passaporte válido?"',
     "completo": (
@@ -1221,6 +1258,7 @@ async def orchestrate(
     memory_summary: str = "",
     last_interaction_at: Optional[str] = None,
     lead_status_db: Optional[str] = None,
+    correlation_id: Optional[str] = None,
 ) -> str:
     """
     Ponto de entrada do orquestrador LangGraph multi-agente.
@@ -1253,6 +1291,9 @@ async def orchestrate(
             "Um consultor da Cadife Tour irá te atender em breve. 😊"
         )
 
+    if correlation_id:
+        structlog.contextvars.bind_contextvars(correlation_id=correlation_id)
+
     initial_state: OrchestratorState = {
         "wa_id": wa_id,
         "message": message,
@@ -1263,6 +1304,8 @@ async def orchestrate(
         # Passados direto do DB (bypass LLM — mais confiáveis)
         "last_interaction_at": last_interaction_at,
         "lead_status_db": lead_status_db,
+        # Correlation ID propagado do middleware HTTP para rastreio em background
+        "correlation_id": correlation_id,
         # Defaults — preenchidos por cada nó
         "safe_message": "",
         "blocked": False,

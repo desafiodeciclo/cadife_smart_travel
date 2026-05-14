@@ -37,8 +37,42 @@ _GROUP_ID = "whatsapp-processor"
 MAX_RETRIES = 3  # tentativas antes de mover para DLQ
 
 
+async def _persist_to_pg_dlq(phone: str, raw_value: dict, error: str) -> None:
+    """Persiste a entrada na dead_letter_queue do PostgreSQL para rastreamento e retry."""
+    from datetime import datetime, timedelta, timezone
+    from sqlalchemy import select
+    from app.core.dependencies import get_db_session
+    from app.models.dead_letter_queue import DeadLetterQueue
+    from app.models.lead import Lead
+
+    try:
+        async with get_db_session() as db:
+            result = await db.execute(
+                select(Lead.id).where(Lead.telefone == phone).limit(1)
+            )
+            lead_id = result.scalar_one_or_none()
+            if lead_id is None:
+                logger.warning("dlq_pg_persist_no_lead", phone=phone)
+                return
+
+            entry = DeadLetterQueue(
+                lead_id=lead_id,
+                original_payload=raw_value,
+                error_trace=error[:2000],
+                retry_count_exhausted=MAX_RETRIES,
+                tentativas=0,
+                proximo_retry=datetime.now(timezone.utc) + timedelta(minutes=5),
+                resolvido=False,
+            )
+            db.add(entry)
+            await db.commit()
+            logger.info("dlq_pg_persisted", phone=phone, lead_id=str(lead_id))
+    except Exception as pg_exc:
+        logger.error("dlq_pg_persist_failed", phone=phone, error=str(pg_exc))
+
+
 async def _send_to_dlq(producer, phone: str, raw_value: dict, error: str) -> None:
-    """Publica a mensagem irrecuperável no tópico DLQ via producer existente."""
+    """Publica no tópico Kafka DLQ e persiste no PostgreSQL para retry automático."""
     from datetime import datetime, timezone
     from app.services.kafka_producer import TOPICS
 
@@ -61,6 +95,9 @@ async def _send_to_dlq(producer, phone: str, raw_value: dict, error: str) -> Non
         )
     except Exception as dlq_exc:
         logger.error("whatsapp_dlq_publish_failed", phone=phone, error=str(dlq_exc))
+
+    # Always attempt PostgreSQL persistence — independent of Kafka success
+    await _persist_to_pg_dlq(phone, raw_value, error)
 
 
 async def _run(stop_event: asyncio.Event) -> None:
@@ -108,6 +145,11 @@ async def _run(stop_event: asyncio.Event) -> None:
 
             try:
                 payload = msg.value.get("payload", msg.value)
+                correlation_id = msg.value.get("correlation_id")
+                if correlation_id:
+                    import structlog as _structlog
+                    _structlog.contextvars.clear_contextvars()
+                    _structlog.contextvars.bind_contextvars(correlation_id=correlation_id)
                 async with get_db_session() as db:
                     await process_whatsapp_message.execute(payload, db)
 

@@ -5,7 +5,18 @@
 
 ## COMO USAR ESTE DOCUMENTO
 
-Este arquivo descreve perfis reais de clientes que a Cadife Tour atende. Cada persona contém: dados demográficos, motivações de viagem, dores específicas, objeções frequentes, solução Cadife personalizada e linguagem recomendada para o atendimento pela AYA ou consultores. A IA deve identificar sinais dessas personas na conversa e adaptar a resposta de acordo.
+> ⚠️ **[GUIAS DE ATENDIMENTO — NÃO ASSUMA SOBRE O CLIENTE ATUAL]**
+>
+> Este arquivo contém **perfis de referência** para orientar a abordagem consultiva da AYA.
+> São exemplos de padrões comuns entre clientes — **NÃO são atributos do cliente em atendimento**.
+>
+> **REGRAS DE USO:**
+> - Use as personas para calibrar **tom, sensibilidade e perguntas** — nunca para assumir fatos.
+> - Se o cliente mencionar "sou aposentada", isso NÃO significa que ela tem medo de viajar, não fala inglês ou quer Portugal. São apenas tendências estatísticas de referência.
+> - Toda característica relevante deve ser **confirmada explicitamente** pelo cliente antes de ser usada na resposta ou salva via `persist_lead_data`.
+> - Sinal de reconhecimento = gatilho para **fazer perguntas com sensibilidade**, NÃO para assumir o perfil completo.
+
+Este arquivo descreve perfis reais de clientes que a Cadife Tour atende. Cada persona contém: dados demográficos, motivações de viagem, dores específicas, objeções frequentes, solução Cadife personalizada e linguagem recomendada para o atendimento pela AYA ou consultores.
 
 ---
 

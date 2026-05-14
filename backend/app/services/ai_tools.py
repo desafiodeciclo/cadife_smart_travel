@@ -237,6 +237,14 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
                                 "enum": ["casal", "familia", "solo", "grupo", "amigos"],
                                 "description": "Perfil do grupo viajante.",
                             },
+                            "ocasiao": {
+                                "type": "string",
+                                "enum": [
+                                    "lua_de_mel", "aniversario", "ferias", "negocios",
+                                    "intercambio", "formatura", "familia", "outro",
+                                ],
+                                "description": "Ocasião especial da viagem — NUNCA inferir, apenas salvar o que o cliente informou explicitamente.",
+                            },
                             "orcamento": {
                                 "type": "string",
                                 "enum": ["baixo", "medio", "alto", "premium"],
@@ -447,8 +455,11 @@ async def _check_existing_lead(phone: str, db: Optional[AsyncSession]) -> str:
 # Campos permitidos na tool persist_lead_data — defesa em profundidade
 _ALLOWED_PERSIST_FIELDS: frozenset[str] = frozenset({
     "destino", "data_ida", "data_volta", "qtd_pessoas",
-    "perfil", "orcamento", "tem_passaporte", "observacoes",
+    "perfil", "ocasiao", "orcamento", "tem_passaporte", "observacoes",
 })
+
+# Campos que devem ser salvos diretamente no Lead (não no Briefing)
+_LEAD_DIRECT_FIELDS: frozenset[str] = frozenset({"nome"})
 
 # Comprimento máximo para campos de texto livre (defesa contra context stuffing)
 _MAX_FIELD_LENGTH = 500
@@ -465,9 +476,14 @@ async def _persist_lead_data(
         from app.services.lead_service import upsert_lead_with_resilience
         from app.models.briefing import BriefingExtracted
 
-        # Whitelist: remove campos não reconhecidos antes de qualquer persistência
+        # Whitelist: separa campos do Lead dos campos do Briefing
         sanitized: dict[str, Any] = {}
+        lead_updates: dict[str, Any] = {}
         for key, value in data.items():
+            if key in _LEAD_DIRECT_FIELDS:
+                if isinstance(value, str) and value.strip():
+                    lead_updates[key] = value.strip()[:_MAX_FIELD_LENGTH]
+                continue
             if key not in _ALLOWED_PERSIST_FIELDS:
                 logger.warning("persist_unknown_field_blocked", field=key, phone=phone)
                 continue
@@ -476,10 +492,24 @@ async def _persist_lead_data(
                 value = value[:_MAX_FIELD_LENGTH]
             sanitized[key] = value
 
-        if not sanitized:
+        if not sanitized and not lead_updates:
             return json.dumps({"success": False, "reason": "no_valid_fields"})
 
         lead = await upsert_lead_with_resilience(db, {"telefone": phone})
+
+        # Atualiza campos diretos do lead (ex: nome informado explicitamente pelo cliente)
+        if lead_updates:
+            for field, value in lead_updates.items():
+                # Só atualiza se o campo ainda está vazio (não sobrescreve dados existentes)
+                if not getattr(lead, field, None):
+                    setattr(lead, field, value)
+            await db.commit()
+            await db.refresh(lead)
+            logger.info("lead_direct_fields_updated", lead_id=str(lead.id), fields=list(lead_updates.keys()))
+
+        if not sanitized:
+            # Apenas campos diretos do lead foram atualizados (ex: somente nome)
+            return json.dumps({"success": True, "lead_id": str(lead.id), "completude_pct": None})
 
         from app.services.lead_service import update_briefing_from_extraction
 
@@ -579,14 +609,15 @@ async def _confirm_scheduling(
             await db.rollback()
             return json.dumps({"success": False, "reason": "slot_conflict"})
 
-        # Gera link Google Meet (best-effort)
-        meet_link = await criar_evento_curadoria(
+        # Gera link Google Meet e persiste event_id para cancelamento futuro (best-effort)
+        meet_link, google_event_id = await criar_evento_curadoria(
             lead_nome=lead.nome,
             data=data_obj,
             hora=hora_obj,
         )
-        if meet_link:
+        if meet_link or google_event_id:
             agendamento.meet_link = meet_link
+            agendamento.google_event_id = google_event_id
             await db.commit()
 
         # Atualiza status do lead para AGENDADO
@@ -614,6 +645,7 @@ async def _confirm_scheduling(
             data=data_curadoria,
             hora=hora_curadoria,
             meet_link=meet_link,
+            google_event_id=google_event_id,
         )
 
         # Publica evento Kafka para downstream (FCM ao consultor, analytics, CRM sync)
@@ -631,6 +663,7 @@ async def _confirm_scheduling(
                     "data": data_curadoria,
                     "hora": hora_curadoria,
                     "meet_link": meet_link,
+                    "google_event_id": google_event_id,
                     "timestamp": datetime.now(_tz.utc).isoformat(),
                 },
             )

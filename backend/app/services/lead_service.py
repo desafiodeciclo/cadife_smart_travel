@@ -72,18 +72,23 @@ async def upsert_lead_with_resilience(db: AsyncSession, lead_data: dict) -> Lead
         phone_hash = hmac_hash(phone)
 
         # Tenta inserir ou atualizar no conflito do telefone_hash
+        incoming_nome = lead_data.get("nome")
         stmt = (
             insert(Lead)
             .values(
                 telefone=phone,
                 telefone_hash=phone_hash,
-                nome=lead_data.get("nome"),
+                nome=incoming_nome,
                 status=lead_data.get("status", LeadStatus.novo),
                 origem=lead_data.get("origem", LeadOrigem.whatsapp),
             )
             .on_conflict_do_update(
                 index_elements=[Lead.telefone_hash],
-                set_={"nome": lead_data.get("nome"), "atualizado_em": func.now()},
+                # Só atualiza o nome se: (a) há um nome novo E (b) o lead ainda não tem nome
+                set_={
+                    "nome": func.coalesce(Lead.nome, incoming_nome),
+                    "atualizado_em": func.now(),
+                },
             )
             .returning(Lead)
         )
@@ -425,6 +430,7 @@ async def update_lead_status(
     if old_status == new_status:
         return lead
 
+    LeadStateMachine.validate_transition(old_status, new_status)
     lead.status = new_status
     await db.commit()
     await db.refresh(lead)

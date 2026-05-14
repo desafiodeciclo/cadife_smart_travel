@@ -26,6 +26,7 @@ settings = get_settings()
 _MEMORY_WINDOW_K = 20  # Mantém as últimas 20 interações como contexto
 _SUMMARY_REDIS_KEY = "memory:summary:{phone}"
 _SUMMARY_REDIS_TTL = 86_400  # 24 horas
+_MEMORY_IDLE_TTL_S = 3600  # Entradas do dict _memories são descartadas após 1h de inatividade
 _SUMMARY_SYSTEM_PROMPT = """
 You are a helpful assistant that summarizes a conversation between a customer and a travel agency.
 Include the main topics discussed and any important details.
@@ -122,8 +123,17 @@ class SimpleWindowMemory:
         return {self.memory_key: messages}
 
 
-_memories: dict[str, SimpleWindowMemory] = {}
+# Chave: phone, valor: (SimpleWindowMemory, last_access_timestamp)
+_memories: dict[str, tuple[SimpleWindowMemory, float]] = {}
 _llm: Optional[ChatOpenAI] = None
+
+
+def _evict_stale_memories() -> None:
+    """Remove entradas inativas há mais de _MEMORY_IDLE_TTL_S do dict de memória."""
+    cutoff = time.time() - _MEMORY_IDLE_TTL_S
+    stale = [k for k, (_, ts) in _memories.items() if ts < cutoff]
+    for k in stale:
+        del _memories[k]
 
 
 async def _load_summary_from_redis(phone: str) -> str:
@@ -176,14 +186,19 @@ def get_llm() -> ChatOpenAI:
 
 
 def get_memory(phone: str) -> SimpleWindowMemory:
+    _evict_stale_memories()
     if phone not in _memories:
-        _memories[phone] = SimpleWindowMemory(
+        mem = SimpleWindowMemory(
             k=_MEMORY_WINDOW_K,
             memory_key="chat_history",
             return_messages=True,
             phone=phone,
         )
-    return _memories[phone]
+        _memories[phone] = (mem, time.time())
+    else:
+        mem, _ = _memories[phone]
+        _memories[phone] = (mem, time.time())
+    return _memories[phone][0]
 
 
 async def preload_memory_from_db(

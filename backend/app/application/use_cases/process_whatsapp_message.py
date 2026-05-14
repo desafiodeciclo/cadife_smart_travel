@@ -80,7 +80,20 @@ async def execute(payload: dict, db: AsyncSession) -> None:
     msg_type: str = msg.get("type", "text")
     media_id: str | None = msg.get("media_id")
 
-    logger.info("processing_whatsapp_message", phone=phone, msg_type=msg_type)
+    # Idempotency guard: Meta may re-send webhooks on timeout (at-least-once delivery).
+    # Check wamid before any AI processing to avoid duplicate side-effects.
+    if message_id:
+        from sqlalchemy import select as _select
+        from app.models.interacao import Interacao as _Interacao
+        _dup = await db.scalar(
+            _select(_Interacao.id).where(_Interacao.whatsapp_message_id == message_id).limit(1)
+        )
+        if _dup is not None:
+            logger.info("duplicate_webhook_ignored", wamid=message_id, phone=phone)
+            return
+
+    _masked_phone = f"+55...{phone[-4:]}" if len(phone) >= 4 else "***"
+    logger.info("processing_whatsapp_message", phone=_masked_phone, msg_type=msg_type)
 
     # Mark message as read early — shows blue ticks before we even generate a reply,
     # signalling to the client that AYA received the message.
@@ -206,6 +219,8 @@ async def execute(payload: dict, db: AsyncSession) -> None:
         # Texto puro ou áudio transcrito → orquestrador multi-agente
         tipo = TipoMensagem.audio if transcription_used else TipoMensagem.texto
 
+        import structlog as _structlog
+        _correlation_id = _structlog.contextvars.get_contextvars().get("request_id")
         reply = await multi_agent_orchestrator.orchestrate(
             wa_id=phone,
             message=text,
@@ -216,13 +231,25 @@ async def execute(payload: dict, db: AsyncSession) -> None:
             memory_summary=_memory_summary,
             last_interaction_at=_last_interaction_at,
             lead_status_db=status_antes.value if status_antes else None,
+            correlation_id=_correlation_id,
         )
 
         # Tool calls inside orchestrate may commit the session, expiring all ORM
         # attributes. Re-read by lead_id instead of refresh to avoid loading
         # partial state if an internal commit failed (audit §4.3).
         _result = await db.execute(select(Lead).where(Lead.id == lead_id))
-        lead = _result.scalar_one()
+        lead = _result.scalar_one_or_none()
+        if lead is None:
+            logger.error("lead_not_found_after_orchestrate", lead_id=str(lead_id))
+            lead_id_str = str(lead_id)
+            # Skip briefing update but still send the reply
+            interacao = await lead_service.save_interacao(
+                db, lead_id, msg_cliente=text, msg_ia=reply, tipo=tipo,
+            )
+            if text and reply:
+                _memory.save_context({"input": text}, {"output": reply})
+            await whatsapp_service.send_message(phone, reply)
+            return
 
         lead_id_str = str(lead_id)
 
@@ -263,11 +290,32 @@ async def execute(payload: dict, db: AsyncSession) -> None:
                     if not await curadoria_service.lead_tem_agendamento_ativo(db, lead.id):
                         # Só sobrescreve se o orquestrador NÃO já incluiu slots ou Meet link
                         import re as _re
+                        # Detecta quando o orquestrador JÁ incluiu oferta/confirmação de
+                        # agendamento na resposta. Padrões ordenados do mais específico ao
+                        # mais geral para reduzir falsos positivos:
+                        #   - meet.google.com → Meet link presente (confirmação real)
+                        #   - agendar|agendamento → verbo/substantivo de ação de scheduling
+                        #   - horários disponíveis → listagem de slots
+                        #   - \d{1,2}h\d{2} → formato de hora (09h00) típico de slot
+                        #   - \d{2}/\d{2}/\d{4} → data no formato BR típico de slot
+                        # "agendado" sozinho (passado) não conta — evita falso positivo
+                        # quando AYA menciona "já foi agendado" em outro contexto.
                         _reply_has_scheduling = bool(
                             _re.search(
-                                r"meet\.google\.com|curadoria|agend[ao]|\d{1,2}h\d{2}|\d{2}/\d{2}/\d{4}",
+                                r"meet\.google\.com"
+                                r"|quer\s+agendar|vamos\s+agendar|posso\s+agendar"
+                                r"|hor[aá]rios?\s+dispon[ií]veis"
+                                r"|\bagendar\s+sua\s+curadoria\b"
+                                r"|\bcuradoria\b.*\bagend"
+                                r"|\d{1,2}h\d{2}.*\d{1,2}h\d{2}"
+                                r"|\d{2}/\d{2}/\d{4}.*\d{1,2}h\d{2}"
+                                # Slots numerados: "1. 15/05 às 09:00"
+                                r"|[1-3]\.\s+\d{2}/\d{2}\s+[àa]s\s+\d{2}:\d{2}"
+                                # Oferta explícita de horários de curadoria
+                                r"|horários?\s+para\s+(?:a\s+)?curadoria"
+                                r"|conversa\s+r[aá]pida.*\d{2}\s*minutos",
                                 reply,
-                                _re.IGNORECASE,
+                                _re.IGNORECASE | _re.DOTALL,
                             )
                         )
                         if not _reply_has_scheduling:
@@ -374,6 +422,22 @@ async def execute_with_new_session(payload: dict) -> None:
     try:
         async with AsyncSessionLocal() as db:
             await execute(payload, db)
+    except Exception as exc:
+        logger.error(
+            "execute_whatsapp_message_unhandled_error",
+            wa_id=wa_id,
+            error=str(exc),
+            error_type=type(exc).__name__,
+        )
+        # Tenta enviar fallback ao cliente mesmo após falha crítica
+        try:
+            from app.services.whatsapp_service import send_message as _send
+            await _send(wa_id, (
+                "Recebi sua mensagem! Tivemos uma instabilidade momentânea. "
+                "Um consultor da Cadife Tour irá te atender em breve. 😊"
+            ))
+        except Exception:
+            pass
     finally:
         if lock_acquired and redis_lock is not None:
             try:
@@ -385,18 +449,36 @@ async def execute_with_new_session(payload: dict) -> None:
 async def _enqueue_qualified_notification(
     db: AsyncSession, lead: Lead, briefing
 ) -> None:
-    """Enqueue FCM push notification for all agency consultants via background queue."""
+    """Enqueue FCM push notification for the assigned consultant (or all, if unassigned)."""
     from sqlalchemy import select
 
-    result = await db.execute(
-        select(User).where(User.perfil == "agencia", User.fcm_token.isnot(None))
-    )
-    consultores = result.scalars().all()
-    tokens = [c.fcm_token for c in consultores if c.fcm_token]
-
-    if not tokens:
-        logger.warning("no_consultant_tokens_for_notification", lead_id=str(lead.id))
-        return
+    if lead.consultor_id:
+        # Lead atribuído: notifica apenas o consultor responsável
+        result = await db.execute(
+            select(User).where(
+                User.id == lead.consultor_id,
+                User.fcm_token.isnot(None),
+            )
+        )
+        consultor = result.scalar_one_or_none()
+        tokens = [consultor.fcm_token] if consultor and consultor.fcm_token else []
+        if not tokens:
+            logger.warning(
+                "assigned_consultant_has_no_fcm_token",
+                lead_id=str(lead.id),
+                consultor_id=str(lead.consultor_id),
+            )
+            return
+    else:
+        # Lead sem consultor: broadcast para todos os consultores da agência
+        result = await db.execute(
+            select(User).where(User.perfil == "agencia", User.fcm_token.isnot(None))
+        )
+        consultores = result.scalars().all()
+        tokens = [c.fcm_token for c in consultores if c.fcm_token]
+        if not tokens:
+            logger.warning("no_consultant_tokens_for_notification", lead_id=str(lead.id))
+            return
 
     queue_service = NotificationQueueService()
     await queue_service.enqueue_qualified_lead_notification(

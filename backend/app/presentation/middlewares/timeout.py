@@ -14,9 +14,8 @@ while processing the message async — this middleware protects the
 synchronous processing boundary.
 """
 
-import asyncio
-
 import structlog
+import anyio
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
@@ -37,7 +36,6 @@ class TimeoutMiddleware(BaseHTTPMiddleware):
     """
 
     async def dispatch(self, request: Request, call_next) -> Response:
-        # Determine timeout based on route
         is_webhook = request.url.path.startswith("/webhook")
         timeout = (
             settings.WEBHOOK_TIMEOUT_SECONDS
@@ -45,12 +43,16 @@ class TimeoutMiddleware(BaseHTTPMiddleware):
             else settings.REQUEST_TIMEOUT_SECONDS
         )
 
-        try:
-            response = await asyncio.wait_for(call_next(request), timeout=timeout)
-            return response
+        request_id = request.headers.get("X-Request-ID", "unknown")
+        timed_out = False
 
-        except asyncio.TimeoutError:
-            request_id = request.headers.get("X-Request-ID", "unknown")
+        with anyio.move_on_after(timeout) as cancel_scope:
+            response = await call_next(request)
+
+        if cancel_scope.cancelled_caught:
+            timed_out = True
+
+        if timed_out:
             logger.warning(
                 "request_timeout",
                 path=request.url.path,
@@ -66,3 +68,5 @@ class TimeoutMiddleware(BaseHTTPMiddleware):
                 },
                 headers={"X-Request-ID": request_id},
             )
+
+        return response

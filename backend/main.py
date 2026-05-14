@@ -206,9 +206,51 @@ app.include_router(auth.router)
 
 @app.get("/health", tags=["Health"])
 async def health():
+    from sqlalchemy import text as _text
+    from app.infrastructure.persistence.database import AsyncSessionLocal as _SessionLocal
+    from app.infrastructure.cache.redis_client import _RedisClient
+    from app.services.ingestion_pipeline import get_ingestion_pipeline as _get_pipeline
+
+    checks: dict[str, str] = {}
+
+    # Database
+    try:
+        async with _SessionLocal() as _db:
+            await _db.execute(_text("SELECT 1"))
+        checks["database"] = "ok"
+    except Exception:
+        checks["database"] = "error"
+
+    # Redis
+    checks["redis"] = "ok" if await _RedisClient.health() else "degraded"
+
+    # ChromaDB / RAG
+    try:
+        _pipeline = _get_pipeline()
+        _status = _pipeline.get_status()
+        _chunks = _status.get("total_chunks", 0)
+        checks["chromadb"] = f"ok ({_chunks} chunks)"
+    except Exception:
+        checks["chromadb"] = "degraded"
+
+    # Kafka
+    if settings.KAFKA_ENABLED:
+        try:
+            from aiokafka.admin import AIOKafkaAdminClient  # type: ignore[import]
+            _admin = AIOKafkaAdminClient(bootstrap_servers=settings.KAFKA_BOOTSTRAP_SERVERS)
+            await _admin.start()
+            await _admin.close()
+            checks["kafka"] = "ok"
+        except Exception:
+            checks["kafka"] = "degraded"
+    else:
+        checks["kafka"] = "disabled"
+
+    overall = "ok" if checks.get("database") == "ok" else "degraded"
     return {
-        "status": "ok",
+        "status": overall,
         "service": "cadife-smart-travel",
         "version": app.version,
         "env": settings.APP_ENV,
+        "checks": checks,
     }

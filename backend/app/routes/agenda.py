@@ -231,13 +231,14 @@ async def create_agendamento(
         )
 
     # Gera link Google Meet e persiste no agendamento (best-effort — não bloqueia)
-    meet_link = await google_calendar_service.criar_evento_curadoria(
+    meet_link, google_event_id = await google_calendar_service.criar_evento_curadoria(
         lead_nome=lead.nome if lead else None,
         data=body.data,
         hora=body.hora,
     )
-    if meet_link:
+    if meet_link or google_event_id:
         agendamento.meet_link = meet_link
+        agendamento.google_event_id = google_event_id
         await db.commit()
         await db.refresh(agendamento)
 
@@ -311,6 +312,10 @@ async def update_agendamento(
     ag.status = body.status
     await db.commit()
     await db.refresh(ag)
+
+    # Cancela o evento no Google Calendar quando agendamento é cancelado
+    if body.status == AgendamentoStatus.cancelado and ag.google_event_id:
+        await google_calendar_service.cancelar_evento_curadoria(ag.google_event_id)
 
     logger.info(
         "agendamento_updated",

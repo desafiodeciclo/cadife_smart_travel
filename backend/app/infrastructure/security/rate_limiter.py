@@ -16,6 +16,7 @@ Uso nas rotas:
 """
 
 import structlog
+from fastapi import Request
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
@@ -23,6 +24,30 @@ from app.core.config import get_settings
 
 logger = structlog.get_logger()
 settings = get_settings()
+
+
+def get_wa_id_from_webhook(request: Request) -> str:
+    """
+    Extrai wa_id (telefone) do payload WhatsApp para usar como chave de rate limit.
+    Fallback para IP quando wa_id não estiver disponível (ex: verificação de challenge).
+
+    O webhook da Meta sempre vem do mesmo IP — usar IP como chave faria com que
+    todos os clientes da Cadife compartilhassem o mesmo bucket de rate limit.
+    """
+    try:
+        # request._json é populado se o body já foi lido anteriormente
+        body = getattr(request, "_json", None)
+        if body:
+            entry = body.get("entry", [{}])[0]
+            changes = entry.get("changes", [{}])[0]
+            value = changes.get("value", {})
+            messages = value.get("messages", [])
+            if messages:
+                return messages[0].get("from", get_remote_address(request))
+    except Exception:
+        pass
+    return get_remote_address(request)
+
 
 try:
     limiter = Limiter(

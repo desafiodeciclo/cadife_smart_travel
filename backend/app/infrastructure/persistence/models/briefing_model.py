@@ -58,6 +58,7 @@ BRIEFING_REQUIRED_FIELDS = [
     "preferencias",
     "orcamento",
     "tem_passaporte",
+    "ocasiao",
 ]
 
 

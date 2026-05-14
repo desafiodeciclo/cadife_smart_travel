@@ -20,9 +20,14 @@ engine_kwargs = {
 
 # Async SQLite does not support pool_size / max_overflow in SQLAlchemy 2.x.
 if engine_url.get_backend_name() != "sqlite":
+    # 5 + 10 = 15 conexões por worker. Com 4 workers uvicorn = 60 conexões,
+    # bem abaixo do limite padrão do PostgreSQL (100). Usar PgBouncer em produção
+    # com múltiplas instâncias para aumentar a capacidade sem alterar esses números.
     engine_kwargs.update(
-        pool_size=10,
-        max_overflow=20,
+        pool_size=5,
+        max_overflow=10,
+        pool_timeout=30,
+        pool_recycle=1800,
     )
 
 engine = create_async_engine(settings.DATABASE_URL, **engine_kwargs)

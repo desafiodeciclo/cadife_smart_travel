@@ -7,7 +7,7 @@ Responsabilidades:
   - Gerar mensagem da AYA oferecendo horários de forma natural
 """
 
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from typing import Optional
 
 import structlog
@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.entities.enums import AgendamentoStatus, LeadStatus
 from app.models.agendamento import Agendamento
+from app.services import google_calendar_service
 
 logger = structlog.get_logger()
 
@@ -69,7 +70,14 @@ async def get_proximos_slots_disponiveis(
         for hora in HORARIOS_DISPONIVEIS:
             if len(slots_disponiveis) >= quantidade:
                 break
-            if hora not in agendados_horas and len(agendados) < MAX_POR_DIA:
+            if hora in agendados_horas or len(agendados) >= MAX_POR_DIA:
+                continue
+            # Confirma disponibilidade real no Google Calendar (double-booking prevention)
+            hora_time = datetime.strptime(hora, "%H:%M").time()
+            calendar_livre = await google_calendar_service.verificar_disponibilidade_calendar(
+                current, hora_time
+            )
+            if calendar_livre:
                 slots_disponiveis.append({"data": current, "hora": hora})
 
     return slots_disponiveis
