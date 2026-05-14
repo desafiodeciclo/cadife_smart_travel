@@ -158,3 +158,12 @@ backend/chroma_db_local/
 backend/chroma_db_gemini/
 backend/validation_report*.json
 google_service_account.json
+
+# ========================
+# ARTEFATOS TEMPORÁRIOS / DEV
+# ========================
+response_test*.json
+frontend_flutter/analyze_out.txt
+frontend_flutter/*.png
+backend/*.png
+backend/analyze_out.txt

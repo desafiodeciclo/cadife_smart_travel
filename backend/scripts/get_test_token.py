@@ -1,36 +1,47 @@
+import asyncio
+import uuid
+from datetime import datetime, timezone
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from dotenv import load_dotenv
+
 import sys
 import os
-import argparse
-import uuid
-from datetime import timedelta
-from jose import jwt
+sys.path.append(os.path.join(os.getcwd(), "backend"))
 
-# Ajusta o path para encontrar o módulo 'app'
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Load environment variables from .env
+load_dotenv(os.path.join(os.getcwd(), "backend", ".env"))
 
-from app.infrastructure.config.settings import get_settings
+from app.core.database import AsyncSessionLocal
+from app.infrastructure.persistence.models.user_model import UserModel
+from app.core.security import create_access_token, hash_password
 
-settings = get_settings()
+async def get_test_token():
+    async with AsyncSessionLocal() as db:
+        # Check if test user exists
+        stmt = select(UserModel).where(UserModel.email == "test@example.com")
+        result = await db.execute(stmt)
+        user = result.scalar_one_or_none()
 
-def create_token(user_id: str, perfil: str):
-    payload = {
-        "sub": user_id,
-        "perfil": perfil,
-        "type": "access",
-    }
-    return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+        if not user:
+            user = UserModel(
+                id=uuid.uuid4(),
+                nome="Test User",
+                email="test@example.com",
+                hashed_password=hash_password("password123"),
+                perfil="cliente",
+                is_active=True,
+                criado_em=datetime.now(timezone.utc)
+            )
+            db.add(user)
+            await db.commit()
+            await db.refresh(user)
+            print(f"User created: {user.id}")
+        else:
+            print(f"User exists: {user.id}")
 
-def main():
-    parser = argparse.ArgumentParser(description="Gerador de JWT para Pentest Manual")
-    parser.add_argument("--perfil", choices=["admin", "consultor", "cliente", "agencia"], default="cliente")
-    parser.add_argument("--id", default=str(uuid.uuid4()))
-    
-    args = parser.parse_args()
-    
-    token = create_token(args.id, args.perfil)
-    print(f"\n🔑 Token Gerado para Perfil: {args.perfil}")
-    print(f"🆔 ID Simulado: {args.id}")
-    print(f"\n{token}\n")
+        token = create_access_token(str(user.id))
+        print(f"TOKEN:{token}")
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(get_test_token())

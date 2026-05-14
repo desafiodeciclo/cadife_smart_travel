@@ -44,8 +44,8 @@ class AuthRepositoryImpl implements IAuthRepository {
         return Right(AuthUser.fromJson(userData));
       }
       
-      // Fallback: try /users/me endpoint
-      final currentUserData = await _remoteDatasource.getCurrentUser();
+      // Fallback: try /me endpoint
+      final currentUserData = await _remoteDatasource.getUserProfile();
       if (currentUserData != null) {
         return Right(AuthUser.fromJson(currentUserData));
       }
@@ -98,9 +98,9 @@ class AuthRepositoryImpl implements IAuthRepository {
   }
 
   @override
-  Future<Either<Failure, AuthUser?>> getCurrentUser() async {
+  Future<Either<Failure, AuthUser?>> getUserProfile() async {
     try {
-      final data = await _remoteDatasource.getCurrentUser();
+      final data = await _remoteDatasource.getUserProfile();
       if (data != null) {
         return Right(AuthUser.fromJson(data));
       }
