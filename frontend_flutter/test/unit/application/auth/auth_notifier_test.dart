@@ -59,7 +59,7 @@ void main() {
     test('logout limpa o estado para null', () async {
       final user = UserFixture.consultor();
       when(() => authRepository.isLoggedIn()).thenAnswer((_) async => const Right(true));
-      when(() => authRepository.getCurrentUser()).thenAnswer((_) async => Right(user));
+      when(() => authRepository.getUserProfile()).thenAnswer((_) async => Right(user));
       when(() => authRepository.logout()).thenAnswer((_) async => const Right(null));
 
       final container = makeContainer();

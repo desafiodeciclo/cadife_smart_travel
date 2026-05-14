@@ -11,7 +11,7 @@ class MockProfileRepository implements IProfileRepository {
   AuthUser? _user;
 
   @override
-  Future<Either<Failure, AuthUser>> getCurrentUser() async {
+  Future<Either<Failure, AuthUser>> getUserProfile() async {
     await Future.delayed(const Duration(milliseconds: 400));
     _user ??= AuthUser(
       id: 'mock-client-001',
@@ -40,7 +40,7 @@ class MockProfileRepository implements IProfileRepository {
   }) async {
     await Future.delayed(const Duration(milliseconds: 600));
     if (_user == null) {
-      await getCurrentUser();
+      await getUserProfile();
     }
     _user = _user!.copyWith(
       name: name,

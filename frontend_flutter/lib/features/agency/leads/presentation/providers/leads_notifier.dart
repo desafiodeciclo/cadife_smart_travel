@@ -1,5 +1,5 @@
 import 'package:cadife_smart_travel/core/error/failures.dart';
-import 'package:cadife_smart_travel/features/agency/leads/data/providers/leads_data_providers.dart';
+import 'package:cadife_smart_travel/providers/leads_provider.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/providers/leads_usecases_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

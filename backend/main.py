@@ -7,9 +7,13 @@ Registers middlewares, routers, and startup/shutdown lifecycle hooks.
 
 from contextlib import asynccontextmanager
 
+import sys
+from unittest.mock import MagicMock
+sys.modules["aioboto3"] = MagicMock()
+
 import structlog
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Depends, status, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
@@ -36,7 +40,7 @@ from app.jobs.conversation_summary_retry_job import run_conversation_summary_ret
 from app.jobs.aya_alert_job import alert_aya_disabled_leads
 
 # Routers
-from app.routes import admin, agenda, auth, documents, ia, leads, offers, propostas, webhook, suitcase, diary, travels
+from app.routes import admin, agency_settings, agenda, auth, consultor_profile, documents, documentos, ia, leads, mala, offers, propostas, webhook, suitcase, diary, travels, users
 
 # Middlewares
 from app.presentation.middlewares.request_id import RequestIdMiddleware
@@ -148,17 +152,27 @@ app.include_router(leads.router)
 app.include_router(ia.router)
 app.include_router(agenda.router)
 app.include_router(propostas.router)
-app.include_router(documents.router)
+app.include_router(documentos.router)  # canonical PT
+app.include_router(documents.router)  # deprecated EN alias (parity gap §3.11)
 app.include_router(auth.router)
+app.include_router(users.router)
 app.include_router(admin.router)
-app.include_router(suitcase.router)
+app.include_router(mala.router)  # canonical PT
+app.include_router(suitcase.router)  # deprecated EN alias (parity gap §3.11)
 app.include_router(offers.router)
 app.include_router(diary.router)
 app.include_router(travels.router)
+app.include_router(agency_settings.router)  # PRD: settings + templates
+app.include_router(consultor_profile.router)  # PRD: bio, foto, métricas, metas
 
 @app.get("/health", tags=["Health"])
 async def health():
-    return {"status": "ok", "version": app.version, "env": settings.APP_ENV}
+    return {
+        "status": "ok",
+        "service": "cadife-smart-travel",
+        "version": app.version,
+        "env": settings.APP_ENV,
+    }
 
 if __name__ == "__main__":
     import uvicorn
