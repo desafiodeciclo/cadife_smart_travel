@@ -40,7 +40,7 @@ from app.jobs.conversation_summary_retry_job import run_conversation_summary_ret
 from app.jobs.aya_alert_job import alert_aya_disabled_leads
 
 # Routers
-from app.routes import admin, agenda, auth, documents, ia, leads, offers, propostas, webhook, suitcase, diary, users, travels
+from app.routes import admin, agenda, auth, documents, documentos, ia, leads, mala, offers, propostas, webhook, suitcase, diary, users, travels
 
 # Middlewares
 from app.presentation.middlewares.request_id import RequestIdMiddleware
@@ -152,11 +152,13 @@ app.include_router(leads.router)
 app.include_router(ia.router)
 app.include_router(agenda.router)
 app.include_router(propostas.router)
-app.include_router(documents.router)
+app.include_router(documentos.router)  # canonical PT
+app.include_router(documents.router)  # deprecated EN alias (parity gap §3.11)
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(admin.router)
-app.include_router(suitcase.router)
+app.include_router(mala.router)  # canonical PT
+app.include_router(suitcase.router)  # deprecated EN alias (parity gap §3.11)
 app.include_router(offers.router)
 app.include_router(diary.router)
 app.include_router(travels.router)
