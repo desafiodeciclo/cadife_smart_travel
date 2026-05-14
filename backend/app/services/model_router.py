@@ -110,25 +110,8 @@ def _convert_to_wav(audio_bytes: bytes, src_format: str) -> bytes:
     return result.stdout
 
 
-async def transcribe_audio(audio_bytes: bytes, mime_type: str) -> str:
-    """Transcreve áudio via openai/gpt-4o-audio-preview no OpenRouter."""
-    normalized_mime = mime_type.split(";")[0].strip().lower()
-    src_fmt = _EXT_MAP.get(normalized_mime, "ogg")
-
-    if src_fmt in _GPT4O_NATIVE_FORMATS:
-        audio_wav = audio_bytes
-        audio_fmt = src_fmt
-    else:
-        logger.info(
-            "audio_format_conversion_needed",
-            src_format=src_fmt,
-            mime_type=normalized_mime,
-        )
-        audio_wav = _convert_to_wav(audio_bytes, src_fmt)
-        audio_fmt = "wav"
-
-    audio_b64 = base64.b64encode(audio_wav).decode()
-
+async def _transcribe_with_gpt4o_audio(audio_b64: str, audio_fmt: str) -> str:
+    """Transcrição primária via gpt-4o-audio-preview (input_audio no /chat/completions)."""
     payload = {
         "model": settings.OPENROUTER_AUDIO_MODEL,
         "messages": [
@@ -151,13 +134,11 @@ async def transcribe_audio(audio_bytes: bytes, mime_type: str) -> str:
         ],
         "max_tokens": 1000,
     }
-
     auth_headers = {
         "Authorization": f"Bearer {settings.OPENROUTER_API_KEY}",
         "Content-Type": "application/json",
         **_OPENROUTER_HEADERS,
     }
-
     async with httpx.AsyncClient(timeout=60.0) as client:
         response = await client.post(
             f"{_OPENROUTER_BASE}/chat/completions",
@@ -167,6 +148,58 @@ async def transcribe_audio(audio_bytes: bytes, mime_type: str) -> str:
         response.raise_for_status()
         data = response.json()
         return data["choices"][0]["message"]["content"] or ""
+
+
+async def _transcribe_with_whisper(audio_wav: bytes, audio_fmt: str) -> str:
+    """Fallback de transcrição via Whisper no OpenRouter (/audio/transcriptions)."""
+    import io
+
+    auth_headers = {
+        "Authorization": f"Bearer {settings.OPENROUTER_API_KEY}",
+        **_OPENROUTER_HEADERS,
+    }
+    files = {"file": (f"audio.{audio_fmt}", io.BytesIO(audio_wav), f"audio/{audio_fmt}")}
+    data = {"model": settings.OPENROUTER_WHISPER_MODEL}
+
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        response = await client.post(
+            f"{_OPENROUTER_BASE}/audio/transcriptions",
+            headers=auth_headers,
+            files=files,
+            data=data,
+        )
+        response.raise_for_status()
+        return response.json().get("text", "")
+
+
+async def transcribe_audio(audio_bytes: bytes, mime_type: str) -> str:
+    """Transcreve áudio via gpt-4o-audio-preview com fallback para Whisper."""
+    normalized_mime = mime_type.split(";")[0].strip().lower()
+    src_fmt = _EXT_MAP.get(normalized_mime, "ogg")
+
+    if src_fmt in _GPT4O_NATIVE_FORMATS:
+        audio_wav = audio_bytes
+        audio_fmt = src_fmt
+    else:
+        logger.info(
+            "audio_format_conversion_needed",
+            src_format=src_fmt,
+            mime_type=normalized_mime,
+        )
+        audio_wav = _convert_to_wav(audio_bytes, src_fmt)
+        audio_fmt = "wav"
+
+    audio_b64 = base64.b64encode(audio_wav).decode()
+
+    try:
+        return await _transcribe_with_gpt4o_audio(audio_b64, audio_fmt)
+    except Exception as primary_exc:
+        logger.warning(
+            "audio_primary_model_failed_falling_back_to_whisper",
+            primary_model=settings.OPENROUTER_AUDIO_MODEL,
+            error=str(primary_exc),
+        )
+        return await _transcribe_with_whisper(audio_wav, audio_fmt)
 
 
 async def analyze_image(
