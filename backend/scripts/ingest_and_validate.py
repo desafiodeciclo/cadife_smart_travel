@@ -143,10 +143,10 @@ async def main():
     # ------------------------------------------------------------------
     print("\n[2/3] Estatísticas do VectorStore:")
     vs = get_vectorstore()
-    count = vs._collection.count()
+    status = pipeline.get_status()
+    count = status.get("total_chunks", 0)
     print(f"       Total de chunks indexados: {count}")
 
-    status = pipeline.get_status()
     print(f"       Documentos no cache: {status['indexed_documents']}")
     print(f"       Total chunks no cache: {status['total_chunks']}")
     for doc in status["documents"]:
