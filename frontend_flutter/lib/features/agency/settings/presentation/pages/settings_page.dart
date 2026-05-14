@@ -861,8 +861,8 @@ class _SecuritySection extends ConsumerWidget {
 
     // Best-effort: revoke server-side tokens; proceed even if request fails
     try {
-      final dio = ref.read(dioClientProvider);
-      await dio.post('/auth/logout-all-devices');
+      final repo = ref.read(authRepositoryProvider);
+      await repo.logoutAllDevices();
     } on Exception catch (_) {}
 
     if (!context.mounted) return;

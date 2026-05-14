@@ -12,4 +12,6 @@ abstract class IAuthRepository {
   Future<Either<Failure, TokenModel>> refreshToken(String refreshToken);
   Future<Either<Failure, void>> saveFcmToken(String token);
   Future<Either<Failure, void>> changePassword(String currentPassword, String newPassword);
+  Future<Either<Failure, void>> resetPassword(String token, String newPassword);
+  Future<Either<Failure, void>> logoutAllDevices();
 }

@@ -170,4 +170,25 @@ class AuthRepositoryImpl implements IAuthRepository {
       return Left(Failure.fromException(e));
     }
   }
+
+  @override
+  Future<Either<Failure, void>> resetPassword(
+      String token, String newPassword) async {
+    try {
+      await _remoteDatasource.resetPassword(token, newPassword);
+      return const Right(null);
+    } on Exception catch (e) {
+      return Left(Failure.fromException(e));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> logoutAllDevices() async {
+    try {
+      await _remoteDatasource.logoutAllDevices();
+      return const Right(null);
+    } on Exception catch (e) {
+      return Left(Failure.fromException(e));
+    }
+  }
 }

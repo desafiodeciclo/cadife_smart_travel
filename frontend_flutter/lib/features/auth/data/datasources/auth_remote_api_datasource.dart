@@ -36,7 +36,7 @@ class AuthRemoteApiDatasource implements IAuthDatasource {
   @override
   Future<Map<String, dynamic>> register(String name, String email, String password) async {
     final response = await _dio.post(
-      '/auth/register',
+      ApiConstants.register,
       data: {'name': name, 'email': email, 'password': password},
     );
     return response.data as Map<String, dynamic>;
@@ -44,7 +44,7 @@ class AuthRemoteApiDatasource implements IAuthDatasource {
 
   @override
   Future<void> logout() async {
-    await _dio.post('/auth/logout');
+    await _dio.post(ApiConstants.logout);
   }
 
   @override
@@ -81,5 +81,21 @@ class AuthRemoteApiDatasource implements IAuthDatasource {
         'new_password': newPassword,
       },
     );
+  }
+
+  @override
+  Future<void> resetPassword(String token, String newPassword) async {
+    await _dio.post(
+      ApiConstants.resetPassword,
+      data: {
+        'token': token,
+        'new_password': newPassword,
+      },
+    );
+  }
+
+  @override
+  Future<void> logoutAllDevices() async {
+    await _dio.post(ApiConstants.logoutAllDevices);
   }
 }
