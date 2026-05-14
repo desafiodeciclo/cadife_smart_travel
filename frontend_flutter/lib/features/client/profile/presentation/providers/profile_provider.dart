@@ -23,7 +23,7 @@ class UserProfileNotifier extends AsyncNotifier<AuthUser?> {
   @override
   Future<AuthUser?> build() async {
     final repo = ref.watch(iProfileRepositoryProvider);
-    final result = await repo.getCurrentUser();
+    final result = await repo.getUserProfile();
     return result.fold(
       (failure) => throw failure,
       (user) => user,
@@ -33,7 +33,7 @@ class UserProfileNotifier extends AsyncNotifier<AuthUser?> {
   Future<void> refresh() async {
     state = const AsyncLoading();
     final repo = ref.read(iProfileRepositoryProvider);
-    final result = await repo.getCurrentUser();
+    final result = await repo.getUserProfile();
     state = result.fold(
       (failure) => AsyncError(failure, StackTrace.current),
       AsyncData.new,

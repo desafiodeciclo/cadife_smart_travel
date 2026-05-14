@@ -1,6 +1,6 @@
 """add_aya_toggle_feature
 
-Revision ID: g1h2i3j4k5l6
+Revision ID: g1h2i3j4k5l7
 Revises: f6a7b8c9d0e1
 Create Date: 2026-05-11
 
@@ -15,7 +15,7 @@ import uuid
 import sqlalchemy as sa
 from alembic import op
 
-revision = "g1h2i3j4k5l6"
+revision = "g1h2i3j4k5l7"
 down_revision = "f6a7b8c9d0e1"
 branch_labels = None
 depends_on = None

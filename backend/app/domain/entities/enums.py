@@ -72,10 +72,25 @@ class AgendamentoStatus(str, Enum):
 
 
 class AgendamentoTipo(str, Enum):
-    """Curation session type (spec.md §4.4)."""
+    """Curation session type (spec.md §4.4) + manual block.
+
+    'bloqueio' represents a non-curation slot reserved by the consultant
+    (lunch, internal meeting, unavailability). When tipo == bloqueio,
+    lead_id MUST be NULL and motivo_bloqueio MUST be set (DB CHECK).
+    """
 
     online = "online"
     presencial = "presencial"
+    bloqueio = "bloqueio"
+
+
+class MotivoBloqueio(str, Enum):
+    """Reason for a manual time block in the consultant agenda."""
+
+    pausa = "pausa"
+    reuniao_interna = "reuniao_interna"
+    indisponibilidade = "indisponibilidade"
+    outro = "outro"
 
 
 class PropostaStatus(str, Enum):

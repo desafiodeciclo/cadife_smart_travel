@@ -11,7 +11,7 @@ by overriding `_load_external_secrets()`.
 """
 
 from functools import lru_cache
-from typing import Literal, Optional
+from typing import Literal
 
 from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -37,8 +37,6 @@ class Settings(BaseSettings):
         description="Current environment — controls secret loading strategy",
     )
     DEBUG: bool = Field(default=False)
-    HOST: str = Field(default="0.0.0.0")
-    PORT: int = Field(default=8000)
 
     # ── WhatsApp Cloud API (spec.md §15) ──────────────────────────────────
     WHATSAPP_TOKEN: str = Field(default="", description="Meta WhatsApp access token")
@@ -77,7 +75,7 @@ class Settings(BaseSettings):
         description="Modelo para embeddings RAG (base de conhecimento Cadife)",
     )
     OPENROUTER_TRIAGEM_MODEL: str = Field(
-        default="mistralai/mistral-small-3.1-24b-instruct:free",
+        default="qwen/qwen-2.5-72b-instruct:free",
         description="TriagemAgent — extração JSON estruturado do CRM (identificação cliente novo/recorrente)",
     )
     OPENROUTER_CONVERSION_MODEL: str = Field(
@@ -93,7 +91,7 @@ class Settings(BaseSettings):
         description="Modelo de geração de imagens inspiracionais ao final do briefing (recraft-v4 quando disponível via OpenRouter)",
     )
     OPENROUTER_FALLBACK_MODEL: str = Field(
-        default="baidu/ernie-4.5-turbo-preview:free",
+        default="qwen/qwen-2.5-72b-instruct:free",
         description="Modelo fallback econômico para redundância quando cadeia principal falha",
     )
 
@@ -147,23 +145,6 @@ class Settings(BaseSettings):
     KNOWLEDGE_BASE_DIR: str = Field(default="./knowledge_base")
     INGESTION_CACHE_PATH: str = Field(default="./chroma_db/ingestion_cache.json")
 
-    # ── Object Storage (S3 / LocalStack) (spec.md §3.3) ───────────────────
-    S3_ENDPOINT_URL: Optional[str] = Field(
-        default="http://localhost:4566",
-        description="Endpoint para S3 compatível (LocalStack/MinIO). None para AWS S3 real.",
-    )
-    S3_ACCESS_KEY: str = Field(default="test", description="S3 Access Key")
-    S3_SECRET_KEY: str = Field(default="test", description="S3 Secret Key")
-    S3_REGION: str = Field(default="us-east-1", description="S3 Region")
-    
-    # Buckets específicos por funcionalidade
-    S3_BUCKET_NAME: str = Field(default="cadife-travel-diary", description="Bucket principal (retrocompatibilidade)")
-    DOCUMENTS_BUCKET_NAME: str = Field(default="cadife-documents")
-    DIARY_BUCKET_NAME: str = Field(default="cadife-travel-diary")
-    
-    DOCUMENTS_MAX_SIZE_MB: int = Field(default=10, ge=1)
-    DIARY_MAX_SIZE_MB: int = Field(default=5, ge=1)
-
     # ── CORS (spec.md §12.2) ──────────────────────────────────────────────
     ALLOWED_ORIGINS: str = Field(
         default="http://localhost:3000,http://localhost:8080",
@@ -210,18 +191,6 @@ class Settings(BaseSettings):
         description="Global toggle for response caching via Redis",
     )
 
-    # ── AYA Toggle Feature ────────────────────────────────────────────────
-    AYA_CONTEXT_MSGS: int = Field(
-        default=10,
-        ge=1,
-        description="Number of recent messages injected as context when AYA is reactivated",
-    )
-    AYA_ALERT_HOURS: int = Field(
-        default=48,
-        ge=1,
-        description="Hours before alerting consultant that AYA has been disabled for too long",
-    )
-
     # ── Business Rules (spec.md §8.4) ─────────────────────────────────────
     LEAD_EXPIRATION_DAYS: int = Field(
         default=30,
@@ -237,7 +206,6 @@ class Settings(BaseSettings):
         default="",
         description="Optional HTTP endpoint to POST when proposals are auto-expired (CRM, Slack, etc.)",
     )
-
 
     # ── Request Timeout (spec.md §12.3 — webhook must respond in < 5s) ────
     REQUEST_TIMEOUT_SECONDS: float = Field(
@@ -307,8 +275,8 @@ def _load_external_secrets(settings: Settings) -> Settings:
     This hook is intentionally empty for MVP — the interface is ready for extension.
     """
     if settings.APP_ENV == "production":
-        # TODO(devops-backlog): Implement production secret loading via AWS Secrets Manager / Vault.
-        # Requires issue criada no repo desafiodeciclo/cadife-smart-travel antes de deploy prod.
+        # TODO: Implement production secret loading strategy here.
+        # Options: AWS Secrets Manager, HashiCorp Vault, GCP Secret Manager.
         pass
     return settings
 

@@ -40,6 +40,7 @@ dependencies:
   # HTTP / Network
   dio: ^5.7.0
   connectivity_plus: ^7.1.1
+  http: ^1.1.0
 
   # Offline-First DB (Hive)
   hive: ^2.2.3

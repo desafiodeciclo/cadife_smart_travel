@@ -39,7 +39,7 @@ class AuthRemoteMockDatasource implements IAuthDatasource {
   }
 
   @override
-  Future<Map<String, dynamic>?> getCurrentUser() async {
+  Future<Map<String, dynamic>?> getUserProfile() async {
     await Future.delayed(const Duration(milliseconds: 200));
     // Simula que o usuário não está em cache no datasource (o repo cuidará do token)
     return null;

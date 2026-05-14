@@ -204,19 +204,22 @@ class _MeetingCard extends ConsumerWidget {
                 ? meeting.notes!
                 : 'Reunião de Curadoria');
 
-    final statusColor = switch (meeting.statusEnum) {
-      StatusAgendamento.agendado => Colors.blue,
-      StatusAgendamento.pendente => AppColors.warning,
-      StatusAgendamento.realizado => AppColors.success,
-      StatusAgendamento.cancelado => context.cadife.textSecondary,
-      StatusAgendamento.bloqueado => context.cadife.textSecondary,
-    };
+    final statusColor = meeting.isBloqueado
+        ? context.cadife.textSecondary
+        : switch (meeting.statusEnum) {
+            StatusAgendamento.pendente => AppColors.warning,
+            StatusAgendamento.confirmado => Colors.blue,
+            StatusAgendamento.realizado => AppColors.success,
+            StatusAgendamento.cancelado => context.cadife.textSecondary,
+          };
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(10),
-        onTap: () => _openLeadSummary(context, ref),
+        onTap: meeting.leadId != null
+            ? () => _openLeadSummary(context, ref)
+            : null,
         onLongPress: () => _showLongPressMenu(context, ref),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -334,10 +337,12 @@ class _MeetingCard extends ConsumerWidget {
             }
           }
         },
-        onViewLead: () {
-          Navigator.of(sheetCtx).pop();
-          context.push('/agency/leads/${meeting.leadId}');
-        },
+        onViewLead: meeting.leadId != null
+            ? () {
+                Navigator.of(sheetCtx).pop();
+                context.push('/agency/leads/${meeting.leadId}');
+              }
+            : null,
       ),
     );
   }
@@ -693,8 +698,7 @@ class _EditSlotSheetState extends ConsumerState<_EditSlotSheet> {
           widget.meeting.id,
           UpdateAgendaRequest(
             status: _selectedStatus,
-            durationMinutes: _selectedDuration,
-            notes: _notesCtrl.text.trim().isEmpty
+            notas: _notesCtrl.text.trim().isEmpty
                 ? null
                 : _notesCtrl.text.trim(),
           ),
