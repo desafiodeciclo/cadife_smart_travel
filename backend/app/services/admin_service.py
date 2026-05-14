@@ -19,6 +19,7 @@ from app.models.admin import AdminUserMetrics
 from app.models.lead import Lead
 from app.models.user import User, UserPerfil
 from app.services.fcm_service import send_push_notification
+from app.services import audit_service
 
 logger = structlog.get_logger()
 
@@ -239,6 +240,15 @@ async def soft_delete_consultor(
     await db.commit()
     await db.refresh(user)
 
+    await audit_service.log_event(
+        db,
+        event_type="consultor_deactivated",
+        resource_type="user",
+        resource_id=user.id,
+        description=f"Consultor {user.email} desativado. Leads reatribuídos para {reassign_to_id}" if reassign_to_id else f"Consultor {user.email} desativado.",
+        payload={"reassign_to": str(reassign_to_id) if reassign_to_id else None}
+    )
+
     logger.info(
         "admin_user_soft_deleted",
         admin_action="soft_delete_consultor",
@@ -273,6 +283,15 @@ async def reassign_lead(
     lead.consultor_id = new_consultor_id
     await db.commit()
     await db.refresh(lead)
+
+    await audit_service.log_event(
+        db,
+        event_type="lead_reassigned",
+        resource_type="lead",
+        resource_id=lead.id,
+        description=f"Lead reatribuído de {old_consultor_id} para {new_consultor_id}",
+        payload={"old_consultor": str(old_consultor_id), "new_consultor": str(new_consultor_id)}
+    )
 
     # Notify old consultant (if any)
     if old_consultor_id:
