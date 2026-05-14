@@ -6,7 +6,7 @@ abstract class IAuthRepository {
   Future<Either<Failure, AuthUser>> login(String email, String password, {UserRole? profileHint});
   Future<Either<Failure, AuthUser>> register(String name, String email, String password);
   Future<Either<Failure, void>> logout();
-  Future<Either<Failure, AuthUser?>> getCurrentUser();
+  Future<Either<Failure, AuthUser?>> getUserProfile();
   Future<Either<Failure, bool>> isLoggedIn();
   Future<Either<Failure, void>> forgotPassword(String email);
   Future<Either<Failure, TokenModel>> refreshToken(String refreshToken);

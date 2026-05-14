@@ -17,7 +17,7 @@ class ProfileRepositoryImpl implements IProfileRepository {
   static const _cacheKey = 'profile:me';
 
   @override
-  Future<Either<Failure, AuthUser>> getCurrentUser() async {
+  Future<Either<Failure, AuthUser>> getUserProfile() async {
     try {
       final response = await _dio.get(ApiConstants.me);
       final user = AuthUser.fromJson(response.data as Map<String, dynamic>);

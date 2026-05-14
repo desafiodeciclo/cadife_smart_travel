@@ -21,8 +21,8 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, func
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, func, JSON
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.infrastructure.persistence.database import Base
@@ -50,7 +50,7 @@ class ConversationSummaryModel(Base):
         index=True,
     )
     sessao_id: Mapped[str] = mapped_column(String(64), nullable=False)
-    resumo_json: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    resumo_json: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     resumo_pendente: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False
     )

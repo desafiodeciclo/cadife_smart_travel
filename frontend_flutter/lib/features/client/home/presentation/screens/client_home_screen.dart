@@ -7,6 +7,8 @@ import 'package:cadife_smart_travel/features/client/presentation/widgets/itinera
 import 'package:cadife_smart_travel/features/client/presentation/widgets/recommendations_section.dart';
 import 'package:cadife_smart_travel/features/client/presentation/widgets/trip_status_section.dart';
 import 'package:cadife_smart_travel/features/notifications/presentation/widgets/notification_bell.dart';
+import 'package:cadife_smart_travel/providers/auth_provider.dart';
+import 'package:cadife_smart_travel/design_system/components/shimmer_loading.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -19,6 +21,7 @@ class ClientHomeScreen extends ConsumerWidget {
     final consultant = ClientHomeMocks.mockConsultant();
     final documents = ClientHomeMocks.mockDocuments();
     final recommendations = ClientHomeMocks.mockRecommendations();
+    final userAsync = ref.watch(currentUserProvider);
 
     return PageScaffold(
       showProfile: false, // Perfil agora no leading da AppBar
@@ -39,6 +42,38 @@ class ClientHomeScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // 0. Saudação ao usuário
+                  userAsync.when(
+                    data: (user) {
+                      if (user == null) return const SizedBox.shrink();
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 20),
+                        child: Text(
+                          'Olá, ${user.name}',
+                          style: AppTextStyles.h2.copyWith(
+                            color: context.cadife.textPrimary,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                      );
+                    },
+                    loading: () => const Padding(
+                      padding: EdgeInsets.only(bottom: 20),
+                      child: ShimmerLoading(
+                        isLoading: true,
+                        child: Skeleton(height: 32, width: 200),
+                      ),
+                    ),
+                    error: (err, _) => Padding(
+                      padding: const EdgeInsets.only(bottom: 20),
+                      child: Text(
+                        'Erro ao carregar nome: $err',
+                        style: const TextStyle(color: Colors.red, fontSize: 12),
+                      ),
+                    ),
+                  ),
+
                   // 1. Banner da viagem atual
                   CurrentTripBanner(trip: trip),
                   const SizedBox(height: 24),
