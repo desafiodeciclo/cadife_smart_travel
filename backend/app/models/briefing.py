@@ -18,7 +18,7 @@ class Briefing(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(GUID(), primary_key=True, default=uuid.uuid4)
     lead_id: Mapped[uuid.UUID] = mapped_column(
-        GUID(), ForeignKey("leads.id"), unique=True, nullable=False
+        GUID(), ForeignKey("leads.id", ondelete="CASCADE"), unique=True, nullable=False
     )
     destino: Mapped[Optional[str]] = mapped_column(String(255))
     origem: Mapped[Optional[str]] = mapped_column(String(255))

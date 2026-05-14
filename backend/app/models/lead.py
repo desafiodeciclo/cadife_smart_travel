@@ -54,13 +54,13 @@ class Lead(Base):
     )
 
     consultor_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id")
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
     client_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id"), nullable=True
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
     offer_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("offers.id"), nullable=True
+        UUID(as_uuid=True), ForeignKey("offers.id", ondelete="SET NULL"), nullable=True
     )
     budget: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), nullable=True)
     aya_ativo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
