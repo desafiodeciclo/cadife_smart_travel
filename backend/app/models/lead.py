@@ -6,11 +6,10 @@ from decimal import Decimal
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, func, Numeric
 from sqlalchemy.dialects.postgresql import ENUM as PgEnum, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from pydantic import BaseModel
 
 from app.core.database import Base
 from app.infrastructure.security.pii_encryption import EncryptedString
-from app.domain.entities.enums import LeadOrigem, LeadStatus, LeadScore, PropostaStatus
+from app.domain.entities.enums import LeadOrigem, LeadStatus, LeadScore
 
 if TYPE_CHECKING:
     from app.models.briefing import Briefing
@@ -111,68 +110,3 @@ class Lead(Base):
     )
 
 
-# --- Pydantic schemas ---
-
-class LeadCreate(BaseModel):
-    nome: Optional[str] = None
-    telefone: str
-    origem: LeadOrigem = LeadOrigem.whatsapp
-
-
-class LeadUpdate(BaseModel):
-    nome: Optional[str] = None
-    status: Optional[LeadStatus] = None
-    score: Optional[LeadScore] = None
-    consultor_id: Optional[uuid.UUID] = None
-
-
-class PropostaListItem(BaseModel):
-    id: uuid.UUID
-    descricao: str
-    status: PropostaStatus
-    valor_estimado: Optional[Decimal]
-    criado_em: datetime
-
-    model_config = {"from_attributes": True}
-
-
-class LeadResponse(BaseModel):
-    id: uuid.UUID
-    nome: Optional[str]
-    telefone: str
-    origem: LeadOrigem
-    status: LeadStatus
-    score: Optional[LeadScore]
-    consultor_id: Optional[uuid.UUID]
-    client_id: Optional[uuid.UUID] = None
-    offer_id: Optional[uuid.UUID] = None
-    consultor_nome: Optional[str] = None
-    consultor_avatar: Optional[str] = None
-    is_archived: bool
-    criado_em: datetime
-    atualizado_em: datetime
-    propostas: list[PropostaListItem] = []
-
-    model_config = {"from_attributes": True}
-
-
-class LeadListItem(BaseModel):
-    id: uuid.UUID
-    nome: Optional[str]
-    telefone: str
-    origem: LeadOrigem
-    status: LeadStatus
-    score: Optional[LeadScore]
-    criado_em: datetime
-    atualizado_em: datetime
-    completude_pct: Optional[int] = None
-
-    model_config = {"from_attributes": True}
-
-
-class LeadListResponse(BaseModel):
-    items: list[LeadListItem]
-    total: int
-    page: int
-    limit: int
-    pages: int

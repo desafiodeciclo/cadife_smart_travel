@@ -36,7 +36,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import get_current_user, get_db
 from app.infrastructure.security.dependencies import RequiresRole
-from app.models.user import User, UserResponse
+from app.models.user import User
+from app.presentation.schemas.user_schema import UserResponse
 from app.presentation.schemas.common_errors import HTTPErrorResponse
 from app.presentation.schemas.consultor_profile_schema import (
     BioUpdateRequest,

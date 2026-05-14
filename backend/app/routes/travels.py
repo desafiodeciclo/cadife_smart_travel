@@ -10,8 +10,8 @@ from app.infrastructure.security.dependencies import get_current_user, get_db
 from app.infrastructure.persistence.models.user_model import UserModel
 from app.infrastructure.persistence.models.travel_model import TravelModel
 from app.infrastructure.persistence.repositories.documento_repository import DocumentoRepository
-from app.schemas.travel import TravelResponse, TravelListResponse, TravelStatus
-from app.schemas.document import DocumentResponse, DocumentsListResponse, DocumentType
+from app.presentation.schemas.document_schema import DocumentResponse, DocumentsListResponse, DocumentType
+from app.presentation.schemas.travel_schema import TravelResponse, TravelListResponse, TravelStatus
 
 router = APIRouter(prefix="/travels", tags=["travels"])
 

@@ -15,9 +15,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import hash_password
 from app.infrastructure.config.settings import get_settings
-from app.models.admin import AdminUserMetrics
+from app.presentation.schemas.admin_schema import AdminUserMetrics
 from app.models.lead import Lead
-from app.models.user import User, UserPerfil
+from app.domain.entities.enums import UserPerfil
+from app.models.user import User
 from app.services.fcm_service import send_push_notification
 
 logger = structlog.get_logger()

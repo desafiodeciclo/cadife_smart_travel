@@ -1,21 +1,13 @@
 import uuid
 from datetime import datetime
-from enum import Enum
 from typing import Optional
 
 from sqlalchemy import Boolean, DateTime, String, func
 from sqlalchemy.orm import Mapped, mapped_column
-from pydantic import BaseModel
 
 from app.core.database import Base
+from app.domain.entities.enums import UserPerfil
 from app.infrastructure.persistence.types import GUID, StringArray
-
-
-class UserPerfil(str, Enum):
-    agencia = "agencia"
-    cliente = "cliente"
-    consultor = "consultor"
-    admin = "admin"
 
 
 class User(Base):
@@ -44,54 +36,3 @@ class User(Base):
     tipo_viagem: Mapped[Optional[list[str]]] = mapped_column(StringArray())
     preferencias: Mapped[Optional[list[str]]] = mapped_column(StringArray())
     tem_passaporte: Mapped[Optional[bool]] = mapped_column(Boolean)
-
-
-# Pydantic schemas
-
-
-class LoginRequest(BaseModel):
-    email: str
-    password: str
-
-
-class TokenResponse(BaseModel):
-    access_token: str
-    refresh_token: str
-    token_type: str = "bearer"
-    expires_in: int = 3600
-
-
-class RefreshRequest(BaseModel):
-    refresh_token: str
-
-
-class UserResponse(BaseModel):
-    id: uuid.UUID
-    email: str
-    nome: str
-    perfil: UserPerfil
-    telefone: Optional[str]
-    avatar_url: Optional[str]
-    bio: Optional[str] = None
-    is_active: bool
-    criado_em: datetime
-    tipo_viagem: Optional[list[str]]
-    preferencias: Optional[list[str]]
-    tem_passaporte: Optional[bool]
-
-    model_config = {"from_attributes": True}
-
-
-class UserProfileUpdate(BaseModel):
-    nome: Optional[str] = None
-    tipo_viagem: Optional[list[str]] = None
-    preferencias: Optional[list[str]] = None
-    tem_passaporte: Optional[bool] = None
-
-
-class FcmTokenRequest(BaseModel):
-    fcm_token: str
-
-
-class FcmTokenResponse(BaseModel):
-    message: str

@@ -4,7 +4,8 @@ from typing import Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.user import User, UserProfileUpdate
+from app.models.user import User
+from app.presentation.schemas.user_schema import UserProfileUpdate
 
 
 async def get_user_by_email(db: AsyncSession, email: str) -> Optional[User]:

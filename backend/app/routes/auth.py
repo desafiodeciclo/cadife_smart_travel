@@ -9,7 +9,7 @@ from app.core.security import (
     decode_token,
     verify_password,
 )
-from app.models.user import (
+from app.presentation.schemas.user_schema import (
     FcmTokenRequest,
     FcmTokenResponse,
     LoginRequest,
