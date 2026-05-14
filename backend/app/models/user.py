@@ -35,6 +35,7 @@ class User(Base):
     telefone: Mapped[Optional[str]] = mapped_column(String(20))
     fcm_token: Mapped[Optional[str]] = mapped_column(String(500))
     avatar_url: Mapped[Optional[str]] = mapped_column(String(500))
+    bio: Mapped[Optional[str]] = mapped_column(String(1000))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     criado_em: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
@@ -82,7 +83,7 @@ class ResetPasswordRequest(BaseModel):
 
 
 class ChangePasswordRequest(BaseModel):
-    old_password: str
+    current_password: str
     new_password: SecretStr = Field(min_length=8, max_length=128)
 
     @field_validator("new_password")
@@ -117,6 +118,7 @@ class UserResponse(BaseModel):
     perfil: UserPerfil
     telefone: Optional[str]
     avatar_url: Optional[str]
+    bio: Optional[str]
     is_active: bool
     criado_em: datetime
     tipo_viagem: Optional[list[str]]
@@ -128,6 +130,8 @@ class UserResponse(BaseModel):
 
 class UserProfileUpdate(BaseModel):
     nome: Optional[str] = None
+    bio: Optional[str] = None
+    avatar_url: Optional[str] = None
     tipo_viagem: Optional[list[str]] = None
     preferencias: Optional[list[str]] = None
     tem_passaporte: Optional[bool] = None

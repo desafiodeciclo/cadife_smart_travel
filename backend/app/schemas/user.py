@@ -12,7 +12,8 @@ class UserResponse(BaseModel):
     name: str
     email: EmailStr
     role: UserRole
-    avatar: Optional[str] = None
+    avatar_url: Optional[str] = None
+    bio: Optional[str] = None
 
     class Config:
         json_schema_extra = {
@@ -21,7 +22,8 @@ class UserResponse(BaseModel):
                 "name": "João Silva",
                 "email": "joao@cadife.com",
                 "role": "consultant",
-                "avatar": "https://..."
+                "avatar_url": "https://...",
+                "bio": "Consultor especializado em viagens de luxo."
             }
         }
         from_attributes = True

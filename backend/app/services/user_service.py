@@ -47,6 +47,13 @@ async def update_fcm_token(db: AsyncSession, user: User, fcm_token: str) -> User
     return user
 
 
+async def update_user_avatar(db: AsyncSession, user: User, avatar_url: str) -> User:
+    user.avatar_url = avatar_url
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+
 async def update_user_profile(
     db: AsyncSession, user: User, data: UserProfileUpdate
 ) -> User:
@@ -58,6 +65,10 @@ async def update_user_profile(
         user.preferencias = data.preferencias
     if data.tem_passaporte is not None:
         user.tem_passaporte = data.tem_passaporte
+    if data.bio is not None:
+        user.bio = data.bio
+    if data.avatar_url is not None:
+        user.avatar_url = data.avatar_url
     await db.commit()
     await db.refresh(user)
     return user
