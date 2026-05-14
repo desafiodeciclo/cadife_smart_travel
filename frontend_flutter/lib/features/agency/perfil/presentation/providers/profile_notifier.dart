@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:cadife_smart_travel/core/migrations/migrate_shared_prefs_to_secure.dart';
+import 'package:cadife_smart_travel/core/services/secure_storage_service.dart';
 import 'package:cadife_smart_travel/features/agency/perfil/domain/entities/consultor_profile_models.dart';
 import 'package:cadife_smart_travel/features/agency/perfil/domain/repositories/i_consultor_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,6 +18,10 @@ final iConsultorRepositoryProvider = Provider<IConsultorRepository>((ref) {
   throw UnimplementedError('Override em ProviderScope');
 });
 
+final secureStorageServiceProvider = Provider((ref) {
+  return SecureStorageService();
+});
+
 // ── Profile ───────────────────────────────────────────────────────────────────
 
 final consultorProfileProvider =
@@ -24,8 +30,16 @@ final consultorProfileProvider =
 );
 
 class ConsultorProfileNotifier extends AsyncNotifier<ConsultorProfile> {
+  late SecureStorageService _secureStorage;
+  late ProfileMigrationManager _migrationManager;
+
   @override
   Future<ConsultorProfile> build() async {
+    _secureStorage = ref.read(secureStorageServiceProvider);
+    _migrationManager = ProfileMigrationManager(secureStorage: _secureStorage);
+
+    await _migrationManager.runMigration();
+
     final cached = await _loadProfileFromCache();
     if (cached != null) {
       _refreshProfileInBackground();
@@ -100,7 +114,8 @@ class ConsultorProfileNotifier extends AsyncNotifier<ConsultorProfile> {
       final cacheTime = DateTime.tryParse(timeStr);
       if (cacheTime == null) return null;
       if (DateTime.now().difference(cacheTime) > _kCacheMaxAge) return null;
-      final jsonStr = prefs.getString(_kProfileKey);
+
+      final jsonStr = await _secureStorage.read(key: _kProfileKey);
       if (jsonStr == null) return null;
       return ConsultorProfile.fromJson(
         jsonDecode(jsonStr) as Map<String, dynamic>,
@@ -113,8 +128,20 @@ class ConsultorProfileNotifier extends AsyncNotifier<ConsultorProfile> {
   Future<void> _saveProfileToCache(ConsultorProfile profile) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_kProfileKey, jsonEncode(profile.toJson()));
+      await _secureStorage.write(
+        key: _kProfileKey,
+        value: jsonEncode(profile.toJson()),
+      );
       await prefs.setString(_kCacheTimeKey, DateTime.now().toIso8601String());
+    } on Exception catch (_) {}
+  }
+
+  /// Logout: limpa dados de perfil do armazenamento seguro.
+  Future<void> logout() async {
+    try {
+      await _secureStorage.delete(key: _kProfileKey);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_kCacheTimeKey);
     } on Exception catch (_) {}
   }
 
