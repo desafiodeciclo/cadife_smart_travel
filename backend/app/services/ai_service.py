@@ -1,9 +1,9 @@
+import json
+import re
 import time
-from typing import Optional, Any
-from datetime import datetime
+from typing import Optional
 
-from langchain_core.messages import HumanMessage, SystemMessage, BaseMessage
-from langchain_openai import ChatOpenAI
+import structlog
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.output_parsers import JsonOutputParser
 from pydantic import BaseModel, Field
@@ -38,95 +38,411 @@ def get_memory(phone: str) -> SimpleWindowMemory:
     """Recupera ou cria a memória para um usuário específico."""
     _evict_stale_memories()
     if phone not in _memories:
-        _memories[phone] = SimpleWindowMemory(
+        _memories[phone] = ConversationBufferWindowMemory(
             k=_MEMORY_WINDOW_K,
             memory_key="chat_history",
             return_messages=True,
         )
-    _memory_last_access[phone] = time.time()
     return _memories[phone]
 
-# --- Modelos de Dados ---
-class BriefingSchema(BaseModel):
-    destinos: list[str] = Field(default_factory=list)
-    orcamento: Optional[str] = None
-    data_viagem: Optional[str] = None
-    num_passageiros: Optional[int] = None
-    interesses: list[str] = Field(default_factory=list)
 
-# --- Classe Principal do Serviço ---
-class AyaService:
-    def __init__(self):
-        # Inicializa o modelo via OpenRouter/OpenAI
-        self.llm = ChatOpenAI(
-            model=settings.OPENROUTER_MODEL,
-            openai_api_key=settings.OPENROUTER_API_KEY,
-            openai_api_base="https://openrouter.ai/api/v1",
-            temperature=0.7
+def preload_memory_from_db(
+    phone: str,
+    interacoes: list[dict],
+) -> None:
+    """Populate conversation memory from persisted interacoes rows.
+
+    Call this at the start of a conversation when memory is
+    empty (e.g. after a server restart/cache clear) to restore the AI's context.
+
+    Args:
+        phone: Customer phone number (used as memory key).
+        interacoes: List of dicts with keys 'mensagem_cliente' and
+                    'mensagem_ia', ordered oldest-first.
+    """
+    memory = get_memory(phone)
+    history = memory.load_memory_variables({})
+
+    # If the history already has messages, we don't need to preload
+    if history.get("chat_history"):
+        return
+
+    for row in interacoes[-_MEMORY_WINDOW_K:]:
+        cliente = row.get("mensagem_cliente") or ""
+        ia = row.get("mensagem_ia") or ""
+        if cliente or ia:
+            memory.save_context({"input": cliente}, {"output": ia})
+
+    logger.info("memory_preloaded_from_db", phone=phone, rows=len(interacoes))
+
+
+def _resolve_destino_tag(destino: Optional[str]) -> Optional[str]:
+    """
+    Map a free-text destination (from briefing) to a taxonomy tag for metadata filtering.
+    Returns None if no category matches (avoids over-filtering).
+    """
+    if not destino:
+        return None
+    normalized = destino.lower()
+    for category, keywords in DESTINO_KEYWORDS.items():
+        if any(kw in normalized for kw in keywords):
+            return category
+    return None
+
+
+def _resolve_perfil_tag(perfil: Optional[str]) -> Optional[str]:
+    """Map briefing perfil enum value to metadata taxonomy tag."""
+    if not perfil:
+        return None
+    _PERFIL_MAP = {
+        "casal": "Casal",
+        "família": "Família",
+        "familia": "Família",
+        "solo": "Solo",
+        "grupo": "Grupo",
+        "amigos": "Grupo",
+    }
+    return _PERFIL_MAP.get(perfil.lower())
+
+
+def _retrieve_context(
+    query: str,
+    briefing: Optional[BriefingExtracted] = None,
+) -> str:
+    """
+    Retrieve RAG context, applying metadata filters derived from current briefing.
+
+    If the lead's briefing already contains destination/profile data, the retrieval
+    is narrowed via hard-constraint metadata tags to keep context assertive.
+    """
+    try:
+        destino_tag = _resolve_destino_tag(briefing.destino if briefing else None)
+        perfil_tag = _resolve_perfil_tag(
+            briefing.perfil.value if briefing and briefing.perfil else None
         )
 
-    async def process_message(self, phone: str, message_text: str) -> str:
-        """
-        Processa a mensagem do usuário: Busca contexto, atualiza memória e gera resposta.
-        """
+        if destino_tag or perfil_tag:
+            return rag_service.retrieve_with_metadata_filter(
+                query,
+                k=4,
+                destino=destino_tag,
+                perfil=perfil_tag,
+            )
+        return rag_service.retrieve_context(query, k=3)
+    except Exception as exc:
+        logger.warning("rag_retrieval_failed", error=str(exc))
+        return ""
+
+
+def _fallback_reply(message: str) -> str:
+    return (
+        f"Olá! Recebemos sua mensagem 😊\n\n"
+        f'"{message}"\n\n'
+        f"Em breve um consultor da Cadife Tour irá te atender pessoalmente."
+    )
+
+
+def detect_hallucinations(response: str) -> list[str]:
+    """Detect common hallucination patterns in AI response."""
+    hallucinations = []
+    # Patterns from implementation plan
+    if re.search(r"(custa|preço|valor)\s*r\$\s*[\d.,]+", response, re.IGNORECASE):
+        hallucinations.append("price_generated")
+    if re.search(r"(disponível|reservo|confirmo sua vaga)", response, re.IGNORECASE):
+        hallucinations.append("availability_confirmed")
+    return hallucinations
+
+
+async def process_message(
+    phone: str,
+    message: str,
+    briefing: Optional[BriefingExtracted] = None,
+    validation_errors: Optional[list[str]] = None,
+) -> str:
+    """Processa mensagem do cliente com a AYA.
+
+    Args:
+        phone: Telefone do cliente.
+        message: Mensagem enviada pelo cliente.
+        briefing: Briefing extraído da conversa atual para contextualizar o RAG.
+        validation_errors: Lista opcional de erros de validação de domínio.
+            Quando presente, a AYA é instruída a informar o cliente que
+            a proposta contém inconsistências e pedir novos dados.
+    """
+    try:
+        llm = get_llm()
         memory = get_memory(phone)
-        chat_history = memory.load_memory_variables({})["chat_history"]
 
         # 1. Recuperar Contexto Relevante (RAG)
         context = await retrieve_context(message_text)
+        # 1. Sanitizar entrada do usuário contra prompt injection
+        safe_message = sanitize_user_input(message)
+        if safe_message != message:
+            logger.warning("user_input_sanitized", phone=phone)
 
-        # 2. Preparar o Prompt
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", settings.AYA_SYSTEM_PROMPT),
-            MessagesPlaceholder(variable_name="chat_history"),
-            ("system", f"CONTEXTO RELEVANTE:\n{context}"),
-            ("human", "{input}")
-        ])
+        context = _retrieve_context(safe_message, briefing)
 
-        chain = prompt | self.llm
+        # 2. Montar system prompt parametrizado com isoladores textuais
+        system_prompt = build_system_prompt(context=wrap_rag_context(context))
 
         try:
             # 3. Gerar Resposta com Trace do Langfuse
             response = await chain.ainvoke(
                 {"input": message_text, "chat_history": chat_history},
                 config={"callbacks": get_callbacks_for_chain()}
+        # 3. Se houver erros de validação, injeta instrução corretiva no prompt
+        if validation_errors:
+            errors_summary = "; ".join(validation_errors)
+            system_prompt += f"""
+
+NOTA INTERNA — DADOS INCONSISTENTES:
+Os dados coletados apresentam inconsistência: {errors_summary}.
+Informe o cliente de forma natural e empática que precisa revisar uma informação —
+sem linguagem técnica, sem listas, sem culpar o cliente.
+Faça UMA pergunta de esclarecimento para corrigir o ponto específico.
+Mantenha o tom consultivo e acolhedor."""
+
+            logger.info(
+                "validation_correction_injected",
+                phone=phone,
+                errors=validation_errors,
             )
-            
-            response_content = response.content
 
-            # 4. Salvar na Memória
-            memory.save_context({"input": message_text}, {"output": response_content})
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", system_prompt),
+                MessagesPlaceholder(variable_name="chat_history"),
+                ("human", wrap_user_content("{input}")),
+            ]
+        )
 
-            return response_content
+        chain = prompt | llm
+        history = memory.load_memory_variables({})
 
-        except Exception as e:
-            logger.error("error_generating_response", phone=phone, error=str(e))
-            return "Desculpe, tive um probleminha técnico. Pode repetir?"
+        # Observabilidade: rastrear chain no Langfuse (se configurado)
+        callbacks = get_callbacks_for_chain()
+        config = {"callbacks": callbacks} if callbacks else {}
 
-    async def extract_briefing(self, phone: str) -> BriefingSchema:
-        """
-        Analisa o histórico e extrai os dados estruturados da viagem.
-        """
-        memory = get_memory(phone)
-        chat_history = memory.load_memory_variables({})["chat_history"]
-        
-        if not chat_history:
-            return BriefingSchema()
+        start_time = time.time()
+        response = await chain.ainvoke(
+            {
+                "chat_history": history.get("chat_history", []),
+                "input": safe_message,
+            },
+            config=config,
+        )
+        latency_ms = int((time.time() - start_time) * 1000)
 
-        # Chama o serviço especializado em extração
-        return await extract_briefing_structured(chat_history, self.llm)
+        response_content = str(response.content)
+        hallucinations = detect_hallucinations(response_content)
 
-    def detect_hallucinations(self, text: str) -> bool:
-        """
-        Verifica se a IA mencionou preços fixos ou informações sensíveis proibidas.
-        """
-        import re
-        # Exemplo simples: bloquear menção a valores em R$ se não houver contexto real
-        price_pattern = r"R\$\s?\d+"
-        if re.search(price_pattern, text):
-            # Lógica personalizada aqui
-            return True
-        return False
+        if hallucinations:
+            logger.warning(
+                "hallucination_detected",
+                phone=phone,
+                hallucinations=hallucinations,
+                response_snippet=response_content[:100],
+            )
+            await alert_service.AlertService.notify_hallucination(
+                phone, hallucinations, response_content[:100]
+            )
 
-# Instância Singleton
-aya_service = AyaService()
+        memory.save_context({"input": safe_message}, {"output": response_content})
+
+        logger.info(
+            "ai_message_processed",
+            phone=phone,
+            latency_ms=latency_ms,
+            response_length=len(response_content),
+            hallucination_count=len(hallucinations),
+        )
+
+        # Flush eventos Langfuse pendentes (não bloqueante)
+        flush_langfuse()
+
+        return response_content
+
+    except Exception as exc:
+        logger.error("ai_chain_error", phone=phone, error=str(exc))
+        return _fallback_reply(message)
+
+
+async def extract_briefing(conversation: list[dict]) -> BriefingExtracted:
+    """Extrai briefing de viagem com fallback chain de autocorreção.
+
+    Estratégia:
+      1. Tentativa primária: structured_output nativo do LLM
+      2. Fallback: se structured_output falhar (JSON malformado, schema mismatch),
+         usa um prompt de autocorreção com LLM mais simples/robusto
+      3. Último recurso: retorna BriefingExtracted vazio (seguro, sem crash)
+
+    Args:
+        conversation: Lista de dicts com keys 'role' e 'content'.
+
+    Returns:
+        Instância de BriefingExtracted, possivelmente vazia.
+    """
+    if not settings.OPENROUTER_API_KEY:
+        return BriefingExtracted()
+
+    # Sanitizar conversa antes de enviar à extração
+    safe_conversation = []
+    for msg in conversation:
+        safe_msg = dict(msg)
+        safe_msg["content"] = sanitize_user_input(msg.get("content", ""))
+        safe_conversation.append(safe_msg)
+
+    conversation_text = "\n".join(
+        f"{msg['role'].upper()}: {msg['content']}" for msg in safe_conversation
+    )
+
+    llm = get_llm()
+
+    callbacks = get_callbacks_for_chain()
+    config = {"callbacks": callbacks} if callbacks else {}
+
+    # -----------------------------------------------------------------------
+    # TENTATIVA 1 — Structured Output nativo
+    # -----------------------------------------------------------------------
+    try:
+        structured_llm = llm.with_structured_output(BriefingExtracted)
+
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", EXTRACTION_SYSTEM_PROMPT_SECURE),
+                ("human", "Extraia o briefing da seguinte conversa:\n\n{conversation}"),
+            ]
+        )
+
+        chain = prompt | structured_llm
+        briefing = await chain.ainvoke(
+            {"conversation": conversation_text},
+            config=config,
+        )
+
+        briefing_data = briefing.model_dump()
+        completude = calculate_completude(briefing_data)
+        logger.info(
+            "briefing_extracted_structured",
+            completude=completude,
+            fields_filled=[
+                k for k, v in briefing_data.items() if v not in (None, [], "")
+            ],
+        )
+        flush_langfuse()
+        return briefing
+
+    except Exception as exc_primary:
+        logger.warning(
+            "briefing_extraction_primary_failed",
+            error=str(exc_primary),
+            error_type=type(exc_primary).__name__,
+        )
+
+    # -----------------------------------------------------------------------
+    # TENTATIVA 2 — Fallback: autocorreção com prompt explícito (Gemini)
+    # -----------------------------------------------------------------------
+    try:
+        fallback_llm = ChatOpenAI(
+            model=settings.OPENROUTER_MODEL,
+            temperature=0.0,
+            timeout=15,
+            max_retries=1,
+            openai_api_key=settings.OPENROUTER_API_KEY,
+            openai_api_base="https://openrouter.ai/api/v1",
+            default_headers={
+                "HTTP-Referer": "https://cadifetour.com",
+                "X-Title": "Cadife Smart Travel",
+            },
+        )
+
+        autocorrect_prompt = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    (
+                        "Você é um extrator de dados JSON de alta "
+                        "precisão. Sua tarefa é transformar a conversa "
+                        "fornecida em um objeto JSON válido.\n"
+                        "\n"
+                        "REGRAS RÍGIDAS:\n"
+                        "1. JSON PURO: Retorne APENAS o JSON. Sem "
+                        "explicações, sem markdown, sem texto antes ou "
+                        "depois.\n"
+                        "2. ZERO INFERÊNCIA: Se a informação não estiver "
+                        "na conversa, use null.\n"
+                        "3. FORMATO DE DATA: Use estritamente YYYY-MM-DD "
+                        "para datas.\n"
+                        "4. PERFIL: Use apenas: casal, familia, solo, "
+                        "grupo, amigos.\n"
+                        "5. ORÇAMENTO: Use apenas: baixo, medio, alto, "
+                        "premium.\n"
+                        "\n"
+                        "SCHEMA:\n"
+                        "{{\n"
+                        '  "destino": "string ou null",\n'
+                        '  "data_ida": "YYYY-MM-DD ou null",\n'
+                        '  "data_volta": "YYYY-MM-DD ou null",\n'
+                        '  "qtd_pessoas": "int ou null",\n'
+                        '  "perfil": "string ou null",\n'
+                        '  "tipo_viagem": ["string"],\n'
+                        '  "preferencias": ["string"],\n'
+                        '  "orcamento": "string ou null",\n'
+                        '  "tem_passaporte": "bool ou null",\n'
+                        '  "observacoes": "string ou null"\n'
+                        "}}"
+                    ),
+                ),
+                (
+                    "human",
+                    "Converta esta conversa em JSON seguindo as regras:\n{conversation}",
+                ),
+            ]
+        )
+
+        autocorrect_chain = autocorrect_prompt | fallback_llm
+        response = await autocorrect_chain.ainvoke(
+            {"conversation": conversation_text},
+            config=config,
+        )
+        raw_json = str(response.content).strip()
+
+        # Limpeza robusta de Markdown e ruídos
+        # Remove blocos de código markdown se existirem
+        if "```" in raw_json:
+            match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", raw_json, re.DOTALL)
+            if match:
+                raw_json = match.group(1)
+            else:
+                # Fallback: remove apenas os delimitadores
+                raw_json = re.sub(r"```(?:json)?", "", raw_json).strip()
+                raw_json = re.sub(r"```$", "", raw_json).strip()
+
+        parsed = json.loads(raw_json)
+        briefing = BriefingExtracted.model_validate(parsed)
+
+        briefing_data = briefing.model_dump()
+        completude = calculate_completude(briefing_data)
+        logger.info(
+            "briefing_extracted_fallback_autocorrect",
+            completude=completude,
+            fields_filled=[
+                k for k, v in briefing_data.items() if v not in (None, [], "")
+            ],
+        )
+        flush_langfuse()
+        return briefing
+
+    except Exception as exc_fallback:
+        logger.error(
+            "briefing_extraction_fallback_failed",
+            error=str(exc_fallback),
+            error_type=type(exc_fallback).__name__,
+        )
+
+    # -----------------------------------------------------------------------
+    # TENTATIVA 3 — Último recurso: retorno seguro vazio
+    # -----------------------------------------------------------------------
+    logger.error("briefing_extraction_all_attempts_failed", returning_empty=True)
+    flush_langfuse()
+    return BriefingExtracted()

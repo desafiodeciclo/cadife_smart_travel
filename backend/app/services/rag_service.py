@@ -235,7 +235,7 @@ def retrieve_context(query: str, k: int = 3) -> str:
         return _join(safe_docs)
     except Exception as exc:
         logger.warning("rag_retrieval_failed", error=str(exc))
-        return "Não foi possível recuperar informações da base de conhecimento no momento."
+        return ""
 
 
 def retrieve_with_metadata_filter(

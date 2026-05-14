@@ -1,0 +1,37 @@
+{
+  "id": "B-feat-auth-e2e-real-db",
+  "title": "Estabilização do Fluxo de Autenticação e Perfil com Integração Real ao Banco de Dados",
+  "status": "in-progress",
+  "owner": "Nikolas Tesch / Otávio Grotto",
+  "created_at": "2026-05-13",
+  "sprint": "ciclo-2",
+  "depends_on": ["feat/ui-shared-auth-screens", "feat/backend-lead-briefing-logic"],
+  "blocks": [],
+  "description": "Consolidação da estabilização completa do fluxo de Autenticação e Perfil, saindo de mocks fixos para integração real com banco de dados e UI dinâmica. Inclui E2E login→home, compatibilidade backend↔frontend, persistência JWT, greeting profissional, sincronização de perfil, consulta SQLite real, resolução de conflitos e validação multi-usuário.",
+  "user_story": "Como usuário do app, quero fazer login com minhas credenciais reais, ser redirecionado para minha home correta e visualizar meus dados de perfil atualizados, para que eu tenha uma experiência personalizada e segura.",
+  "acceptance_criteria": [
+    "Fluxo E2E login → home executa sem crashes ou loops infinitos",
+    "AuthRepositoryImpl interpreta corretamente o objeto token (access/refresh) e user da API",
+    "JWT é persistido com segurança via FlutterSecureStorage entre reinicializações do app",
+    "Greeting da home usa Skeleton Loading até o carregamento do nome real do usuário",
+    "Tela de perfil exibe dados reais do usuário autenticado (biografia, telefone, e-mail)",
+    "Login valida e-mail contra registros reais do banco de dados SQLite",
+    "Resolução de conflitos com a branch developer concluída sem merge markers",
+    "Alternância de perfis limpa o cache anterior e renderiza dados exclusivos de cada conta",
+    "Toda comunicação autenticada usa token type='access' e rejeita refresh tokens",
+    "Nenhuma credencial é logada em texto plano no console ou logs do app"
+  ],
+  "steps": [
+    {"id": 1, "description": "Estabilização do Teste Manual E2E (Login → Home)", "status": "done"},
+    {"id": 2, "description": "Compatibilidade de Dados (Backend ↔ Frontend)", "status": "done"},
+    {"id": 3, "description": "Validação de Persistência (Secure Storage)", "status": "done"},
+    {"id": 4, "description": "Profissionalização do Greeting (Home)", "status": "done"},
+    {"id": 5, "description": "Sincronização da Aba de Perfil", "status": "done"},
+    {"id": 6, "description": "Integração com SQLite (cadife.db)", "status": "done"},
+    {"id": 7, "description": "Resolução de Conflitos e Atualização (Developer Branch)", "status": "done"},
+    {"id": 8, "description": "Validação Multi-usuário e Consistência de Dados", "status": "done"},
+    {"id": 9, "description": "Correções de segurança: remover backdoor, credenciais em log e rotas duplicadas", "status": "done"},
+    {"id": 10, "description": "Resolução de merge conflicts em conftest.py e lead.py", "status": "done"},
+    {"id": 11, "description": "Validação de token type='access' no middleware JWT", "status": "done"}
+  ]
+}

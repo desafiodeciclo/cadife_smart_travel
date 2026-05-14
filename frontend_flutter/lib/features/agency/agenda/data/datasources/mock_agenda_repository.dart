@@ -22,123 +22,132 @@ class MockAgendaRepository implements IAgendaRepository {
         id: 'mock-1',
         leadId: 'rafael-mendes',
         consultorId: 'jakeline-lima',
-        dateTime: today.copyWith(hour: 9),
-        durationMinutes: 60,
-        status: 'agendado',
+        data: today,
+        hora: '09:00',
+        tipo: 'online',
+        status: 'confirmado',
         nomeCliente: 'Rafael Mendes',
         destinoViagem: 'Nova York, EUA',
-        notes: 'Família de 4 pessoas (2 adultos + 2 crianças). Curadoria principal.',
-        createdAt: now.subtract(const Duration(days: 2)),
+        notas: 'Família de 4 pessoas (2 adultos + 2 crianças). Curadoria principal.',
+        criadoEm: now.subtract(const Duration(days: 2)),
       ),
       Agendamento(
         id: 'mock-2',
         leadId: 'camila-santos',
         consultorId: 'daniela-costa',
-        dateTime: today.copyWith(hour: 11),
-        durationMinutes: 90,
+        data: today,
+        hora: '11:00',
+        tipo: 'online',
         status: 'pendente',
         nomeCliente: 'Camila Santos',
         destinoViagem: 'Tóquio, Japão',
-        notes: 'Grupo de 4 amigas. Atenção: alergia a frutos do mar.',
-        createdAt: now.subtract(const Duration(days: 1)),
+        notas: 'Grupo de 4 amigas. Atenção: alergia a frutos do mar.',
+        criadoEm: now.subtract(const Duration(days: 1)),
       ),
       Agendamento(
         id: 'mock-3',
-        leadId: 'blocked',
         consultorId: 'daniela-costa',
-        dateTime: today.copyWith(hour: 13),
-        durationMinutes: 60,
-        status: 'bloqueado',
+        data: today,
+        hora: '13:00',
+        tipo: 'bloqueio',
+        status: 'pendente',
         motivoBloqueio: MotivoBloqueio.pausa,
-        notes: 'Pausa para almoço',
-        createdAt: now,
+        notas: 'Pausa para almoço',
+        criadoEm: now,
       ),
       Agendamento(
         id: 'mock-4',
         leadId: 'ana-luiza-gomes',
         consultorId: 'marcos-andrade',
-        dateTime: today.copyWith(hour: 15),
-        durationMinutes: 60,
-        status: 'agendado',
+        data: today,
+        hora: '15:00',
+        tipo: 'online',
+        status: 'confirmado',
         nomeCliente: 'Ana Luiza Gomes',
         destinoViagem: 'Maldivas',
-        notes: 'Lua de mel. Cliente muito animada com villa overwater.',
-        createdAt: now.subtract(const Duration(hours: 3)),
+        notas: 'Lua de mel. Cliente muito animada com villa overwater.',
+        criadoEm: now.subtract(const Duration(hours: 3)),
       ),
       // Ontem — lead realizado
       Agendamento(
         id: 'mock-5',
         leadId: 'otavio-grotto',
         consultorId: 'daniela-costa',
-        dateTime: today.subtract(const Duration(days: 1)).copyWith(hour: 10),
-        durationMinutes: 60,
+        data: today.subtract(const Duration(days: 1)),
+        hora: '10:00',
+        tipo: 'online',
         status: 'realizado',
         nomeCliente: 'Otávio Grotto',
         destinoViagem: 'Paris, França',
-        notes: 'Aniversário de casamento. Roteiro finalizado e aprovado.',
-        createdAt: now.subtract(const Duration(days: 3)),
+        notas: 'Aniversário de casamento. Roteiro finalizado e aprovado.',
+        criadoEm: now.subtract(const Duration(days: 3)),
       ),
       // Amanhã
       Agendamento(
         id: 'mock-6',
         leadId: 'joao-silva',
         consultorId: 'jakeline-lima',
-        dateTime: today.add(const Duration(days: 1)).copyWith(hour: 10),
-        durationMinutes: 60,
-        status: 'agendado',
+        data: today.add(const Duration(days: 1)),
+        hora: '10:00',
+        tipo: 'online',
+        status: 'confirmado',
         nomeCliente: 'João Silva',
         destinoViagem: 'Europa (Portugal ou Espanha)',
-        notes: 'Primeiro contato. Ainda definindo destino.',
-        createdAt: now,
+        notas: 'Primeiro contato. Ainda definindo destino.',
+        criadoEm: now,
       ),
       Agendamento(
         id: 'mock-7',
         leadId: 'maria-oliveira',
         consultorId: 'diego-costa',
-        dateTime: today.add(const Duration(days: 1)).copyWith(hour: 14),
-        durationMinutes: 90,
+        data: today.add(const Duration(days: 1)),
+        hora: '14:00',
+        tipo: 'online',
         status: 'pendente',
         nomeCliente: 'Maria Oliveira',
         destinoViagem: 'Cancún, México',
-        notes: 'Casal. Verificar passaportes antes da reunião.',
-        createdAt: now,
+        notas: 'Casal. Verificar passaportes antes da reunião.',
+        criadoEm: now,
       ),
       // Depois de amanhã
       Agendamento(
         id: 'mock-8',
         leadId: 'fernanda-castro',
         consultorId: 'diego-costa',
-        dateTime: today.add(const Duration(days: 2)).copyWith(hour: 9),
-        durationMinutes: 60,
-        status: 'agendado',
+        data: today.add(const Duration(days: 2)),
+        hora: '09:00',
+        tipo: 'online',
+        status: 'confirmado',
         nomeCliente: 'Fernanda Castro',
         destinoViagem: 'Maldivas',
-        notes: 'Lead qualificado. Aguardando proposta.',
-        createdAt: now,
+        notas: 'Lead qualificado. Aguardando proposta.',
+        criadoEm: now,
       ),
       Agendamento(
         id: 'mock-9',
         leadId: 'rafael-mendes',
         consultorId: 'jakeline-lima',
-        dateTime: today.add(const Duration(days: 2)).copyWith(hour: 11),
-        durationMinutes: 60,
-        status: 'agendado',
+        data: today.add(const Duration(days: 2)),
+        hora: '11:00',
+        tipo: 'online',
+        status: 'confirmado',
         nomeCliente: 'Rafael Mendes',
         destinoViagem: 'Nova York, EUA',
-        notes: 'Follow-up — confirmar visto americano.',
-        createdAt: now,
+        notas: 'Follow-up — confirmar visto americano.',
+        criadoEm: now,
       ),
       Agendamento(
         id: 'mock-10',
         leadId: 'ana-luiza-gomes',
         consultorId: 'marcos-andrade',
-        dateTime: today.add(const Duration(days: 2)).copyWith(hour: 14),
-        durationMinutes: 60,
-        status: 'agendado',
+        data: today.add(const Duration(days: 2)),
+        hora: '14:00',
+        tipo: 'online',
+        status: 'confirmado',
         nomeCliente: 'Ana Luiza Gomes',
         destinoViagem: 'Maldivas',
-        notes: 'Apresentação final do pacote curado.',
-        createdAt: now,
+        notas: 'Apresentação final do pacote curado.',
+        criadoEm: now,
       ),
     ]);
   }
@@ -150,9 +159,9 @@ class MockAgendaRepository implements IAgendaRepository {
     final items = _agendas
         .where(
           (a) =>
-              a.dateTime.year == date.year &&
-              a.dateTime.month == date.month &&
-              a.dateTime.day == date.day,
+              a.data.year == date.year &&
+              a.data.month == date.month &&
+              a.data.day == date.day,
         )
         .toList();
     return Right(items);
@@ -175,7 +184,7 @@ class MockAgendaRepository implements IAgendaRepository {
   ) async {
     await Future.delayed(const Duration(milliseconds: 600));
 
-    final hour = request.dateTime.hour;
+    final hour = int.parse(request.hora.split(':')[0]);
     if (hour < 9 || hour >= 16) {
       return const Left(
         ServerFailure('Agendamento fora do horário permitido (09:00–16:00)'),
@@ -185,11 +194,11 @@ class MockAgendaRepository implements IAgendaRepository {
     final sameDay = _agendas
         .where(
           (a) =>
-              a.dateTime.year == request.dateTime.year &&
-              a.dateTime.month == request.dateTime.month &&
-              a.dateTime.day == request.dateTime.day &&
+              a.data.year == request.data.year &&
+              a.data.month == request.data.month &&
+              a.data.day == request.data.day &&
               a.status != 'cancelado' &&
-              a.status != 'bloqueado',
+              a.tipo != 'bloqueio',
         )
         .length;
     if (sameDay >= 6) {
@@ -200,29 +209,30 @@ class MockAgendaRepository implements IAgendaRepository {
 
     final conflict = _agendas.any(
       (a) =>
-          a.dateTime.year == request.dateTime.year &&
-          a.dateTime.month == request.dateTime.month &&
-          a.dateTime.day == request.dateTime.day &&
-          a.dateTime.hour == request.dateTime.hour &&
+          a.data.year == request.data.year &&
+          a.data.month == request.data.month &&
+          a.data.day == request.data.day &&
+          a.hora == request.hora &&
           a.status != 'cancelado',
     );
     if (conflict) {
       return const Left(ConflictFailure('Horário já ocupado'));
     }
 
-    final isBloqueio = request.leadId == 'blocked';
+    final isBloqueio = request.tipo == 'bloqueio';
     final agenda = Agendamento(
       id: 'mock-${DateTime.now().millisecondsSinceEpoch}',
-      leadId: request.leadId,
+      leadId: isBloqueio ? null : request.leadId,
       consultorId: 'daniela-costa',
-      dateTime: request.dateTime,
-      durationMinutes: request.durationMinutes,
-      status: isBloqueio ? 'bloqueado' : 'agendado',
-      nomeCliente: request.nomeCliente,
-      destinoViagem: request.destinoViagem,
+      data: request.data,
+      hora: request.hora,
+      tipo: request.tipo,
+      status: isBloqueio ? 'pendente' : 'confirmado',
+      nomeCliente: null,
+      destinoViagem: null,
       motivoBloqueio: request.motivoBloqueio,
-      notes: request.notes,
-      createdAt: DateTime.now(),
+      notas: request.notas,
+      criadoEm: DateTime.now(),
     );
     _agendas.add(agenda);
     return Right(agenda);
@@ -241,15 +251,15 @@ class MockAgendaRepository implements IAgendaRepository {
       id: old.id,
       leadId: old.leadId,
       consultorId: old.consultorId,
-      dateTime: request.dateTime ?? old.dateTime,
-      durationMinutes: request.durationMinutes ?? old.durationMinutes,
+      data: request.data ?? old.data,
+      hora: request.hora ?? old.hora,
+      tipo: request.tipo ?? old.tipo,
       status: request.status ?? old.status,
       nomeCliente: old.nomeCliente,
       destinoViagem: old.destinoViagem,
-      motivoBloqueio: old.motivoBloqueio,
-      notes: request.notes ?? old.notes,
-      createdAt: old.createdAt,
-      updatedAt: DateTime.now(),
+      motivoBloqueio: request.motivoBloqueio ?? old.motivoBloqueio,
+      notas: request.notas ?? old.notas,
+      criadoEm: old.criadoEm,
     );
     _agendas[index] = updated;
     return Right(updated);
@@ -270,12 +280,13 @@ class MockAgendaRepository implements IAgendaRepository {
     final slots = List.generate(8, (i) {
       final hour = 9 + i;
       final start = DateTime(date.year, date.month, date.day, hour);
+      final horaStr = '${hour.toString().padLeft(2, '0')}:00';
       final isBooked = _agendas.any(
         (a) =>
-            a.dateTime.year == date.year &&
-            a.dateTime.month == date.month &&
-            a.dateTime.day == date.day &&
-            a.dateTime.hour == hour &&
+            a.data.year == date.year &&
+            a.data.month == date.month &&
+            a.data.day == date.day &&
+            a.hora == horaStr &&
             a.status != 'cancelado',
       );
       return TimeSlotModel(

@@ -1,11 +1,21 @@
+"""Stub for memory_service — TODO: implement proper memory management."""
 
-from typing import Any
-from langchain.memory import ConversationBufferWindowMemory
+from typing import List
 
-class SimpleWindowMemory(ConversationBufferWindowMemory):
-    """
-    A simple wrapper around ConversationBufferWindowMemory 
-    to maintain compatibility with the existing ai_service.
-    """
-    def __init__(self, k: int = 5, memory_key: str = "chat_history", return_messages: bool = True, **kwargs: Any):
-        super().__init__(k=k, memory_key=memory_key, return_messages=return_messages, **kwargs)
+class SimpleWindowMemory:
+    """In-memory windowed conversation memory (stub)."""
+
+    def __init__(self, window_size: int = 10) -> None:
+        self.window_size = window_size
+        self.messages: List[dict] = []
+
+    def add_message(self, role: str, content: str) -> None:
+        self.messages.append({"role": role, "content": content})
+        if len(self.messages) > self.window_size:
+            self.messages.pop(0)
+
+    def get_messages(self) -> List[dict]:
+        return self.messages.copy()
+
+    def clear(self) -> None:
+        self.messages.clear()

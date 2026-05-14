@@ -18,7 +18,6 @@ from jose import jwt
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 # ── Environment Setup ────────────────────────────────────────────────────
-# Must be set BEFORE importing app modules to avoid real PostgreSQL/WhatsApp
 os.environ["WHATSAPP_TOKEN"] = "test_token"
 os.environ["PHONE_NUMBER_ID"] = "test_id"
 os.environ["GEMINI_API_KEY"] = "test_key"
@@ -30,42 +29,42 @@ os.environ["JWT_ALGORITHM"] = "HS256"
 os.environ["ACCESS_TOKEN_EXPIRE_MINUTES"] = "15"
 os.environ["REFRESH_TOKEN_EXPIRE_DAYS"] = "7"
 os.environ["ENCRYPTION_KEY"] = "858iXm1S2iXN5sH3W6V-q7W_U8U7z6T5S4R3Q2P1O0N="
-os.environ["HASH_KEY"] = (
-    "f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7"
-)
+os.environ["HASH_KEY"] = "f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7"
 os.environ["REDIS_PREFIX"] = "CACHE"
 
-# Eagerly import all ORM models to avoid relationship mapper errors
+# ── Import ALL models to avoid 'name not defined' errors ────────────────
+# Import legacy models (Core)
 import app.models.lead  # noqa: F401
+import app.models.user  # noqa: F401
 import app.models.briefing  # noqa: F401
 import app.models.interacao  # noqa: F401
 import app.models.agendamento  # noqa: F401
 import app.models.proposta  # noqa: F401
-import app.models.user  # noqa: F401
 import app.models.offer  # noqa: F401
 import app.models.notification_queue  # noqa: F401
 import app.models.dead_letter_queue  # noqa: F401
 import app.models.lead_score_history  # noqa: F401
 
-# Import persistence models (Sync Base.metadata)
+# Import infrastructure models (Clean Architecture)
+import app.infrastructure.persistence.models.user_model  # noqa: F401
 import app.infrastructure.persistence.models.lead_model  # noqa: F401
 import app.infrastructure.persistence.models.briefing_model  # noqa: F401
 import app.infrastructure.persistence.models.interacao_model  # noqa: F401
 import app.infrastructure.persistence.models.agendamento_model  # noqa: F401
 import app.infrastructure.persistence.models.proposta_model  # noqa: F401
-import app.infrastructure.persistence.models.user_model  # noqa: F401
 import app.infrastructure.persistence.models.documento_model  # noqa: F401
 import app.infrastructure.persistence.models.suitcase_model  # noqa: F401
 import app.infrastructure.persistence.models.offer_model  # noqa: F401
 import app.infrastructure.persistence.models.travel_diary_model  # noqa: F401
-
-# --- RESOLUÇÃO DO CONFLITO: Incluindo ambos os modelos ---
 import app.infrastructure.persistence.models.travel_model  # noqa: F401
 import app.infrastructure.persistence.models.conversation_summary_model  # noqa: F401
-# ---------------------------------------------------------
+import app.infrastructure.persistence.models.itinerary_model  # noqa: F401
+import app.infrastructure.persistence.models.aya_toggle_history_model  # noqa: F401
+import app.infrastructure.persistence.models.lead_score_history_model  # noqa: F401
 
 from main import app
-from app.infrastructure.persistence.database import Base
+from app.infrastructure.persistence.database import Base as InfraBase
+from app.core.database import Base as CoreBase
 from app.core.dependencies import get_db
 from app.infrastructure.security.dependencies import get_current_user
 from app.infrastructure.security.jwt import create_access_token
@@ -90,7 +89,6 @@ TestSessionLocal = async_sessionmaker(
 
 @pytest.fixture(scope="session")
 def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
-    """Create an instance of the default event loop for the test session."""
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
     loop.close()
@@ -100,15 +98,26 @@ def setup_database(event_loop) -> None:
     """Create and drop all tables in the test database."""
     async def _setup() -> None:
         async with test_engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
+            # Create tables from InfraBase first (primary)
+            await conn.run_sync(InfraBase.metadata.create_all)
+            # Try to create tables from CoreBase, but ignore duplicates
+            # because they likely overlap with InfraBase
+            for table in CoreBase.metadata.sorted_tables:
+                try:
+                    async with test_engine.begin() as conn2:
+                        await conn2.run_sync(table.create)
+                except Exception:
+                    pass # Table/Index likely already exists from InfraBase
 
     event_loop.run_until_complete(_setup())
     yield
-
     async def _teardown() -> None:
         async with test_engine.begin() as conn:
-            await conn.run_sync(Base.metadata.drop_all)
-
+            await conn.run_sync(InfraBase.metadata.drop_all)
+            try:
+                await conn.run_sync(CoreBase.metadata.drop_all)
+            except Exception:
+                pass
     event_loop.run_until_complete(_teardown())
 
 @pytest.fixture()
@@ -123,7 +132,6 @@ async def db_session(setup_database) -> AsyncGenerator[AsyncSession, None]:
 def override_get_db(db_session: AsyncSession):
     async def _get_db():
         yield db_session
-
     app.dependency_overrides[get_db] = _get_db
     yield
     app.dependency_overrides.pop(get_db, None)
@@ -143,7 +151,6 @@ def override_get_current_user():
     )
     async def _get_current_user():
         return mock_user
-
     app.dependency_overrides[get_current_user] = _get_current_user
     yield mock_user
     app.dependency_overrides.pop(get_current_user, None)

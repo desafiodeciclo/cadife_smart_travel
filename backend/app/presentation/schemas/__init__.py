@@ -15,6 +15,11 @@ from .offer_schema import (
     OfferResponse,
     OfferResponse as OfferListItem,
     OffersListResponse as OfferListResponse,
+    OfferCreateRequest,
+    OfferDetailResponse,
+    OffersListResponse,
+    OfferResponse,
+    OfferUpdateRequest,
 )
 
 __all__ = [
@@ -29,9 +34,9 @@ __all__ = [
     "LeadResponseSchema",
     "BriefingSchema",
     "BriefingResponse",
-    "OfferCreate",
-    "OfferUpdate",
+    "OfferCreateRequest",
+    "OfferUpdateRequest",
     "OfferResponse",
-    "OfferListItem",
-    "OfferListResponse",
+    "OfferDetailResponse",
+    "OffersListResponse",
 ]

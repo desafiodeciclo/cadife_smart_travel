@@ -500,6 +500,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   void _handleLogout(BuildContext context) {
     ref.read(authNotifierProvider.notifier).logout();
+    ref.read(currentUserProvider.notifier).logout();
     context.go('/auth/login');
   }
 

@@ -14,8 +14,9 @@ from app.models.lead import Lead
 from app.models.offer import Offer
 from app.models.lead_offer import LeadOffer
 from app.presentation.schemas.offer_schema import OfferCreateRequest, OfferUpdateRequest
+from app.models.user import User
 from app.services import lead_service
-from app.services.fcm_service import send_notification
+from app.services.fcm_service import send_push_notification
 
 logger = structlog.get_logger()
 
@@ -315,16 +316,19 @@ async def express_interest(
 
     # 6. Notificar agência (via FCM se disponível)
     try:
-        await send_notification(
-            user_id=str(offer.agency_id),
-            title="Novo interesse em oferta!",
-            body=f"{user_name} se interessou na oferta '{offer.title}'",
-            data={
-                "type": "offer_interest",
-                "offer_id": str(offer.id),
-                "lead_id": str(lead.id),
-            }
-        )
+        agency_result = await db.execute(select(User).where(User.id == offer.agency_id))
+        agency = agency_result.scalar_one_or_none()
+        if agency and agency.fcm_token:
+            await send_push_notification(
+                fcm_token=agency.fcm_token,
+                title="Novo interesse em oferta!",
+                body=f"{user_name} se interessou na oferta '{offer.title}'",
+                data={
+                    "type": "offer_interest",
+                    "offer_id": str(offer.id),
+                    "lead_id": str(lead.id),
+                },
+            )
     except Exception as e:
         logger.warning("failed_to_send_notification", error=str(e), agency_id=str(offer.agency_id))
 

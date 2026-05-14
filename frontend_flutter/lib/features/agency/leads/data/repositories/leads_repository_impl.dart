@@ -7,6 +7,7 @@ import 'package:cadife_smart_travel/features/agency/leads/domain/repositories/i_
 import 'package:cadife_smart_travel/shared/domain/entities/interacao.dart';
 import 'package:fpdart/fpdart.dart';
 
+/// Adapts [ILeadsDatasource] to [ILeadsRepository].
 class LeadsRepositoryImpl implements ILeadsRepository {
   final ILeadsDatasource _datasource;
 

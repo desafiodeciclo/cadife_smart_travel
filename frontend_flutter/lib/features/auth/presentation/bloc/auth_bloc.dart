@@ -27,7 +27,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       },
       (isLoggedIn) async {
         if (isLoggedIn) {
-          final userResult = await _authRepository.getCurrentUser();
+          final userResult = await _authRepository.getUserProfile();
           userResult.fold(
             (failure) => emit(const AuthUnauthenticated()),
             (user) {

@@ -1,8 +1,8 @@
-"""merge heads for travel diary, offers, and aya toggle
+"""merge_propostas_extension_into_final
 
-Revision ID: a588336b9d68
-Revises: 67b69bf11b14, a3b4c5d6e7f8, g1h2i3j4k5l6
-Create Date: 2026-05-11 15:47:22.171411
+Revision ID: c79f9278911e
+Revises: n7o8p9q0r1s2, z9y8x7w6v5u4
+Create Date: 2026-05-14 11:48:33.242485
 
 """
 from typing import Sequence, Union
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'a588336b9d68'
-down_revision: Union[str, None] = ('67b69bf11b14', 'a3b4c5d6e7f8', 'g1h2i3j4k5l6')
+revision: str = 'c79f9278911e'
+down_revision: Union[str, None] = ('n7o8p9q0r1s2', 'z9y8x7w6v5u4')
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

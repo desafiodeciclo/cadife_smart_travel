@@ -62,8 +62,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     final email = _emailController.text.trim();
     final password = _passwordController.text;
-    debugPrint('LOGIN SCREEN: email="$email", password="$password"');
 
+    // AuthNotifier login handles the HTTP request, token storage, and state update.
+    // GoRouter redirect automatically navigates to the correct dashboard on success.
     await ref.read(authNotifierProvider.notifier).login(email, password);
   }
 
