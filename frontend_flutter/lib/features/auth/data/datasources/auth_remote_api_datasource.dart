@@ -29,17 +29,27 @@ class AuthRemoteApiDatasource implements IAuthDatasource {
       developer.log('LOGIN ERROR: ${e.type}', name: 'AuthRemote');
       developer.log('LOGIN ERROR MESSAGE: ${e.message}', name: 'AuthRemote');
       developer.log('LOGIN ERROR RESPONSE: ${e.response?.statusCode} - ${e.response?.data}', name: 'AuthRemote');
+      if (e.response?.statusCode == 429) {
+        throw Exception('Muitas tentativas. Por favor, aguarde um minuto e tente novamente.');
+      }
       rethrow;
     }
   }
 
   @override
   Future<Map<String, dynamic>> register(String name, String email, String password) async {
-    final response = await _dio.post(
-      ApiConstants.register,
-      data: {'name': name, 'email': email, 'password': password},
-    );
-    return response.data as Map<String, dynamic>;
+    try {
+      final response = await _dio.post(
+        ApiConstants.register,
+        data: {'name': name, 'email': email, 'password': password},
+      );
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 429) {
+        throw Exception('Muitas tentativas. Por favor, aguarde um minuto e tente novamente.');
+      }
+      rethrow;
+    }
   }
 
   @override
@@ -69,7 +79,14 @@ class AuthRemoteApiDatasource implements IAuthDatasource {
 
   @override
   Future<void> forgotPassword(String email) async {
-    await _dio.post(ApiConstants.forgotPassword, data: {'email': email});
+    try {
+      await _dio.post(ApiConstants.forgotPassword, data: {'email': email});
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 429) {
+        throw Exception('Muitas tentativas. Por favor, aguarde um minuto e tente novamente.');
+      }
+      rethrow;
+    }
   }
 
   @override

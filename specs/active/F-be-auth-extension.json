@@ -1,0 +1,43 @@
+{
+  "id": "F-be-auth-extension",
+  "title": "3.1 Auth — fluxo de identidade completo",
+  "description": "Especificação das rotas completas de identidade e autenticação, cobrindo registro, logout, logout total, forgot password e change password, conforme diretrizes de segurança.",
+  "status": "implemented",
+  "endpoints": [
+    {
+      "method": "POST",
+      "path": "/auth/register",
+      "description": "Recebe { name, email, password }, valida unicidade, faz hash Argon2, cria UserModel (role=cliente) e retorna TokenPair."
+    },
+    {
+      "method": "POST",
+      "path": "/auth/logout",
+      "description": "Invalida o refresh token atual via blacklist."
+    },
+    {
+      "method": "POST",
+      "path": "/auth/logout-all-devices",
+      "description": "Invalida todos os tokens do usuário atualizando global_logout_at."
+    },
+    {
+      "method": "POST",
+      "path": "/auth/forgot-password",
+      "description": "Gera token assinado JWT (30 min) e aciona serviço de e-mail. Retorna 202 sempre."
+    },
+    {
+      "method": "POST",
+      "path": "/auth/reset-password",
+      "description": "Valida token JWT de reset e atualiza a senha no banco, revogando todas as sessões anteriores."
+    },
+    {
+      "method": "POST",
+      "path": "/auth/change-password",
+      "description": "Endpoint autenticado que troca a senha após validar a atual, também revogando todas as sessões ativas."
+    }
+  ],
+  "dependencies": [
+    "Redis (opcional para blacklist de tokens) / PostgreSQL (tabela de revogação)",
+    "Serviço de e-mail (para forgot-password)"
+  ],
+  "notes": "Tratamento de status HTTP 429 para rate limit exigido no front-end."
+}
