@@ -41,10 +41,12 @@ class AuthUser extends Equatable {
     id: json['id'] as String,
     name: json['nome'] as String? ?? json['name'] as String,
     email: json['email'] as String,
-    role: UserRole.values.firstWhere(
-      (e) => e.name == (json['perfil'] ?? json['role']),
-      orElse: () => UserRole.consultor,
-    ),
+    role: () {
+      final roleStr = (json['perfil'] ?? json['role'] ?? '').toString().toLowerCase();
+      if (roleStr == 'admin') return UserRole.admin;
+      if (roleStr == 'consultant' || roleStr == 'consultor' || roleStr == 'agencia') return UserRole.consultor;
+      return UserRole.cliente; // Default to client for mobile app
+    }(),
     phone: json['telefone'] as String? ?? json['phone'] as String?,
     avatarUrl: json['avatar_url'] as String?,
     createdAt: json['criado_em'] != null

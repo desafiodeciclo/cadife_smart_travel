@@ -4,63 +4,93 @@ import 'package:cadife_smart_travel/core/security/secure_config.dart';
 import 'package:cadife_smart_travel/features/auth/data/datasources/i_auth_datasource.dart';
 import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
 import 'package:cadife_smart_travel/features/auth/domain/repositories/i_auth_repository.dart';
+import 'package:flutter/foundation.dart';
 import 'package:fpdart/fpdart.dart';
 
 class AuthRepositoryImpl implements IAuthRepository {
   AuthRepositoryImpl({
     required IAuthDatasource remoteDatasource,
     required SecureConfig secureConfig,
-  })  : _remoteDatasource = remoteDatasource,
-        _secureConfig = secureConfig;
+  }) : _remoteDatasource = remoteDatasource,
+       _secureConfig = secureConfig;
 
   final IAuthDatasource _remoteDatasource;
   final SecureConfig _secureConfig;
 
   @override
-  Future<Either<Failure, AuthUser>> login(String email, String password, {UserRole? profileHint}) async {
+  Future<Either<Failure, AuthUser>> login(
+    String email,
+    String password, {
+    UserRole? profileHint,
+  }) async {
     try {
-      final data = await _remoteDatasource.login(email, password, profileHint: profileHint);
-
-      // Mock format: {user: {...}, token: {access_token, refresh_token}}
-      final tokenData = data['token'] as Map<String, dynamic>?;
-      if (tokenData == null) {
-        return const Left(ServerFailure('Resposta de login inválida.'));
-      }
-
-      final accessToken = tokenData['access_token']?.toString();
-      final refreshToken = tokenData['refresh_token']?.toString();
-      if (accessToken == null || refreshToken == null) {
-        return const Left(ServerFailure('Token ausente na resposta.'));
-      }
-
-      await _secureConfig.saveTokens(
-        accessToken: accessToken,
-        refreshToken: refreshToken,
+      final data = await _remoteDatasource.login(
+        email,
+        password,
+        profileHint: profileHint,
       );
-
-      // Try to get user from login response first (mock format)
-      final userData = data['user'] as Map<String, dynamic>?;
-      if (userData != null) {
-        return Right(AuthUser.fromJson(userData));
-      }
-      
-      // Fallback: try /me endpoint
-      final currentUserData = await _remoteDatasource.getUserProfile();
-      if (currentUserData != null) {
-        return Right(AuthUser.fromJson(currentUserData));
-      }
-      
-      return const Left(ServerFailure('Dados do usuário ausentes.'));
+      return await _handleAuthResponse(data);
     } on Exception catch (e) {
       return Left(Failure.fromException(e));
     }
   }
 
+  Future<Either<Failure, AuthUser>> _handleAuthResponse(
+    Map<String, dynamic> data,
+  ) async {
+    debugPrint('AUTH_REPO: Raw data received: $data');
+    // Backend sends tokens at top level: {access_token, refresh_token}
+    // But might also be wrapped: {token: {access_token, refresh_token}}
+    final Map<String, dynamic> tokenData = (data['token'] is Map) 
+        ? data['token'] as Map<String, dynamic> 
+        : data;
+
+    final accessToken = tokenData['access_token']?.toString();
+    final refreshToken = tokenData['refresh_token']?.toString();
+    
+    if (accessToken == null || refreshToken == null) {
+      return const Left(ServerFailure('Token ausente na resposta do servidor.'));
+    }
+
+    await _secureConfig.saveTokens(
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+    );
+    debugPrint('DEBUG: Tokens saved successfully. Fetching profile...');
+
+    // Small delay to ensure SecureStorage is ready
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    // Try to get user from response (might be in 'user' key or at top level if it's a UserResponse)
+    final userData = (data['user'] is Map) ? data['user'] as Map<String, dynamic> : data;
+    
+    // Check if we actually have user data (backend UserResponse has 'email' or 'id')
+    if (userData.containsKey('email') || userData.containsKey('id')) {
+      return Right(AuthUser.fromJson(userData));
+    }
+
+    // Fallback: mandatory fetch for /me since register doesn't return user data
+    try {
+      final currentUserData = await _remoteDatasource.getUserProfile();
+      if (currentUserData != null) {
+        return Right(AuthUser.fromJson(currentUserData));
+      }
+    } catch (e) {
+      return Left(ServerFailure('Erro ao recuperar perfil: $e'));
+    }
+
+    return const Left(ServerFailure('Dados do usuário não encontrados.'));
+  }
+
   @override
-  Future<Either<Failure, AuthUser>> register(String name, String email, String password) async {
+  Future<Either<Failure, AuthUser>> register(
+    String name,
+    String email,
+    String password,
+  ) async {
     try {
       final data = await _remoteDatasource.register(name, email, password);
-      return Right(AuthUser.fromJson(data));
+      return _handleAuthResponse(data);
     } on Exception catch (e) {
       return Left(Failure.fromException(e));
     }
@@ -121,7 +151,10 @@ class AuthRepositoryImpl implements IAuthRepository {
 
     return AuthUser(
       id: payload['sub'] as String? ?? '',
-      name: payload['name'] as String? ?? payload['email'] as String? ?? 'Usuário',
+      name:
+          payload['name'] as String? ??
+          payload['email'] as String? ??
+          'Usuário',
       email: payload['email'] as String? ?? '',
       role: UserRole.values.firstWhere(
         (e) => e.name == (payload['role'] as String?),
@@ -162,7 +195,9 @@ class AuthRepositoryImpl implements IAuthRepository {
 
   @override
   Future<Either<Failure, void>> changePassword(
-      String currentPassword, String newPassword) async {
+    String currentPassword,
+    String newPassword,
+  ) async {
     try {
       await _remoteDatasource.changePassword(currentPassword, newPassword);
       return const Right(null);
@@ -173,7 +208,9 @@ class AuthRepositoryImpl implements IAuthRepository {
 
   @override
   Future<Either<Failure, void>> resetPassword(
-      String token, String newPassword) async {
+    String token,
+    String newPassword,
+  ) async {
     try {
       await _remoteDatasource.resetPassword(token, newPassword);
       return const Right(null);
