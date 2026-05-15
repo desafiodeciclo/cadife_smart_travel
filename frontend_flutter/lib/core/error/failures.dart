@@ -14,10 +14,35 @@ abstract class Failure extends Equatable {
       if (statusCode == 401 || statusCode == 403) {
         return const UnauthorizedFailure();
       }
+
+      // Extract message from response data
+      String? detail;
+      final data = e.response?.data;
+      if (data is Map) {
+        final rawDetail = data['detail'];
+        if (rawDetail is String) {
+          detail = rawDetail;
+        } else if (rawDetail is List && rawDetail.isNotEmpty) {
+          // FastAPI validation errors are lists
+          final first = rawDetail.first;
+          if (first is Map && first.containsKey('msg')) {
+            detail = first['msg'].toString();
+          } else {
+            detail = rawDetail.toString();
+          }
+        } else if (rawDetail != null) {
+          detail = rawDetail.toString();
+        }
+      }
+
       if (statusCode == 422) {
-        final detail = e.response?.data?['detail'] as String?;
         return ValidationFailure(detail ?? 'Dados inválidos.');
       }
+      
+      if (statusCode == 409) {
+        return ConflictFailure(detail ?? 'Conflito de dados.');
+      }
+
       switch (e.type) {
         case DioExceptionType.connectionTimeout:
         case DioExceptionType.receiveTimeout:
@@ -25,7 +50,6 @@ abstract class Failure extends Equatable {
         case DioExceptionType.connectionError:
           return const NetworkFailure();
         default:
-          final detail = e.response?.data?['detail'] as String?;
           return ServerFailure(detail ?? e.message ?? 'Erro no servidor.');
       }
     }

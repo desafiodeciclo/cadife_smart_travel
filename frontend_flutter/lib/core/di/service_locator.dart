@@ -40,7 +40,9 @@ import 'package:cadife_smart_travel/features/client/itinerary/data/services/itin
 import 'package:cadife_smart_travel/features/client/notifications/data/repositories/notifications_repository_impl.dart';
 import 'package:cadife_smart_travel/features/client/notifications/domain/repositories/i_notifications_repository.dart';
 import 'package:cadife_smart_travel/features/client/profile/data/datasources/mock_profile_repository.dart';
+import 'package:cadife_smart_travel/features/client/profile/data/repositories/profile_repository_impl.dart';
 import 'package:cadife_smart_travel/features/client/profile/domain/repositories/i_profile_repository.dart';
+import 'package:cadife_smart_travel/features/agency/perfil/data/repositories/consultor_repository_impl.dart';
 import 'package:cadife_smart_travel/features/client/status/data/datasources/status_datasource.dart';
 import 'package:cadife_smart_travel/features/client/status/data/repositories/status_repository_impl.dart';
 import 'package:cadife_smart_travel/features/client/status/domain/repositories/i_status_repository.dart';
@@ -133,7 +135,11 @@ Future<void> setupServiceLocator({
       );
     }
     if (pinnedCertificates == null || pinnedCertificates.isEmpty) {
-      return DioClientFactory.createUnpinned();
+      return DioClientFactory.createUnpinned(
+        authInterceptor: sl<AuthInterceptor>(),
+        errorInterceptor: sl<ErrorInterceptor>(),
+        offlineInterceptor: sl<OfflineInterceptor>(),
+      );
     }
     return DioClientFactory.createPinned(
       pinnedSha256: pinnedCertificates,
@@ -214,8 +220,15 @@ void _registerProposalModule() {
 }
 
 void _registerProfileModule() {
-  sl.registerLazySingleton<IProfileRepository>(MockProfileRepository.new);
-  sl.registerLazySingleton<IConsultorRepository>(MockConsultorRepository.new);
+  sl.registerLazySingleton<IProfileRepository>(
+    () => ProfileRepositoryImpl(
+      dio: sl<Dio>(),
+      offlineManager: sl<OfflineManager>(),
+    ),
+  );
+  sl.registerLazySingleton<IConsultorRepository>(
+    () => ConsultorRepositoryImpl(sl<Dio>()),
+  );
 }
 
 void _registerNotificationsModule() {

@@ -200,8 +200,8 @@ class _MeetingCard extends ConsumerWidget {
     final displayName =
         meeting.nomeCliente?.isNotEmpty == true
             ? meeting.nomeCliente!
-            : (meeting.notes?.isNotEmpty == true
-                ? meeting.notes!
+            : (meeting.notas?.isNotEmpty == true
+                ? meeting.notas!
                 : 'Reunião de Curadoria');
 
     final statusColor = meeting.isBloqueado
@@ -396,7 +396,7 @@ class _StatusChip extends StatelessWidget {
     final label = StatusAgendamento.values
         .firstWhere(
           (e) => e.name == status,
-          orElse: () => StatusAgendamento.agendado,
+          orElse: () => StatusAgendamento.confirmado,
         )
         .label;
 
@@ -425,13 +425,13 @@ class _MeetingActionsSheet extends StatelessWidget {
     required this.meeting,
     required this.onEdit,
     required this.onCancel,
-    required this.onViewLead,
+    this.onViewLead,
   });
 
   final Agendamento meeting;
   final VoidCallback onEdit;
   final VoidCallback onCancel;
-  final VoidCallback onViewLead;
+  final VoidCallback? onViewLead;
 
   @override
   Widget build(BuildContext context) {
@@ -468,11 +468,12 @@ class _MeetingActionsSheet extends StatelessWidget {
             label: 'Editar agendamento',
             onTap: onEdit,
           ),
-          _ActionTile(
-            icon: Icons.person_outline,
-            label: 'Ver perfil do lead',
-            onTap: onViewLead,
-          ),
+          if (onViewLead != null)
+            _ActionTile(
+              icon: Icons.person_outline,
+              label: 'Ver perfil do lead',
+              onTap: onViewLead!,
+            ),
           _ActionTile(
             icon: Icons.cancel_outlined,
             label: 'Cancelar reunião',
@@ -534,7 +535,7 @@ class _EditSlotSheetState extends ConsumerState<_EditSlotSheet> {
   @override
   void initState() {
     super.initState();
-    _notesCtrl = TextEditingController(text: widget.meeting.notes ?? '');
+    _notesCtrl = TextEditingController(text: widget.meeting.notas ?? '');
     _selectedStatus = widget.meeting.status;
     _selectedDuration = widget.meeting.durationMinutes;
   }
@@ -608,7 +609,7 @@ class _EditSlotSheetState extends ConsumerState<_EditSlotSheet> {
               Wrap(
                 spacing: 8,
                 children: [
-                  StatusAgendamento.agendado,
+                  StatusAgendamento.confirmado,
                   StatusAgendamento.pendente,
                   StatusAgendamento.realizado,
                 ].map((s) {
@@ -763,8 +764,8 @@ class _BlockedSlotCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final label = meeting.motivoBloqueio?.label ??
-        (meeting.notes?.isNotEmpty == true
-            ? meeting.notes!
+        (meeting.notas?.isNotEmpty == true
+            ? meeting.notas!
             : 'Horário Bloqueado');
 
     return Container(

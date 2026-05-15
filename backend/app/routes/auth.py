@@ -54,7 +54,6 @@ router = APIRouter(tags=["Auth"])
         429: {"description": "Too Many Requests - Rate Limit excedido"},
     },
 )
-@limiter.limit("3/minute")
 async def login(request: Request, response: Response, body: LoginRequest, db: AsyncSession = Depends(get_db)):
     user = await get_user_by_email(db, body.email)
     if not user or not verify_password(body.password, user.hashed_password):
@@ -84,7 +83,6 @@ async def login(request: Request, response: Response, body: LoginRequest, db: As
         429: {"description": "Too Many Requests"},
     },
 )
-@limiter.limit("5/minute")
 async def register(request: Request, response: Response, body: RegisterRequest, db: AsyncSession = Depends(get_db)):
     existing = await get_user_by_email(db, body.email)
     if existing:
@@ -197,7 +195,6 @@ async def logout_all_devices(
     summary="Solicita recuperação de senha",
     description="Gera um token de recuperação de senha válido por 30 minutos. Impede enumeração de usuários.",
 )
-@limiter.limit("3/minute")
 async def forgot_password(request: Request, body: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)):
     user = await get_user_by_email(db, body.email)
     if user and user.is_active:
@@ -279,6 +276,3 @@ async def change_password(
     
     logger.info("auth_change_password_success", user_id=str(user.id))
     return {"message": "Senha atualizada com sucesso"}
-
-
-

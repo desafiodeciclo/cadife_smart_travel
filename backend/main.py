@@ -68,7 +68,10 @@ async def lifespan(app: FastAPI):
     logger.info("startup_begin", env=settings.APP_ENV, debug=settings.DEBUG)
 
     # Infra Start
-    await create_tables()
+    try:
+        await create_tables()
+    except Exception as exc:
+        logger.warning("database_creation_skipped_or_failed", error=str(exc))
     init_firebase()
 
     # RAG Knowledge Base
@@ -135,7 +138,7 @@ async def global_exception_handler(request: Request, exc: Exception):
         content={"detail": "Erro interno no servidor.", "error_code": "INTERNAL_SERVER_ERROR"}
     )
 
-app.add_middleware(SlowAPIMiddleware)
+# app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(RequestIdMiddleware)
 app.add_middleware(TimeoutMiddleware)
 app.add_middleware(
