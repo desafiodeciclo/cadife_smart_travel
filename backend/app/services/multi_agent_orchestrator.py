@@ -69,7 +69,7 @@ _TRIAGEM_FREE_MODELS: list[str] = [
 ]
 _ORCHESTRATOR_FREE_MODELS: list[str] = [
     settings.OPENROUTER_FALLBACK_MODEL,
-    "nvidia/llama-3.1-nemotron-ultra-253b-v1:free",
+    "nvidia/llama-nemotron-embed-vl-1b-v2:free",
     "meta-llama/llama-3.3-70b-instruct:free",
 ]
 _RETRIABLE_STATUS_CODES = frozenset({429, 503})
