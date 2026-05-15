@@ -17,6 +17,7 @@ Orchestrates the full message-processing flow defined in spec.md §9.1:
 
 from __future__ import annotations
 
+import asyncio
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -49,6 +50,10 @@ MEDIA_FALLBACK_REPLY = (
 
 _validator = BriefingValidator()
 
+# FIFO lock per phone — prevents concurrent processing of messages from the
+# same number, which would cause rate-limit amplification and DB race conditions.
+_phone_locks: dict[str, asyncio.Lock] = {}
+
 
 async def execute(payload: dict, db: AsyncSession) -> None:
     """
@@ -60,6 +65,13 @@ async def execute(payload: dict, db: AsyncSession) -> None:
         logger.debug("webhook_payload_ignored", reason="no_message_extracted")
         return
 
+    phone: str = msg["phone"]
+    async with _phone_locks.setdefault(phone, asyncio.Lock()):
+        await _process(msg, db)
+
+
+async def _process(msg: dict, db: AsyncSession) -> None:
+    """Serialized per-phone processing — always called under the phone lock."""
     phone: str = msg["phone"]
     message_id: str | None = msg.get("message_id")
     text: str | None = msg.get("text")
