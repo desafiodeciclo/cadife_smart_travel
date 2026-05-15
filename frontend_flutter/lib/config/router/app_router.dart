@@ -3,13 +3,6 @@ import 'package:cadife_smart_travel/config/router/agency_shell.dart';
 import 'package:cadife_smart_travel/config/router/client_shell.dart';
 import 'package:cadife_smart_travel/config/router/transitions/custom_page_route.dart';
 import 'package:cadife_smart_travel/core/analytics/analytics_navigation_observer.dart';
-import 'package:cadife_smart_travel/features/admin/presentation/pages/admin_all_leads_page.dart';
-import 'package:cadife_smart_travel/features/admin/presentation/pages/admin_consultant_list_page.dart';
-import 'package:cadife_smart_travel/features/admin/presentation/pages/admin_overview_page.dart';
-import 'package:cadife_smart_travel/features/admin/presentation/pages/consultor_detail_page.dart';
-import 'package:cadife_smart_travel/features/admin/presentation/pages/consultor_edit_page.dart';
-import 'package:cadife_smart_travel/features/admin/presentation/pages/create_consultant_page.dart';
-import 'package:cadife_smart_travel/features/agency/agenda/presentation/pages/agenda_page.dart';
 /*
 import 'package:cadife_smart_travel/features/agency/dashboard/dashboard_screen.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/pages/lead_detail_page.dart';

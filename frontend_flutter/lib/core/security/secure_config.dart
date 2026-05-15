@@ -76,8 +76,13 @@ class SecureConfig {
     final dynamicPins = await getCertificatePins();
     if (dynamicPins.isNotEmpty) return dynamicPins.toList();
     final fallback = _decodeFallbackPins();
-    // BUG-001: falha rápida em debug se os pins não forem configurados antes do deploy.
-    assert(fallback.isNotEmpty, 'Certificate pins not configured — populate _fallbackPinsObf before release.');
+    // assert só dispara em debug — o throw garante falha em release também.
+    if (fallback.isEmpty) {
+      throw StateError(
+        'Certificate pins not configured. '
+        'Populate _fallbackPinsObf in secure_config.dart before release.',
+      );
+    }
     return fallback;
   }
 

@@ -40,7 +40,6 @@ class MockAuthRepository implements IAuthRepository {
     return Right(_currentUser!);
   }
 
-  @override
   Future<Either<Failure, AuthUser?>> getCurrentUser() async {
     if (_currentUser != null) return Right(_currentUser);
 
@@ -126,5 +125,10 @@ class MockAuthRepository implements IAuthRepository {
       return const Left(ServerFailure('Senha atual incorreta'));
     }
     return const Right(null);
+  }
+
+  @override
+  Future<Either<Failure, AuthUser?>> getUserProfile() async {
+    return Right(_currentUser);
   }
 }

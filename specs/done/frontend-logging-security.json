@@ -1,0 +1,59 @@
+{
+  "id": "frontend-logging-security",
+  "title": "Frontend: Remover Exposição de Credenciais em Logs",
+  "status": "done",
+  "owner": "Jakeline",
+  "created_at": "2026-05-14",
+  "sprint": "frontend-debt-phase1",
+  "depends_on": [],
+  "blocks": ["frontend-storage-security", "frontend-api-alignment"],
+  "description": "Remover 4 débitos P1 que expõem JWT e tokens em logs. Inclui: sanitizar LogInterceptor para mascarar Authorization header, remover debugPrint de auth_interceptor, corrigir Dio direto em document_viewer_page para usar DioClient injetado, remover debugPrint de itinerary_service.",
+  "user_story": "Como desenvolvedor, quero que logs não exponham JWT ou tokens sensíveis, e quero que toda comunicação HTTP passe por interceptadores centralizados para auditoria e segurança.",
+  "acceptance_criteria": [
+    "LogInterceptor sanitiza Authorization header (mostra apenas últimos 8 chars de JWT)",
+    "Nenhum JWT completo aparece em logs de nenhuma forma",
+    "auth_interceptor não usa debugPrint (substituído por logger estruturado)",
+    "document_viewer_page injeta DioClient via GetIt, sem criar Dio() local",
+    "itinerary_service não tem debugPrint (usa logger estruturado)",
+    "Todas as requisições passam por LogInterceptor e AuthInterceptor",
+    "Teste validando que credenciais nunca aparecem em logs"
+  ],
+  "steps": [
+    {
+      "id": 1,
+      "description": "Criar LogInterceptor customizado que sanitiza Authorization header e payloads sensíveis",
+      "status": "done",
+      "file": "lib/core/network/interceptors/log_interceptor.dart",
+      "effort_hours": 1,
+      "details": "Mascarar JWT: 'Bearer xxxx...xxxx'. Remover password, token, email em request bodies. Usar logger estruturado, não debugPrint."
+    },
+    {
+      "id": 2,
+      "description": "Remover debugPrint em auth_interceptor, substituir por logger estruturado",
+      "status": "done",
+      "file": "lib/core/network/interceptors/auth_interceptor.dart:112",
+      "effort_hours": 0.5
+    },
+    {
+      "id": 3,
+      "description": "Injetar DioClient em document_viewer_page via GetIt, remover Dio() local",
+      "status": "done",
+      "file": "lib/features/client/documentos/document_viewer_page.dart:25",
+      "effort_hours": 0.5
+    },
+    {
+      "id": 4,
+      "description": "Remover debugPrint em itinerary_service, substituir por logger estruturado",
+      "status": "done",
+      "file": "lib/features/client/itinerary/data/services/itinerary_service.dart:41,108,127",
+      "effort_hours": 1
+    },
+    {
+      "id": 5,
+      "description": "Testes: validar que credenciais nunca aparecem em logs capturados",
+      "status": "done",
+      "file": "test/core/network/interceptors/log_interceptor_test.dart",
+      "effort_hours": 1
+    }
+  ]
+}

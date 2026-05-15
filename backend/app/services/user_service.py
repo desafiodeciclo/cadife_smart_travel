@@ -4,7 +4,22 @@ from typing import Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.security import hash_password
 from app.models.user import User, UserProfileUpdate
+
+
+async def create_user(
+    db: AsyncSession, *, nome: str, email: str, password: str
+) -> User:
+    user = User(
+        nome=nome,
+        email=email,
+        hashed_password=hash_password(password),
+    )
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    return user
 
 
 async def get_user_by_email(db: AsyncSession, email: str) -> Optional[User]:
@@ -51,6 +66,14 @@ async def update_bio(db: AsyncSession, user: User, bio: str) -> User:
 async def update_avatar_url(db: AsyncSession, user: User, url: str) -> User:
     """Updates avatar URL after a successful profile-photo upload."""
     user.avatar_url = url
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+
+async def update_password(db: AsyncSession, user: User, new_password: str) -> User:
+    """Updates user password."""
+    user.hashed_password = hash_password(new_password)
     await db.commit()
     await db.refresh(user)
     return user
