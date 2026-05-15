@@ -8,7 +8,6 @@ import 'package:cadife_smart_travel/features/client/presentation/widgets/recomme
 import 'package:cadife_smart_travel/features/client/presentation/widgets/trip_status_section.dart';
 import 'package:cadife_smart_travel/features/notifications/presentation/widgets/notification_bell.dart';
 import 'package:cadife_smart_travel/providers/auth_provider.dart';
-import 'package:cadife_smart_travel/design_system/components/shimmer_loading.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

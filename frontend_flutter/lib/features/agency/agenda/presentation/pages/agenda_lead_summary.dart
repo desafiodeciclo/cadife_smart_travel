@@ -163,12 +163,12 @@ class _LeadSummaryContent extends StatelessWidget {
               value: lead!.orcamentoFaixa!,
             ),
           ],
-          if (meeting.notes?.isNotEmpty == true) ...[
+          if (meeting.notas?.isNotEmpty == true) ...[
             const SizedBox(height: 10),
             _InfoRow(
               icon: Icons.notes_outlined,
               label: 'Anotações',
-              value: meeting.notes!,
+              value: meeting.notas!,
             ),
           ],
           const SizedBox(height: 20),

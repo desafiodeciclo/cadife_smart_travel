@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:cadife_smart_travel/core/di/service_locator.dart';
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/client/documentos/domain/entities/documento.dart';
 import 'package:dio/dio.dart';
@@ -21,13 +22,12 @@ class DocumentViewerPage extends StatefulWidget {
 
 class _DocumentViewerPageState extends State<DocumentViewerPage> {
   bool _isDownloading = false;
-  // Scoped Dio for file downloads — bypasses API interceptors intentionally
-  final _dio = Dio();
+  late final Dio _dio;
 
   @override
-  void dispose() {
-    _dio.close();
-    super.dispose();
+  void initState() {
+    super.initState();
+    _dio = sl<Dio>();
   }
 
   Future<void> _shareDocument() async {

@@ -1,8 +1,8 @@
 import 'package:cadife_smart_travel/features/agency/agenda/presentation/providers/agenda_provider.dart';
-import 'package:cadife_smart_travel/features/agency/leads/data/providers/leads_data_providers.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/agency/propostas/domain/entities/proposta.dart';
 import 'package:cadife_smart_travel/features/agency/propostas/presentation/providers/proposals_provider.dart';
+import 'package:cadife_smart_travel/providers/leads_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class DashboardStats {

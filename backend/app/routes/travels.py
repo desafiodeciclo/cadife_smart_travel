@@ -60,6 +60,45 @@ async def list_travels(
     )
 
 
+@router.get("/me/active", response_model=TravelListResponse)
+async def get_my_active_travel(
+    db: AsyncSession = Depends(get_db),
+    current_user: UserModel = Depends(get_current_user),
+):
+    """
+    Get active travel for the current user.
+
+    Retorna a viagem com status ATIVA para o usuário autenticado,
+    ordenada por start_date (próxima primeiro).
+    """
+    result = await db.execute(
+        select(TravelModel).where(
+            TravelModel.user_id == current_user.id,
+            TravelModel.status == "ATIVA",
+        ).order_by(TravelModel.start_date.asc())
+    )
+    travels = result.scalars().all()
+
+    travels_response = [
+        TravelResponse(
+            id=str(travel.id),
+            user_id=str(travel.user_id),
+            destination=travel.destination,
+            start_date=travel.start_date,
+            end_date=travel.end_date,
+            status=travel.status,
+            image_url=travel.image_url,
+            description=travel.description,
+        )
+        for travel in travels
+    ]
+
+    return TravelListResponse(
+        travels=travels_response,
+        count=len(travels_response),
+    )
+
+
 @router.get("/{travel_id}", response_model=TravelResponse)
 async def get_travel(
     travel_id: str,

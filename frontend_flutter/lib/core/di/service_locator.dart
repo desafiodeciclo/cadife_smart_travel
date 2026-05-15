@@ -18,30 +18,29 @@ import 'package:cadife_smart_travel/core/offline/offline_manager.dart';
 import 'package:cadife_smart_travel/core/offline/offline_sync_queue.dart';
 import 'package:cadife_smart_travel/core/offline/process_offline_queue_usecase.dart';
 import 'package:cadife_smart_travel/core/security/secure_config.dart';
-import 'package:cadife_smart_travel/features/agency/agenda/data/datasources/mock_agenda_repository.dart';
+import 'package:cadife_smart_travel/features/agency/agenda/data/repositories/agenda_repository_impl.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/domain/repositories/i_agenda_repository.dart';
 import 'package:cadife_smart_travel/features/agency/leads/data/datasources/i_leads_datasource.dart';
 import 'package:cadife_smart_travel/features/agency/leads/data/datasources/leads_remote_api_datasource.dart';
-import 'package:cadife_smart_travel/features/agency/leads/data/datasources/leads_remote_mock_datasource.dart';
 import 'package:cadife_smart_travel/features/agency/leads/data/repositories/leads_repository_impl.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/repositories/i_leads_repository.dart';
-import 'package:cadife_smart_travel/features/agency/perfil/data/datasources/mock_consultor_repository.dart';
+import 'package:cadife_smart_travel/features/agency/perfil/data/repositories/consultor_repository_impl.dart';
 import 'package:cadife_smart_travel/features/agency/perfil/domain/repositories/i_consultor_repository.dart';
-import 'package:cadife_smart_travel/features/agency/propostas/data/repositories/mock_proposals_repository.dart';
+import 'package:cadife_smart_travel/features/agency/propostas/data/repositories/proposal_repository_impl.dart';
 import 'package:cadife_smart_travel/features/agency/propostas/domain/repositories/i_proposals_repository.dart';
-import 'package:cadife_smart_travel/features/agency/settings/data/datasources/mock_agency_settings_repository.dart';
+import 'package:cadife_smart_travel/features/agency/settings/data/repositories/agency_settings_repository_impl.dart';
 import 'package:cadife_smart_travel/features/agency/settings/domain/repositories/i_agency_settings_repository.dart';
-import 'package:cadife_smart_travel/features/auth/data/datasources/auth_remote_mock_datasource.dart';
-import 'package:cadife_smart_travel/features/auth/data/datasources/i_auth_datasource.dart';
 import 'package:cadife_smart_travel/features/auth/data/datasources/auth_remote_api_datasource.dart';
+import 'package:cadife_smart_travel/features/auth/data/datasources/i_auth_datasource.dart';
 import 'package:cadife_smart_travel/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:cadife_smart_travel/features/auth/domain/repositories/i_auth_repository.dart';
 import 'package:cadife_smart_travel/features/client/itinerary/data/services/itinerary_service.dart';
 import 'package:cadife_smart_travel/features/client/notifications/data/repositories/notifications_repository_impl.dart';
 import 'package:cadife_smart_travel/features/client/notifications/domain/repositories/i_notifications_repository.dart';
-import 'package:cadife_smart_travel/features/client/profile/data/datasources/mock_profile_repository.dart';
+import 'package:cadife_smart_travel/features/client/profile/data/repositories/profile_repository_impl.dart';
 import 'package:cadife_smart_travel/features/client/profile/domain/repositories/i_profile_repository.dart';
 import 'package:cadife_smart_travel/features/client/status/data/datasources/status_datasource.dart';
+import 'package:cadife_smart_travel/features/client/status/data/datasources/status_remote_datasource.dart';
 import 'package:cadife_smart_travel/features/client/status/data/repositories/status_repository_impl.dart';
 import 'package:cadife_smart_travel/features/client/status/domain/repositories/i_status_repository.dart';
 import 'package:cadife_smart_travel/features/notifications/domain/repositories/i_notification_repository.dart';
@@ -52,7 +51,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 
 /// Service Locator global — get_it com registro explícito e lifecycle controlado.
 final sl = GetIt.instance;
@@ -160,7 +158,9 @@ Future<void> setupServiceLocator({
 }
 
 void _registerStatusModule() {
-  sl.registerLazySingleton<IStatusDatasource>(StatusMockDatasource.new);
+  sl.registerLazySingleton<IStatusDatasource>(
+    () => StatusRemoteDatasource(dio: sl<Dio>()),
+  );
   sl.registerLazySingleton<IStatusRepository>(
     () => StatusRepositoryImpl(sl<IStatusDatasource>()),
   );
@@ -205,17 +205,22 @@ void _registerLeadModule() {
 }
 
 void _registerAgendaModule() {
-  sl.registerLazySingleton<IAgendaRepository>(MockAgendaRepository.new);
+  sl.registerLazySingleton<IAgendaRepository>(
+    () => AgendaRepositoryImpl(dio: sl<Dio>(), offlineManager: sl<OfflineManager>()),
+  );
 }
 
 void _registerProposalModule() {
-  // Criando um Mock temporário para destravar a UI
-  sl.registerLazySingleton<IProposalsRepository>(MockProposalsRepository.new);
+  sl.registerLazySingleton<IProposalsRepository>(
+    () => ProposalRepositoryImpl(dio: sl<Dio>(), offlineManager: sl<OfflineManager>()),
+  );
 }
 
 void _registerProfileModule() {
-  sl.registerLazySingleton<IProfileRepository>(MockProfileRepository.new);
-  sl.registerLazySingleton<IConsultorRepository>(MockConsultorRepository.new);
+  sl.registerLazySingleton<IProfileRepository>(
+    () => ProfileRepositoryImpl(dio: sl<Dio>(), offlineManager: sl<OfflineManager>()),
+  );
+  sl.registerLazySingleton<IConsultorRepository>(() => ConsultorRepositoryImpl(sl<Dio>()));
 }
 
 void _registerNotificationsModule() {
@@ -233,7 +238,9 @@ void _registerInAppNotificationsModule() {
 }
 
 void _registerSettingsModule() {
-  sl.registerLazySingleton<IAgencySettingsRepository>(MockAgencySettingsRepository.new);
+  sl.registerLazySingleton<IAgencySettingsRepository>(
+    () => AgencySettingsRepositoryImpl(dio: sl<Dio>()),
+  );
 }
 
 Future<void> initDependencies() async {
