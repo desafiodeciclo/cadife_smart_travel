@@ -22,6 +22,7 @@ import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.entities.enums import LeadStatus, TipoMensagem
+from app.infrastructure.persistence.database import AsyncSessionLocal
 from app.models.lead import Lead
 from app.models.user import User
 from app.services import (
@@ -53,6 +54,16 @@ _validator = BriefingValidator()
 # FIFO lock per phone — prevents concurrent processing of messages from the
 # same number, which would cause rate-limit amplification and DB race conditions.
 _phone_locks: dict[str, asyncio.Lock] = {}
+
+
+async def execute_with_own_session(payload: dict) -> None:
+    """
+    BackgroundTask entry point — creates its own DB session to avoid
+    greenlet_spawn errors caused by reusing a request-scoped session after
+    the HTTP response has been sent and the request context has been torn down.
+    """
+    async with AsyncSessionLocal() as db:
+        await execute(payload, db)
 
 
 async def execute(payload: dict, db: AsyncSession) -> None:
@@ -107,9 +118,8 @@ async def _process(msg: dict, db: AsyncSession) -> None:
     lead_id = lead.id
     status_antes = lead.status
 
-    # ── Step 2.5: Carrega histórico do DB (restart-resilient) ────────────────
+    # ── Step 2.5: Carrega histórico do DB (source of truth) ─────────────────
     interacoes_list = await lead_service.get_recent_interacoes(db, lead_id, limit=20)
-    ai_service.preload_memory_from_db(phone, interacoes_list)
 
     # Formata histórico para o orquestrador — interleave correto user + assistant.
     # Cada row de interacao contém AMBAS as mensagens (cliente e IA), então cada
@@ -223,8 +233,8 @@ async def _process(msg: dict, db: AsyncSession) -> None:
             # de continuar — evita PendingRollbackError nas etapas seguintes.
             try:
                 await db.rollback()
-            except Exception:
-                pass
+            except Exception as rb_exc:
+                logger.error("briefing_rollback_failed", lead_id=lead_id_str, error=str(rb_exc))
             logger.error("briefing_update_error", lead_id=lead_id_str, error=str(exc))
 
     # ── Step 6: Persist interaction record (sempre executado) ─────────────
