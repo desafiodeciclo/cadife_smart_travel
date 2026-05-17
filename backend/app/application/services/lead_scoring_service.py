@@ -162,17 +162,33 @@ class LeadScoringService:
         lead: object,
         engajamento_rapido: bool = False,
         motivo: str = "auto",
+        briefing: object | None = None,
     ) -> ScoringContext:
         """
         Constrói ScoringContext a partir de uma instância ORM Lead.
         Separado do cálculo para permitir testes com objetos simples.
+
+        ``briefing`` pode ser passado explicitamente para evitar lazy-load em
+        contexto async (greenlet_spawn). Se None, tenta obter via lead.briefing
+        somente se o atributo já estiver carregado na identidade map da sessão.
         """
-        briefing = getattr(lead, "briefing", None)
+        # Acessa "briefing" sem disparar lazy-load: verifica se já está em memória.
+        if briefing is None:
+            sa_state = getattr(lead, "__sa_instance_state__", None)
+            if sa_state is not None and "briefing" in sa_state.dict:
+                briefing = lead.briefing  # já carregado — seguro
+            # else: briefing permanece None; scoring sem dados de briefing
+
         status_val = getattr(lead, "status", LeadStatus.novo)
         if hasattr(status_val, "value"):
             status_val = status_val.value
 
-        has_proposta = bool(getattr(lead, "propostas", None))
+        # Acessa "propostas" sem disparar lazy-load: verifica se já está em memória.
+        sa_state = getattr(lead, "__sa_instance_state__", None)
+        if sa_state is not None and "propostas" in sa_state.dict:
+            has_proposta = bool(lead.propostas)
+        else:
+            has_proposta = False
         if not has_proposta:
             has_proposta = status_val in STATUSES_COM_PROPOSTA
 
