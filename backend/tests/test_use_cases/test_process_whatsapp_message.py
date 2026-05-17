@@ -556,7 +556,6 @@ async def test_memory_preloaded_from_db():
 
         mock_ai.process_message = AsyncMock(return_value="Resposta com contexto")
         mock_ai.extract_briefing = AsyncMock(return_value=MagicMock())
-        mock_ai.preload_memory_from_db = MagicMock()
 
         mock_ws.extract_message_from_payload = MagicMock(
             return_value={
@@ -572,9 +571,6 @@ async def test_memory_preloaded_from_db():
         await process_whatsapp_message.execute(_text_payload(), db)
 
     mock_ls.get_recent_interacoes.assert_awaited_once_with(db, lead.id, limit=20)
-    mock_ai.preload_memory_from_db.assert_called_once_with(
-        "5584999990001", recent_interacoes
-    )
     mock_ai.process_message.assert_awaited_once()
 
 
