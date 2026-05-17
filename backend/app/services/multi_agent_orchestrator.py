@@ -64,13 +64,13 @@ _DEFAULT_HEADERS = {
 
 # Cadeias de fallback por agente — percorridas em 429/503
 _TRIAGEM_FREE_MODELS: list[str] = [
-    "qwen/qwen3-next-80b-a3b-instruct:free",
-    "meta-llama/llama-3.3-70b-instruct:free",
+    "mistralai/ministral-8b-2512",
+    "deepseek/deepseek-v4-flash",
 ]
 _ORCHESTRATOR_FREE_MODELS: list[str] = [
     settings.OPENROUTER_FALLBACK_MODEL,
     "nvidia/llama-nemotron-embed-vl-1b-v2:free",
-    "meta-llama/llama-3.3-70b-instruct:free",
+    "deepseek/deepseek-v4-flash",
 ]
 _RETRIABLE_STATUS_CODES = frozenset({429, 503})
 
