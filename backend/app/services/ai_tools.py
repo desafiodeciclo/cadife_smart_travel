@@ -440,11 +440,18 @@ async def _persist_lead_data(
     data: dict[str, Any],
     db: Optional[AsyncSession],
 ) -> str:
-    if not db:
+    # `db` is intentionally unused here — we create an isolated session so that
+    # intermediate commits (upsert_lead_with_resilience + update_briefing_from_extraction)
+    # do NOT corrupt the shared request-scoped session held by _process.
+    # Without isolation, those commits expire ORM objects in the outer session,
+    # causing MissingGreenlet / DetachedInstanceError in _process Step 5,
+    # which then rolls back and leaves the briefing unpersisted → AI loop.
+    if db is None:
         return json.dumps({"success": False, "reason": "db_unavailable"})
     try:
-        from app.services.lead_service import upsert_lead_with_resilience
         from app.models.briefing import BriefingExtracted
+        from app.services.lead_service import upsert_lead_with_resilience, update_briefing_from_extraction
+        from app.infrastructure.persistence.database import AsyncSessionLocal
 
         # Whitelist: remove campos não reconhecidos antes de qualquer persistência
         sanitized: dict[str, Any] = {}
@@ -460,20 +467,21 @@ async def _persist_lead_data(
         if not sanitized:
             return json.dumps({"success": False, "reason": "no_valid_fields"})
 
-        lead = await upsert_lead_with_resilience(db, {"telefone": phone})
-
-        from app.services.lead_service import update_briefing_from_extraction
-
         normalized = _normalize_briefing_enums(_normalize_date_fields(sanitized))
         briefing_in = BriefingExtracted.model_validate(normalized)
-        briefing = await update_briefing_from_extraction(db, lead, briefing_in)
 
-        scheduling_required = briefing.completude_pct >= 60
+        async with AsyncSessionLocal() as isolated_db:
+            lead = await upsert_lead_with_resilience(isolated_db, {"telefone": phone})
+            briefing = await update_briefing_from_extraction(isolated_db, lead, briefing_in)
+            scheduling_required = briefing.completude_pct >= 60
+            completude = briefing.completude_pct
+            lead_id_str = str(lead.id)
+
         return json.dumps(
             {
                 "success": True,
-                "lead_id": str(lead.id),
-                "completude_pct": briefing.completude_pct,
+                "lead_id": lead_id_str,
+                "completude_pct": completude,
                 "next_step": "offer_scheduling" if scheduling_required else "continue_briefing",
                 "instruction": (
                     "Briefing completo. Chame check_availability AGORA e convide o cliente para agendar a curadoria."
@@ -483,12 +491,6 @@ async def _persist_lead_data(
             }
         )
     except Exception as exc:
-        # Garante que a sessão volta a um estado limpo — evita PendingRollbackError
-        # em chamadas subsequentes que compartilham o mesmo AsyncSession.
-        try:
-            await db.rollback()
-        except Exception:
-            pass
         logger.error("tool_persist_lead_data_failed", error=str(exc))
         return json.dumps({"success": False, "error": "persist_failed"})
 
