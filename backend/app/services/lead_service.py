@@ -199,7 +199,17 @@ async def create_manual_lead(db: AsyncSession, data: "ManualLeadCreate") -> Lead
     )
 
     lead.score = calculate_score_from_briefing(briefing)
-    briefing.completude_pct = calculate_completude(briefing.__dict__)
+    briefing.completude_pct = calculate_completude({
+        "destino": briefing.destino,
+        "data_ida": briefing.data_ida,
+        "data_volta": briefing.data_volta,
+        "qtd_pessoas": briefing.qtd_pessoas,
+        "perfil": briefing.perfil,
+        "tipo_viagem": briefing.tipo_viagem,
+        "preferencias": briefing.preferencias,
+        "orcamento": briefing.orcamento,
+        "tem_passaporte": briefing.tem_passaporte,
+    })
 
     lead.briefing = briefing
     db.add(briefing)
@@ -465,10 +475,11 @@ async def _persist_score(
     lead: Lead,
     engajamento_rapido: bool = False,
     motivo: str = "auto",
+    briefing: Optional[Briefing] = None,
 ) -> None:
     """Calcula score via LeadScoringService, persiste em leads e insere histórico."""
     ctx = lead_scoring_service.context_from_lead(
-        lead, engajamento_rapido=engajamento_rapido, motivo=motivo
+        lead, engajamento_rapido=engajamento_rapido, motivo=motivo, briefing=briefing
     )
     result = lead_scoring_service.calculate(ctx)
 
@@ -518,13 +529,36 @@ async def update_briefing_from_extraction(
         briefing = Briefing(lead_id=lead.id)
         db.add(briefing)
 
+    # Exclui campos Pydantic que não existem no modelo ORM (ex: campos_inferidos)
+    _BRIEFING_ORM_FIELDS = {
+        "destino", "data_ida", "data_volta", "qtd_pessoas", "perfil",
+        "tipo_viagem", "preferencias", "orcamento", "tem_passaporte", "observacoes",
+    }
     for field, value in extracted.model_dump().items():
+        if field not in _BRIEFING_ORM_FIELDS:
+            continue
         if value not in (None, [], ""):
             setattr(briefing, field, value)
 
-    briefing.completude_pct = calculate_completude(briefing.__dict__)
+    _briefing_dict = {
+        "destino": briefing.destino,
+        "data_ida": briefing.data_ida,
+        "data_volta": briefing.data_volta,
+        "qtd_pessoas": briefing.qtd_pessoas,
+        "perfil": briefing.perfil,
+        "tipo_viagem": briefing.tipo_viagem,
+        "preferencias": briefing.preferencias,
+        "orcamento": briefing.orcamento,
+        "tem_passaporte": briefing.tem_passaporte,
+    }
+    briefing.completude_pct = calculate_completude(_briefing_dict)
 
     lead.score = calculate_score_from_briefing(briefing)
+
+    # Flush pending changes explicitly so that any constraint violation surfaces here
+    # (with a clean exception) rather than inside update_lead_status's nested commit,
+    # which would poison the session and cascade into the save_interacao step.
+    await db.flush()
 
     if briefing.completude_pct >= 60 and lead.status == LeadStatus.em_atendimento:
         await update_lead_status(
@@ -539,7 +573,7 @@ async def update_briefing_from_extraction(
     )
     recent = list(interacoes_result.scalars().all())
     engajamento = _is_engajamento_rapido(recent)
-    await _persist_score(db, lead, engajamento_rapido=engajamento, motivo="auto")
+    await _persist_score(db, lead, engajamento_rapido=engajamento, motivo="auto", briefing=briefing)
 
     await db.commit()
     await db.refresh(briefing)
@@ -551,7 +585,16 @@ async def update_briefing_from_extraction(
     if briefing.completude_pct > 40 and filled >= 5:
         from app.services.checkpoint_service import activate_checkpoint, SISTEMA
         from app.domain.entities.enums import TravelCheckpoint
-        await activate_checkpoint(db, lead.id, TravelCheckpoint.briefing_coletado, SISTEMA)
+        try:
+            await activate_checkpoint(db, lead.id, TravelCheckpoint.briefing_coletado, SISTEMA)
+        except Exception as checkpoint_exc:
+            # Checkpoint já existe (409) ou erro transitório — não propaga para não
+            # invalidar o briefing que já foi salvo com sucesso.
+            logger.info(
+                "checkpoint_skipped",
+                lead_id=str(lead.id),
+                reason=str(checkpoint_exc),
+            )
 
     return briefing
 
