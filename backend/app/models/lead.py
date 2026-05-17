@@ -78,21 +78,22 @@ class Lead(Base):
 
     # Relacionamentos Base
     briefing: Mapped[Optional["Briefing"]] = relationship(
-        "Briefing", back_populates="lead", uselist=False
+        "Briefing", back_populates="lead", uselist=False, lazy="selectin"
     )
     interacoes: Mapped[list["Interacao"]] = relationship(
-        "Interacao", back_populates="lead"
+        "Interacao", back_populates="lead", lazy="selectin"
     )
     agendamentos: Mapped[list["Agendamento"]] = relationship(
-        "Agendamento", back_populates="lead"
+        "Agendamento", back_populates="lead", lazy="selectin"
     )
     propostas: Mapped[list["Proposta"]] = relationship(
-        "Proposta", back_populates="lead"
+        "Proposta", back_populates="lead", lazy="selectin"
     )
     consultor: Mapped[Optional["User"]] = relationship(
         "User",
         primaryjoin="foreign(Lead.consultor_id) == User.id",
         overlaps="consultor",
+        lazy="selectin",
     )
 
     # --- UNIFICAÇÃO DE RELACIONAMENTOS ESPECÍFICOS ---
@@ -101,12 +102,13 @@ class Lead(Base):
         back_populates="lead",
         order_by="TravelCheckpointRecord.ativado_em",
         cascade="all, delete-orphan",
+        lazy="selectin",
     )
-    
+
     score_history: Mapped[list["LeadScoreHistory"]] = relationship(
         "LeadScoreHistory",
         back_populates="lead",
-        lazy="select",
+        lazy="selectin",
         order_by="LeadScoreHistory.criado_em.desc()",
     )
 
