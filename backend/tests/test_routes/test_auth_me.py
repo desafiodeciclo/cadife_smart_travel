@@ -60,4 +60,4 @@ async def test_get_me_success(async_client: AsyncClient, db_session: AsyncSessio
     data = response.json()
     assert data["id"] == str(user_id)
     assert data["email"] == "auth_test@example.com"
-    assert data["name"] == "Authenticated User"
+    assert data["nome"] == "Authenticated User"

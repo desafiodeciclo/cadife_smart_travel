@@ -66,7 +66,7 @@ async def get_current_user(
     iat_timestamp = payload.get("iat")
     if iat_timestamp and user.global_logout_at:
         iat_dt = datetime.fromtimestamp(iat_timestamp, tz=timezone.utc)
-        if iat_dt < user.global_logout_at:
+        if iat_dt <= user.global_logout_at:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Sessão expirada (logout global)"
             )
@@ -105,7 +105,7 @@ async def get_optional_user(
     iat_timestamp = payload.get("iat")
     if iat_timestamp and user.global_logout_at:
         iat_dt = datetime.fromtimestamp(iat_timestamp, tz=timezone.utc)
-        if iat_dt < user.global_logout_at:
+        if iat_dt <= user.global_logout_at:
             return None
             
     return user

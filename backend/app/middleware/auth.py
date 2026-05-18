@@ -59,6 +59,7 @@ async def verify_jwt(
             {"uid": user_id}
         )
         global_logout_at = user_res.scalar()
+        print(f"VERIFY_JWT: uid={user_id}, global_logout_at={global_logout_at}, type={type(global_logout_at)}, iat={iat}")
 
         if global_logout_at and iat:
             # iat is seconds since epoch

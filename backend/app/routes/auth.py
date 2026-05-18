@@ -55,7 +55,7 @@ router = APIRouter(tags=["Auth"])
     },
 )
 @limiter.limit("5/minute")
-async def register(request: Request, body: RegisterRequest, db: AsyncSession = Depends(get_db)):
+async def register(request: Request, response: Response, body: RegisterRequest, db: AsyncSession = Depends(get_db)):
     existing = await get_user_by_email(db, body.email)
     if existing:
         raise HTTPException(
@@ -83,7 +83,7 @@ async def register(request: Request, body: RegisterRequest, db: AsyncSession = D
     },
 )
 @limiter.limit("5/minute")
-async def login(request: Request, body: LoginRequest, db: AsyncSession = Depends(get_db)):
+async def login(request: Request, response: Response, body: LoginRequest, db: AsyncSession = Depends(get_db)):
     user = await get_user_by_email(db, body.email)
     if not user or not verify_password(body.password, user.hashed_password):
         raise HTTPException(
@@ -197,7 +197,7 @@ async def logout_all_devices(
     description="Gera um token de recuperação de senha válido por 15 minutos. Impede enumeração de usuários.",
 )
 @limiter.limit("3/minute")
-async def forgot_password(request: Request, body: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)):
+async def forgot_password(request: Request, response: Response, body: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)):
     user = await get_user_by_email(db, body.email)
     if user and user.is_active:
         reset_token = create_reset_token(str(user.id))
@@ -271,6 +271,7 @@ async def reset_password(body: ResetPasswordRequest, db: AsyncSession = Depends(
 @limiter.limit("5/minute")
 async def change_password(
     request: Request,
+    response: Response,
     body: ChangePasswordRequest, 
     user = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
