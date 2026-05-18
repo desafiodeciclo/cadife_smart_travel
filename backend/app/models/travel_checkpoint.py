@@ -27,7 +27,12 @@ class TravelCheckpointRecord(Base):
         UUID(as_uuid=True), ForeignKey("leads.id", ondelete="CASCADE"), nullable=False, index=True
     )
     checkpoint: Mapped[TravelCheckpoint] = mapped_column(
-        PgEnum(TravelCheckpoint, name="travel_checkpoint_enum", create_type=False),
+        PgEnum(
+            TravelCheckpoint,
+            name="travel_checkpoint_enum",
+            create_type=False,
+            values_callable=lambda obj: [e.value for e in obj],
+        ),
         nullable=False,
     )
     ativado_em: Mapped[datetime] = mapped_column(
