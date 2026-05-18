@@ -47,8 +47,8 @@ from app.core.dependencies import get_current_user, get_db
 from app.domain.entities.enums import AgendamentoStatus, AgendamentoTipo, LeadStatus
 from app.infrastructure.security.dependencies import RequiresRole
 from app.infrastructure.security.scope_check import check_lead_access
-from app.models.agendamento import (
-    Agendamento,
+from app.models.agendamento import Agendamento
+from app.presentation.schemas.agendamento_schema import (
     AgendamentoCreate,
     AgendamentoListResponse,
     AgendamentoPatch,

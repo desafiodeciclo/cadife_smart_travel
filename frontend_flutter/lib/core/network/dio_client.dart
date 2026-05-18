@@ -2,6 +2,7 @@ import 'package:cadife_smart_travel/core/constants/api_constants.dart';
 import 'package:cadife_smart_travel/core/constants/app_constants.dart';
 import 'package:cadife_smart_travel/core/network/interceptors/auth_interceptor.dart';
 import 'package:cadife_smart_travel/core/network/interceptors/error_interceptor.dart';
+import 'package:cadife_smart_travel/core/network/interceptors/log_interceptor.dart';
 import 'package:cadife_smart_travel/core/offline/offline_interceptor.dart';
 import 'package:cadife_smart_travel/core/security/certificate_pinning_interceptor.dart';
 import 'package:dio/dio.dart';
@@ -56,18 +57,9 @@ class DioClientFactory {
     dio.interceptors.add(authInterceptor);
     dio.interceptors.add(offlineInterceptor);
 
-    // Debug logging
+    // Debug logging with sanitization
     if (kDebugMode) {
-      dio.interceptors.add(
-        LogInterceptor(
-          request: true,
-          requestHeader: true,
-          requestBody: true,
-          responseHeader: true,
-          responseBody: true,
-          logPrint: (o) => debugPrint(o.toString()),
-        ),
-      );
+      dio.interceptors.add(CadifeLogInterceptor());
     }
 
     return dio;

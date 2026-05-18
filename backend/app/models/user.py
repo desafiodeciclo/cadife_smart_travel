@@ -1,15 +1,15 @@
 import uuid
-from app.infrastructure.persistence.types import GUID, StringArray
+import re
 from datetime import datetime
 from enum import Enum
 from typing import Optional
 
 from sqlalchemy import Boolean, DateTime, String, func
 from sqlalchemy.orm import Mapped, mapped_column
-from pydantic import BaseModel, EmailStr, Field, SecretStr, field_validator
-import re
+from pydantic import BaseModel, EmailStr, Field, SecretStr, field_validator, AliasChoices
 
 from app.core.database import Base
+from app.infrastructure.persistence.types import GUID, StringArray
 
 
 class UserPerfil(str, Enum):
@@ -48,11 +48,11 @@ class User(Base):
     global_logout_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
 
 
-# Pydantic schemas
+# Pydantic schemas for Auth Flow
 
 
 class RegisterRequest(BaseModel):
-    name: str = Field(min_length=2, max_length=120)
+    name: str = Field(min_length=2, max_length=120, validation_alias=AliasChoices("name", "nome"))
     email: EmailStr
     password: SecretStr = Field(min_length=8, max_length=128)
 
@@ -93,53 +93,3 @@ class ChangePasswordRequest(BaseModel):
         if not re.search(r"\d", pwd) or not re.search(r"[A-Za-z]", pwd):
             raise ValueError("password must contain letters and digits")
         return v
-
-
-class LoginRequest(BaseModel):
-    email: str
-    password: str
-
-
-class TokenResponse(BaseModel):
-    access_token: str
-    refresh_token: str
-    token_type: str = "bearer"
-    expires_in: int = 3600
-
-
-class RefreshRequest(BaseModel):
-    refresh_token: str
-
-
-class UserResponse(BaseModel):
-    id: uuid.UUID
-    email: str
-    nome: str
-    perfil: UserPerfil
-    telefone: Optional[str]
-    avatar_url: Optional[str]
-    bio: Optional[str] = None
-    is_active: bool
-    criado_em: datetime
-    tipo_viagem: Optional[list[str]]
-    preferencias: Optional[list[str]]
-    tem_passaporte: Optional[bool]
-
-    model_config = {"from_attributes": True}
-
-
-class UserProfileUpdate(BaseModel):
-    nome: Optional[str] = None
-    bio: Optional[str] = None
-    avatar_url: Optional[str] = None
-    tipo_viagem: Optional[list[str]] = None
-    preferencias: Optional[list[str]] = None
-    tem_passaporte: Optional[bool] = None
-
-
-class FcmTokenRequest(BaseModel):
-    fcm_token: str
-
-
-class FcmTokenResponse(BaseModel):
-    message: str

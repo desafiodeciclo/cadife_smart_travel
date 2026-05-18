@@ -40,10 +40,6 @@ import 'package:cadife_smart_travel/features/client/offers/presentation/screens/
 import 'package:cadife_smart_travel/features/client/profile/presentation/pages/profile_page.dart' as client_profile;
 import 'package:cadife_smart_travel/features/client/profile/presentation/pages/travel_journal_detail_screen.dart';
 import 'package:cadife_smart_travel/features/notifications/presentation/screens/notification_center_screen.dart';
-/*
-import 'package:cadife_smart_travel/screens/consultant/lead_detail_screen.dart';
-import 'package:cadife_smart_travel/screens/consultant/profile_screen.dart';
-*/
 import 'package:cadife_smart_travel/screens/settings_screen.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';

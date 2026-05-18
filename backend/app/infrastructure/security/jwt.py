@@ -55,10 +55,10 @@ def create_refresh_token(user_id: str) -> str:
 
 
 def create_reset_token(user_id: str) -> str:
-    """Create a short-lived token for password reset."""
+    """Create a short-lived reset token (15 minutes for password reset)."""
     return _create_token(
         {"sub": user_id, "type": "reset"},
-        timedelta(minutes=30),
+        timedelta(minutes=15),
     )
 
 

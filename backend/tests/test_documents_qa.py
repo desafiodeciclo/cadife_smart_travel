@@ -7,7 +7,7 @@ from app.domain.entities.enums import DocumentoCategoria, LeadStatus
 from app.infrastructure.persistence.models.lead_model import LeadModel
 from app.infrastructure.persistence.models.user_model import UserModel
 from app.models import Documento
-from app.models.user import UserPerfil
+from app.domain.entities.enums import UserPerfil
 from app.infrastructure.security.dependencies import get_current_user
 from app.infrastructure.security.pii_encryption import hmac_hash
 

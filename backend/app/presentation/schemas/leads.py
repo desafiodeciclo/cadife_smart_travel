@@ -163,6 +163,7 @@ class LeadListItemDTO(BaseModel):
     score: Optional[LeadScore] = None
     consultor_id: Optional[uuid.UUID] = None
     score_numerico: Optional[int] = None
+    aya_ativo: bool = True
     criado_em: datetime
     atualizado_em: datetime
     completude_pct: Optional[int] = None

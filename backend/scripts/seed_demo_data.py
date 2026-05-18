@@ -23,7 +23,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.infrastructure.persistence.database import AsyncSessionLocal, engine
 from app.infrastructure.security.pii_encryption import hmac_hash
 from app.models.lead import Lead
-from app.models.user import User, UserPerfil
+from app.domain.entities.enums import UserPerfil
+from app.models.user import User
 from app.domain.entities.enums import LeadOrigem, LeadStatus
 
 logger = structlog.get_logger()

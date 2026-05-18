@@ -20,12 +20,13 @@ from httpx import ASGITransport, AsyncClient
 from jose import jwt
 
 from main import app
+from app.domain.entities.enums import UserPerfil
 from app.infrastructure.config.settings import get_settings
 from app.infrastructure.security.jwt import (
     create_access_token,
     hash_password,
 )
-from app.models.user import User, UserPerfil
+from app.models.user import User
 
 settings = get_settings()
 

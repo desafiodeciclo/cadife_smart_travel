@@ -8,6 +8,15 @@ No framework dependencies — reusable across layers.
 from enum import Enum
 
 
+class UserPerfil(str, Enum):
+    """User roles across the platform."""
+
+    agencia = "agencia"
+    cliente = "cliente"
+    consultor = "consultor"
+    admin = "admin"
+
+
 class LeadOrigem(str, Enum):
     """Channel through which the lead entered the system (spec.md §4.1)."""
 

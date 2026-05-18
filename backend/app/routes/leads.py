@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
@@ -30,12 +30,13 @@ from app.infrastructure.security.dependencies import (
     get_db,
 )
 from app.infrastructure.security.pii_encryption import hmac_hash
-from app.models.briefing import BriefingResponse, BriefingUpdate, calculate_completude
-from app.models.conversation_summary import (
+from app.domain.services.briefing_calculator import calculate_completude
+from app.presentation.schemas.briefing_schema import BriefingResponse, BriefingUpdate
+from app.presentation.schemas.conversation_summary_schema import (
     ConversationSummaryListResponse,
     ConversationSummaryResponse,
 )
-from app.models.interacao import InteracaoListResponse
+from app.presentation.schemas.interacao_schema import InteracaoListResponse
 from app.models.lead import Lead
 from app.presentation.schemas.common_errors import HTTPErrorResponse
 from app.presentation.schemas.leads import (
@@ -44,6 +45,7 @@ from app.presentation.schemas.leads import (
     LeadCreateRequest,
     LeadCursorListResponseDTO,
     LeadDetailDTO,
+    LeadListResponseDTO,
     LeadMetricsDTO,
     LeadPatchRequest,
     LeadUpdateRequest,
@@ -57,19 +59,32 @@ router = APIRouter(
     tags=["Leads"],
 )
 
-# ── GET /leads (Cursor-based + Filtros) ────────────────────────────────────
+# ── GET /leads (Offset-based + Cursor-based + Filtros) ─────────────────────
 
 @router.get(
     "",
-    summary="Listar leads com paginação cursor-based e filtros",
+    summary="Listar leads com paginação (offset ou cursor) e filtros",
     description=(
-        "Retorna leads ativos com paginação cursor-based, filtros por status, score, "
-        "consultor assignado, período de data e busca textual. Ideal para o dashboard "
-        "do CRM onde o consultor navega pelo pipeline sem page-drift."
+        "Retorna leads ativos com paginação offset-based (page/size) ou cursor-based, "
+        "filtros por status, score, consultor assignado, período de data e busca textual. "
+        "Use `page` para paginação tradicional; use `cursor` para navegação sem page-drift."
     ),
-    response_model=LeadCursorListResponseDTO,
+    response_model=None,
     dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))],
     responses={
+        200: {
+            "description": "Lista paginada de leads",
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "oneOf": [
+                            LeadListResponseDTO.model_json_schema(),
+                            LeadCursorListResponseDTO.model_json_schema(),
+                        ]
+                    }
+                }
+            },
+        },
         401: {"description": "Não autenticado", "model": HTTPErrorResponse},
         403: {"description": "Sem permissão", "model": HTTPErrorResponse},
     },
@@ -77,8 +92,10 @@ router = APIRouter(
 async def list_leads(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
-    limit: int = Query(20, ge=1, le=100),
-    cursor: Optional[str] = Query(None),
+    page: Optional[int] = Query(None, ge=1, description="Número da página (modo offset-based)"),
+    size: int = Query(10, ge=1, le=100, description="Itens por página"),
+    limit: int = Query(20, ge=1, le=100, description="Alias para size (cursor-based)"),
+    cursor: Optional[str] = Query(None, description="Cursor para paginação cursor-based"),
     status: Optional[str] = Query(None),
     score: Optional[str] = Query(None),
     search: Optional[str] = Query(None),
@@ -87,7 +104,25 @@ async def list_leads(
     data_fim: Optional[datetime] = Query(None),
     order_by: str = Query("criado_em"),
     order_dir: str = Query("desc"),
-):
+) -> Any:
+    # ── Offset-based pagination (page/size) ────────────────────────────────
+    if page is not None:
+        items, total = await lead_service.list_leads(
+            db,
+            status=status,
+            score=score,
+            search=search,
+            page=page,
+            limit=size,
+            consultor_id=consultor_id,
+            data_inicio=data_inicio,
+            data_fim=data_fim,
+            order_by=order_by,
+            order_dir=order_dir,
+        )
+        return map_leads_to_list_response(items, total, page, size)
+
+    # ── Cursor-based pagination (cursor/limit) ─────────────────────────────
     items, next_cursor = await lead_service.list_leads_cursor(
         db,
         limit=limit,
@@ -130,6 +165,38 @@ async def get_lead(
     if not lead:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead não encontrado")
     return map_lead_to_detail(lead)
+
+
+# ── GET /leads/{id}/checkpoints ────────────────────────────────────────────
+
+@router.get(
+    "/{lead_id}/checkpoints",
+    response_model=CheckpointListResponse,
+    summary="Listar checkpoints de um lead",
+    description=(
+        "Retorna lista de checkpoints (marcos de viagem) ativados para este lead, "
+        "ordenados por data de ativação. Usados no acompanhamento de status da viagem."
+    ),
+    dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))],
+    responses={
+        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
+        403: {"description": "Sem permissão", "model": HTTPErrorResponse},
+        404: {"description": "Lead não encontrado", "model": HTTPErrorResponse},
+    },
+)
+async def list_lead_checkpoints(
+    lead_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+) -> CheckpointListResponse:
+    lead = await lead_service.get_lead_by_id(db, lead_id)
+    if not lead:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead não encontrado")
+    records = await checkpoint_service.get_checkpoints(db, lead_id)
+    return CheckpointListResponse(
+        checkpoints=[CheckpointResponse.model_validate(r) for r in records],
+        total=len(records),
+    )
 
 
 # ── GET /leads/metrics ─────────────────────────────────────────────────────

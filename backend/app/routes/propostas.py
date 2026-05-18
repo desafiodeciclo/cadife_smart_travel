@@ -36,9 +36,9 @@ from app.core.dependencies import get_current_user, get_db
 from app.domain.entities.enums import LeadStatus, PropostaStatus, TravelCheckpoint
 from app.infrastructure.security.dependencies import RequiresRole
 from app.infrastructure.security.scope_check import check_lead_access
-from app.models.proposta import (
+from app.models.proposta import Proposta
+from app.presentation.schemas.proposta_schema import (
     CancelPropostaRequest,
-    Proposta,
     PropostaCreate,
     PropostaPatchRequest,
     PropostaResponse,

@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi.security import HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timezone, timedelta
+import structlog
+import hashlib
 
-from app.core.dependencies import get_db
-from app.infrastructure.security.dependencies import get_current_user, bearer_scheme
+from app.core.dependencies import get_current_user, bearer_scheme, get_db
 from app.infrastructure.persistence.models.revoked_token_model import RevokedTokenModel
 from app.infrastructure.security.jwt import decode_token, create_reset_token
 from app.core.security import (
@@ -13,27 +14,25 @@ from app.core.security import (
     verify_password,
 )
 from app.models.user import (
-    FcmTokenRequest,
-    FcmTokenResponse,
-    LoginRequest,
-    RegisterRequest,
-    RefreshRequest,
-    ForgotPasswordRequest,
-    ResetPasswordRequest,
     ChangePasswordRequest,
+    ForgotPasswordRequest,
+    RegisterRequest,
+    ResetPasswordRequest,
+    User,
+)
+from app.presentation.schemas.user_schema import (
+    LoginRequest,
     TokenResponse,
-    UserResponse,
+    RefreshRequest,
 )
 from app.presentation.schemas.common_errors import HTTPErrorResponse
 from app.services.user_service import (
+    create_user,
     get_user_by_email,
     get_user_by_id,
-    create_user,
     update_password,
 )
 from app.infrastructure.security.rate_limiter import limiter
-import structlog
-import hashlib
 
 logger = structlog.get_logger()
 
@@ -41,6 +40,35 @@ def hash_pii(email: str) -> str:
     return hashlib.sha256(email.lower().strip().encode()).hexdigest()
 
 router = APIRouter(tags=["Auth"])
+
+
+@router.post(
+    "/auth/register",
+    response_model=TokenResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Registro de novo usuário",
+    description="Cria uma nova conta de usuário (cliente) e retorna um par de tokens JWT.",
+    responses={
+        409: {"description": "E-mail já registrado", "model": HTTPErrorResponse},
+        422: {"description": "Erro de validação no body (senha fraca, etc)", "model": HTTPErrorResponse},
+        429: {"description": "Too Many Requests"},
+    },
+)
+@limiter.limit("5/minute")
+async def register(request: Request, body: RegisterRequest, db: AsyncSession = Depends(get_db)):
+    existing = await get_user_by_email(db, body.email)
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="email_already_registered"
+        )
+    
+    user = await create_user(db, body, role="cliente")
+    logger.info("auth_register", user_id=str(user.id), email_hash=hash_pii(body.email))
+    
+    return TokenResponse(
+        access_token=create_access_token(str(user.id)),
+        refresh_token=create_refresh_token(str(user.id)),
+    )
 
 
 @router.post(
@@ -54,7 +82,8 @@ router = APIRouter(tags=["Auth"])
         429: {"description": "Too Many Requests - Rate Limit excedido"},
     },
 )
-async def login(request: Request, response: Response, body: LoginRequest, db: AsyncSession = Depends(get_db)):
+@limiter.limit("5/minute")
+async def login(request: Request, body: LoginRequest, db: AsyncSession = Depends(get_db)):
     user = await get_user_by_email(db, body.email)
     if not user or not verify_password(body.password, user.hashed_password):
         raise HTTPException(
@@ -72,31 +101,31 @@ async def login(request: Request, response: Response, body: LoginRequest, db: As
 
 
 @router.post(
-    "/auth/register",
-    response_model=TokenResponse,
-    status_code=status.HTTP_201_CREATED,
-    summary="Registro de novo usuário",
-    description="Cria uma nova conta de usuário (cliente) e retorna um par de tokens JWT.",
-    responses={
-        409: {"description": "E-mail já registrado", "model": HTTPErrorResponse},
-        422: {"description": "Erro de validação no body (senha fraca, etc)", "model": HTTPErrorResponse},
-        429: {"description": "Too Many Requests"},
-    },
+    "/auth/logout",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Encerra a sessão atual (Logout)",
+    description="Adiciona o Access Token atual na lista negra para impedir novas requisições.",
 )
-async def register(request: Request, response: Response, body: RegisterRequest, db: AsyncSession = Depends(get_db)):
-    existing = await get_user_by_email(db, body.email)
-    if existing:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail="email_already_registered"
-        )
-    
-    user = await create_user(db, body, role="cliente")
-    logger.info("auth_register", user_id=str(user.id), email_hash=hash_pii(body.email))
-    
-    return TokenResponse(
-        access_token=create_access_token(str(user.id)),
-        refresh_token=create_refresh_token(str(user.id)),
+async def logout(
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+    user = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    try:
+        payload = decode_token(credentials.credentials)
+        exp_timestamp = payload.get("exp")
+        expires_at = datetime.fromtimestamp(exp_timestamp, tz=timezone.utc) if exp_timestamp else (datetime.now(timezone.utc) + timedelta(hours=1))
+    except Exception:
+        expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
+        
+    revoked = RevokedTokenModel(
+        token=credentials.credentials,
+        expires_at=expires_at
     )
+    db.add(revoked)
+    await db.commit()
+    logger.info("auth_logout", user_id=str(user.id))
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post(
@@ -146,34 +175,6 @@ async def refresh_token(body: RefreshRequest, db: AsyncSession = Depends(get_db)
 
 
 @router.post(
-    "/auth/logout",
-    status_code=status.HTTP_204_NO_CONTENT,
-    summary="Encerra a sessão atual (Logout)",
-    description="Adiciona o Access Token atual na lista negra para impedir novas requisições.",
-)
-async def logout(
-    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
-    user = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
-):
-    try:
-        payload = decode_token(credentials.credentials)
-        exp_timestamp = payload.get("exp")
-        expires_at = datetime.fromtimestamp(exp_timestamp, tz=timezone.utc) if exp_timestamp else (datetime.now(timezone.utc) + timedelta(hours=1))
-    except Exception:
-        expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
-        
-    revoked = RevokedTokenModel(
-        token=credentials.credentials,
-        expires_at=expires_at
-    )
-    db.add(revoked)
-    await db.commit()
-    logger.info("auth_logout", user_id=str(user.id))
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-
-@router.post(
     "/auth/logout-all-devices",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Desconecta de todos os dispositivos",
@@ -193,14 +194,19 @@ async def logout_all_devices(
     "/auth/forgot-password",
     status_code=status.HTTP_202_ACCEPTED,
     summary="Solicita recuperação de senha",
-    description="Gera um token de recuperação de senha válido por 30 minutos. Impede enumeração de usuários.",
+    description="Gera um token de recuperação de senha válido por 15 minutos. Impede enumeração de usuários.",
 )
+@limiter.limit("3/minute")
 async def forgot_password(request: Request, body: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)):
     user = await get_user_by_email(db, body.email)
     if user and user.is_active:
         reset_token = create_reset_token(str(user.id))
-        from app.services.email_service import send_password_reset_email
-        await send_password_reset_email(body.email, reset_token)
+        try:
+            from app.services.email_service import send_password_reset_email
+            await send_password_reset_email(body.email, reset_token)
+        except Exception:
+            # Em dev, não bloqueamos o fluxo caso não haja SMTP configurado
+            pass
         logger.info("auth_forgot_password_email_sent", user_id=str(user.id))
     
     # Sempre retorna sucesso para não confirmar se o e-mail existe
@@ -262,7 +268,9 @@ async def reset_password(body: ResetPasswordRequest, db: AsyncSession = Depends(
         422: {"description": "Nova senha não atende aos requisitos de força", "model": HTTPErrorResponse},
     }
 )
+@limiter.limit("5/minute")
 async def change_password(
+    request: Request,
     body: ChangePasswordRequest, 
     user = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)

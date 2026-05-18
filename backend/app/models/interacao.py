@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Optional
 from sqlalchemy import DateTime, ForeignKey, String, Text, func
 from sqlalchemy.dialects.postgresql import ENUM as PgEnum, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from pydantic import BaseModel
 
 from app.core.database import Base
 from app.domain.entities.enums import TipoMensagem
@@ -51,18 +50,3 @@ class Interacao(Base):
     erro_envio: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     lead: Mapped["Lead"] = relationship("Lead", back_populates="interacoes")
-
-
-class InteracaoResponse(BaseModel):
-    id: uuid.UUID
-    mensagem_cliente: Optional[str]
-    mensagem_ia: Optional[str]
-    tipo_mensagem: TipoMensagem
-    timestamp: datetime
-
-    model_config = {"from_attributes": True}
-
-
-class InteracaoListResponse(BaseModel):
-    items: list[InteracaoResponse]
-    total: int

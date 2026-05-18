@@ -135,8 +135,9 @@ async def test_summarise_no_closed_sessions(db_session):
 @pytest.mark.asyncio
 async def test_summarise_one_closed_session(db_session):
     """Two sessions (one closed) → one summary row created."""
-    from app.infrastructure.persistence.models import LeadModel, UserModel, BriefingModel, InteracaoModel
-    from app.models.conversation_summary import ConversationSummaryTopics
+    from app.infrastructure.persistence.models.lead_model import LeadModel
+    from app.infrastructure.persistence.models.user_model import UserModel
+    from app.presentation.schemas.conversation_summary_schema import ConversationSummaryTopics
 
     # Need a real lead in the DB for FK constraint
     user = UserModel(
@@ -195,8 +196,9 @@ async def test_summarise_one_closed_session(db_session):
 @pytest.mark.asyncio
 async def test_summarise_idempotent(db_session):
     """Calling summarise_closed_sessions twice should not create duplicate rows."""
-    from app.infrastructure.persistence.models import LeadModel, UserModel, BriefingModel, InteracaoModel
-    from app.models.conversation_summary import ConversationSummaryTopics
+    from app.infrastructure.persistence.models.lead_model import LeadModel
+    from app.infrastructure.persistence.models.user_model import UserModel
+    from app.presentation.schemas.conversation_summary_schema import ConversationSummaryTopics
 
     user = UserModel(
         id=uuid.uuid4(),
@@ -245,8 +247,6 @@ async def test_summarise_idempotent(db_session):
 @pytest.mark.asyncio
 async def test_summarise_fallback_on_llm_failure(db_session):
     """LLM failure → row persisted with resumo_pendente=True."""
-    from app.infrastructure.persistence.models import LeadModel, UserModel, BriefingModel, InteracaoModel
-
     user = UserModel(
         id=uuid.uuid4(),
         nome="Consultor",

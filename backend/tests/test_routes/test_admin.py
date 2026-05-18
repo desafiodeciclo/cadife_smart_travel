@@ -12,7 +12,8 @@ from httpx import ASGITransport, AsyncClient
 
 from main import app
 from app.infrastructure.security.jwt import create_access_token, hash_password
-from app.models.user import User, UserPerfil
+from app.domain.entities.enums import UserPerfil
+from app.models.user import User
 from app.models.lead import Lead
 from app.infrastructure.security.pii_encryption import hmac_hash
 

@@ -10,8 +10,8 @@ from app.infrastructure.security.dependencies import get_current_user, get_db
 from app.infrastructure.persistence.models.user_model import UserModel
 from app.infrastructure.persistence.models.travel_model import TravelModel
 from app.infrastructure.persistence.repositories.documento_repository import DocumentoRepository
-from app.schemas.travel import TravelResponse, TravelListResponse, TravelStatus
-from app.schemas.document import DocumentResponse, DocumentsListResponse, DocumentType
+from app.presentation.schemas.document_schema import DocumentResponse, DocumentsListResponse, DocumentType
+from app.presentation.schemas.travel_schema import TravelResponse, TravelListResponse, TravelStatus
 
 router = APIRouter(prefix="/travels", tags=["travels"])
 
@@ -38,6 +38,45 @@ async def list_travels(
     query = query.order_by(TravelModel.start_date.asc())
 
     result = await db.execute(query)
+    travels = result.scalars().all()
+
+    travels_response = [
+        TravelResponse(
+            id=str(travel.id),
+            user_id=str(travel.user_id),
+            destination=travel.destination,
+            start_date=travel.start_date,
+            end_date=travel.end_date,
+            status=travel.status,
+            image_url=travel.image_url,
+            description=travel.description,
+        )
+        for travel in travels
+    ]
+
+    return TravelListResponse(
+        travels=travels_response,
+        count=len(travels_response),
+    )
+
+
+@router.get("/me/active", response_model=TravelListResponse)
+async def get_my_active_travel(
+    db: AsyncSession = Depends(get_db),
+    current_user: UserModel = Depends(get_current_user),
+):
+    """
+    Get active travel for the current user.
+
+    Retorna a viagem com status ATIVA para o usuário autenticado,
+    ordenada por start_date (próxima primeiro).
+    """
+    result = await db.execute(
+        select(TravelModel).where(
+            TravelModel.user_id == current_user.id,
+            TravelModel.status == "ATIVA",
+        ).order_by(TravelModel.start_date.asc())
+    )
     travels = result.scalars().all()
 
     travels_response = [

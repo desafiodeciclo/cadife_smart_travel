@@ -18,7 +18,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.security.jwt import hash_password
-from app.models.user import User, UserPerfil
+from app.domain.entities.enums import UserPerfil
+from app.models.user import User
 from shared import ADMIN_EMAIL, DEMO_PASSWORD
 
 

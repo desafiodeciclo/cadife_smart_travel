@@ -1,51 +1,14 @@
-import unicodedata
 import uuid
 from app.infrastructure.persistence.types import GUID, StringArray
 from datetime import date
 from typing import TYPE_CHECKING, Optional
 from sqlalchemy import Boolean, Date, Enum as SAEnum, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-# RESOLUÇÃO: Usando ConfigDict da developer
-from pydantic import BaseModel, ConfigDict, Field, field_validator
-
-
 from app.core.database import Base
 from app.domain.entities.enums import PerfilViagem, OrcamentoPerfil as OrcamentoNivel
 
-# Aliases the LLM commonly returns (accented, translated, or misspelled).
-# Maps variant → canonical DB enum value (no accents, as defined in PerfilViagem/OrcamentoPerfil).
-_PERFIL_ALIASES: dict[str, str] = {
-    "família": "familia",
-    "famíla": "familia",
-    "family": "familia",
-    "group": "grupo",
-    "couple": "casal",
-    "alone": "solo",
-    "friends": "amigos",
-    "grupo de amigos": "amigos",
-}
-_ORCAMENTO_ALIASES: dict[str, str] = {
-    "médio": "medio",
-    "medium": "medio",
-    "low": "baixo",
-    "high": "alto",
-}
-
 if TYPE_CHECKING:
     from app.models.lead import Lead
-
-
-BRIEFING_FIELDS = [
-    "destino",
-    "data_ida",
-    "data_volta",
-    "qtd_pessoas",
-    "perfil",
-    "tipo_viagem",
-    "preferencias",
-    "orcamento",
-    "tem_passaporte",
-]
 
 
 class Briefing(Base):
@@ -87,119 +50,3 @@ class Briefing(Base):
     completude_pct: Mapped[int] = mapped_column(Integer, default=0)
 
     lead: Mapped["Lead"] = relationship("Lead", back_populates="briefing")
-
-
-def calculate_completude(briefing_data: dict) -> int:
-    """Calcula o percentual de completude do briefing (9 campos obrigatórios, peso uniforme)."""
-    from app.infrastructure.persistence.models.briefing_model import (
-        calculate_completude as _canonical,
-    )
-    return _canonical(briefing_data)
-
-
-# Pydantic schemas
-
-class BriefingExtracted(BaseModel):
-    """Schema para Structured Outputs API — extração automática pela IA."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    destino: Optional[str] = Field(
-        None,
-        description="Cidade, país ou região de destino. Extraia APENAS se mencionado explicitamente pelo cliente.",
-    )
-    data_ida: Optional[date] = Field(
-        None,
-        description=(
-            "Data de início da viagem (YYYY-MM-DD). "
-            "Extraia APENAS se houver uma data ou mês/ano claro. NÃO infira."
-        ),
-    )
-    data_volta: Optional[date] = Field(
-        None,
-        description="Data de retorno da viagem (YYYY-MM-DD). Extraia APENAS se mencionada explicitamente.",
-    )
-    qtd_pessoas: Optional[int] = Field(
-        None, description="Número total de passageiros (adultos + crianças)."
-    )
-    perfil: Optional[PerfilViagem] = Field(
-        None, description="Composição do grupo: casal, familia, solo, grupo ou amigos."
-    )
-    tipo_viagem: list[str] = Field(
-        default_factory=list,
-        description="Estilo da viagem: aventura, luxo, romântica, gastronômica, etc.",
-    )
-    preferencias: list[str] = Field(
-        default_factory=list,
-        description="Interesses específicos: praias, museus, compras, resorts, neve, etc.",
-    )
-    orcamento: Optional[OrcamentoNivel] = Field(
-        None,
-        description="Nível de investimento: baixo (econômico), medio (padrão), alto (conforto) ou premium (luxo).",
-    )
-    tem_passaporte: Optional[bool] = Field(
-        None,
-        description="True se o cliente confirmou que possui passaporte válido, False se disse que não tem.",
-    )
-    observacoes: Optional[str] = Field(
-        None,
-        description="Notas adicionais, restrições alimentares, celebrações ou pedidos especiais.",
-    )
-    campos_inferidos: list[str] = Field(
-        default_factory=list,
-        description=(
-            "Lista de campos cujo valor foi inferido pelo contexto, "
-            "não mencionados explicitamente pelo cliente. "
-            "Não afeta o score — apenas rastreabilidade."
-        ),
-    )
-
-    @field_validator("perfil", mode="before")
-    @classmethod
-    def _normalize_perfil(cls, v: object) -> object:
-        if isinstance(v, str):
-            # NFC-normalize before lookup to handle NFD strings from LLM responses
-            key = unicodedata.normalize("NFC", v.lower().strip())
-            return _PERFIL_ALIASES.get(key, key)
-        return v
-
-    @field_validator("orcamento", mode="before")
-    @classmethod
-    def _normalize_orcamento(cls, v: object) -> object:
-        if isinstance(v, str):
-            key = unicodedata.normalize("NFC", v.lower().strip())
-            return _ORCAMENTO_ALIASES.get(key, key)
-        return v
-
-
-class BriefingUpdate(BaseModel):
-    destino: Optional[str] = None
-    origem: Optional[str] = None
-    data_ida: Optional[date] = None
-    data_volta: Optional[date] = None
-    qtd_pessoas: Optional[int] = None
-    perfil: Optional[PerfilViagem] = None
-    tipo_viagem: Optional[list[str]] = None
-    preferencias: Optional[list[str]] = None
-    orcamento: Optional[OrcamentoNivel] = None
-    tem_passaporte: Optional[bool] = None
-    observacoes: Optional[str] = None
-
-
-class BriefingResponse(BaseModel):
-    lead_id: uuid.UUID
-    destino: Optional[str]
-    origem: Optional[str]
-    data_ida: Optional[date]
-    data_volta: Optional[date]
-    duracao_dias: Optional[int]
-    qtd_pessoas: Optional[int]
-    perfil: Optional[str]
-    tipo_viagem: Optional[list[str]]
-    preferencias: Optional[list[str]]
-    orcamento: Optional[str]
-    tem_passaporte: Optional[bool]
-    observacoes: Optional[str]
-    completude_pct: int
-
-    model_config = ConfigDict(from_attributes=True)

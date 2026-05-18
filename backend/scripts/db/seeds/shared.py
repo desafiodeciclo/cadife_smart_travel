@@ -22,7 +22,8 @@ from app.infrastructure.security.jwt import hash_password
 from app.infrastructure.security.pii_encryption import hmac_hash
 from app.models.briefing import Briefing, calculate_completude
 from app.models.lead import Lead
-from app.models.user import User, UserPerfil
+from app.domain.entities.enums import UserPerfil
+from app.models.user import User
 
 DEMO_PASSWORD = "Cadife@2026"
 ADMIN_EMAIL = "admin@cadifetoure.com.br"

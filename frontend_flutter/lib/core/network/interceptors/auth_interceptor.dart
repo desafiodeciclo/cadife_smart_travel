@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 
 import 'package:cadife_smart_travel/core/constants/api_constants.dart';
 import 'package:cadife_smart_travel/core/security/secure_config.dart';
@@ -109,9 +110,7 @@ class AuthInterceptor extends Interceptor {
       _refreshCompleter!.complete(false);
       await _secureConfig.clearTokens();
       _onTokenExpired();
-      if (kDebugMode) {
-        debugPrint('[AuthInterceptor] Token refresh failed: $e');
-      }
+      log('Token refresh failed', name: 'AuthInterceptor', error: e);
       handler.next(err);
     } finally {
       _refreshCompleter = null;

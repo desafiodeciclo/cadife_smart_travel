@@ -36,7 +36,10 @@ from app.services import rag_service
 
 logger = structlog.get_logger()
 
-from app.models.briefing import _PERFIL_ALIASES, _ORCAMENTO_ALIASES
+from app.services.ai_normalization import (
+    ORCAMENTO_ALIASES as _ORCAMENTO_ALIASES,
+    PERFIL_ALIASES as _PERFIL_ALIASES,
+)
 
 # Corrige DD/MMYYYY → DD/MM/YYYY (ex: "17/092027" → "17/09/2027")
 _DATE_MISSING_SLASH_RE = re.compile(r'^(\d{1,2})/(\d{2})(\d{4})$')
@@ -470,7 +473,7 @@ async def _persist_lead_data(
         return json.dumps({"success": False, "reason": "db_unavailable"})
     try:
         from app.services.lead_service import upsert_lead_with_resilience
-        from app.models.briefing import BriefingExtracted
+        from app.presentation.schemas.briefing_schema import BriefingExtracted
 
         # Whitelist: remove campos não reconhecidos antes de qualquer persistência
         sanitized: dict[str, Any] = {}

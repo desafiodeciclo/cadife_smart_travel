@@ -1,12 +1,44 @@
 import uuid
 from typing import Optional
+from datetime import datetime, timezone
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from datetime import datetime, timezone
 
-from app.models.user import User, UserProfileUpdate, RegisterRequest, UserPerfil
 from app.core.security import hash_password
+from app.models.user import User, UserProfileUpdate, RegisterRequest, UserPerfil
+
+
+async def create_user(
+    db: AsyncSession,
+    data: Optional[RegisterRequest] = None,
+    *,
+    nome: Optional[str] = None,
+    email: Optional[str] = None,
+    password: Optional[str] = None,
+    role: str = "cliente",
+) -> User:
+    """
+    Creates a new user. Supports both RegisterRequest schema and direct keyword arguments.
+    """
+    if data is not None:
+        user = User(
+            email=data.email,
+            nome=data.name,
+            hashed_password=hash_password(data.password.get_secret_value()),
+            perfil=role,
+        )
+    else:
+        user = User(
+            nome=nome,
+            email=email,
+            hashed_password=hash_password(password) if password else "",
+            perfil=role,
+        )
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    return user
 
 
 async def get_user_by_email(db: AsyncSession, email: str) -> Optional[User]:
@@ -19,20 +51,8 @@ async def get_user_by_id(db: AsyncSession, user_id: str) -> Optional[User]:
     return result.scalar_one_or_none()
 
 
-async def create_user(db: AsyncSession, data: RegisterRequest, role: str = UserPerfil.cliente) -> User:
-    user = User(
-        email=data.email,
-        nome=data.name,
-        hashed_password=hash_password(data.password.get_secret_value()),
-        perfil=role
-    )
-    db.add(user)
-    await db.commit()
-    await db.refresh(user)
-    return user
-
-
 async def update_password(db: AsyncSession, user: User, new_password_plain: str) -> User:
+    """Updates user password and invalidates active sessions by updating global_logout_at."""
     user = await db.merge(user)
     user.hashed_password = hash_password(new_password_plain)
     user.global_logout_at = datetime.now(timezone.utc).replace(microsecond=0)

@@ -496,7 +496,7 @@ class _ActionTile extends StatelessWidget {
 
   final IconData icon;
   final String label;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final Color? color;
 
   @override
@@ -510,6 +510,7 @@ class _ActionTile extends StatelessWidget {
       ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       onTap: onTap,
+      enabled: onTap != null,
     );
   }
 }
@@ -609,8 +610,8 @@ class _EditSlotSheetState extends ConsumerState<_EditSlotSheet> {
               Wrap(
                 spacing: 8,
                 children: [
-                  StatusAgendamento.confirmado,
                   StatusAgendamento.pendente,
+                  StatusAgendamento.confirmado,
                   StatusAgendamento.realizado,
                 ].map((s) {
                   final selected = _selectedStatus == s.name;

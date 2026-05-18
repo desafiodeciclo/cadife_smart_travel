@@ -9,7 +9,8 @@ from langchain_openai import ChatOpenAI
 from langchain_classic.memory import ConversationBufferWindowMemory
 
 from app.core.config import get_settings
-from app.models.briefing import BriefingExtracted, calculate_completude
+from app.domain.services.briefing_calculator import calculate_completude
+from app.presentation.schemas.briefing_schema import BriefingExtracted
 from app.services import rag_service, alert_service
 from app.services.metadata_tagger import DESTINO_KEYWORDS
 from app.services.observability import get_callbacks_for_chain, flush_langfuse

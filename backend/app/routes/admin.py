@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.security.dependencies import RequiresRole, get_current_user, get_db
-from app.models.admin import (
+from app.presentation.schemas.admin_schema import (
     AdminLeadReassignRequest,
     AdminLeadReassignResponse,
     AdminUserCreate,
@@ -20,8 +20,9 @@ from app.models.admin import (
     AdminUserResponse,
     AdminUserUpdate,
 )
+from app.domain.entities.enums import UserPerfil
 from app.models.lead import Lead
-from app.models.user import User, UserPerfil
+from app.models.user import User
 from app.presentation.schemas.common_errors import HTTPErrorResponse
 from app.services import admin_service
 

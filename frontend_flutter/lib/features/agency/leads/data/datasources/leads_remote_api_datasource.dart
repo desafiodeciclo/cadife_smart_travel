@@ -113,7 +113,7 @@ class LeadsRemoteApiDatasource implements ILeadsDatasource {
   Future<List<Interacao>> getInteractions(String leadId) async {
     try {
       final response = await _dio.get(
-        '${ApiConstants.leadById(leadId)}/interactions',
+        ApiConstants.leadInteracoes(leadId),
       );
       final interactions = (response.data as List)
           .map((e) => Interacao.fromJson(e as Map<String, dynamic>))
