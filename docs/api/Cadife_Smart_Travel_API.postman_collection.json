@@ -1,6 +1,6 @@
 {
   "info": {
-    "_postman_id": "8c22e18b-7a38-4639-b28f-2513404d665e",
+    "_postman_id": "7e79eb4f-551e-4f5e-93da-dc9b43d872e8",
     "name": "Cadife Smart Travel API",
     "description": "Backend inteligente para turismo via WhatsApp + Flutter. Orquestra webhooks da Meta, processamento de IA (RAG + LangChain), gestão de leads, propostas e agendamentos. Documentação completa disponível em /docs (Swagger UI) e /redoc (ReDoc).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
