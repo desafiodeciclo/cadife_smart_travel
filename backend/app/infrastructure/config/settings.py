@@ -87,7 +87,7 @@ class Settings(BaseSettings):
         description="Modelo Whisper primário para transcrição de áudio via /audio/transcriptions",
     )
     OPENROUTER_IMAGE_GEN_MODEL: str = Field(
-        default="recraft-ai/recraft-v3",
+        default="recraft/recraft-v3",
         description="Modelo de geração de imagens inspiracionais ao final do briefing (recraft-v4 quando disponível via OpenRouter)",
     )
     OPENROUTER_FALLBACK_MODEL: str = Field(
@@ -138,6 +138,16 @@ class Settings(BaseSettings):
     FIREBASE_CREDENTIALS: str = Field(
         default="./firebase_credentials.json",
         description="Path to Firebase Admin JSON credentials file",
+    )
+
+    # ── Google Calendar Integration ────────────────────────────────────────
+    GOOGLE_CALENDAR_CREDENTIALS: str = Field(
+        default="./google_calendar_credentials.json",
+        description="Caminho para o arquivo JSON de credenciais da conta de serviço Google",
+    )
+    GOOGLE_CALENDAR_ID: str = Field(
+        default="primary",
+        description="ID da Agenda do Google onde as curadorias serão agendadas",
     )
 
     # ── RAG / PGVector (produção) ──────────────────────────────────────────
