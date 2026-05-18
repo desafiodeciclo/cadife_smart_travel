@@ -4,7 +4,7 @@ from datetime import date
 from pydantic import ValidationError
 from app.presentation.schemas.briefing_schema import BriefingSchema
 from app.presentation.schemas.lead_schema import LeadCreateSchema
-from app.models.briefing import calculate_completude
+from app.domain.services.briefing_calculator import calculate_completude
 from app.domain.entities.enums import PerfilViagem, OrcamentoPerfil
 from app.services import lead_service
 from app.models.lead import Lead
@@ -48,12 +48,11 @@ def test_lead_schema_phone_validation():
 
 
 def test_calculate_completude_only_destination():
-    """Cenário: Apenas destino preenchido = 20% (1/4 dos obrigatórios * 80%)."""
+    """Cenário: Apenas destino preenchido = 11% (1/9 dos obrigatórios * 100%)."""
     briefing_data = {"destino": "Maldivas"}
     pct = calculate_completude(briefing_data)
-    # REQUIRED_FIELDS = ["destino", "data_ida", "orcamento", "perfil"]
-    # (1/4) * 80 = 20.
-    assert pct == 20
+    # BRIEFING_REQUIRED_FIELDS has 9 fields, so (1/9) * 100 = 11.
+    assert pct == 11
 
 
 def test_calculate_completude_full():

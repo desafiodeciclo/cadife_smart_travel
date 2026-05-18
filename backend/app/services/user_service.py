@@ -6,7 +6,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import hash_password
-from app.models.user import User, UserProfileUpdate, RegisterRequest, UserPerfil
+from app.models.user import User, UserPerfil, RegisterRequest
+from app.presentation.schemas.user_schema import UserProfileUpdate
 
 
 async def create_user(
