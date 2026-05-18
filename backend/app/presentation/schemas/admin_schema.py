@@ -8,7 +8,7 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
-from app.models.user import UserPerfil
+from app.domain.entities.enums import UserPerfil
 
 
 class AdminUserCreate(BaseModel):

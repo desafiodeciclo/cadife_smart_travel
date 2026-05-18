@@ -14,7 +14,8 @@ from typing import Optional
 
 import structlog
 
-from app.models.briefing import BriefingExtracted, OrcamentoNivel
+from app.domain.entities.enums import OrcamentoPerfil as OrcamentoNivel
+from app.presentation.schemas.briefing_schema import BriefingExtracted
 
 logger = structlog.get_logger()
 

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.dependencies import get_db
+from app.core.dependencies import get_current_user, get_db
 from app.middleware.auth import verify_jwt
 from app.core.security import (
     create_access_token,
@@ -20,6 +20,7 @@ from app.models.user import (
     RegisterRequest,
     TokenResponse,
     User,
+    UserProfileUpdate,
     UserResponse,
 )
 from app.presentation.schemas.common_errors import HTTPErrorResponse
@@ -27,6 +28,8 @@ from app.services.user_service import (
     create_user,
     get_user_by_email,
     get_user_by_id,
+    update_fcm_token,
+    update_user_profile,
 )
 from app.infrastructure.security.rate_limiter import limiter
 
@@ -230,5 +233,56 @@ async def logout_all_devices(
     # Salvar timestamp em Redis chave "invalidated_before:{user_id}" para rejeitar tokens antigos
     # Por enquanto, apenas log da ação
     return {"detail": "Todos os dispositivos foram desconectados"}
+
+
+@router.get(
+    "/users/me",
+    response_model=UserResponse,
+    summary="Perfil do usuário autenticado",
+    description="Retorna os dados do usuário autenticado via JWT.",
+    responses={
+        401: {"description": "Token inválido ou ausente", "model": HTTPErrorResponse},
+    },
+)
+async def get_me(current_user=Depends(get_current_user)):
+    return UserResponse.model_validate(current_user)
+
+
+@router.patch(
+    "/users/me",
+    response_model=UserResponse,
+    summary="Atualizar perfil do usuário",
+    description="Atualiza campos editáveis do perfil do usuário autenticado.",
+    responses={
+        401: {"description": "Token inválido ou ausente", "model": HTTPErrorResponse},
+        422: {"description": "Erro de validação no body", "model": HTTPErrorResponse},
+    },
+)
+async def update_me(
+    body: UserProfileUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    updated = await update_user_profile(db, current_user, body)
+    return UserResponse.model_validate(updated)
+
+
+@router.post(
+    "/users/fcm-token",
+    response_model=FcmTokenResponse,
+    summary="Registrar token FCM",
+    description="Registra ou atualiza o token Firebase Cloud Messaging do dispositivo do usuário.",
+    responses={
+        401: {"description": "Token inválido ou ausente", "model": HTTPErrorResponse},
+        422: {"description": "Erro de validação no body", "model": HTTPErrorResponse},
+    },
+)
+async def register_fcm_token(
+    body: FcmTokenRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    await update_fcm_token(db, current_user, body.fcm_token)
+    return FcmTokenResponse(message="Token FCM registrado com sucesso")
 
 

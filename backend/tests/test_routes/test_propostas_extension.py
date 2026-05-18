@@ -16,8 +16,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.core.dependencies import get_current_user, get_db
-from app.domain.entities.enums import LeadStatus, PropostaStatus
-from app.models.user import UserPerfil
+from app.domain.entities.enums import LeadStatus, PropostaStatus, UserPerfil
 from app.routes.propostas import router as propostas_router
 
 # Pre-import all SQLAlchemy models so relationships resolve correctly

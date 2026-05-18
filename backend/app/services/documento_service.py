@@ -14,7 +14,8 @@ from app.infrastructure.adapters.storage.s3_adapter import S3StorageAdapter
 from app.infrastructure.persistence.repositories.documento_repository import DocumentoRepository
 from app.infrastructure.security.pii_encryption import hmac_hash
 from app.models.documento import Documento
-from app.models.user import User, UserPerfil
+from app.domain.entities.enums import UserPerfil
+from app.models.user import User
 from app.infrastructure.config.settings import get_settings
 from app.services.fcm_service import send_push_notification
 

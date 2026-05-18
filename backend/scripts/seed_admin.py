@@ -24,7 +24,8 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from app.infrastructure.config.settings import get_settings
 from app.infrastructure.security.jwt import hash_password
-from app.models.user import User, UserPerfil
+from app.domain.entities.enums import UserPerfil
+from app.models.user import User
 
 logger = structlog.get_logger()
 

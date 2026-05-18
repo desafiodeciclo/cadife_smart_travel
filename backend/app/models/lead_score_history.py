@@ -12,7 +12,6 @@ from typing import TYPE_CHECKING, Optional
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from pydantic import BaseModel
 
 from app.core.database import Base
 
@@ -42,23 +41,3 @@ class LeadScoreHistory(Base):
     )
 
     lead: Mapped["Lead"] = relationship("Lead", back_populates="score_history")
-
-
-# Pydantic schemas
-
-
-class ScoreHistoryItem(BaseModel):
-    id: uuid.UUID
-    score_numerico: int
-    score_label: str
-    motivo: Optional[str]
-    criterios_json: Optional[str]
-    criado_em: datetime
-
-    model_config = {"from_attributes": True}
-
-
-class ScoreHistoryResponse(BaseModel):
-    items: list[ScoreHistoryItem]
-    total: int
-    lead_id: uuid.UUID
