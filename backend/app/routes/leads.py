@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
@@ -44,6 +44,7 @@ from app.presentation.schemas.leads import (
     LeadCreateRequest,
     LeadCursorListResponseDTO,
     LeadDetailDTO,
+    LeadListResponseDTO,
     LeadMetricsDTO,
     LeadPatchRequest,
     LeadUpdateRequest,
@@ -57,19 +58,32 @@ router = APIRouter(
     tags=["Leads"],
 )
 
-# ── GET /leads (Cursor-based + Filtros) ────────────────────────────────────
+# ── GET /leads (Offset-based + Cursor-based + Filtros) ─────────────────────
 
 @router.get(
     "",
-    summary="Listar leads com paginação cursor-based e filtros",
+    summary="Listar leads com paginação (offset ou cursor) e filtros",
     description=(
-        "Retorna leads ativos com paginação cursor-based, filtros por status, score, "
-        "consultor assignado, período de data e busca textual. Ideal para o dashboard "
-        "do CRM onde o consultor navega pelo pipeline sem page-drift."
+        "Retorna leads ativos com paginação offset-based (page/size) ou cursor-based, "
+        "filtros por status, score, consultor assignado, período de data e busca textual. "
+        "Use `page` para paginação tradicional; use `cursor` para navegação sem page-drift."
     ),
-    response_model=LeadCursorListResponseDTO,
+    response_model=None,
     dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))],
     responses={
+        200: {
+            "description": "Lista paginada de leads",
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "oneOf": [
+                            LeadListResponseDTO.model_json_schema(),
+                            LeadCursorListResponseDTO.model_json_schema(),
+                        ]
+                    }
+                }
+            },
+        },
         401: {"description": "Não autenticado", "model": HTTPErrorResponse},
         403: {"description": "Sem permissão", "model": HTTPErrorResponse},
     },
@@ -77,8 +91,10 @@ router = APIRouter(
 async def list_leads(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
-    limit: int = Query(20, ge=1, le=100),
-    cursor: Optional[str] = Query(None),
+    page: Optional[int] = Query(None, ge=1, description="Número da página (modo offset-based)"),
+    size: int = Query(10, ge=1, le=100, description="Itens por página"),
+    limit: int = Query(20, ge=1, le=100, description="Alias para size (cursor-based)"),
+    cursor: Optional[str] = Query(None, description="Cursor para paginação cursor-based"),
     status: Optional[str] = Query(None),
     score: Optional[str] = Query(None),
     search: Optional[str] = Query(None),
@@ -87,7 +103,25 @@ async def list_leads(
     data_fim: Optional[datetime] = Query(None),
     order_by: str = Query("criado_em"),
     order_dir: str = Query("desc"),
-):
+) -> Any:
+    # ── Offset-based pagination (page/size) ────────────────────────────────
+    if page is not None:
+        items, total = await lead_service.list_leads(
+            db,
+            status=status,
+            score=score,
+            search=search,
+            page=page,
+            limit=size,
+            consultor_id=consultor_id,
+            data_inicio=data_inicio,
+            data_fim=data_fim,
+            order_by=order_by,
+            order_dir=order_dir,
+        )
+        return map_leads_to_list_response(items, total, page, size)
+
+    # ── Cursor-based pagination (cursor/limit) ─────────────────────────────
     items, next_cursor = await lead_service.list_leads_cursor(
         db,
         limit=limit,
