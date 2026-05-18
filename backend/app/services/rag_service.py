@@ -228,7 +228,7 @@ def retrieve_context(query: str, k: int = 3) -> str:
     """
     try:
         docs = retrieve_hybrid(query, k=k)
-        safe_docs = apply_guardrails(docs, strategy="remove")
+        safe_docs = apply_guardrails(docs, strategy="mask")
         return _join(safe_docs)
     except Exception as exc:
         logger.warning("rag_retrieval_failed", error=str(exc))
@@ -273,7 +273,7 @@ def retrieve_with_metadata_filter(
         else:
             docs = retrieve_hybrid(query, k=k)
 
-        safe_docs = apply_guardrails(docs, strategy="remove")
+        safe_docs = apply_guardrails(docs, strategy="mask")
         return _join(safe_docs)
     except Exception as exc:
         logger.warning("rag_filtered_retrieval_failed", error=str(exc))
