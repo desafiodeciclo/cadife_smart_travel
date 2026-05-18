@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, ForeignKey, String, func
+from sqlalchemy import DateTime, ForeignKey, String, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import ENUM as PgEnum, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -15,7 +15,10 @@ if TYPE_CHECKING:
 
 class TravelCheckpointRecord(Base):
     __tablename__ = "travel_checkpoints"
-    __table_args__ = {"extend_existing": True}
+    __table_args__ = (
+        UniqueConstraint("lead_id", "checkpoint", name="uq_travel_checkpoints_lead_checkpoint"),
+        {"extend_existing": True},
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
