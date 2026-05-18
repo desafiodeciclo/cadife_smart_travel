@@ -1,6 +1,6 @@
 {
   "info": {
-    "_postman_id": "7c954b3c-3dfd-4e83-a114-12b8829e8a69",
+    "_postman_id": "8c22e18b-7a38-4639-b28f-2513404d665e",
     "name": "Cadife Smart Travel API",
     "description": "Backend inteligente para turismo via WhatsApp + Flutter. Orquestra webhooks da Meta, processamento de IA (RAG + LangChain), gestão de leads, propostas e agendamentos. Documentação completa disponível em /docs (Swagger UI) e /redoc (ReDoc).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -1522,172 +1522,6 @@
       ]
     },
     {
-      "name": "Suitcase",
-      "item": [
-        {
-          "name": "Get Suitcase",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/leads/{lead_id}/suitcase",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "leads",
-                "{lead_id}",
-                "suitcase"
-              ]
-            },
-            "description": "Returns all items in the suitcase grouped by category."
-          },
-          "response": []
-        },
-        {
-          "name": "Add Suitcase Item",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/leads/{lead_id}/suitcase/items",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "leads",
-                "{lead_id}",
-                "suitcase",
-                "items"
-              ]
-            },
-            "description": "Adds a new item to the suitcase.",
-            "body": {
-              "mode": "raw",
-              "raw": "{}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Update Suitcase Item",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/leads/{lead_id}/suitcase/items/{item_id}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "leads",
-                "{lead_id}",
-                "suitcase",
-                "items",
-                "{item_id}"
-              ]
-            },
-            "description": "Updates an existing item (e.g., marks as packed).",
-            "body": {
-              "mode": "raw",
-              "raw": "{}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Delete Suitcase Item",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/leads/{lead_id}/suitcase/items/{item_id}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "leads",
-                "{lead_id}",
-                "suitcase",
-                "items",
-                "{item_id}"
-              ]
-            },
-            "description": "Removes an item from the suitcase."
-          },
-          "response": []
-        },
-        {
-          "name": "Get Suitcase Suggestions",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/leads/{lead_id}/suitcase/suggestions",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "leads",
-                "{lead_id}",
-                "suitcase",
-                "suggestions"
-              ],
-              "query": [
-                {
-                  "key": "tipo_destino",
-                  "value": "",
-                  "description": ""
-                }
-              ]
-            },
-            "description": "Returns suggested items based on destination type.\nIf tipo_destino is not provided, tries to infer from lead briefing."
-          },
-          "response": []
-        }
-      ]
-    },
-    {
       "name": "Offers",
       "item": [
         {
@@ -1906,6 +1740,47 @@
               ]
             },
             "description": "Client expresses interest in an offer → auto-creates a lead."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Suitcase",
+      "item": [
+        {
+          "name": "Add Suitcase Item",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads/{lead_id}/suitcase/items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "{lead_id}",
+                "suitcase",
+                "items"
+              ]
+            },
+            "description": "Adds a new item to the suitcase.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           },
           "response": []
         }
