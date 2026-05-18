@@ -171,6 +171,18 @@ class BriefingExtracted(BaseModel):
             return _ORCAMENTO_ALIASES.get(key, key)
         return v
 
+    @field_validator("tem_passaporte", mode="before")
+    @classmethod
+    def _normalize_tem_passaporte(cls, v: object) -> object:
+        if isinstance(v, str):
+            normalized = unicodedata.normalize("NFC", v.lower().strip())
+            if normalized in ("sim", "s", "yes", "y", "true", "1"):
+                return True
+            if normalized in ("não", "nao", "n", "no", "false", "0"):
+                return False
+        return v
+
+
 
 class BriefingUpdate(BaseModel):
     destino: Optional[str] = None
