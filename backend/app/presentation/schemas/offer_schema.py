@@ -84,3 +84,22 @@ class OffersListResponse(BaseModel):
     page: int
     pages: int
     filters_applied: Optional[Dict] = None
+
+
+class OfferPublishResponse(BaseModel):
+    """Resposta do toggle de publicação de oferta"""
+    status: str
+    message: str
+    new_status: str
+    offer_id: uuid.UUID
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class OfferDeleteResponse(BaseModel):
+    """Resposta de remoção (soft-delete) de oferta"""
+    status: str
+    message: str
+    offer_id: uuid.UUID
+
+    model_config = ConfigDict(from_attributes=True)

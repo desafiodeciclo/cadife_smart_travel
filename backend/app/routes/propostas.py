@@ -33,7 +33,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import get_current_user, get_db
-from app.domain.entities.enums import LeadStatus, PropostaStatus, TravelCheckpoint
+from app.domain.entities.enums import LeadStatus, PropostaStatus, TravelCheckpoint, UserPerfil
 from app.infrastructure.security.dependencies import RequiresRole
 from app.infrastructure.security.scope_check import check_lead_access
 from app.models.proposta import Proposta
@@ -81,7 +81,7 @@ async def _assert_can_edit(
     db: AsyncSession, current_user: User, proposta: Proposta
 ) -> None:
     """Consultor only edits own; admin edits anything."""
-    if str(current_user.perfil) == "admin":
+    if str(current_user.perfil) == UserPerfil.admin.value:
         return
     if proposta.consultor_id == current_user.id:
         # Re-check lead scope (lead may have been reassigned)
@@ -191,7 +191,7 @@ async def list_propostas(
         query = query.where(Proposta.deletado_em.is_(None))
     if lead_id:
         query = query.where(Proposta.lead_id == lead_id)
-    if str(current_user.perfil) == "consultor":
+    if str(current_user.perfil) == UserPerfil.consultor.value:
         query = query.where(Proposta.consultor_id == current_user.id)
 
     propostas = (await db.execute(query)).scalars().all()
@@ -511,7 +511,7 @@ async def list_versoes(
     proposta = await _load_proposta_or_404(db, proposta_id, include_deleted=True)
 
     # Permission: dono, admin, or cliente do lead.
-    if str(current_user.perfil) == "admin":
+    if str(current_user.perfil) == UserPerfil.admin.value:
         pass
     elif proposta.consultor_id == current_user.id:
         pass
@@ -598,8 +598,20 @@ async def update_proposta_legacy(
     if new_status == PropostaStatus.enviada and proposta.enviado_em is None:
         proposta.enviado_em = datetime.now(timezone.utc)
 
-    await db.commit()
-    await db.refresh(proposta)
+    try:
+        await db.commit()
+        await db.refresh(proposta)
+    except Exception as exc:
+        await db.rollback()
+        logger.error(
+            "proposta_legacy_commit_failed",
+            proposta_id=str(proposta_id),
+            error=str(exc),
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erro ao persistir proposta",
+        )
 
     # Checkpoint triggers + goal increment (preserving legacy behavior)
     if new_status is not None and old_status != new_status:

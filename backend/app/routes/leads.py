@@ -1,6 +1,6 @@
 import math
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Optional
 
 import structlog
@@ -59,6 +59,8 @@ from app.presentation.schemas.leads import (
     ManualLeadCreate,
 )
 from app.services import lead_service
+from app.infrastructure.persistence.models.aya_toggle_history_model import AyaToggleHistoryModel
+from app.infrastructure.config.settings import get_settings as get_infra_settings
 
 logger = structlog.get_logger()
 router = APIRouter(
@@ -234,7 +236,6 @@ async def create_lead(
     current_user=Depends(get_current_user),
 ):
     phone_hash = hmac_hash(lead_in.telefone)
-    from sqlalchemy import select
     existing = (await db.execute(select(Lead).where(Lead.telefone_hash == phone_hash))).scalar_one_or_none()
 
     if existing:
@@ -265,7 +266,7 @@ async def _apply_lead_update(db: AsyncSession, lead: Lead, data: dict) -> LeadDe
         if new_status == LeadStatus.qualificado:
             # Chama a persistência de histórico (branch developer) 
             # que utiliza o cálculo do briefing (branch feat)
-            await lead_service._persist_score(db, lead, motivo="auto")
+            await lead_service.persist_score(db, lead, motivo="auto")
             logger.info(
                 "lead_auto_scored",
                 lead_id=str(lead.id),
@@ -356,9 +357,6 @@ async def toggle_aya(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ) -> AyaToggleResponseDTO:
-    from app.infrastructure.persistence.models.aya_toggle_history_model import AyaToggleHistoryModel
-    from app.infrastructure.config.settings import get_settings
-
     lead = await lead_service.get_lead_by_id(db, lead_id)
     if not lead:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead não encontrado")
@@ -370,14 +368,14 @@ async def toggle_aya(
     db.add(history)
     await db.commit()
 
-    settings = get_settings()
+    settings = get_infra_settings()
     recentes = await lead_service.get_recent_interacoes(db, lead_id, limit=settings.AYA_CONTEXT_MSGS)
 
     return AyaToggleResponseDTO(
         lead_id=lead_id,
         aya_ativo=body.ativo,
         motivo=body.motivo,
-        alterado_em=datetime.now(), # Simplificado para o exemplo
+        alterado_em=datetime.now(timezone.utc),
         contexto_msgs_count=len(recentes),
     )
 

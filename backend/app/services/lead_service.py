@@ -480,7 +480,7 @@ async def soft_delete(db: AsyncSession, lead: Lead) -> None:
     await db.commit()
 
 
-async def _persist_score(
+async def persist_score(
     db: AsyncSession,
     lead: Lead,
     engajamento_rapido: bool = False,
@@ -604,7 +604,7 @@ async def update_briefing_from_extraction(
     )
     recent = list(interacoes_result.scalars().all())
     engajamento = _is_engajamento_rapido(recent)
-    await _persist_score(db, lead, engajamento_rapido=engajamento, motivo="auto", briefing=briefing)
+    await persist_score(db, lead, engajamento_rapido=engajamento, motivo="auto", briefing=briefing)
 
     if commit:
         await db.commit()

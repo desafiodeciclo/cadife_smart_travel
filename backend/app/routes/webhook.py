@@ -1,4 +1,7 @@
+import json
+import os
 import structlog
+from datetime import datetime, timezone
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from fastapi.responses import PlainTextResponse
 
@@ -9,6 +12,23 @@ from app.services import whatsapp_service
 
 logger = structlog.get_logger()
 router = APIRouter(prefix="/webhook", tags=["Webhook"])
+
+_DLQ_PATH = os.environ.get("WEBHOOK_DLQ_PATH", "/tmp/webhook_dlq.jsonl")
+
+
+def _save_to_dlq(raw_body: bytes, error: str) -> None:
+    """Persiste payload não parseável para recuperação manual (Dead Letter Queue)."""
+    try:
+        entry = {
+            "ts": datetime.now(timezone.utc).isoformat(),
+            "error": error,
+            "raw_hex": raw_body.hex(),
+        }
+        with open(_DLQ_PATH, "a", encoding="utf-8") as f:
+            f.write(json.dumps(entry) + "\n")
+        logger.warning("webhook_dlq_saved", dlq_path=_DLQ_PATH, bytes=len(raw_body))
+    except Exception as dlq_exc:
+        logger.error("webhook_dlq_write_failed", error=str(dlq_exc))
 
 
 # ── Dependência: valida HMAC X-Hub-Signature-256 ─────────────────────────────
@@ -90,6 +110,7 @@ async def receive_whatsapp(
         payload = await request.json()
         background_tasks.add_task(process_whatsapp_message.execute_with_own_session, payload)
     except Exception as exc:
-        logger.error("webhook_parse_error", error=str(exc))
+        logger.error("webhook_parse_error", error=str(exc), bytes=len(_body))
+        _save_to_dlq(_body, str(exc))
 
     return {"status": "received"}

@@ -1,0 +1,41 @@
+from app.routes import (
+    admin,
+    agency_settings,
+    agenda,
+    auth,
+    consultor_profile,
+    diary,
+    documents,
+    documentos,
+    ia,
+    itinerario,
+    leads,
+    mala,
+    offers,
+    propostas,
+    suitcase,
+    travels,
+    webhook,
+)
+
+# Routers registrados em ordem: webhook antes dos demais garante prioridade de matching.
+# documents/suitcase são aliases EN deprecated para documentos/mala (parity gap §3.11).
+all_routers = [
+    webhook.router,
+    leads.router,
+    ia.router,
+    agenda.router,
+    propostas.router,
+    documentos.router,
+    documents.router,
+    auth.router,
+    admin.router,
+    mala.router,
+    suitcase.router,
+    offers.router,
+    diary.router,
+    travels.router,
+    itinerario.router,
+    agency_settings.router,
+    consultor_profile.router,
+]

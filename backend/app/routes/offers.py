@@ -15,7 +15,9 @@ from app.infrastructure.security.dependencies import (
 )
 from app.presentation.schemas.offer_schema import (
     OfferCreateRequest,
+    OfferDeleteResponse,
     OfferDetailResponse,
+    OfferPublishResponse,
     OfferResponse,
     OfferUpdateRequest,
     OffersListResponse,
@@ -165,7 +167,7 @@ async def update_offer(
     return OfferResponse.model_validate(updated_offer)
 
 
-@router.patch("/{offer_id}/publish")
+@router.patch("/{offer_id}/publish", response_model=OfferPublishResponse)
 async def toggle_publish_offer(
     offer_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -177,18 +179,18 @@ async def toggle_publish_offer(
     offer = await offer_service.get_offer_by_id(db, offer_id)
     if not offer:
         raise HTTPException(status_code=404, detail="Oferta não encontrada")
-        
+
     updated = await offer_service.toggle_publish(db, offer, agency_id=current_user.id)
-    
-    return {
-        "status": "success",
-        "message": f"Oferta {updated.status.value}!",
-        "new_status": updated.status.value,
-        "offer_id": str(updated.id),
-    }
+
+    return OfferPublishResponse(
+        status="success",
+        message=f"Oferta {updated.status.value}!",
+        new_status=updated.status.value,
+        offer_id=updated.id,
+    )
 
 
-@router.delete("/{offer_id}")
+@router.delete("/{offer_id}", response_model=OfferDeleteResponse)
 async def delete_offer(
     offer_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -200,14 +202,14 @@ async def delete_offer(
     offer = await offer_service.get_offer_by_id(db, offer_id)
     if not offer:
         raise HTTPException(status_code=404, detail="Oferta não encontrada")
-        
+
     await offer_service.soft_delete_offer(db, offer, agency_id=current_user.id)
-    
-    return {
-        "status": "success",
-        "message": "Oferta removida",
-        "offer_id": str(offer_id),
-    }
+
+    return OfferDeleteResponse(
+        status="success",
+        message="Oferta removida",
+        offer_id=offer_id,
+    )
 
 
 @router.post("/{offer_id}/interest")

@@ -56,4 +56,11 @@ def spawn_with_own_session(
                 exc_info=True,
             )
 
-    asyncio.ensure_future(_wrapper())
+    task = asyncio.create_task(_wrapper(), name=task_name)
+
+    def _on_done(t: asyncio.Task) -> None:
+        exc = t.exception()
+        if exc:
+            logger.error(f"{task_name}_unhandled", error=str(exc), exc_info=exc)
+
+    task.add_done_callback(_on_done)

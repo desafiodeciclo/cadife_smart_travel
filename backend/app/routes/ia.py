@@ -12,6 +12,7 @@ from app.services.domain_validator import BriefingValidator
 from app.services.ingestion_pipeline import get_ingestion_pipeline
 from app.infrastructure.security.rate_limiter import limiter
 from app.core.config import get_settings
+from app.presentation.schemas.briefing_schema import BriefingExtracted
 
 settings = get_settings()
 
@@ -47,7 +48,7 @@ class ExtrairBriefingRequest(BaseModel):
 
 
 class ExtrairBriefingResponse(BaseModel):
-    briefing: dict
+    briefing: BriefingExtracted
     completude_pct: int
     validation_passed: bool
     validation_errors: list[str]
@@ -144,7 +145,7 @@ async def extrair_briefing(request: Request, response: Response, body: ExtrairBr
     validation = _validator.validate(briefing)
 
     return ExtrairBriefingResponse(
-        briefing=briefing.model_dump(),
+        briefing=briefing,
         completude_pct=completude,
         validation_passed=validation.is_valid,
         validation_errors=validation.errors,

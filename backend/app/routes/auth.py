@@ -1,3 +1,4 @@
+import structlog
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -34,6 +35,7 @@ from app.services.user_service import (
 )
 from app.infrastructure.security.rate_limiter import limiter
 
+logger = structlog.get_logger()
 router = APIRouter(tags=["Auth"])
 
 
@@ -127,6 +129,7 @@ async def refresh_token(body: RefreshRequest, db: AsyncSession = Depends(get_db)
     try:
         payload = decode_token(body.refresh_token)
     except ValueError:
+        logger.warning("token_decode_failed", token_type="refresh", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token inválido ou expirado",
@@ -233,6 +236,7 @@ async def reset_password(
     try:
         payload = decode_token(body.token)
     except ValueError:
+        logger.warning("token_decode_failed", token_type="reset", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Token inválido ou expirado",

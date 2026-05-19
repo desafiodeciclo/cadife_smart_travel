@@ -25,6 +25,8 @@ from app.models.lead import Lead
 from app.models.user import User
 from app.presentation.schemas.common_errors import HTTPErrorResponse
 from app.services import admin_service
+from app.services.user_service import get_user_by_id
+from app.services.lead_service import get_lead_by_id
 
 logger = structlog.get_logger()
 router = APIRouter(prefix="/admin", tags=["Admin"])
@@ -127,8 +129,6 @@ async def update_user(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    from app.services.user_service import get_user_by_id
-
     user = await get_user_by_id(db, str(user_id))
     if not user:
         raise HTTPException(
@@ -169,8 +169,6 @@ async def delete_user(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    from app.services.user_service import get_user_by_id
-
     user = await get_user_by_id(db, str(user_id))
     if not user:
         raise HTTPException(
@@ -213,8 +211,6 @@ async def reassign_lead(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    from app.services.lead_service import get_lead_by_id
-
     lead = await get_lead_by_id(db, lead_id)
     if not lead:
         raise HTTPException(
