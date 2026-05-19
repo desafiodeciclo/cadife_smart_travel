@@ -15,8 +15,47 @@ abstract class Failure extends Equatable {
         return const UnauthorizedFailure();
       }
       if (statusCode == 422) {
-        final detail = e.response?.data?['detail'] as String?;
-        return ValidationFailure(detail ?? 'Dados inválidos.');
+        final rawDetail = e.response?.data?['detail'];
+        String? message;
+        if (rawDetail is List) {
+          final errors = <String>[];
+          for (final err in rawDetail) {
+            if (err is Map) {
+              final msg = err['msg']?.toString();
+              final loc = err['loc'] is List ? (err['loc'] as List).last?.toString() : null;
+              if (msg != null && loc != null) {
+                String field = loc;
+                if (loc == 'nome') field = 'Nome';
+                if (loc == 'email') field = 'E-mail';
+                if (loc == 'password') field = 'Senha';
+
+                String cleanMsg = msg;
+                if (msg.contains('Field required')) {
+                  cleanMsg = 'é obrigatório';
+                } else if (msg.contains('should have at least')) {
+                  final ctx = err['ctx'] as Map?;
+                  final minLength = ctx?['min_length']?.toString() ?? '8';
+                  cleanMsg = 'deve ter pelo menos $minLength caracteres';
+                }
+
+                errors.add('$field $cleanMsg');
+              } else if (msg != null) {
+                errors.add(msg);
+              }
+            }
+          }
+          if (errors.isNotEmpty) {
+            message = errors.join('. ') + '.';
+          }
+        } else if (rawDetail is String) {
+          message = rawDetail;
+        }
+        return ValidationFailure(message ?? 'Dados inválidos.');
+      }
+      if (statusCode == 409) {
+        final rawDetail = e.response?.data?['detail'];
+        final detail = rawDetail is String ? rawDetail : rawDetail?.toString();
+        return ConflictFailure(detail ?? 'E-mail ou recurso já cadastrado.');
       }
       switch (e.type) {
         case DioExceptionType.connectionTimeout:
@@ -25,7 +64,8 @@ abstract class Failure extends Equatable {
         case DioExceptionType.connectionError:
           return const NetworkFailure();
         default:
-          final detail = e.response?.data?['detail'] as String?;
+          final rawDetail = e.response?.data?['detail'];
+          final detail = rawDetail is String ? rawDetail : rawDetail?.toString();
           return ServerFailure(detail ?? e.message ?? 'Erro no servidor.');
       }
     }

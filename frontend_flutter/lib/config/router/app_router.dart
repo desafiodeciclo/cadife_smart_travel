@@ -63,6 +63,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       return authValue.when(
         loading: () {
           debugPrint('ROUTER: Auth state is loading, redirecting to /splash');
+          if (isLoggingIn) return null;
           return state.matchedLocation == '/splash' ? null : '/splash';
         },
         error: (error, _) {
