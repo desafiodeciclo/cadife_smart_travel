@@ -1,3 +1,6 @@
+import 'package:cadife_smart_travel/core/di/service_locator.dart';
+import 'package:cadife_smart_travel/features/notifications/domain/entities/in_app_notification.dart';
+import 'package:cadife_smart_travel/features/notifications/domain/repositories/i_notification_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class Notification {
@@ -16,71 +19,54 @@ class Notification {
     required this.timestamp,
     this.isRead = false,
   });
+
+  factory Notification.fromInApp(InAppNotification n) {
+    return Notification(
+      id: n.uuid,
+      title: n.title,
+      body: n.body,
+      type: _mapType(n.type),
+      timestamp: n.receivedAt,
+      isRead: n.read,
+    );
+  }
+
+  static String _mapType(NotificationType type) {
+    switch (type) {
+      case NotificationType.leadQualificado:
+        return 'lead_qualified';
+      case NotificationType.agendamentoConfirmado:
+        return 'schedule_confirmed';
+      case NotificationType.propostaAprovada:
+      case NotificationType.propostaEnviada:
+        return 'proposal_accepted';
+      default:
+        return 'default';
+    }
+  }
 }
 
-// Mock notifications
-final mockNotifications = [
-  Notification(
-    id: '1',
-    title: 'Novo Lead Qualificado',
-    body: 'João Silva foi qualificado para curadoria',
-    type: 'lead_qualified',
-    timestamp: DateTime.now().subtract(const Duration(hours: 2)),
-    isRead: false,
-  ),
-  Notification(
-    id: '2',
-    title: 'Agendamento Confirmado',
-    body: 'Maria Santos confirmou horário para amanhã 14:00',
-    type: 'schedule_confirmed',
-    timestamp: DateTime.now().subtract(const Duration(hours: 4)),
-    isRead: true,
-  ),
-  Notification(
-    id: '3',
-    title: 'Proposta Aceita',
-    body: 'Carlos Santos aceitou sua proposta de viagem',
-    type: 'proposal_accepted',
-    timestamp: DateTime.now().subtract(const Duration(days: 1)),
-    isRead: true,
-  ),
-];
-
 class NotificationsNotifier extends AsyncNotifier<List<Notification>> {
+  INotificationRepository get _repo => sl<INotificationRepository>();
+
   @override
   Future<List<Notification>> build() async {
-    // Por enquanto, retorna mock
-    // Depois: buscar do backend via GET /notifications
-    return mockNotifications;
+    final items = await _repo.getNotifications();
+    return items.map(Notification.fromInApp).toList();
   }
 
   Future<void> markAsRead(String notificationId) async {
-    final current = state.valueOrNull;
-    if (current == null) return;
-    state = AsyncValue.data(current.map((n) {
-      if (n.id != notificationId) return n;
-      return Notification(
-        id: n.id,
-        title: n.title,
-        body: n.body,
-        type: n.type,
-        timestamp: n.timestamp,
-        isRead: true,
-      );
-    }).toList());
-    // Simulando chamada ao backend: POST /notifications/{id}/mark-as-read
-    await Future.delayed(const Duration(milliseconds: 300));
+    await _repo.markAsRead(notificationId);
+    ref.invalidateSelf();
   }
 
   Future<void> deleteNotification(String notificationId) async {
-    final current = state.valueOrNull;
-    if (current == null) return;
-    state = AsyncValue.data(
-      current.where((n) => n.id != notificationId).toList(),
-    );
+    await _repo.deleteNotification(notificationId);
+    ref.invalidateSelf();
   }
 }
 
-final notificationsProvider = AsyncNotifierProvider<NotificationsNotifier, List<Notification>>(
+final notificationsProvider =
+    AsyncNotifierProvider<NotificationsNotifier, List<Notification>>(
   NotificationsNotifier.new,
 );

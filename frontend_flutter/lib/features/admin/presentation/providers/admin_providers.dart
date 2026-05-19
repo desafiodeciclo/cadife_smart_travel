@@ -1,5 +1,7 @@
-import 'package:cadife_smart_travel/features/admin/data/repositories/mock_admin_repository.dart';
+import 'package:cadife_smart_travel/core/di/service_locator.dart';
+import 'package:cadife_smart_travel/features/admin/data/repositories/admin_repository.dart';
 import 'package:cadife_smart_travel/features/admin/domain/entities/admin_entities.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // ─── Consultor Detail (family — carrega por ID) ──────────────────────────────
@@ -11,7 +13,7 @@ final consultorDetailProvider = AsyncNotifierProvider.family<ConsultorDetailNoti
 class ConsultorDetailNotifier extends FamilyAsyncNotifier<ConsultorAdmin?, String> {
   @override
   Future<ConsultorAdmin?> build(String arg) async {
-    final repo = ref.watch(mockAdminRepositoryProvider);
+    final repo = ref.watch(adminRepositoryProvider);
     return repo.getConsultorById(arg);
   }
 
@@ -19,7 +21,7 @@ class ConsultorDetailNotifier extends FamilyAsyncNotifier<ConsultorAdmin?, Strin
     final current = state.valueOrNull;
     if (current == null) return;
     state = const AsyncValue.loading();
-    final repo = ref.read(mockAdminRepositoryProvider);
+    final repo = ref.read(adminRepositoryProvider);
     try {
       final updated = await repo.toggleConsultorStatus(current.id);
       state = AsyncValue.data(updated);
@@ -30,17 +32,17 @@ class ConsultorDetailNotifier extends FamilyAsyncNotifier<ConsultorAdmin?, Strin
   }
 }
 
-final mockAdminRepositoryProvider = Provider<MockAdminRepository>((ref) {
-  return MockAdminRepository();
+final adminRepositoryProvider = Provider<AdminRepository>((ref) {
+  return AdminRepository(sl<Dio>());
 });
 
 final adminMetricsProvider = FutureProvider<AgenciaMetrics>((ref) async {
-  final repo = ref.watch(mockAdminRepositoryProvider);
+  final repo = ref.watch(adminRepositoryProvider);
   return repo.getMetrics();
 });
 
 final adminConsultoresProvider = FutureProvider<List<ConsultorAdmin>>((ref) async {
-  final repo = ref.watch(mockAdminRepositoryProvider);
+  final repo = ref.watch(adminRepositoryProvider);
   return repo.getConsultores();
 });
 
@@ -49,13 +51,13 @@ final adminConsultoresNotifierProvider = AsyncNotifierProvider<AdminConsultoresN
 class AdminConsultoresNotifier extends AsyncNotifier<List<ConsultorAdmin>> {
   @override
   Future<List<ConsultorAdmin>> build() async {
-    final repo = ref.watch(mockAdminRepositoryProvider);
+    final repo = ref.watch(adminRepositoryProvider);
     return repo.getConsultores();
   }
 
   Future<void> toggleStatus(String id) async {
     state = const AsyncValue.loading();
-    final repo = ref.read(mockAdminRepositoryProvider);
+    final repo = ref.read(adminRepositoryProvider);
     try {
       await repo.toggleConsultorStatus(id);
       state = AsyncValue.data(await repo.getConsultores());
@@ -71,7 +73,7 @@ class AdminConsultoresNotifier extends AsyncNotifier<List<ConsultorAdmin>> {
     required String password,
   }) async {
     state = const AsyncValue.loading();
-    final repo = ref.read(mockAdminRepositoryProvider);
+    final repo = ref.read(adminRepositoryProvider);
     try {
       await repo.createConsultor(
         name: name,
@@ -87,7 +89,7 @@ class AdminConsultoresNotifier extends AsyncNotifier<List<ConsultorAdmin>> {
 
   Future<void> updateConsultor(ConsultorAdmin consultor) async {
     state = const AsyncValue.loading();
-    final repo = ref.read(mockAdminRepositoryProvider);
+    final repo = ref.read(adminRepositoryProvider);
     try {
       await repo.updateConsultor(consultor);
       state = AsyncValue.data(await repo.getConsultores());
@@ -98,7 +100,7 @@ class AdminConsultoresNotifier extends AsyncNotifier<List<ConsultorAdmin>> {
 
   Future<void> deleteConsultor(String id) async {
     state = const AsyncValue.loading();
-    final repo = ref.read(mockAdminRepositoryProvider);
+    final repo = ref.read(adminRepositoryProvider);
     try {
       await repo.deleteConsultor(id);
       state = AsyncValue.data(await repo.getConsultores());
@@ -109,7 +111,7 @@ class AdminConsultoresNotifier extends AsyncNotifier<List<ConsultorAdmin>> {
 
   Future<void> refresh() async {
     state = const AsyncValue.loading();
-    final repo = ref.read(mockAdminRepositoryProvider);
+    final repo = ref.read(adminRepositoryProvider);
     try {
       state = AsyncValue.data(await repo.getConsultores());
     } on Exception catch (e, st) {

@@ -1,6 +1,7 @@
 import 'package:cadife_smart_travel/design_system/design_system.dart';
-import 'package:cadife_smart_travel/features/client/profile/data/mocks/client_profile_mocks.dart';
+import 'package:cadife_smart_travel/features/client/home/presentation/providers/travels_provider.dart';
 import 'package:cadife_smart_travel/features/client/profile/domain/entities/diary_entry.dart';
+import 'package:cadife_smart_travel/features/client/profile/presentation/providers/diary_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
@@ -20,17 +21,14 @@ class _TravelJournalDetailScreenState
     extends ConsumerState<TravelJournalDetailScreen> {
   late PageController _pageController;
   int _currentPage = 0;
-  late List<DiaryEntry> _entries;
+  List<DiaryEntry> _entries = [];
+  bool _loaded = false;
   bool _isEditing = false;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
-    _entries = ClientProfileMocks.diaryEntries()
-        .where((e) => e.tripId == widget.tripId)
-        .toList()
-      ..sort((a, b) => a.date.compareTo(b.date));
   }
 
   @override
@@ -39,8 +37,12 @@ class _TravelJournalDetailScreenState
     super.dispose();
   }
 
-  String _tripName() =>
-      ClientProfileMocks.tripNames()[widget.tripId] ?? widget.tripId;
+  String _tripName() {
+    final travels = ref.read(travelsProvider).valueOrNull;
+    final match = travels?.where((t) => t.id == widget.tripId);
+    if (match != null && match.isNotEmpty) return match.first.destination;
+    return widget.tripId;
+  }
 
   List<List<DiaryEntry>> _groupIntoWeeks(List<DiaryEntry> entries) {
     if (entries.isEmpty) return [];
@@ -61,6 +63,53 @@ class _TravelJournalDetailScreenState
   Widget build(BuildContext context) {
     final cadife = context.cadife;
     final theme = Theme.of(context);
+
+    final entriesAsync = ref.watch(tripDiaryEntriesProvider(widget.tripId));
+    ref.listen(tripDiaryEntriesProvider(widget.tripId), (_, next) {
+      next.whenData((data) {
+        if (!mounted) return;
+        setState(() {
+          _entries = List<DiaryEntry>.from(data);
+          _loaded = true;
+        });
+      });
+    });
+    if (!_loaded) {
+      if (entriesAsync.hasError) {
+        return Scaffold(
+          backgroundColor: cadife.background,
+          appBar: AppBar(
+            backgroundColor: cadife.background,
+            elevation: 0,
+            leading: IconButton(
+              icon: Icon(LucideIcons.arrowLeft, color: cadife.textPrimary),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ),
+          body: Center(
+            child: Text('Erro ao carregar diário: ${entriesAsync.error}'),
+          ),
+        );
+      }
+      if (entriesAsync.hasValue) {
+        _entries = List<DiaryEntry>.from(entriesAsync.value!);
+        _loaded = true;
+      } else {
+        return Scaffold(
+          backgroundColor: cadife.background,
+          appBar: AppBar(
+            backgroundColor: cadife.background,
+            elevation: 0,
+            leading: IconButton(
+              icon: Icon(LucideIcons.arrowLeft, color: cadife.textPrimary),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ),
+          body: const Center(child: CircularProgressIndicator()),
+        );
+      }
+    }
+
     final weeks = _groupIntoWeeks(_entries);
 
     return Scaffold(

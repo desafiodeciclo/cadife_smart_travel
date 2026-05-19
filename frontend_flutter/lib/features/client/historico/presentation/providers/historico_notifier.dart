@@ -1,8 +1,12 @@
+import 'package:cadife_smart_travel/core/constants/api_constants.dart';
 import 'package:cadife_smart_travel/features/client/documentos/domain/entities/trip_summary.dart';
+import 'package:cadife_smart_travel/features/client/domain/entities/travel.dart';
+import 'package:dio/dio.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get_it/get_it.dart';
 
-/// Provider que gerencia a lista de viagens do cliente para o histórico.
+/// Provider que gerencia a lista de viagens concluídas do cliente (histórico).
 final travelHistoryProvider = AsyncNotifierProvider<HistoricoNotifier, List<TripSummary>>(
   HistoricoNotifier.new,
 );
@@ -10,7 +14,7 @@ final travelHistoryProvider = AsyncNotifierProvider<HistoricoNotifier, List<Trip
 class HistoricoNotifier extends AsyncNotifier<List<TripSummary>> {
   @override
   Future<List<TripSummary>> build() async {
-    // Escuta eventos FCM para recarregar o histórico quando uma viagem for concluída
+    // Recarrega o histórico quando uma viagem for concluída (evento FCM).
     final subscription = FirebaseMessaging.onMessage.listen((message) {
       if (message.data['type'] == 'travel_completed') {
         ref.invalidateSelf();
@@ -18,50 +22,36 @@ class HistoricoNotifier extends AsyncNotifier<List<TripSummary>> {
     });
     ref.onDispose(subscription.cancel);
 
-    // Simulando busca de dados
-    await Future.delayed(const Duration(milliseconds: 800));
-    return _mockHistoryTrips;
+    return _fetchCompletedTravels();
+  }
+
+  Future<List<TripSummary>> _fetchCompletedTravels() async {
+    final dio = GetIt.I<Dio>();
+    final response = await dio.get(
+      '${ApiConstants.baseUrl}/travels',
+      queryParameters: {'status': 'completed'},
+    );
+    final travels = (response.data['travels'] as List)
+        .map((e) => Travel.fromJson(e as Map<String, dynamic>))
+        .map(_toSummary)
+        .toList();
+    return travels;
+  }
+
+  TripSummary _toSummary(Travel t) {
+    return TripSummary(
+      id: t.id,
+      name: t.destination,
+      destino: t.destination,
+      dataIda: t.startDate,
+      dataVolta: t.endDate,
+      imageUrl: t.imageUrl,
+      roteiro: t.description,
+    );
   }
 
   Future<void> refresh() async {
     state = const AsyncLoading();
-    await Future.delayed(const Duration(milliseconds: 800));
-    state = AsyncData(_mockHistoryTrips);
+    state = await AsyncValue.guard(_fetchCompletedTravels);
   }
-
-  static final _mockHistoryTrips = [
-    TripSummary(
-      id: 'trip-h1',
-      name: 'Férias em Gramado',
-      destino: 'Gramado, RS',
-      dataIda: DateTime(2023, 12, 10),
-      dataVolta: DateTime(2023, 12, 17),
-      numPessoas: 2,
-      orcamento: 4500.00,
-      imageUrl: 'https://images.unsplash.com/photo-1596436805366-5d589f6075c7?auto=format&fit=crop&q=80&w=800',
-      roteiro: 'Uma semana mágica na Serra Gaúcha, aproveitando o Natal Luz em Gramado, fondues deliciosos e passeios pelo Lago Negro e Mini Mundo.',
-    ),
-    TripSummary(
-      id: 'trip-h2',
-      name: 'Carnaval no Rio',
-      destino: 'Rio de Janeiro, RJ',
-      dataIda: DateTime(2024, 2, 9),
-      dataVolta: DateTime(2024, 2, 14),
-      numPessoas: 4,
-      orcamento: 8200.50,
-      imageUrl: 'https://images.unsplash.com/photo-1483729558449-99ef09a8c325?auto=format&fit=crop&q=80&w=800',
-      roteiro: 'A energia do Carnaval carioca! Desfiles na Sapucaí, blocos de rua em Santa Teresa e momentos de relaxamento nas praias de Ipanema e Leblon.',
-    ),
-    TripSummary(
-      id: 'trip-h3',
-      name: 'Trabalho em São Paulo',
-      destino: 'São Paulo, SP',
-      dataIda: DateTime(2024, 3, 5),
-      dataVolta: DateTime(2024, 3, 8),
-      numPessoas: 1,
-      orcamento: 1250.00,
-      imageUrl: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&q=80&w=800',
-      roteiro: 'Imersão na metrópole paulista para reuniões de negócios, com jantares na Avenida Paulista e uma visita rápida ao Museu do Ipiranga.',
-    ),
-  ];
 }
