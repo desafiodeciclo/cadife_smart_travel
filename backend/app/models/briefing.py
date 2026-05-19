@@ -86,7 +86,7 @@ class Briefing(Base):
     observacoes: Mapped[Optional[str]] = mapped_column(Text)
     completude_pct: Mapped[int] = mapped_column(Integer, default=0)
 
-    lead: Mapped["Lead"] = relationship("Lead", back_populates="briefing")
+    lead: Mapped["Lead"] = relationship("Lead", back_populates="briefing", lazy="noload")
 
 
 def calculate_completude(briefing_data: dict) -> int:
@@ -170,6 +170,18 @@ class BriefingExtracted(BaseModel):
             key = unicodedata.normalize("NFC", v.lower().strip())
             return _ORCAMENTO_ALIASES.get(key, key)
         return v
+
+    @field_validator("tem_passaporte", mode="before")
+    @classmethod
+    def _normalize_tem_passaporte(cls, v: object) -> object:
+        if isinstance(v, str):
+            normalized = unicodedata.normalize("NFC", v.lower().strip())
+            if normalized in ("sim", "s", "yes", "y", "true", "1"):
+                return True
+            if normalized in ("não", "nao", "n", "no", "false", "0"):
+                return False
+        return v
+
 
 
 class BriefingUpdate(BaseModel):

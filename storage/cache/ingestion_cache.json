@@ -1,0 +1,169 @@
+{
+  "argumentacao.txt": {
+    "hash": "sha256:9516339afe84e30958df54cab689dca00a67875ed08f6e74df04ec95c52566b9",
+    "chunk_ids": [
+      "00262b84-098e-480f-b87c-9569b225e9dc",
+      "d6675449-c44a-4bad-9f15-17270b06bc2b"
+    ],
+    "indexed_at": "2026-05-16T23:47:58.450074+00:00",
+    "chunk_count": 2
+  },
+  "cross_selling_matrix.md": {
+    "hash": "sha256:139a1a14d1162144d742f12ab617212f7916d0ed7f7aa78f366c240565b24241",
+    "chunk_ids": [
+      "41bb4f51-1fd9-43b0-949f-5059f5dd1f62",
+      "d364199d-7a25-4206-a975-cfa117cce57c",
+      "98058209-eb02-4b5d-b33a-24c8733fdb8f",
+      "9a251a93-ee29-4bd5-a0e4-09d028725c8a",
+      "bce8e239-26f1-4d97-a956-e33571ae1893",
+      "ae000754-17ec-44f6-9059-6cadbcefc4b1",
+      "de1cdab2-1f18-4f12-b500-e69a99faad99",
+      "c3191548-be7b-49c2-995e-430a9651451b",
+      "dabc89fb-4fd1-4cc7-aca7-f688e5728504"
+    ],
+    "indexed_at": "2026-05-16T23:47:59.787134+00:00",
+    "chunk_count": 9
+  },
+  "destinos.txt": {
+    "hash": "sha256:474869245ab1bb824520dceeaff5543833634897864bfe7e02d2dfadf708a4d1",
+    "chunk_ids": [
+      "b23b6071-8355-4d30-a81a-328f8fc02ce7",
+      "8e355553-53c9-4da1-a44b-c4fcc1764160"
+    ],
+    "indexed_at": "2026-05-16T23:48:00.403973+00:00",
+    "chunk_count": 2
+  },
+  "experiencias_exclusivas.md": {
+    "hash": "sha256:39cb375f66e22be268070b1a11e0db4b851ce81375e0eeb39c408d710e2aed64",
+    "chunk_ids": [
+      "f85bec31-faf8-46ae-b109-6297e98f9c50",
+      "a4fe4392-18b6-4c96-a345-81b114780625",
+      "b64019ea-531d-412d-a234-e3880fece223",
+      "4a0f355a-8858-4fc4-a5df-c72d79a9f760",
+      "364ca1f9-d4be-4ad5-8f1d-e8266e651c4d",
+      "6059b9be-e8bd-46d0-962a-ffeaa6f150ed",
+      "5e6a89be-8802-473e-82ec-248f5caf804e",
+      "c6a29a69-598a-4dfc-92c2-885ff8e2ca70",
+      "7accaf79-35a0-4edd-ba02-b92316cc6b40",
+      "d0c23f59-b098-4978-9f29-fca95ee716c1",
+      "c36e03c6-75ea-4aff-ac18-8282be307446",
+      "2e935ff3-db74-42b3-a967-d4995fa9d951",
+      "bbe44987-48c7-471f-83f3-8ec93f5538b8",
+      "95c5cb81-39ad-4ab8-a25f-d936483f5032",
+      "ba0518c8-0ab5-4a98-b2b9-519b832c444e",
+      "7bad6481-b8c2-47b5-adb9-e541ae2d21bc"
+    ],
+    "indexed_at": "2026-05-16T23:48:02.081338+00:00",
+    "chunk_count": 16
+  },
+  "faq.txt": {
+    "hash": "sha256:b206e7d70120e80e1c03a7287c436fad51c88f94c68e88194d464466d6cc9b41",
+    "chunk_ids": [
+      "42b23028-ff46-4a1b-94d8-915cd779ea7a",
+      "14b03ba5-bf58-4c4e-a1c6-00cd1e69b080"
+    ],
+    "indexed_at": "2026-05-16T23:48:02.744719+00:00",
+    "chunk_count": 2
+  },
+  "fluxo_atendimento.txt": {
+    "hash": "sha256:ab524495184f83e3ac33d1207c9779c582b1d4c2566f358e266856103c1476cd",
+    "chunk_ids": [
+      "ef10c591-8b22-4755-857a-47637cafdabd",
+      "ff417ff2-34e6-4288-bfef-69be6ad9b38d"
+    ],
+    "indexed_at": "2026-05-16T23:48:03.381770+00:00",
+    "chunk_count": 2
+  },
+  "identidade_empresa.txt": {
+    "hash": "sha256:26fc65e8c2bcb3caff3720191333a6c3c0f6d9251835decd96719f5069de8028",
+    "chunk_ids": [
+      "b93a7ff0-2388-4e91-87af-6aec0d29f0fe",
+      "e843b2d7-0179-413c-a9be-fc41fb6cbdd6"
+    ],
+    "indexed_at": "2026-05-16T23:48:04.122846+00:00",
+    "chunk_count": 2
+  },
+  "inventory_control.md": {
+    "hash": "sha256:c664a2662acf84ed78fa53ec0cacc4c8922f905559d341916722e58f95323b51",
+    "chunk_ids": [
+      "ab223497-b27f-4244-be39-0783b1bfdbd8",
+      "915c813f-dbc5-456b-b10b-6d7f93dc95e3",
+      "0dd50080-8d8c-4072-ac92-08340088dc0b",
+      "e697f167-04f8-4c67-a5d5-cae42e3bfb06",
+      "8797f939-c376-4593-99a8-41f11cb8612b",
+      "c9ed563d-a570-4f1e-9976-a84ca72bf5c8",
+      "2aa2e90b-5d8f-4c16-acda-89e7f1cdc7e7",
+      "b4e20d5c-a07e-43ae-bdc8-97b3f7e54d16",
+      "bbc3db5d-b6d9-4646-9be3-42036f75add7",
+      "78146d99-37cc-4e74-9f97-6b1b4cf8764c"
+    ],
+    "indexed_at": "2026-05-16T23:48:05.483650+00:00",
+    "chunk_count": 10
+  },
+  "logistica_especialista.md": {
+    "hash": "sha256:d92aaabed406f515245e072298e97b30f72ee690e82838d4135a7df06f9640d9",
+    "chunk_ids": [
+      "ab998f21-bdce-4eea-afc4-d9615ae9f896",
+      "0f4c4ae8-7674-4a98-b72b-8dec5f2e9058",
+      "510c322a-a263-45fe-8c1e-cff08a1ad091",
+      "0a92d1fd-5c82-4a66-834b-57e105cf6e92",
+      "c118f89f-c66a-4f64-8842-d796e99f28c5",
+      "7987982a-3adb-4d1a-a4a5-11d8106ab224",
+      "7a611af0-9aff-4fc6-914d-30b4a32a4954",
+      "8a64634e-7447-4077-b5ff-eb395a005905",
+      "55315750-1d90-4c08-adb3-fc8315475991",
+      "e9ea2263-7689-4767-b6f0-aff2a43fefb8",
+      "8533cf58-8e1a-4d98-a03e-add8fea8a2ae",
+      "1080bf83-695b-48d3-8138-5b0875891b34",
+      "6da1d6cf-857d-4886-a108-d2f774150295"
+    ],
+    "indexed_at": "2026-05-16T23:48:06.973574+00:00",
+    "chunk_count": 13
+  },
+  "objecoes.txt": {
+    "hash": "sha256:ae82c1681d6a750540aa3871ad4465b11ab318fd5f3bef01acdc93fe3c0f4bcf",
+    "chunk_ids": [
+      "9c3f3e71-ad3d-4421-b7c2-cd9e37ae4140",
+      "5316625f-fca2-4593-85fb-0d757a8fb586"
+    ],
+    "indexed_at": "2026-05-16T23:48:07.590211+00:00",
+    "chunk_count": 2
+  },
+  "perfis_e_solucoes.md": {
+    "hash": "sha256:9de354f40fc9a18551c671961d98ce1724e4f2f0b3fa40186b11cf7922912220",
+    "chunk_ids": [
+      "9b79080d-a7c7-4487-a665-f06b195f4340",
+      "c6e5abd0-fd98-40d1-be11-c2274d57e35d",
+      "62ba5583-f62b-4817-9b25-016fa88b2f2d",
+      "5195e380-b90f-4daf-b301-3d47a9942bf3",
+      "a5f5ece6-8edd-467b-b110-64f085021f98",
+      "3c9748ff-8e66-4bb8-8e67-ac839720e3e4",
+      "79d5b250-bb4d-4a24-a2b4-a1e73378da4f",
+      "4c9d5100-4c0c-4039-b819-f0e07a5589f5",
+      "21a7e61f-db51-48ca-99b8-778d7e0c3ed3",
+      "2989ba89-ce78-4832-a812-713b965794da",
+      "18a009a1-0f77-4220-8b22-0dfb21a4340f",
+      "5b3f2ec9-d775-4471-8e5b-c7447282469c",
+      "1381c913-6278-4d67-88cd-f0aded4e3e78",
+      "5f44cb33-3fcd-4524-b6c0-d08ada2d54fe",
+      "e1491011-2acd-4fc5-9955-d4e2b1120eea",
+      "f7f43680-6a7b-42e8-8609-87c8140491ac",
+      "b29a57f9-0bc9-432f-9f41-3dd9b2a7b786",
+      "dc05ad03-d820-44ee-adc5-503efc1dde11",
+      "88d686f2-5402-4f5b-b569-03a9577f6220",
+      "a22045c7-2c4d-4af1-98ef-96ecbfb7426d",
+      "f459e342-2bd2-475a-a875-0876c9b3fada"
+    ],
+    "indexed_at": "2026-05-16T23:48:09.825415+00:00",
+    "chunk_count": 21
+  },
+  "regras_negocio.txt": {
+    "hash": "sha256:3757ab409cf4b57cb8e9deaea9dede7a1a9a66135a03c86be5d9436b77c48340",
+    "chunk_ids": [
+      "6d1d2d12-58bd-4fad-8f72-b844b0f98eea",
+      "da1a26c3-8e57-4068-86cd-6187751da902"
+    ],
+    "indexed_at": "2026-05-16T23:48:10.621990+00:00",
+    "chunk_count": 2
+  }
+}

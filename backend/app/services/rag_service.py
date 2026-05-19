@@ -127,6 +127,10 @@ def _reciprocal_rank_fusion(
     Returns:
         Docs reranked by descending RRF score.
     """
+    # Defensive: callers must never pass None, but guard anyway
+    vector_ranked = vector_ranked or []
+    keyword_ranked = keyword_ranked or []
+
     # Build rank lookups
     vector_ranks = {id(d): idx + 1 for idx, d in enumerate(vector_ranked)}
     keyword_ranks = {id(d): idx + 1 for idx, d in enumerate(keyword_ranked)}
@@ -175,7 +179,7 @@ def retrieve_hybrid(
         candidate_k = max(k * _VECTOR_CANDIDATES_MULTIPLIER, 10)
 
         # 1. Vector candidates
-        vector_docs = vs.similarity_search(query, k=candidate_k, filter=filter)
+        vector_docs = vs.similarity_search(query, k=candidate_k, filter=filter) or []
         if not vector_docs:
             return []
 
@@ -184,7 +188,7 @@ def retrieve_hybrid(
             (_keyword_score(query, doc.page_content), doc) for doc in vector_docs
         ]
         keyword_scores.sort(key=lambda x: x[0], reverse=True)
-        keyword_ranked = [doc for _, doc in keyword_scores if _ > 0]
+        keyword_ranked = [doc for _, doc in keyword_scores if _ > 0] or []
 
         # If no keyword matches, fall back to pure vector ranking
         if not keyword_ranked:
@@ -224,7 +228,7 @@ def retrieve_context(query: str, k: int = 3) -> str:
     """
     try:
         docs = retrieve_hybrid(query, k=k)
-        safe_docs = apply_guardrails(docs, strategy="remove")
+        safe_docs = apply_guardrails(docs, strategy="mask")
         return _join(safe_docs)
     except Exception as exc:
         logger.warning("rag_retrieval_failed", error=str(exc))
@@ -269,7 +273,7 @@ def retrieve_with_metadata_filter(
         else:
             docs = retrieve_hybrid(query, k=k)
 
-        safe_docs = apply_guardrails(docs, strategy="remove")
+        safe_docs = apply_guardrails(docs, strategy="mask")
         return _join(safe_docs)
     except Exception as exc:
         logger.warning("rag_filtered_retrieval_failed", error=str(exc))

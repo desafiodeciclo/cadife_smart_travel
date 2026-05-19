@@ -195,18 +195,23 @@ async def update_proposta(
     await db.commit()
     await db.refresh(proposta)
 
-    # Checkpoint triggers (fire-and-forget — do not block the response)
+    # Checkpoint triggers (fire-and-forget — spawn with own session so the task
+    # is not tied to this request's db session which will be closed after return).
     if body.status is not None and old_status != body.status:
-        import asyncio
         from app.services.checkpoint_service import activate_checkpoint, SISTEMA
         from app.domain.entities.enums import TravelCheckpoint
+        from app.infrastructure.persistence.session_utils import spawn_with_own_session
         if body.status == PropostaStatus.enviada:
-            asyncio.ensure_future(
-                activate_checkpoint(db, proposta.lead_id, TravelCheckpoint.proposta_enviada, SISTEMA)
+            spawn_with_own_session(
+                activate_checkpoint,
+                proposta.lead_id, TravelCheckpoint.proposta_enviada, SISTEMA,
+                task_name="proposta_checkpoint_enviada",
             )
         elif body.status == PropostaStatus.aprovada:
-            asyncio.ensure_future(
-                activate_checkpoint(db, proposta.lead_id, TravelCheckpoint.proposta_aprovada, SISTEMA)
+            spawn_with_own_session(
+                activate_checkpoint,
+                proposta.lead_id, TravelCheckpoint.proposta_aprovada, SISTEMA,
+                task_name="proposta_checkpoint_aprovada",
             )
 
     return PropostaResponse.model_validate(proposta)

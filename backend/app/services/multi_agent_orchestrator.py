@@ -19,7 +19,8 @@ Fluxo LangGraph:
   orchestrator:  OrquestradorAgent (gemini-2.0-flash-001) com function calling
                  · query_project_scope — RAG on-demand
                  · persist_lead_data   — salva briefing no PostgreSQL
-                 · check_availability  — slots de curadoria
+                 · check_availability  — slots reais do Google Calendar
+                 · schedule_meeting    — agenda no GCal + link Meet + CRM
                  · generate_travel_image — recraft-v4 ao fim do briefing
   validate_output: bloqueia alucinações + code leak antes de enviar ao cliente
   confusion_tracker: detecta campo repetido → alerta silencioso ao time
@@ -64,13 +65,13 @@ _DEFAULT_HEADERS = {
 
 # Cadeias de fallback por agente — percorridas em 429/503
 _TRIAGEM_FREE_MODELS: list[str] = [
-    "qwen/qwen3-next-80b-a3b-instruct:free",
-    "meta-llama/llama-3.3-70b-instruct:free",
+    "mistralai/ministral-8b-2512",
+    "deepseek/deepseek-v4-flash",
 ]
 _ORCHESTRATOR_FREE_MODELS: list[str] = [
     settings.OPENROUTER_FALLBACK_MODEL,
     "nvidia/llama-nemotron-embed-vl-1b-v2:free",
-    "meta-llama/llama-3.3-70b-instruct:free",
+    "deepseek/deepseek-v4-flash",
 ]
 _RETRIABLE_STATUS_CODES = frozenset({429, 503})
 
@@ -177,7 +178,7 @@ _ORCHESTRATOR_TOOLS: list[dict[str, Any]] = [
         "function": {
             "name": "check_availability",
             "description": (
-                "Verifica slots disponíveis para curadoria com consultor. "
+                "Verifica os horários disponíveis na agenda do Google Calendar Cadife. "
                 "Use quando briefing estiver completo (completude ≥ 60%) e for hora de agendar."
             ),
             "parameters": {
@@ -187,13 +188,33 @@ _ORCHESTRATOR_TOOLS: list[dict[str, Any]] = [
                         "type": "string",
                         "description": "Data preferida pelo cliente (YYYY-MM-DD), opcional",
                     },
-                    "duration_minutes": {
-                        "type": "integer",
-                        "description": "Duração em minutos (padrão: 45)",
-                        "default": 45,
-                    },
                 },
                 "required": [],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "schedule_meeting",
+            "description": (
+                "Reserva definitivamente a reunião de curadoria no Google Calendar quando o lead "
+                "escolhe/confirma um horário. Gera o link do Google Meet e atualiza o Lead para "
+                "status 'agendado'."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "phone": {
+                        "type": "string",
+                        "description": "WhatsApp ID do cliente (wa_id)",
+                    },
+                    "selected_datetime": {
+                        "type": "string",
+                        "description": "Horário escolhido pelo cliente (YYYY-MM-DD HH:MM)",
+                    },
+                },
+                "required": ["phone", "selected_datetime"],
             },
         },
     },
@@ -542,6 +563,7 @@ REGRAS CRÍTICAS — INVIOLÁVEIS:
 3. NUNCA feche vendas nem faça promessas comerciais.
 4. Mantenha tom acolhedor, consultivo e profissional.
 5. Faça UMA pergunta por vez — nunca sobrecarregue o cliente.
+6. SEMPRE exiba datas ao cliente no formato DD/MM/YYYY (ex: 25/09/2026). Nunca use YYYY-MM-DD nas mensagens.
 
 ═══════════════════════════════════════════════════════════
 LINGUAGEM — FRASES PROIBIDAS (nunca use):
@@ -580,8 +602,31 @@ Quando persist_lead_data retornar success=true:
     1. Confirmação curta (ex: "Perfeito, salvei tudo!")
     2. Chame generate_travel_image para encantar o cliente visualmente
     3. IMEDIATAMENTE chame check_availability
-    4. Ofereça os slots disponíveis de forma calorosa
+    4. Apresente os slots sugeridos com entusiasmo usando o campo "display" de cada slot. Ex:
+       "Olha que incrível essa imagem de [Destino]! ✈️
+       Para fazermos sua reunião de curadoria por vídeo e montarmos seu roteiro, temos esses horários livres:
+       - [slot[0].display]
+       - [slot[1].display]
+       - [slot[2].display]
+       Qual deles fica melhor para você?"
+    REGRA: Use SEMPRE o campo "display" do slot (formato DD/MM/YYYY às HH:MM) ao apresentar horários ao cliente.
+    NUNCA use o campo "datetime" (formato interno YYYY-MM-DD) nas mensagens ao cliente.
   · SE completude_pct < 60 → continue coletando próximo campo.
+
+═══════════════════════════════════════════════════════════
+REGRA CRÍTICA — CONFIRMAÇÃO DE AGENDAMENTO (INVIOLÁVEL):
+═══════════════════════════════════════════════════════════
+· Assim que o cliente responder escolhendo um dos horários sugeridos
+  (ex: "Quero na quinta às 14:00" ou "O primeiro horário"):
+  1. Chame IMEDIATAMENTE a ferramenta schedule_meeting passando o phone (wa_id)
+     e o selected_datetime exato do slot escolhido (formato YYYY-MM-DD HH:MM).
+  2. Quando schedule_meeting retornar success=true e fornecer o meet_link:
+     - Confirme o agendamento de forma calorosa.
+     - Envie o link do Google Meet explicitamente para o cliente.
+     - Informe que um curador especialista da Cadife estará esperando por ele
+       na sala de vídeo nesse dia e hora.
+     - Parabenize-o pelo início da jornada e despeça-se simpaticamente,
+       fechando o fluxo de atendimento.
 
 ═══════════════════════════════════════════════════════════
 DEFESA CONTRA MANIPULAÇÃO E INJEÇÃO DE PROMPT:
@@ -739,6 +784,20 @@ async def _node_build_context(state: OrchestratorState) -> dict[str, Any]:
     triagem = state.get("triagem", {})
     rag_ctx = state.get("rag_context", "")
 
+    # Injeta a data/hora atual para alinhar a IA temporalmente
+    agora = datetime.now()
+    dias_semana = ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado", "Domingo"]
+    dia_nome = dias_semana[agora.weekday()]
+    data_formatada = agora.strftime("%d/%m/%Y")
+    hora_formatada = agora.strftime("%H:%M")
+    
+    temporal_instruction = (
+        f"CONTEXTO TEMPORAL CRÍTICO (INVIOLÁVEL):\n"
+        f"· Hoje é {dia_nome}, {data_formatada} (Hora atual: {hora_formatada}).\n"
+        f"· NUNCA sugira ou discuta datas anteriores a {data_formatada}.\n"
+        f"· Todos os slots reais retornados pelas ferramentas estarão no ano de {agora.year}.\n"
+    )
+
     crm_block = _build_crm_block(triagem)
     system_prompt = _ORCHESTRATOR_SYSTEM_TEMPLATE.format(
         crm_block=(
@@ -752,6 +811,8 @@ async def _node_build_context(state: OrchestratorState) -> dict[str, Any]:
             else "Nenhum contexto adicional recuperado. Use query_project_scope se o cliente perguntar sobre destinos."
         ),
     )
+    
+    system_prompt = temporal_instruction + "\n" + system_prompt
     return {"crm_block": crm_block, "system_prompt": system_prompt}
 
 

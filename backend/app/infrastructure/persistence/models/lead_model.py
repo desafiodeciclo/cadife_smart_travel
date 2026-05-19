@@ -121,40 +121,40 @@ class LeadModel(Base):
 
     # --- Relationships ---
     briefing: Mapped[Optional["BriefingModel"]] = relationship(
-        "BriefingModel", back_populates="lead", uselist=False, lazy="select"
+        "BriefingModel", back_populates="lead", uselist=False, lazy="selectin"
     )
     interacoes: Mapped[list["InteracaoModel"]] = relationship(
-        "InteracaoModel", back_populates="lead", lazy="select"
+        "InteracaoModel", back_populates="lead", lazy="selectin"
     )
     agendamentos: Mapped[list["AgendamentoModel"]] = relationship(
-        "AgendamentoModel", back_populates="lead", lazy="select"
+        "AgendamentoModel", back_populates="lead", lazy="selectin"
     )
     propostas: Mapped[list["PropostaModel"]] = relationship(
-        "PropostaModel", back_populates="lead", lazy="select"
+        "PropostaModel", back_populates="lead", lazy="selectin"
     )
     suitcase_items: Mapped[list["SuitcaseItemModel"]] = relationship(
-        "SuitcaseItemModel", back_populates="lead", lazy="select"
+        "SuitcaseItemModel", back_populates="lead", lazy="selectin"
     )
     diary_entries: Mapped[list["TravelDiaryEntryModel"]] = relationship(
-        "TravelDiaryEntryModel", back_populates="lead", lazy="select", cascade="all, delete-orphan"
+        "TravelDiaryEntryModel", back_populates="lead", lazy="selectin", cascade="all, delete-orphan"
     )
-    
+
     # Adicionado pela branch de Fluxo de Registro
     itinerary_items: Mapped[list["ItineraryItemModel"]] = relationship(
-        "ItineraryItemModel", back_populates="lead", lazy="select", cascade="all, delete-orphan",
+        "ItineraryItemModel", back_populates="lead", lazy="selectin", cascade="all, delete-orphan",
         order_by="ItineraryItemModel.horario_inicio",
     )
     conversation_summaries: Mapped[list["ConversationSummaryModel"]] = relationship(
-        "ConversationSummaryModel", back_populates="lead", lazy="select", cascade="all, delete-orphan"
+        "ConversationSummaryModel", back_populates="lead", lazy="selectin", cascade="all, delete-orphan"
     )
 
     # Adicionado pela branch Developer
     aya_toggle_history: Mapped[list["AyaToggleHistoryModel"]] = relationship(
-        "AyaToggleHistoryModel", back_populates="lead", lazy="select", cascade="all, delete-orphan"
+        "AyaToggleHistoryModel", back_populates="lead", lazy="selectin", cascade="all, delete-orphan"
     )
     score_history: Mapped[list["LeadScoreHistoryModel"]] = relationship(
         "LeadScoreHistoryModel",
         back_populates="lead",
-        lazy="select",
+        lazy="selectin",
         order_by="LeadScoreHistoryModel.criado_em.desc()",
     )
