@@ -1,3 +1,5 @@
+import 'package:cadife_smart_travel/core/di/service_locator.dart';
+import 'package:cadife_smart_travel/features/agency/perfil/domain/repositories/i_consultor_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class DashboardMetrics {
@@ -17,14 +19,15 @@ class DashboardMetrics {
 class DashboardMetricsNotifier extends AsyncNotifier<DashboardMetrics> {
   @override
   Future<DashboardMetrics> build() async {
-    // Simulando fetch do backend via GET /dashboard/metrics
-    await Future.delayed(const Duration(milliseconds: 800));
-
-    return DashboardMetrics(
-      leadsQualified: 12,
-      conversionRate: 65.0,
-      monthlyRevenue: 45200.00,
-      activeClients: 28,
+    final result = await sl<IConsultorRepository>().getMetrics();
+    return result.fold(
+      (failure) => throw failure,
+      (m) => DashboardMetrics(
+        leadsQualified: m.totalLeadsAtendidos,
+        conversionRate: m.taxaConversao * 100,
+        monthlyRevenue: m.receitaGerada,
+        activeClients: m.leadsAtivosAgora,
+      ),
     );
   }
 

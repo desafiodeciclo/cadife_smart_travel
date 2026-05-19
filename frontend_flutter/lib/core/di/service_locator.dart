@@ -131,7 +131,11 @@ Future<void> setupServiceLocator({
       );
     }
     if (pinnedCertificates == null || pinnedCertificates.isEmpty) {
-      return DioClientFactory.createUnpinned();
+      return DioClientFactory.createUnpinned(
+        authInterceptor: sl<AuthInterceptor>(),
+        errorInterceptor: sl<ErrorInterceptor>(),
+        offlineInterceptor: sl<OfflineInterceptor>(),
+      );
     }
     return DioClientFactory.createPinned(
       pinnedSha256: pinnedCertificates,

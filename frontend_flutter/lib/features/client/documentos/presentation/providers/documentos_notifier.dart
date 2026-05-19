@@ -1,159 +1,51 @@
+import 'package:cadife_smart_travel/core/constants/api_constants.dart';
+import 'package:cadife_smart_travel/features/client/documentos/data/providers/documento_data_providers.dart';
 import 'package:cadife_smart_travel/features/client/documentos/domain/entities/documento.dart';
 import 'package:cadife_smart_travel/features/client/documentos/domain/entities/trip_summary.dart';
+import 'package:cadife_smart_travel/features/client/domain/entities/travel.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get_it/get_it.dart';
 
-// Mock data — será substituído por API real
-final _mockGlobalDocuments = [
-  Documento(
-    id: 'doc-1',
-    name: 'Itinerário da Viagem',
-    type: DocumentType.pdf,
-    size: 2048000,
-    url: 'https://example.com/roteiro.pdf',
-    isGlobal: true,
-    createdAt: DateTime.now().subtract(const Duration(days: 5)),
-    category: 'Itinerário',
-  ),
-  Documento(
-    id: 'doc-2',
-    name: 'Voucher de Hotel',
-    type: DocumentType.pdf,
-    size: 1100000,
-    url: 'https://example.com/voucher.pdf',
-    isGlobal: true,
-    createdAt: DateTime.now().subtract(const Duration(days: 3)),
-    category: 'Voucher',
-  ),
-  Documento(
-    id: 'doc-3',
-    name: 'Comprovante de Seguro',
-    type: DocumentType.pdf,
-    size: 800000,
-    url: 'https://example.com/seguro.pdf',
-    isGlobal: true,
-    createdAt: DateTime.now().subtract(const Duration(days: 1)),
-    category: 'Seguro',
-  ),
-  Documento(
-    id: 'doc-4',
-    name: 'Passagens Aéreas',
-    type: DocumentType.pdf,
-    size: 3200000,
-    url: 'https://example.com/passagens.pdf',
-    isGlobal: true,
-    createdAt: DateTime.now(),
-    category: 'Passagens',
-  ),
-  Documento(
-    id: 'doc-5',
-    name: 'Foto do Passaporte',
-    type: DocumentType.image,
-    size: 500000,
-    url: 'https://images.unsplash.com/photo-1544027993-37dbfe43562a?auto=format&fit=crop&q=80&w=800',
-    isGlobal: true,
-    createdAt: DateTime.now(),
-    category: 'Geral',
-  ),
-];
-
-final _mockTripsWithDocuments = [
-  TripSummary(
-    id: 'trip-1',
-    name: 'Paris & Londres 2024',
-    destino: 'Paris, França e Londres, Reino Unido',
-    dataIda: DateTime(2024, 7, 15),
-    dataVolta: DateTime(2024, 7, 22),
-    numPessoas: 2,
-    imageUrl: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&q=80&w=400',
-  ),
-  TripSummary(
-    id: 'trip-2',
-    name: 'Maldivas 2024',
-    destino: 'Maldivas',
-    dataIda: DateTime(2024, 8, 20),
-    dataVolta: DateTime(2024, 8, 27),
-    numPessoas: 4,
-    imageUrl: 'https://images.unsplash.com/photo-1514282401047-d79a71a590e8?auto=format&fit=crop&q=80&w=400',
-  ),
-];
-
-final _mockTripDocuments = {
-  'trip-1': [
-    Documento(
-      id: 'trip1-doc-1',
-      name: 'Itinerário da Viagem',
-      type: DocumentType.pdf,
-      size: 2048000,
-      url: 'https://example.com/paris-roteiro.pdf',
-      tripId: 'trip-1',
-      createdAt: DateTime.now().subtract(const Duration(days: 2)),
-    ),
-    Documento(
-      id: 'trip1-doc-2',
-      name: 'Voucher de Hotel',
-      type: DocumentType.pdf,
-      size: 1100000,
-      url: 'https://example.com/paris-hotel.pdf',
-      tripId: 'trip-1',
-      createdAt: DateTime.now().subtract(const Duration(days: 1)),
-    ),
-    Documento(
-      id: 'trip1-doc-3',
-      name: 'Comprovante de Seguro',
-      type: DocumentType.pdf,
-      size: 800000,
-      url: 'https://example.com/paris-seguro.pdf',
-      tripId: 'trip-1',
-      createdAt: DateTime.now(),
-    ),
-    Documento(
-      id: 'trip1-doc-4',
-      name: 'Passagens Aéreas',
-      type: DocumentType.pdf,
-      size: 3200000,
-      url: 'https://example.com/paris-passagens.pdf',
-      tripId: 'trip-1',
-      createdAt: DateTime.now(),
-    ),
-  ],
-  'trip-2': [
-    Documento(
-      id: 'trip2-doc-1',
-      name: 'Itinerário Maldivas',
-      type: DocumentType.pdf,
-      size: 1500000,
-      url: 'https://example.com/maldivas-roteiro.pdf',
-      tripId: 'trip-2',
-      createdAt: DateTime.now().subtract(const Duration(days: 3)),
-    ),
-    Documento(
-      id: 'trip2-doc-2',
-      name: 'Resort Booking',
-      type: DocumentType.pdf,
-      size: 900000,
-      url: 'https://example.com/maldivas-resort.pdf',
-      tripId: 'trip-2',
-      createdAt: DateTime.now().subtract(const Duration(days: 2)),
-    ),
-  ],
-};
-
-/// Provedor para documentos principais (globais)
+/// Documentos globais do usuário (viagem ativa/próxima).
 final globalDocumentsProvider = FutureProvider<List<Documento>>((ref) async {
-  await Future.delayed(const Duration(milliseconds: 300));
-  return _mockGlobalDocuments;
+  final repo = ref.watch(documentoRepositoryProvider);
+  final result = await repo.getMyDocuments();
+  return result.fold(
+    (failure) => throw Exception(failure.message),
+    (docs) => docs,
+  );
 });
 
-/// Provedor para lista de viagens que possuem documentos
+/// Lista de viagens do usuário para navegação de documentos por viagem.
 final tripsWithDocumentsProvider =
     FutureProvider<List<TripSummary>>((ref) async {
-  await Future.delayed(const Duration(milliseconds: 300));
-  return _mockTripsWithDocuments;
+  final dio = GetIt.I<Dio>();
+  final response = await dio.get('${ApiConstants.baseUrl}/travels');
+  final travels = (response.data['travels'] as List)
+      .map((e) => Travel.fromJson(e as Map<String, dynamic>))
+      .map(
+        (t) => TripSummary(
+          id: t.id,
+          name: t.destination,
+          destino: t.destination,
+          dataIda: t.startDate,
+          dataVolta: t.endDate,
+          imageUrl: t.imageUrl,
+          roteiro: t.description,
+        ),
+      )
+      .toList();
+  return travels;
 });
 
-/// Provedor para documentos de uma viagem específica
+/// Documentos de uma viagem específica.
 final tripDocumentsProvider =
     FutureProvider.family<List<Documento>, String>((ref, tripId) async {
-  await Future.delayed(const Duration(milliseconds: 300));
-  return _mockTripDocuments[tripId] ?? [];
+  final repo = ref.watch(documentoRepositoryProvider);
+  final result = await repo.getDocumentsByTrip(tripId);
+  return result.fold(
+    (failure) => throw Exception(failure.message),
+    (docs) => docs,
+  );
 });

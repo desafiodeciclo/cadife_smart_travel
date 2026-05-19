@@ -77,3 +77,8 @@ def flush_langsmith() -> None:
     """
     if _tracing_active:
         logger.debug("langsmith_flush_noop")
+
+
+def flush_langfuse() -> None:
+    """Alias de compatibilidade — observabilidade usa LangSmith, não Langfuse."""
+    flush_langsmith()
