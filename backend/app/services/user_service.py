@@ -11,10 +11,12 @@ from app.models.user import User, UserProfileUpdate
 async def create_user(
     db: AsyncSession, *, nome: str, email: str, password: str
 ) -> User:
+    from app.models.user import UserPerfil
     user = User(
         nome=nome,
         email=email,
         hashed_password=hash_password(password),
+        perfil=UserPerfil.cliente,
     )
     db.add(user)
     await db.commit()

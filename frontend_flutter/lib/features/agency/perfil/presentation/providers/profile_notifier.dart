@@ -6,7 +6,6 @@ import 'package:cadife_smart_travel/core/services/secure_storage_service.dart';
 import 'package:cadife_smart_travel/features/agency/perfil/domain/entities/consultor_profile_models.dart';
 import 'package:cadife_smart_travel/features/agency/perfil/domain/repositories/i_consultor_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 const _kProfileKey = 'consultant_profile_v1';
 const _kMetricsKey = 'consultant_metrics_v1';
@@ -108,8 +107,7 @@ class ConsultorProfileNotifier extends AsyncNotifier<ConsultorProfile> {
 
   Future<ConsultorProfile?> _loadProfileFromCache() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final timeStr = prefs.getString(_kCacheTimeKey);
+      final timeStr = await _secureStorage.read(key: _kCacheTimeKey);
       if (timeStr == null) return null;
       final cacheTime = DateTime.tryParse(timeStr);
       if (cacheTime == null) return null;
@@ -127,21 +125,26 @@ class ConsultorProfileNotifier extends AsyncNotifier<ConsultorProfile> {
 
   Future<void> _saveProfileToCache(ConsultorProfile profile) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await _secureStorage.write(
-        key: _kProfileKey,
-        value: jsonEncode(profile.toJson()),
-      );
-      await prefs.setString(_kCacheTimeKey, DateTime.now().toIso8601String());
+      await Future.wait([
+        _secureStorage.write(
+          key: _kProfileKey,
+          value: jsonEncode(profile.toJson()),
+        ),
+        _secureStorage.write(
+          key: _kCacheTimeKey,
+          value: DateTime.now().toIso8601String(),
+        ),
+      ]);
     } on Exception catch (_) {}
   }
 
   /// Logout: limpa dados de perfil do armazenamento seguro.
   Future<void> logout() async {
     try {
-      await _secureStorage.delete(key: _kProfileKey);
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_kCacheTimeKey);
+      await Future.wait([
+        _secureStorage.delete(key: _kProfileKey),
+        _secureStorage.delete(key: _kCacheTimeKey),
+      ]);
     } on Exception catch (_) {}
   }
 

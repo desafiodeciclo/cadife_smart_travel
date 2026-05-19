@@ -100,16 +100,7 @@ class DioClientFactory {
     if (offlineInterceptor != null) dio.interceptors.add(offlineInterceptor);
 
     if (kDebugMode) {
-      dio.interceptors.add(
-        LogInterceptor(
-          request: true,
-          requestHeader: true,
-          requestBody: true,
-          responseHeader: true,
-          responseBody: true,
-          logPrint: (o) => debugPrint(o.toString()),
-        ),
-      );
+      dio.interceptors.add(CadifeLogInterceptor());
     }
 
     return dio;

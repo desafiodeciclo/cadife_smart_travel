@@ -109,7 +109,9 @@ class AuthInterceptor extends Interceptor {
       _refreshCompleter!.complete(false);
       await _secureConfig.clearTokens();
       _onTokenExpired();
-      log('Token refresh failed', name: 'AuthInterceptor', error: e);
+      if (kDebugMode) {
+        log('Token refresh failed: ${e.runtimeType}', name: 'AuthInterceptor');
+      }
       handler.next(err);
     } finally {
       _refreshCompleter = null;

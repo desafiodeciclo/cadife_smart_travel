@@ -43,12 +43,8 @@ DateTime _buildDateTime(DateTime data, String hora) {
 class Agendamento extends Equatable {
   const Agendamento({
     required this.id,
-    this.leadId,
-    required this.consultorId,
-    required this.data,
-    required this.hora,
+    required this.consultorId, required this.data, required this.hora, required this.status, this.leadId,
     this.tipo = 'online',
-    required this.status,
     this.nomeCliente,
     this.destinoViagem,
     this.motivoBloqueio,
@@ -169,9 +165,7 @@ class TimeSlotModel extends Equatable {
 
 class CreateAgendaRequest extends Equatable {
   const CreateAgendaRequest({
-    this.leadId,
-    required this.data,
-    required this.hora,
+    required this.data, required this.hora, this.leadId,
     this.tipo = 'online',
     this.notas,
     this.motivoBloqueio,

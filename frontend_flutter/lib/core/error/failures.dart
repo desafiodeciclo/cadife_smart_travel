@@ -45,7 +45,7 @@ abstract class Failure extends Equatable {
             }
           }
           if (errors.isNotEmpty) {
-            message = errors.join('. ') + '.';
+            message = '${errors.join('. ')}.';
           }
         } else if (rawDetail is String) {
           message = rawDetail;
