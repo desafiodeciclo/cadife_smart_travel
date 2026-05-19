@@ -24,7 +24,9 @@ class AgendaNotifier extends AsyncNotifier<List<Agendamento>> {
   @override
   Future<List<Agendamento>> build() async {
     final agendaRepository = ref.watch(agendaRepositoryProvider);
-    final result = await agendaRepository.getAgenda();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final result = await agendaRepository.getAgenda(date: today);
     return result.fold(
       (failure) => throw failure,
       (agenda) => agenda,
@@ -34,7 +36,9 @@ class AgendaNotifier extends AsyncNotifier<List<Agendamento>> {
   Future<void> refresh() async {
     state = const AsyncLoading();
     final agendaRepository = ref.read(agendaRepositoryProvider);
-    final result = await agendaRepository.getAgenda();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final result = await agendaRepository.getAgenda(date: today);
     state = result.fold(
       (failure) => AsyncError(failure, StackTrace.current),
       AsyncData.new,

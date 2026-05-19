@@ -28,9 +28,18 @@ class LeadsRemoteApiDatasource implements ILeadsDatasource {
         queryParameters: {
           if (status != null) 'status': status.name,
           if (score != null) 'score': score.name,
+          'page': 1,
+          'size': 100,
         },
       );
-      final leads = (response.data as List)
+      // Backend returns paginated: {items: [...], total: ..., page: ..., size: ...}
+      // or cursor-based: {items: [...], next_cursor: ...}
+      // Accept both formats as well as a bare list.
+      final raw = response.data;
+      final List<dynamic> rawItems = raw is Map<String, dynamic>
+          ? (raw['items'] as List<dynamic>? ?? const <dynamic>[])
+          : (raw as List<dynamic>);
+      final leads = rawItems
           .map((e) => LeadApiModel.fromJson(e as Map<String, dynamic>))
           .toList();
 
@@ -44,7 +53,10 @@ class LeadsRemoteApiDatasource implements ILeadsDatasource {
         '$_cacheKeyPrefix:list:${status?.name ?? "all"}:${score?.name ?? "all"}',
       );
       if (cached != null) {
-        return (cached as List)
+        final List<dynamic> cachedItems = cached is Map<String, dynamic>
+            ? (cached['items'] as List<dynamic>? ?? const <dynamic>[])
+            : (cached as List<dynamic>);
+        return cachedItems
             .map((e) => LeadApiModel.fromJson(e as Map<String, dynamic>))
             .toList();
       }
