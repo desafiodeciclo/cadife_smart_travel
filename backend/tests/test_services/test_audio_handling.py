@@ -348,7 +348,6 @@ async def test_text_message_unaffected_by_audio_changes():
 
         mock_ai.process_message = AsyncMock(return_value=ai_reply)
         mock_ai.extract_briefing = AsyncMock(return_value=MagicMock())
-        mock_ai.preload_memory_from_db = MagicMock()
 
         mock_ws.extract_message_from_payload = MagicMock(return_value={
             "phone": "5584999990001",

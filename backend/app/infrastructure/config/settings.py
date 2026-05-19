@@ -75,7 +75,7 @@ class Settings(BaseSettings):
         description="Modelo para embeddings RAG (base de conhecimento Cadife)",
     )
     OPENROUTER_TRIAGEM_MODEL: str = Field(
-        default="qwen/qwen-2.5-72b-instruct:free",
+        default="mistralai/ministral-8b-2512",
         description="TriagemAgent — extração JSON estruturado do CRM (identificação cliente novo/recorrente)",
     )
     OPENROUTER_CONVERSION_MODEL: str = Field(
@@ -87,11 +87,11 @@ class Settings(BaseSettings):
         description="Modelo Whisper primário para transcrição de áudio via /audio/transcriptions",
     )
     OPENROUTER_IMAGE_GEN_MODEL: str = Field(
-        default="recraft-ai/recraft-v3",
+        default="recraft/recraft-v3",
         description="Modelo de geração de imagens inspiracionais ao final do briefing (recraft-v4 quando disponível via OpenRouter)",
     )
     OPENROUTER_FALLBACK_MODEL: str = Field(
-        default="qwen/qwen-2.5-72b-instruct:free",
+        default="mistralai/ministral-8b-2512",
         description="Modelo fallback econômico para redundância quando cadeia principal falha",
     )
 
@@ -103,16 +103,16 @@ class Settings(BaseSettings):
         default="", description="LangSmith observability key (optional)"
     )
 
-    # ── Langfuse Observability ────────────────────────────────────────────
-    LANGFUSE_PUBLIC_KEY: str = Field(
-        default="", description="Langfuse public key for tracing"
+    # ── LangSmith Observability ───────────────────────────────────────────
+    LANGCHAIN_TRACING_V2: str = Field(
+        default="false", description="Ativar tracing LangSmith (true/false)"
     )
-    LANGFUSE_SECRET_KEY: str = Field(
-        default="", description="Langfuse secret key for tracing"
+    LANGCHAIN_PROJECT: str = Field(
+        default="cadife-smart-travel", description="Nome do projeto no LangSmith"
     )
-    LANGFUSE_HOST: str = Field(
-        default="https://cloud.langfuse.com",
-        description="Langfuse API host (self-hosted or cloud)",
+    LANGCHAIN_ENDPOINT: str = Field(
+        default="https://api.smith.langchain.com",
+        description="Endpoint da API LangSmith",
     )
 
     SLACK_WEBHOOK_URL: str = Field(
@@ -140,10 +140,30 @@ class Settings(BaseSettings):
         description="Path to Firebase Admin JSON credentials file",
     )
 
-    # ── RAG / ChromaDB (spec.md §3.3) ─────────────────────────────────────
-    CHROMA_PERSIST_DIR: str = Field(default="./chroma_db")
+    # ── Google Calendar Integration ────────────────────────────────────────
+    GOOGLE_CALENDAR_CREDENTIALS: str = Field(
+        default="./google_calendar_credentials.json",
+        description="Caminho para o arquivo JSON de credenciais da conta de serviço Google",
+    )
+    GOOGLE_CALENDAR_ID: str = Field(
+        default="primary",
+        description="ID da Agenda do Google onde as curadorias serão agendadas",
+    )
+
+    # ── RAG / PGVector (produção) ──────────────────────────────────────────
+    PGVECTOR_CONNECTION_STRING: str = Field(
+        default="postgresql+psycopg://cadife:cadife@localhost:5432/cadife_db",
+        description="Sync psycopg3 connection para PGVector (langchain-postgres)",
+    )
     KNOWLEDGE_BASE_DIR: str = Field(default="./knowledge_base")
-    INGESTION_CACHE_PATH: str = Field(default="./chroma_db/ingestion_cache.json")
+    INGESTION_CACHE_PATH: str = Field(
+        default="/opt/cadife/app/storage/cache/ingestion_cache.json",
+        description=(
+            "Caminho absoluto para o cache JSON de ingestão RAG. "
+            "Deve estar fora da pasta de código para evitar Permission Denied. "
+            "O diretório é criado automaticamente se não existir."
+        ),
+    )
 
     # ── CORS (spec.md §12.2) ──────────────────────────────────────────────
     ALLOWED_ORIGINS: str = Field(

@@ -90,7 +90,6 @@ async def test_aya_enabled_full_flow():
         
         mock_ai.process_message = AsyncMock(return_value="Olá cliente")
         mock_ai.extract_briefing = AsyncMock()
-        mock_ai.preload_memory_from_db = MagicMock()
         
         mock_ws.extract_message_from_payload = MagicMock(return_value={
             "phone": "5584999990001",

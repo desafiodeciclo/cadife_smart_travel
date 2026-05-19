@@ -1,18 +1,19 @@
 import json
+from datetime import datetime
 import re
 import time
 from typing import Optional
 
 import structlog
+from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_openai import ChatOpenAI
-from langchain_classic.memory import ConversationBufferWindowMemory
 
 from app.core.config import get_settings
 from app.models.briefing import BriefingExtracted, calculate_completude
 from app.services import rag_service, alert_service
 from app.services.metadata_tagger import DESTINO_KEYWORDS
-from app.services.observability import get_callbacks_for_chain, flush_langfuse
+from app.services.observability import get_callbacks_for_chain, flush_langsmith
 from app.services.prompt_security import (
     EXTRACTION_SYSTEM_PROMPT_SECURE,
     build_system_prompt,
@@ -24,100 +25,6 @@ from app.services.prompt_security import (
 logger = structlog.get_logger()
 settings = get_settings()
 
-_MEMORY_WINDOW_K = 20  # Mantém as últimas 20 interações como contexto
-_SUMMARY_SYSTEM_PROMPT = """
-You are a helpful assistant that summarizes a conversation between a customer and a travel agency.
-Include the main topics discussed and any important details.
-Do NOT include pleasantries such as "How can I help you?", "Thank you", etc.
-Keep it concise.
-"""
-
-
-# ---------------------------------------------------------------------------
-# SimpleWindowMemory — drop-in replacement for ConversationBufferWindowMemory
-# (removed in langchain 1.x)
-# ---------------------------------------------------------------------------
-
-
-class SimpleWindowMemory:
-    """Stores the last k message pairs per conversation key.
-
-    When the buffer overflows, removed pairs are queued for LLM summarisation
-    so that older context is compressed instead of being lost entirely.
-    """
-
-    def __init__(
-        self,
-        k: int = 20,
-        memory_key: str = "chat_history",
-        return_messages: bool = True,
-    ) -> None:
-        self.k = k
-        self.memory_key = memory_key
-        self.return_messages = return_messages
-        self._buffer: list[tuple[str, str]] = []
-        self._summary: str = ""
-        self._pending_for_summary: list[tuple[str, str]] = []
-
-    def save_context(self, inputs: dict, outputs: dict) -> None:
-        user_msg = inputs.get("input", "")
-        ai_msg = outputs.get("output", "")
-        self._buffer.append((user_msg, ai_msg))
-        if len(self._buffer) > self.k:
-            removed = self._buffer.pop(0)
-            self._pending_for_summary.append(removed)
-
-    def has_pending_summary(self) -> bool:
-        return len(self._pending_for_summary) > 0
-
-    async def compress_pending(self, llm: ChatOpenAI) -> None:
-        """Summarise overflowed messages and merge into the running summary."""
-        if not self._pending_for_summary:
-            return
-
-        conversation_text = "\n".join(
-            f"Cliente: {u}\nAYA: {a}" for u, a in self._pending_for_summary
-        )
-        prompt = ChatPromptTemplate.from_messages(
-            [
-                ("system", _SUMMARY_SYSTEM_PROMPT),
-                ("human", conversation_text),
-            ]
-        )
-        chain = prompt | llm
-        callbacks = get_callbacks_for_chain()
-        config = {"callbacks": callbacks} if callbacks else {}
-
-        try:
-            response = await chain.ainvoke({}, config=config)
-            summary_chunk = str(response.content).strip()
-            if summary_chunk:
-                if self._summary:
-                    self._summary += f"\n{summary_chunk}"
-                else:
-                    self._summary = summary_chunk
-                logger.info("memory_summary_generated", chars=len(summary_chunk))
-        except Exception as exc:
-            logger.warning("memory_summary_failed", error=str(exc))
-
-        self._pending_for_summary = []
-
-    def load_memory_variables(self, _inputs: dict) -> dict:
-        messages = []
-        if self._summary:
-            messages.append(
-                {
-                    "role": "system",
-                    "content": f"Resumo da conversa anterior: {self._summary}",
-                }
-            )
-        for user_msg, ai_msg in self._buffer:
-            messages.append({"role": "user", "content": user_msg})
-            messages.append({"role": "assistant", "content": ai_msg})
-        return {self.memory_key: messages}
-
-
-_memories: dict[str, ConversationBufferWindowMemory] = {}
 _llm: Optional[ChatOpenAI] = None
 
 
@@ -147,44 +54,17 @@ def get_llm() -> ChatOpenAI:
     return _llm
 
 
-def get_memory(phone: str) -> ConversationBufferWindowMemory:
-    if phone not in _memories:
-        _memories[phone] = ConversationBufferWindowMemory(
-            k=_MEMORY_WINDOW_K,
-            memory_key="chat_history",
-            return_messages=True,
-        )
-    return _memories[phone]
-
-
-def preload_memory_from_db(
-    phone: str,
-    interacoes: list[dict],
-) -> None:
-    """Populate conversation memory from persisted interacoes rows.
-
-    Call this at the start of a conversation when memory is
-    empty (e.g. after a server restart/cache clear) to restore the AI's context.
-
-    Args:
-        phone: Customer phone number (used as memory key).
-        interacoes: List of dicts with keys 'mensagem_cliente' and
-                    'mensagem_ia', ordered oldest-first.
-    """
-    memory = get_memory(phone)
-    history = memory.load_memory_variables({})
-
-    # If the history already has messages, we don't need to preload
-    if history.get("chat_history"):
-        return
-
-    for row in interacoes[-_MEMORY_WINDOW_K:]:
-        cliente = row.get("mensagem_cliente") or ""
-        ia = row.get("mensagem_ia") or ""
-        if cliente or ia:
-            memory.save_context({"input": cliente}, {"output": ia})
-
-    logger.info("memory_preloaded_from_db", phone=phone, rows=len(interacoes))
+def _build_chat_history(history: list[dict]) -> list[HumanMessage | AIMessage]:
+    """Convert interacoes rows or role/content dicts to LangChain message objects."""
+    messages: list[HumanMessage | AIMessage] = []
+    for msg in history:
+        role = msg.get("role", "")
+        content = msg.get("content", "")
+        if role == "user":
+            messages.append(HumanMessage(content=content))
+        elif role in ("assistant", "ai"):
+            messages.append(AIMessage(content=content))
+    return messages
 
 
 def _resolve_destino_tag(destino: Optional[str]) -> Optional[str]:
@@ -269,6 +149,7 @@ async def process_message(
     message: str,
     briefing: Optional[BriefingExtracted] = None,
     validation_errors: Optional[list[str]] = None,
+    chat_history: Optional[list[dict]] = None,
 ) -> str:
     """Processa mensagem do cliente com a AYA.
 
@@ -279,10 +160,12 @@ async def process_message(
         validation_errors: Lista opcional de erros de validação de domínio.
             Quando presente, a AYA é instruída a informar o cliente que
             a proposta contém inconsistências e pedir novos dados.
+        chat_history: Histórico de mensagens vindas do PostgreSQL, como lista de
+            dicts com keys 'role' ('user'/'assistant') e 'content'.
+            PostgreSQL é a source of truth — não há memória em RAM.
     """
     try:
         llm = get_llm()
-        memory = get_memory(phone)
 
         # 1. Sanitizar entrada do usuário contra prompt injection
         safe_message = sanitize_user_input(message)
@@ -293,6 +176,17 @@ async def process_message(
 
         # 2. Montar system prompt parametrizado com isoladores textuais
         system_prompt = build_system_prompt(context=wrap_rag_context(context))
+
+        # Injeta contexto temporal
+        agora = datetime.now()
+        dias_semana = ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado", "Domingo"]
+        dia_nome = dias_semana[agora.weekday()]
+        
+        temporal_instruction = (
+            f"CONTEXTO TEMPORAL CRÍTICO:\n"
+            f"Hoje é {dia_nome}, {agora.strftime('%d/%m/%Y')} (Hora: {agora.strftime('%H:%M')}).\n"
+        )
+        system_prompt = temporal_instruction + "\n" + system_prompt
 
         # 3. Se houver erros de validação, injeta instrução corretiva no prompt
         if validation_errors:
@@ -321,7 +215,8 @@ Mantenha o tom consultivo e acolhedor."""
         )
 
         chain = prompt | llm
-        history = memory.load_memory_variables({})
+        # Converte histórico do banco (role/content dicts) para objetos LangChain
+        history_messages = _build_chat_history(chat_history or [])
 
         # Observabilidade: rastrear chain no Langfuse (se configurado)
         callbacks = get_callbacks_for_chain()
@@ -330,7 +225,7 @@ Mantenha o tom consultivo e acolhedor."""
         start_time = time.time()
         response = await chain.ainvoke(
             {
-                "chat_history": history.get("chat_history", []),
+                "chat_history": history_messages,
                 "input": safe_message,
             },
             config=config,
@@ -351,18 +246,17 @@ Mantenha o tom consultivo e acolhedor."""
                 phone, hallucinations, response_content[:100]
             )
 
-        memory.save_context({"input": safe_message}, {"output": response_content})
-
         logger.info(
             "ai_message_processed",
             phone=phone,
             latency_ms=latency_ms,
             response_length=len(response_content),
             hallucination_count=len(hallucinations),
+            history_messages=len(history_messages),
         )
 
         # Flush eventos Langfuse pendentes (não bloqueante)
-        flush_langfuse()
+        flush_langsmith()
 
         return response_content
 
@@ -433,7 +327,7 @@ async def extract_briefing(conversation: list[dict]) -> BriefingExtracted:
                 k for k, v in briefing_data.items() if v not in (None, [], "")
             ],
         )
-        flush_langfuse()
+        flush_langsmith()
         return briefing
 
     except Exception as exc_primary:
@@ -534,7 +428,7 @@ async def extract_briefing(conversation: list[dict]) -> BriefingExtracted:
                 k for k, v in briefing_data.items() if v not in (None, [], "")
             ],
         )
-        flush_langfuse()
+        flush_langsmith()
         return briefing
 
     except Exception as exc_fallback:
@@ -548,5 +442,5 @@ async def extract_briefing(conversation: list[dict]) -> BriefingExtracted:
     # TENTATIVA 3 — Último recurso: retorno seguro vazio
     # -----------------------------------------------------------------------
     logger.error("briefing_extraction_all_attempts_failed", returning_empty=True)
-    flush_langfuse()
+    flush_langsmith()
     return BriefingExtracted()

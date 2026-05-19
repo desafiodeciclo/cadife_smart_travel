@@ -604,16 +604,17 @@ async def update_proposta_legacy(
     # Checkpoint triggers + goal increment (preserving legacy behavior)
     if new_status is not None and old_status != new_status:
         from app.services.checkpoint_service import activate_checkpoint, SISTEMA
+        from app.infrastructure.persistence.session_utils import spawn_with_own_session
 
         if new_status == PropostaStatus.enviada:
             background.add_task(
                 _dispatch_proposta_notifications, proposta.id, proposta.lead_id
             )
         elif new_status == PropostaStatus.aprovada:
-            asyncio.ensure_future(
-                activate_checkpoint(
-                    db, proposta.lead_id, TravelCheckpoint.proposta_aprovada, SISTEMA
-                )
+            spawn_with_own_session(
+                activate_checkpoint,
+                proposta.lead_id, TravelCheckpoint.proposta_aprovada, SISTEMA,
+                task_name="proposta_checkpoint_aprovada",
             )
             if proposta.consultor_id is not None:
                 try:
