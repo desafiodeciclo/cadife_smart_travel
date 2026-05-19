@@ -37,6 +37,7 @@ if TYPE_CHECKING:
     # --- Imports Unificados ---
     from app.infrastructure.persistence.models.aya_toggle_history_model import AyaToggleHistoryModel
     from app.infrastructure.persistence.models.itinerary_model import ItineraryItemModel
+    from app.infrastructure.persistence.models.itinerary_daily_note_model import ItineraryDailyNoteModel
     from app.infrastructure.persistence.models.conversation_summary_model import ConversationSummaryModel
     from app.infrastructure.persistence.models.lead_score_history_model import LeadScoreHistoryModel
 
@@ -157,4 +158,11 @@ class LeadModel(Base):
         back_populates="lead",
         lazy="selectin",
         order_by="LeadScoreHistoryModel.criado_em.desc()",
+    )
+    daily_notes: Mapped[list["ItineraryDailyNoteModel"]] = relationship(
+        "ItineraryDailyNoteModel",
+        back_populates="lead",
+        lazy="selectin",
+        cascade="all, delete-orphan",
+        order_by="ItineraryDailyNoteModel.date",
     )

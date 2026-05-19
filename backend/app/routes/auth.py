@@ -18,6 +18,7 @@ from app.models.user import (
     LoginRequest,
     RefreshRequest,
     RegisterRequest,
+    ResetPasswordRequest,
     TokenResponse,
     User,
     UserProfileUpdate,
@@ -210,6 +211,49 @@ async def forgot_password(
         "detail": "Se o e-mail existir, você receberá as instruções de recuperação.",
         "reset_token": reset_token,
     }
+
+
+@router.post(
+    "/auth/reset-password",
+    status_code=status.HTTP_200_OK,
+    summary="Redefinir senha com token",
+    description=(
+        "Redefine a senha usando o token recebido via /auth/forgot-password. "
+        "O token tem validade de 15 minutos e tipo 'reset'."
+    ),
+    responses={
+        400: {"description": "Token inválido, expirado ou senha fora dos padrões", "model": HTTPErrorResponse},
+        422: {"description": "Erro de validação no body", "model": HTTPErrorResponse},
+    },
+)
+async def reset_password(
+    body: ResetPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    try:
+        payload = decode_token(body.token)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Token inválido ou expirado",
+        )
+
+    if payload.get("type") != "reset":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Token inválido",
+        )
+
+    user = await get_user_by_id(db, payload["sub"])
+    if not user or not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Usuário não encontrado",
+        )
+
+    from app.services.user_service import update_password
+    await update_password(db, user, body.new_password)
+    return {"detail": "Senha redefinida com sucesso."}
 
 
 @router.post(
