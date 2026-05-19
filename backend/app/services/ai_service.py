@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 import re
 import time
 from typing import Optional
@@ -175,6 +176,17 @@ async def process_message(
 
         # 2. Montar system prompt parametrizado com isoladores textuais
         system_prompt = build_system_prompt(context=wrap_rag_context(context))
+
+        # Injeta contexto temporal
+        agora = datetime.now()
+        dias_semana = ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado", "Domingo"]
+        dia_nome = dias_semana[agora.weekday()]
+        
+        temporal_instruction = (
+            f"CONTEXTO TEMPORAL CRÍTICO:\n"
+            f"Hoje é {dia_nome}, {agora.strftime('%d/%m/%Y')} (Hora: {agora.strftime('%H:%M')}).\n"
+        )
+        system_prompt = temporal_instruction + "\n" + system_prompt
 
         # 3. Se houver erros de validação, injeta instrução corretiva no prompt
         if validation_errors:
