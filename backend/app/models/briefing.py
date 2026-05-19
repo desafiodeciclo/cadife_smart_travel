@@ -1,51 +1,15 @@
-import unicodedata
 import uuid
 from datetime import date
 from typing import TYPE_CHECKING, Optional
 from sqlalchemy import Boolean, Date, Enum as SAEnum, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-# RESOLUÇÃO: Usando ConfigDict da developer
-from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.infrastructure.persistence.types import GUID, StringArray
-
 from app.core.database import Base
 from app.domain.entities.enums import PerfilViagem, OrcamentoPerfil as OrcamentoNivel
 
-# Aliases the LLM commonly returns (accented, translated, or misspelled).
-# Maps variant → canonical DB enum value (no accents, as defined in PerfilViagem/OrcamentoPerfil).
-_PERFIL_ALIASES: dict[str, str] = {
-    "família": "familia",
-    "famíla": "familia",
-    "family": "familia",
-    "group": "grupo",
-    "couple": "casal",
-    "alone": "solo",
-    "friends": "amigos",
-    "grupo de amigos": "amigos",
-}
-_ORCAMENTO_ALIASES: dict[str, str] = {
-    "médio": "medio",
-    "medium": "medio",
-    "low": "baixo",
-    "high": "alto",
-}
-
 if TYPE_CHECKING:
     from app.models.lead import Lead
-
-
-BRIEFING_FIELDS = [
-    "destino",
-    "data_ida",
-    "data_volta",
-    "qtd_pessoas",
-    "perfil",
-    "tipo_viagem",
-    "preferencias",
-    "orcamento",
-    "tem_passaporte",
-]
 
 
 class Briefing(Base):

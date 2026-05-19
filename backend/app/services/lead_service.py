@@ -18,11 +18,14 @@ from app.application.services.lead_state_machine import LeadStateMachine
 from app.application.services.lead_scoring_service import lead_scoring_service
 from app.domain.entities.enums import LeadOrigem, LeadScore, LeadStatus, TipoMensagem
 from app.infrastructure.security.pii_encryption import hmac_hash
-from app.models.briefing import Briefing, BriefingExtracted, calculate_completude
+from app.domain.services.briefing_calculator import calculate_completude
+from app.models.briefing import Briefing
+from app.presentation.schemas.briefing_schema import BriefingExtracted
 from app.models.interacao import Interacao
 from app.models.lead import Lead
 from app.models.lead_score_history import LeadScoreHistory
-from app.models.user import User, UserPerfil
+from app.domain.entities.enums import UserPerfil
+from app.models.user import User
 from app.services.whatsapp_service import SendResult
 
 logger = structlog.get_logger()

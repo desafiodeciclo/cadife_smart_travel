@@ -5,7 +5,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, Request, Response
 from pydantic import BaseModel
 
 from app.infrastructure.security.dependencies import get_current_user
-from app.models.briefing import calculate_completude
+from app.domain.services.briefing_calculator import calculate_completude
 from app.presentation.schemas.common_errors import HTTPErrorResponse
 from app.services import ai_service, rag_service
 from app.services.domain_validator import BriefingValidator

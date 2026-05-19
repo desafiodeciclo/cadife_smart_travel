@@ -1,6 +1,6 @@
 """
-ConversationSummary Pydantic Schemas — Application Layer
-=========================================================
+ConversationSummary Pydantic Schemas — Presentation Layer
+===========================================================
 Request/response schemas for the conversation summary endpoints.
 """
 

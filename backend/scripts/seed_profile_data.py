@@ -35,7 +35,8 @@ from app.models.briefing import Briefing, calculate_completude
 from app.models.interacao import Interacao
 from app.models.lead import Lead
 from app.models.proposta import Proposta
-from app.models.user import User, UserPerfil
+from app.domain.entities.enums import UserPerfil
+from app.models.user import User
 from app.infrastructure.persistence.models.suitcase_model import (
     SuitcaseItemModel,
     SuitcaseSuggestionModel,

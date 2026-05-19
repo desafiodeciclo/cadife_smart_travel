@@ -36,7 +36,10 @@ from app.services import rag_service
 
 logger = structlog.get_logger()
 
-from app.models.briefing import _PERFIL_ALIASES, _ORCAMENTO_ALIASES
+from app.services.ai_normalization import (
+    ORCAMENTO_ALIASES as _ORCAMENTO_ALIASES,
+    PERFIL_ALIASES as _PERFIL_ALIASES,
+)
 
 # Corrige DD/MMYYYY → DD/MM/YYYY (ex: "17/092027" → "17/09/2027")
 _DATE_MISSING_SLASH_RE = re.compile(r'^(\d{1,2})/(\d{2})(\d{4})$')

@@ -30,12 +30,13 @@ from app.infrastructure.security.dependencies import (
     get_db,
 )
 from app.infrastructure.security.pii_encryption import hmac_hash
-from app.models.briefing import BriefingResponse, BriefingUpdate, calculate_completude
-from app.models.conversation_summary import (
+from app.domain.services.briefing_calculator import calculate_completude
+from app.presentation.schemas.briefing_schema import BriefingResponse, BriefingUpdate
+from app.presentation.schemas.conversation_summary_schema import (
     ConversationSummaryListResponse,
     ConversationSummaryResponse,
 )
-from app.models.interacao import InteracaoListResponse
+from app.presentation.schemas.interacao_schema import InteracaoListResponse
 from app.models.lead import Lead
 from app.presentation.schemas.common_errors import HTTPErrorResponse
 from app.presentation.schemas.leads import (

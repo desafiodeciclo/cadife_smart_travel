@@ -10,7 +10,8 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_openai import ChatOpenAI
 
 from app.core.config import get_settings
-from app.models.briefing import BriefingExtracted, calculate_completude
+from app.domain.services.briefing_calculator import calculate_completude
+from app.presentation.schemas.briefing_schema import BriefingExtracted
 from app.services import rag_service, alert_service
 from app.services.metadata_tagger import DESTINO_KEYWORDS
 from app.services.observability import get_callbacks_for_chain, flush_langsmith

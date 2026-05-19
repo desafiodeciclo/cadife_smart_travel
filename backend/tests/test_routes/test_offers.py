@@ -9,7 +9,7 @@ from app.domain.entities.enums import OfferStatus
 from app.infrastructure.persistence.models.user_model import UserModel
 from app.infrastructure.security.dependencies import get_current_user
 from app.models.offer import Offer
-from app.models.user import UserPerfil
+from app.domain.entities.enums import UserPerfil
 from main import app as fastapi_app
 
 _AGENCY_ID = uuid.UUID("deadeade-dead-dead-dead-deadeadeadea")

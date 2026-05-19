@@ -14,7 +14,7 @@ for _p in [str(_BACKEND), str(_SEEDS)]:
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.user import UserPerfil
+from app.domain.entities.enums import UserPerfil
 from shared import get_or_create_user
 
 

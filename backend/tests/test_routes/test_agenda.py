@@ -33,7 +33,7 @@ from app.domain.entities.enums import (
     LeadStatus,
     MotivoBloqueio,
 )
-from app.models.user import UserPerfil
+from app.domain.entities.enums import UserPerfil
 from app.routes.agenda import router as agenda_router
 
 # Pre-import all SQLAlchemy models so relationships resolve correctly
