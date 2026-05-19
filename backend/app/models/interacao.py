@@ -1,4 +1,5 @@
 import uuid
+from pydantic import BaseModel
 from app.infrastructure.persistence.types import GUID
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional

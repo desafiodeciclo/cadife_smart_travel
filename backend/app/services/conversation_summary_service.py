@@ -39,7 +39,7 @@ from app.infrastructure.persistence.repositories.conversation_summary_repository
     ConversationSummaryRepository,
 )
 from app.presentation.schemas.conversation_summary_schema import ConversationSummaryTopics
-from app.services.observability import get_callbacks_for_chain, flush_langfuse
+from app.services.observability import get_callbacks_for_chain, flush_langsmith
 
 logger = structlog.get_logger()
 settings = get_settings()
@@ -170,7 +170,7 @@ async def _generate_topics(
         response = await chain.ainvoke(
             {"conversation": conversation_text}, config=config
         )
-        flush_langfuse()
+        flush_langsmith()
 
         tokens_used: int = 0
         if hasattr(response, "usage_metadata") and response.usage_metadata:
@@ -183,7 +183,7 @@ async def _generate_topics(
         return topics, tokens_used
     except Exception as exc:
         logger.error("summarisation_llm_failed", error=str(exc))
-        flush_langfuse()
+        flush_langsmith()
         return None, 0
 
 

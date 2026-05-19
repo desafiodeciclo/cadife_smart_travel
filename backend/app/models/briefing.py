@@ -1,4 +1,6 @@
 import uuid
+import unicodedata
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 from app.infrastructure.persistence.types import GUID, StringArray
 from datetime import date
 from typing import TYPE_CHECKING, Optional
@@ -6,6 +8,10 @@ from sqlalchemy import Boolean, Date, Enum as SAEnum, ForeignKey, Integer, Strin
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 from app.domain.entities.enums import PerfilViagem, OrcamentoPerfil as OrcamentoNivel
+from app.services.ai_normalization import (
+    PERFIL_ALIASES as _PERFIL_ALIASES,
+    ORCAMENTO_ALIASES as _ORCAMENTO_ALIASES,
+)
 
 if TYPE_CHECKING:
     from app.models.lead import Lead
