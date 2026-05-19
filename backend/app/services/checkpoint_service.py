@@ -33,33 +33,58 @@ async def activate_checkpoint(
     lead_id: uuid.UUID,
     checkpoint: TravelCheckpoint,
     ativado_por: str,
+    commit: bool = True,
 ) -> TravelCheckpointRecord:
     """
     Insert a checkpoint record. Raises HTTP 409 if the checkpoint already exists.
     Fires FCM notifications to client and assigned consultor asynchronously.
+
+    When *commit=False* the record is flushed inside a savepoint so a duplicate-
+    key IntegrityError only rolls back the savepoint — not the caller's outer
+    transaction.  The caller is responsible for the final db.commit().
     """
     record = TravelCheckpointRecord(
         lead_id=lead_id,
         checkpoint=checkpoint,
         ativado_por=ativado_por,
     )
-    db.add(record)
-    try:
-        await db.flush()
-    except IntegrityError:
-        await db.rollback()
-        logger.info(
-            "checkpoint_already_active",
-            lead_id=str(lead_id),
-            checkpoint=checkpoint.value,
-        )
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"Checkpoint {checkpoint.value} já foi ativado para este lead.",
-        )
 
-    await db.commit()
-    await db.refresh(record)
+    if commit:
+        # Default path: own flush → commit → refresh cycle.
+        db.add(record)
+        try:
+            await db.flush()
+        except IntegrityError:
+            await db.rollback()
+            logger.info(
+                "checkpoint_already_active",
+                lead_id=str(lead_id),
+                checkpoint=checkpoint.value,
+            )
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Checkpoint {checkpoint.value} já foi ativado para este lead.",
+            )
+        await db.commit()
+        await db.refresh(record)
+    else:
+        # UoW path: use a savepoint so an IntegrityError (duplicate) is absorbed
+        # without poisoning the outer transaction that owns the session.
+        try:
+            async with db.begin_nested():  # SAVEPOINT
+                db.add(record)
+                await db.flush()
+        except IntegrityError:
+            logger.info(
+                "checkpoint_already_active",
+                lead_id=str(lead_id),
+                checkpoint=checkpoint.value,
+            )
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Checkpoint {checkpoint.value} já foi ativado para este lead.",
+            )
+        # No commit — caller's transaction covers this record.
 
     logger.info(
         "checkpoint_activated",
@@ -68,9 +93,13 @@ async def activate_checkpoint(
         ativado_por=ativado_por,
     )
 
-    # Fire-and-forget FCM — do not await so the caller is not blocked
-    import asyncio
-    asyncio.ensure_future(_notify_checkpoint(db, lead_id, checkpoint))
+    # Fire-and-forget FCM — spawn with own session so the notification is not
+    # tied to the caller's (potentially already-committed) session.
+    from app.infrastructure.persistence.session_utils import spawn_with_own_session
+    spawn_with_own_session(
+        _notify_checkpoint, lead_id, checkpoint,
+        task_name="checkpoint_notify",
+    )
 
     return record
 

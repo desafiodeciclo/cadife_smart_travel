@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import json
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Optional
 
 import httpx
@@ -67,6 +67,14 @@ def _normalize_date_fields(data: dict[str, Any]) -> dict[str, Any]:
         if field in result:
             result[field] = _normalize_date_str(result[field])
     return result
+
+
+def _next_business_day(from_date: datetime) -> datetime:
+    """Retorna o próximo dia útil (Seg–Sex) após from_date, às 09:00."""
+    next_day = from_date.replace(hour=9, minute=0, second=0, microsecond=0) + timedelta(days=1)
+    while next_day.weekday() > 4:  # 5=Sáb, 6=Dom
+        next_day += timedelta(days=1)
+    return next_day
 
 
 def _normalize_briefing_enums(data: dict[str, Any]) -> dict[str, Any]:
@@ -120,26 +128,45 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
         "function": {
             "name": "check_availability",
             "description": (
-                "Verifica disponibilidade de horários para curadoria com um consultor Cadife. "
-                "Retorna até 3 slots disponíveis nos próximos dias úteis. "
-                "Use quando o briefing estiver completo (completude ≥ 60%) e for hora de "
-                "oferecer agendamento ao cliente. "
-                "NOTA: integração Google Calendar pendente — retorna slots simulados por ora."
+                "Consulta a disponibilidade real de horários para a reunião de curadoria "
+                "no Google Calendar da Cadife. Retorna slots de 45 min livres nos próximos dias úteis. "
+                "Use quando o briefing estiver com completude >= 60% para sugerir opções ao cliente."
             ),
             "parameters": {
                 "type": "object",
                 "properties": {
                     "preferred_date": {
                         "type": "string",
-                        "description": "Data preferida pelo cliente no formato YYYY-MM-DD (opcional).",
-                    },
-                    "duration_minutes": {
-                        "type": "integer",
-                        "description": "Duração da curadoria em minutos. Padrão: 45.",
-                        "default": 45,
-                    },
+                        "description": "Data preferida no formato YYYY-MM-DD (opcional).",
+                    }
                 },
                 "required": [],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "schedule_meeting",
+            "description": (
+                "Agenda definitivamente a curadoria de viagens no Google Calendar, gera o link do "
+                "Google Meet, salva no banco local e atualiza o Lead para status 'agendado'. "
+                "Chame esta função APENAS quando o cliente escolher/confirmar explicitamente "
+                "um horário sugerido."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "phone": {
+                        "type": "string",
+                        "description": "Número de telefone do cliente (wa_id).",
+                    },
+                    "selected_datetime": {
+                        "type": "string",
+                        "description": "Data e hora escolhidas pelo cliente no formato YYYY-MM-DD HH:MM (ex: '2026-05-20 14:00').",
+                    },
+                },
+                "required": ["phone", "selected_datetime"],
             },
         },
     },
@@ -320,15 +347,15 @@ async def _get_lead_context_by_wa_id(
         briefing_data: dict[str, Any] = {}
         try:
             b_repo = BriefingRepository(db)
-            briefing = await b_repo.get_by_lead_id(lead.id)
+            briefing = await b_repo.get_by_lead(lead.id)
             if briefing:
                 briefing_data = {
                     "destino": briefing.destino,
-                    "data_ida": str(briefing.data_ida) if briefing.data_ida else None,
-                    "data_volta": str(briefing.data_volta) if briefing.data_volta else None,
+                    "data_ida": briefing.data_ida.strftime("%d/%m/%Y") if briefing.data_ida else None,
+                    "data_volta": briefing.data_volta.strftime("%d/%m/%Y") if briefing.data_volta else None,
                     "qtd_pessoas": briefing.qtd_pessoas,
-                    "perfil": briefing.perfil.value if briefing.perfil else None,
-                    "orcamento": briefing.orcamento.value if briefing.orcamento else None,
+                    "perfil": (briefing.perfil.value if hasattr(briefing.perfil, "value") else briefing.perfil) if briefing.perfil else None,
+                    "orcamento": (briefing.orcamento.value if hasattr(briefing.orcamento, "value") else briefing.orcamento) if briefing.orcamento else None,
                     "tem_passaporte": briefing.tem_passaporte,
                     "completude_pct": getattr(briefing, "completude_pct", None),
                 }
@@ -352,8 +379,8 @@ async def _get_lead_context_by_wa_id(
                 "is_new_lead": False,
                 "lead_id": str(lead.id),
                 "nome": lead.nome,
-                "status": lead.status.value if lead.status else None,
-                "score": lead.score.value if lead.score else None,
+                "status": (lead.status.value if hasattr(lead.status, "value") else lead.status) if lead.status else None,
+                "score": (lead.score.value if hasattr(lead.score, "value") else lead.score) if lead.score else None,
                 "briefing": briefing_data,
                 "recent_history": history,
             }
@@ -365,56 +392,196 @@ async def _get_lead_context_by_wa_id(
 
 async def _check_availability(args: dict[str, Any]) -> str:
     """
-    Placeholder para integração com Google Calendar.
-    Retorna slots simulados até GOOGLE_CALENDAR_CREDENTIALS estiver configurado.
-
-    TODO: substituir pela chamada real à Google Calendar API quando
-    as credenciais estiverem disponíveis em settings.GOOGLE_CALENDAR_CREDENTIALS.
+    Verifica horários livres na agenda consultando a API do Google Calendar.
+    Busca slots de 45 minutos livres das 09h às 18h em dias úteis,
+    sempre a partir do próximo dia útil (nunca hoje).
+    Fallback gracioso para slots simulados se o Google Calendar estiver indisponível.
     """
-    from datetime import datetime, timedelta
+    from app.services.google_calendar_service import GoogleCalendarService
 
-    duration = int(args.get("duration_minutes", 45))
+    now = datetime.now()
+    next_biz = _next_business_day(now)
+
     preferred_date_str: Optional[str] = args.get("preferred_date")
-
-    # Gera até 3 slots em dias úteis a partir de amanhã (ou da data preferida)
     try:
-        base = (
-            datetime.strptime(preferred_date_str, "%Y-%m-%d")
-            if preferred_date_str
-            else datetime.now()
-        )
-    except ValueError:
-        base = datetime.now()
-
-    slots = []
-    day_offset = 1
-    while len(slots) < 3 and day_offset <= 14:
-        candidate = base + timedelta(days=day_offset)
-        day_offset += 1
-        if candidate.weekday() > 4:  # pula fim de semana
-            continue
-        for hour in [9, 11, 14, 16]:
-            slot_dt = candidate.replace(hour=hour, minute=0, second=0, microsecond=0)
-            slots.append(
-                {
-                    "datetime": slot_dt.strftime("%Y-%m-%d %H:%M"),
-                    "duration_minutes": duration,
-                    "available": True,
-                }
+        if preferred_date_str:
+            requested = datetime.strptime(preferred_date_str, "%Y-%m-%d").replace(
+                hour=9, minute=0, second=0, microsecond=0
             )
-            if len(slots) >= 3:
-                break
+            # Usa a data preferida somente se for >= próximo dia útil
+            base_date = requested if requested >= next_biz else next_biz
+        else:
+            base_date = next_biz
+    except ValueError:
+        base_date = next_biz
 
-    return json.dumps(
-        {
-            "status": "placeholder",
-            "note": (
-                "Integração Google Calendar pendente. "
-                "Slots simulados para dias úteis (09h–16h, Seg–Sex)."
-            ),
-            "slots": slots,
-        }
-    )
+    start_search = base_date
+    end_search = (base_date + timedelta(days=10)).replace(hour=18, minute=0, second=0, microsecond=0)
+
+    try:
+        busy_slots = await GoogleCalendarService.get_free_busy_slots_async(start_search, end_search)
+
+        # Converte busy slots do Google (UTC) para objetos datetime com timezone local
+        google_busy_ranges = []
+        for slot in busy_slots:
+            busy_start = datetime.fromisoformat(slot["start"].replace("Z", "+00:00")).astimezone()
+            busy_end = datetime.fromisoformat(slot["end"].replace("Z", "+00:00")).astimezone()
+            google_busy_ranges.append((busy_start, busy_end))
+
+        available_slots = []
+        day_offset = 0
+        while len(available_slots) < 3 and day_offset < 14:
+            candidate_day = base_date + timedelta(days=day_offset)
+            day_offset += 1
+
+            if candidate_day.weekday() > 4:  # pula fim de semana
+                continue
+
+            for hour in [9, 11, 14, 16]:
+                slot_start = candidate_day.replace(
+                    hour=hour, minute=0, second=0, microsecond=0
+                ).astimezone()
+                slot_end = slot_start + timedelta(minutes=45)
+
+                is_free = all(
+                    slot_end <= b_start or slot_start >= b_end
+                    for b_start, b_end in google_busy_ranges
+                )
+                if is_free:
+                    available_slots.append(
+                        {
+                            "datetime": slot_start.strftime("%Y-%m-%d %H:%M"),
+                            "display": slot_start.strftime("%d/%m/%Y às %H:%M"),
+                            "duration_minutes": 45,
+                            "available": True,
+                        }
+                    )
+                    if len(available_slots) >= 3:
+                        break
+
+        return json.dumps(
+            {
+                "status": "live",
+                "slots": available_slots,
+                "note": "Horários extraídos diretamente da agenda em tempo real.",
+            }
+        )
+
+    except Exception as exc:
+        logger.error("gcal_availability_failed", error=str(exc))
+        # Fallback gracioso quando o Google Calendar estiver indisponível — sempre próximo dia útil
+        d1 = next_biz
+        d2 = _next_business_day(d1)
+        return json.dumps(
+            {
+                "status": "fallback_simulated",
+                "slots": [
+                    {
+                        "datetime": d1.replace(hour=10).strftime("%Y-%m-%d %H:%M"),
+                        "display": d1.replace(hour=10).strftime("%d/%m/%Y às %H:%M"),
+                        "duration_minutes": 45,
+                        "available": True,
+                    },
+                    {
+                        "datetime": d1.replace(hour=14).strftime("%Y-%m-%d %H:%M"),
+                        "display": d1.replace(hour=14).strftime("%d/%m/%Y às %H:%M"),
+                        "duration_minutes": 45,
+                        "available": True,
+                    },
+                    {
+                        "datetime": d2.replace(hour=11).strftime("%Y-%m-%d %H:%M"),
+                        "display": d2.replace(hour=11).strftime("%d/%m/%Y às %H:%M"),
+                        "duration_minutes": 45,
+                        "available": True,
+                    },
+                ],
+                "note": "Temporariamente indisponível. Apresentando horários sugeridos padrão.",
+            }
+        )
+
+
+async def _schedule_meeting(
+    phone: str,
+    selected_datetime_str: str,
+    db: Optional[AsyncSession],
+) -> str:
+    """
+    Agenda a reunião no Google Calendar, gera o link do Meet,
+    salva o agendamento no banco local e atualiza o Lead para status='agendado'.
+    """
+    if not db:
+        return json.dumps({"success": False, "reason": "db_unavailable"})
+
+    try:
+        from app.services.google_calendar_service import GoogleCalendarService
+        from app.infrastructure.persistence.repositories.lead_repository import LeadRepository
+        from app.infrastructure.persistence.repositories.agendamento_repository import AgendamentoRepository
+        from app.infrastructure.persistence.models.agendamento_model import AgendamentoModel
+        from app.domain.entities.enums import LeadStatus, AgendamentoStatus, AgendamentoTipo
+        from app.infrastructure.persistence.database import AsyncSessionLocal
+
+        # 1. Verifica se o lead existe
+        repo = LeadRepository(db)
+        lead = await repo.get_by_phone(phone)
+        if not lead:
+            return json.dumps({"success": False, "reason": "lead_not_found"})
+
+        # 2. Parse da data/hora escolhida pelo cliente
+        dt_selected = datetime.strptime(selected_datetime_str, "%Y-%m-%d %H:%M").astimezone()
+
+        # 3. Insere o evento no Google Calendar e obtém o link do Meet
+        logger.info(
+            "booking_google_calendar_event",
+            lead_id=str(lead.id),
+            datetime=selected_datetime_str,
+        )
+        gcal_result = await GoogleCalendarService.insert_curation_event_async(
+            lead_name=lead.nome or "Cliente Cadife",
+            lead_phone=phone,
+            start_datetime=dt_selected,
+            duration_minutes=45,
+        )
+
+        meet_link: str = gcal_result.get("meet_link", "")
+
+        # 4. Persistência em sessão isolada para evitar MissingGreenlet na sessão da request
+        async with AsyncSessionLocal() as isolated_db:
+            iso_repo = LeadRepository(isolated_db)
+            iso_lead = await iso_repo.get_by_phone(phone)
+
+            iso_lead.status = LeadStatus.agendado
+
+            agendamento = AgendamentoModel(
+                lead_id=iso_lead.id,
+                data=dt_selected.date(),
+                hora=dt_selected.time(),
+                status=AgendamentoStatus.confirmado.value,
+                tipo=AgendamentoTipo.online.value,
+            )
+            isolated_db.add(agendamento)
+            await isolated_db.commit()
+
+            logger.info(
+                "crm_lead_updated_to_scheduled",
+                lead_id=str(iso_lead.id),
+                meet_link=meet_link,
+            )
+
+        return json.dumps(
+            {
+                "success": True,
+                "meet_link": meet_link,
+                "datetime": selected_datetime_str,
+                "message": (
+                    f"Agendamento concluído com sucesso para {selected_datetime_str}. "
+                    "Link do Google Meet gerado."
+                ),
+            }
+        )
+
+    except Exception as exc:
+        logger.error("tool_schedule_meeting_failed", phone=phone, error=str(exc))
+        return json.dumps({"success": False, "error": "schedule_failed", "details": str(exc)})
 
 
 async def _query_project_scope(query: str) -> str:
@@ -443,8 +610,8 @@ async def _check_existing_lead(phone: str, db: Optional[AsyncSession]) -> str:
                 {
                     "exists": True,
                     "name": lead.nome,
-                    "status": lead.status.value if lead.status else None,
-                    "score": lead.score.value if lead.score else None,
+                    "status": (lead.status.value if hasattr(lead.status, "value") else lead.status) if lead.status else None,
+                    "score": (lead.score.value if hasattr(lead.score, "value") else lead.score) if lead.score else None,
                     "lead_id": str(lead.id),
                 }
             )
@@ -469,11 +636,18 @@ async def _persist_lead_data(
     data: dict[str, Any],
     db: Optional[AsyncSession],
 ) -> str:
-    if not db:
+    # `db` is intentionally unused here — we create an isolated session so that
+    # intermediate commits (upsert_lead_with_resilience + update_briefing_from_extraction)
+    # do NOT corrupt the shared request-scoped session held by _process.
+    # Without isolation, those commits expire ORM objects in the outer session,
+    # causing MissingGreenlet / DetachedInstanceError in _process Step 5,
+    # which then rolls back and leaves the briefing unpersisted → AI loop.
+    if db is None:
         return json.dumps({"success": False, "reason": "db_unavailable"})
     try:
-        from app.services.lead_service import upsert_lead_with_resilience
-        from app.presentation.schemas.briefing_schema import BriefingExtracted
+        from app.models.briefing import BriefingExtracted
+        from app.services.lead_service import upsert_lead_with_resilience, update_briefing_from_extraction
+        from app.infrastructure.persistence.database import AsyncSessionLocal
 
         # Whitelist: remove campos não reconhecidos antes de qualquer persistência
         sanitized: dict[str, Any] = {}
@@ -489,20 +663,21 @@ async def _persist_lead_data(
         if not sanitized:
             return json.dumps({"success": False, "reason": "no_valid_fields"})
 
-        lead = await upsert_lead_with_resilience(db, {"telefone": phone})
-
-        from app.services.lead_service import update_briefing_from_extraction
-
         normalized = _normalize_briefing_enums(_normalize_date_fields(sanitized))
         briefing_in = BriefingExtracted.model_validate(normalized)
-        briefing = await update_briefing_from_extraction(db, lead, briefing_in)
 
-        scheduling_required = briefing.completude_pct >= 60
+        async with AsyncSessionLocal() as isolated_db:
+            lead = await upsert_lead_with_resilience(isolated_db, {"telefone": phone})
+            briefing = await update_briefing_from_extraction(isolated_db, lead, briefing_in)
+            scheduling_required = briefing.completude_pct >= 60
+            completude = briefing.completude_pct
+            lead_id_str = str(lead.id)
+
         return json.dumps(
             {
                 "success": True,
-                "lead_id": str(lead.id),
-                "completude_pct": briefing.completude_pct,
+                "lead_id": lead_id_str,
+                "completude_pct": completude,
                 "next_step": "offer_scheduling" if scheduling_required else "continue_briefing",
                 "instruction": (
                     "Briefing completo. Chame check_availability AGORA e convide o cliente para agendar a curadoria."
@@ -512,12 +687,6 @@ async def _persist_lead_data(
             }
         )
     except Exception as exc:
-        # Garante que a sessão volta a um estado limpo — evita PendingRollbackError
-        # em chamadas subsequentes que compartilham o mesmo AsyncSession.
-        try:
-            await db.rollback()
-        except Exception:
-            pass
         logger.error("tool_persist_lead_data_failed", error=str(exc))
         return json.dumps({"success": False, "error": "persist_failed"})
 
@@ -537,9 +706,9 @@ async def _generate_travel_image(
     estilo: str = "luxo",
 ) -> str:
     """
-    Gera imagem inspiracional do destino via recraft-v4 no OpenRouter.
+    Gera imagem inspiracional do destino via recraft no OpenRouter.
 
-    Usa /images/generations (compatível com OpenAI DALL-E API).
+    Usa /chat/completions com modalities: ["image"] como exigido pelo OpenRouter.
     Fallback gracioso se o modelo não estiver disponível no OpenRouter.
     """
     from app.infrastructure.config.settings import get_settings
@@ -557,9 +726,13 @@ async def _generate_travel_image(
 
     payload = {
         "model": settings.OPENROUTER_IMAGE_GEN_MODEL,
-        "prompt": prompt,
-        "n": 1,
-        "size": "1024x1024",
+        "messages": [
+            {
+                "role": "user",
+                "content": prompt,
+            }
+        ],
+        "modalities": ["image"],
     }
     auth_headers = {
         "Authorization": f"Bearer {settings.OPENROUTER_API_KEY}",
@@ -570,13 +743,22 @@ async def _generate_travel_image(
     try:
         async with httpx.AsyncClient(timeout=45.0) as client:
             resp = await client.post(
-                f"{_OPENROUTER_BASE}/images/generations",
+                f"{_OPENROUTER_BASE}/chat/completions",
                 json=payload,
                 headers=auth_headers,
             )
             resp.raise_for_status()
             data = resp.json()
-            image_url = data["data"][0].get("url", "")
+            choices = data.get("choices", [])
+            image_url = ""
+            if choices:
+                message = choices[0].get("message", {})
+                images = message.get("images", [])
+                if images:
+                    image_url = images[0]
+
+            if not image_url:
+                raise ValueError("Nenhuma imagem gerada retornada no payload")
 
         logger.info(
             "travel_image_generated",
@@ -677,6 +859,13 @@ async def execute_tool(
 
     if tool_name == "check_availability":
         return await _check_availability(tool_args)
+
+    if tool_name == "schedule_meeting":
+        return await _schedule_meeting(
+            phone=tool_args["phone"],
+            selected_datetime_str=tool_args["selected_datetime"],
+            db=db,
+        )
 
     if tool_name == "query_project_scope":
         return await _query_project_scope(tool_args["query"])

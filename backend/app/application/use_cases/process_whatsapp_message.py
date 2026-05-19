@@ -17,10 +17,12 @@ Orchestrates the full message-processing flow defined in spec.md §9.1:
 
 from __future__ import annotations
 
+import asyncio
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.entities.enums import LeadStatus, TipoMensagem
+from app.infrastructure.persistence.database import AsyncSessionLocal
 from app.models.lead import Lead
 from app.models.user import User
 from app.services import (
@@ -49,6 +51,20 @@ MEDIA_FALLBACK_REPLY = (
 
 _validator = BriefingValidator()
 
+# FIFO lock per phone — prevents concurrent processing of messages from the
+# same number, which would cause rate-limit amplification and DB race conditions.
+_phone_locks: dict[str, asyncio.Lock] = {}
+
+
+async def execute_with_own_session(payload: dict) -> None:
+    """
+    BackgroundTask entry point — creates its own DB session to avoid
+    greenlet_spawn errors caused by reusing a request-scoped session after
+    the HTTP response has been sent and the request context has been torn down.
+    """
+    async with AsyncSessionLocal() as db:
+        await execute(payload, db)
+
 
 async def execute(payload: dict, db: AsyncSession) -> None:
     """
@@ -60,6 +76,13 @@ async def execute(payload: dict, db: AsyncSession) -> None:
         logger.debug("webhook_payload_ignored", reason="no_message_extracted")
         return
 
+    phone: str = msg["phone"]
+    async with _phone_locks.setdefault(phone, asyncio.Lock()):
+        await _process(msg, db)
+
+
+async def _process(msg: dict, db: AsyncSession) -> None:
+    """Serialized per-phone processing — always called under the phone lock."""
     phone: str = msg["phone"]
     message_id: str | None = msg.get("message_id")
     text: str | None = msg.get("text")
@@ -95,9 +118,8 @@ async def execute(payload: dict, db: AsyncSession) -> None:
     lead_id = lead.id
     status_antes = lead.status
 
-    # ── Step 2.5: Carrega histórico do DB (restart-resilient) ────────────────
+    # ── Step 2.5: Carrega histórico do DB (source of truth) ─────────────────
     interacoes_list = await lead_service.get_recent_interacoes(db, lead_id, limit=20)
-    ai_service.preload_memory_from_db(phone, interacoes_list)
 
     # Formata histórico para o orquestrador — interleave correto user + assistant.
     # Cada row de interacao contém AMBAS as mensagens (cliente e IA), então cada
@@ -162,10 +184,13 @@ async def execute(payload: dict, db: AsyncSession) -> None:
             db=db,
         )
 
-        # Tool calls inside orchestrate may commit the session, expiring `lead`.
-        # Refresh so subsequent attribute accesses (lead.status, lead.nome) don't
-        # raise MissingGreenlet.
-        await db.refresh(lead)
+        # Tool calls inside orchestrate may use isolated sessions that commit
+        # independently, leaving `lead` in an uncertain state in this session.
+        # Re-fetch from DB to guarantee we hold the latest persisted snapshot
+        # rather than relying on refresh of a potentially stale object.
+        refreshed_lead = await lead_service.get_lead_by_id(db, lead_id)
+        if refreshed_lead is not None:
+            lead = refreshed_lead
 
         lead_id_str = str(lead_id)
 
@@ -173,12 +198,14 @@ async def execute(payload: dict, db: AsyncSession) -> None:
             # ── Step 5: Extrai briefing & atualiza score ──────────────────
             # Passa o histórico COMPLETO (não só a mensagem atual) para que o
             # extrator acumule dados de turnos anteriores corretamente.
+            # commit=False — briefing, score, checkpoint e interacao fazem parte
+            # de um único UoW que termina com o db.commit() ao final do _process.
             full_conv_for_briefing = conversation_history + [
                 {"role": "user", "content": text}
             ]
             extracted = await ai_service.extract_briefing(full_conv_for_briefing)
             briefing = await lead_service.update_briefing_from_extraction(
-                db, lead, extracted
+                db, lead, extracted, commit=False
             )
 
             # ── Step 6: Enfileira notificação FCM se lead qualificar ──────
@@ -209,26 +236,29 @@ async def execute(payload: dict, db: AsyncSession) -> None:
         except Exception as exc:
             # Rollback explícito para limpar qualquer transação pendente antes
             # de continuar — evita PendingRollbackError nas etapas seguintes.
+            # Após o rollback, save_interacao inicia uma transação nova e limpa.
             try:
                 await db.rollback()
-            except Exception:
-                pass
+            except Exception as rb_exc:
+                logger.error("briefing_rollback_failed", lead_id=lead_id_str, error=str(rb_exc))
             logger.error("briefing_update_error", lead_id=lead_id_str, error=str(exc))
 
-    # ── Step 6: Persist interaction record (sempre executado) ─────────────
+    # ── Step 7: Persist interaction record (sempre executado) ─────────────
     # Save AYA's reply whenever there was processable text (original text or
     # transcribed/described media). For unprocessable media, reply is fallback.
+    # commit=False — faz parte do UoW final; o único db.commit() está abaixo.
     interacao = await lead_service.save_interacao(
         db,
         lead_id,
         msg_cliente=text,
         msg_ia=reply,
         tipo=tipo,
+        commit=False,
     )
 
     # ── Step 8: Reply to client via WhatsApp; persist send outcome ────────
     send_result = await whatsapp_service.send_message(phone, reply)
-    await lead_service.update_interacao_send_result(db, interacao, send_result)
+    await lead_service.update_interacao_send_result(db, interacao, send_result, commit=False)
     logger.info(
         "whatsapp_reply_dispatched",
         lead_id=str(lead_id),
@@ -237,6 +267,15 @@ async def execute(payload: dict, db: AsyncSession) -> None:
         latency_ms=send_result.latency_ms,
         retries=send_result.retries_used,
     )
+
+    # ── Step 9: Único commit do UoW — persiste briefing + interacao + send_result ──
+    # (ou apenas interacao + send_result se o briefing step falhou e fez rollback)
+    try:
+        await db.commit()
+    except Exception as exc:
+        await db.rollback()
+        logger.error("process_final_commit_failed", lead_id=str(lead_id), error=str(exc))
+        raise
 
 
 async def _enqueue_qualified_notification(

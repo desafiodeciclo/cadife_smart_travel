@@ -22,6 +22,7 @@ from app.domain.interfaces.repositories import ILeadRepository
 from app.infrastructure.cache import invalidate_pattern
 from app.infrastructure.persistence.abstract_repository import AbstractRepository
 from app.infrastructure.persistence.models.lead_model import LeadModel
+from app.infrastructure.security.pii_encryption import hmac_hash
 
 
 class LeadRepository(AbstractRepository[LeadModel], ILeadRepository):
@@ -42,7 +43,8 @@ class LeadRepository(AbstractRepository[LeadModel], ILeadRepository):
         return await self._session.get(LeadModel, lead_id)
 
     async def get_by_phone(self, phone: str) -> Optional[LeadModel]:
-        stmt = select(LeadModel).where(LeadModel.telefone == phone)
+        phone_hash = hmac_hash(phone)
+        stmt = select(LeadModel).where(LeadModel.telefone_hash == phone_hash)
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
 

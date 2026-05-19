@@ -72,7 +72,7 @@ pip install alembic
 
 ## 4. Configuração do Banco de Dados Local
 
-Você precisa de um banco de dados PostgreSQL rodando. Você pode usar o container do banco de dados definido no projeto para facilitar:
+Você precisa de um banco de dados PostgreSQL com a extensão **pgvector** rodando. Use o container do projeto:
 
 ```bash
 # Volte para a raiz do projeto e suba apenas o banco de dados
@@ -81,9 +81,26 @@ docker compose -f docker/docker-compose.yml up db -d
 cd backend
 ```
 
+> **Nota:** A imagem usada é `pgvector/pgvector:pg16` (não `postgres:16-alpine`). Ela já inclui a extensão `vector`, que é criada automaticamente pelo script `docker/init-pgvector.sql` na primeira vez que o container é iniciado.
+
 ## 5. Configuração das Variáveis de Ambiente (`.env`)
 
-Já está configurado.
+Copie o `.env.example` e preencha os valores:
+
+```bash
+cp .env.example .env
+```
+
+Variáveis essenciais para rodar localmente:
+
+| Variável | Valor para dev local |
+| :--- | :--- |
+| `DATABASE_URL` | `postgresql+asyncpg://cadife:cadife@localhost:5433/cadife_db` |
+| `PGVECTOR_CONNECTION_STRING` | `postgresql+psycopg://cadife:cadife@localhost:5433/cadife_db` |
+| `REDIS_URL` | `redis://localhost:6379/0` |
+| `OPENROUTER_API_KEY` | Sua chave em openrouter.ai |
+
+> **Atenção:** Use porta `5433` (mapeada pelo Docker Compose). A porta `5432` é interna ao container.
 
 ## 6. Rodando as Migrations (Alembic)
 

@@ -1,15 +1,19 @@
 """
-Observability — Integração Langfuse para rastreamento de chains LangChain.
+Observability — Integração LangSmith para rastreamento de chains LangChain.
 
-Fornece callbacks condicionais: quando LANGFUSE_PUBLIC_KEY e
-LANGFUSE_SECRET_KEY estão configurados, todas as invocações de chain
-são rastreadas automaticamente com prompt, contexto, output e latência.
+Quando LANGCHAIN_TRACING_V2=true e LANGCHAIN_API_KEY estão configurados,
+todas as invocações de chain são rastreadas automaticamente no LangSmith
+com prompt, contexto, output e latência.
+
+O LangSmith opera via variáveis de ambiente nativas do LangChain — não requer
+callbacks explícitos. Este módulo garante que as variáveis sejam propagadas
+para o os.environ antes do primeiro uso.
 
 Quando não configurado, opera em modo silencioso (no-op) sem afetar
 performance ou quebrar o fluxo.
 """
 
-from typing import Optional
+import os
 
 import structlog
 
@@ -18,98 +22,58 @@ from app.core.config import get_settings
 logger = structlog.get_logger()
 settings = get_settings()
 
-# Lazy-import para evitar erro se langfuse não estiver instalado
-_langfuse_handler: Optional[object] = None
-_langfuse_available: Optional[bool] = None
+
+def _setup_langsmith_env() -> bool:
+    """
+    Propaga as configurações LangSmith do Settings para os.environ.
+    Retorna True se o tracing está ativo.
+    """
+    api_key = getattr(settings, "LANGCHAIN_API_KEY", "")
+    tracing = getattr(settings, "LANGCHAIN_TRACING_V2", "false")
+    project = getattr(settings, "LANGCHAIN_PROJECT", "cadife-smart-travel")
+    endpoint = getattr(settings, "LANGCHAIN_ENDPOINT", "https://api.smith.langchain.com")
+
+    if not api_key or str(tracing).lower() != "true":
+        return False
+
+    os.environ.setdefault("LANGCHAIN_API_KEY", api_key)
+    os.environ.setdefault("LANGCHAIN_TRACING_V2", "true")
+    os.environ.setdefault("LANGCHAIN_PROJECT", project)
+    os.environ.setdefault("LANGCHAIN_ENDPOINT", endpoint)
+
+    return True
 
 
-def _is_langfuse_available() -> bool:
-    """Verifica se o pacote langfuse está instalado."""
-    global _langfuse_available
-    if _langfuse_available is None:
-        try:
-            import langfuse  # noqa: F401
-
-            _langfuse_available = True
-        except ImportError:
-            _langfuse_available = False
-            logger.debug("langfuse_not_installed")
-    return _langfuse_available
-
-
-def _has_langfuse_credentials() -> bool:
-    """Verifica se as credenciais estão configuradas no ambiente."""
-    return bool(
-        getattr(settings, "LANGFUSE_PUBLIC_KEY", "")
-        and getattr(settings, "LANGFUSE_SECRET_KEY", "")
+# Inicializa ao importar o módulo
+_tracing_active = _setup_langsmith_env()
+if _tracing_active:
+    logger.info(
+        "langsmith_tracing_enabled",
+        project=os.environ.get("LANGCHAIN_PROJECT"),
+        endpoint=os.environ.get("LANGCHAIN_ENDPOINT"),
     )
-
-
-def get_langfuse_callback() -> Optional[object]:
-    """
-    Retorna um Langfuse CallbackHandler configurado, ou None se:
-      - langfuse não estiver instalado, OU
-      - credenciais não estiverem configuradas.
-
-    O handler pode ser passado diretamente para chain.invoke(..., config={"callbacks": [handler]})
-    ou usado com o pattern de env var LANGFUSE_PUBLIC_KEY/LANGFUSE_SECRET_KEY.
-
-    Returns:
-        Instância de langfuse.callback.LangchainCallbackHandler ou None.
-    """
-    global _langfuse_handler
-
-    if _langfuse_handler is not None:
-        return _langfuse_handler
-
-    if not _is_langfuse_available():
-        return None
-
-    if not _has_langfuse_credentials():
-        logger.debug("langfuse_credentials_missing")
-        return None
-
-    try:
-        from langfuse.langchain import CallbackHandler
-
-        host = getattr(settings, "LANGFUSE_HOST", "https://cloud.langfuse.com")
-        _langfuse_handler = CallbackHandler(
-            public_key=settings.LANGFUSE_PUBLIC_KEY,
-            secret_key=settings.LANGFUSE_SECRET_KEY,
-            host=host,
-        )
-        logger.info(
-            "langfuse_callback_initialized",
-            host=host,
-            public_key_prefix=settings.LANGFUSE_PUBLIC_KEY[:8],
-        )
-        return _langfuse_handler
-    except Exception as exc:
-        logger.warning("langfuse_callback_init_failed", error=str(exc))
-        return None
+else:
+    logger.debug("langsmith_tracing_disabled")
 
 
 def get_callbacks_for_chain() -> list[object]:
     """
-    Retorna uma lista de callbacks para uso em chains LangChain.
+    Retorna lista de callbacks para uso em chains LangChain.
+
+    Com LangSmith, o tracing é automático via variáveis de ambiente —
+    callbacks explícitos não são necessários. Retorna lista vazia.
 
     Example:
         callbacks = get_callbacks_for_chain()
         response = await chain.ainvoke(input_dict, config={"callbacks": callbacks})
     """
-    handler = get_langfuse_callback()
-    return [handler] if handler is not None else []
+    return []
 
 
-def flush_langfuse() -> None:
+def flush_langsmith() -> None:
     """
-    Força o flush de eventos pendentes para o servidor Langfuse.
-    Útil chamar antes de encerrar o processo ou BackgroundTask.
+    No-op: LangSmith envia traces de forma assíncrona automaticamente.
+    Mantido para compatibilidade de chamada nos pontos críticos do fluxo.
     """
-    global _langfuse_handler  # noqa: F824
-    if _langfuse_handler is not None:
-        try:
-            _langfuse_handler.flush()
-            logger.debug("langfuse_flushed")
-        except Exception as exc:
-            logger.warning("langfuse_flush_failed", error=str(exc))
+    if _tracing_active:
+        logger.debug("langsmith_flush_noop")

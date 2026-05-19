@@ -105,7 +105,7 @@ class BriefingModel(Base):
     observacoes: Mapped[Optional[str]] = mapped_column(Text)
     completude_pct: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
-    lead: Mapped["LeadModel"] = relationship("LeadModel", back_populates="briefing")
+    lead: Mapped["LeadModel"] = relationship("LeadModel", back_populates="briefing", lazy="noload")
 
 
 def calculate_completude(briefing_data: dict) -> int:

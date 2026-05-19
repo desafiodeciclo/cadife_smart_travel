@@ -162,7 +162,7 @@ async def ia_status() -> IaStatusResponse:
         status="ok",
         model=settings.OPENROUTER_MODEL,
         rag_documents=rag_service.get_rag_document_count(),
-        vector_db="chromadb",
+        vector_db="pgvector",
         domain_validator="active",
     )
 

@@ -202,7 +202,17 @@ async def create_manual_lead(db: AsyncSession, data: "ManualLeadCreate") -> Lead
     )
 
     lead.score = calculate_score_from_briefing(briefing)
-    briefing.completude_pct = calculate_completude(briefing.__dict__)
+    briefing.completude_pct = calculate_completude({
+        "destino": briefing.destino,
+        "data_ida": briefing.data_ida,
+        "data_volta": briefing.data_volta,
+        "qtd_pessoas": briefing.qtd_pessoas,
+        "perfil": briefing.perfil,
+        "tipo_viagem": briefing.tipo_viagem,
+        "preferencias": briefing.preferencias,
+        "orcamento": briefing.orcamento,
+        "tem_passaporte": briefing.tem_passaporte,
+    })
 
     lead.briefing = briefing
     db.add(briefing)
@@ -427,14 +437,19 @@ async def update_lead_status(
     lead: Lead,
     new_status: LeadStatus,
     triggered_by: str = "user_manual",
+    commit: bool = True,
 ) -> Lead:
     old_status = lead.status
     if old_status == new_status:
         return lead
 
     lead.status = new_status
-    await db.commit()
-    await db.refresh(lead)
+    if commit:
+        await db.commit()
+        await db.refresh(lead)
+    else:
+        # Flush so constraint violations surface here; no commit — caller owns the tx.
+        await db.flush()
 
     from app.services import metrics_service
     if lead.consultor_id:
@@ -452,6 +467,8 @@ async def update_lead_status(
         triggered_by=triggered_by,
     )
 
+    # FCM is always sent regardless of commit flag — the push payload carries
+    # everything the client needs; it does not depend on the DB being committed.
     client_token = await _get_client_fcm_token(db, lead)
     if client_token:
         from app.services.fcm_service import notify_travel_status_change
@@ -476,10 +493,11 @@ async def _persist_score(
     lead: Lead,
     engajamento_rapido: bool = False,
     motivo: str = "auto",
+    briefing: Optional[Briefing] = None,
 ) -> None:
     """Calcula score via LeadScoringService, persiste em leads e insere histórico."""
     ctx = lead_scoring_service.context_from_lead(
-        lead, engajamento_rapido=engajamento_rapido, motivo=motivo
+        lead, engajamento_rapido=engajamento_rapido, motivo=motivo, briefing=briefing
     )
     result = lead_scoring_service.calculate(ctx)
 
@@ -521,7 +539,10 @@ def _is_engajamento_rapido(interacoes: list) -> bool:
 
 
 async def update_briefing_from_extraction(
-    db: AsyncSession, lead: Lead, extracted: BriefingExtracted
+    db: AsyncSession,
+    lead: Lead,
+    extracted: BriefingExtracted,
+    commit: bool = True,
 ) -> Briefing:
     result = await db.execute(select(Briefing).where(Briefing.lead_id == lead.id))
     briefing = result.scalar_one_or_none()
@@ -529,17 +550,58 @@ async def update_briefing_from_extraction(
         briefing = Briefing(lead_id=lead.id)
         db.add(briefing)
 
+    # Snapshot completude before any mutation — used for the persistence log below.
+    completude_antes = briefing.completude_pct
+
+    # Exclui campos Pydantic que não existem no modelo ORM (ex: campos_inferidos)
+    _BRIEFING_ORM_FIELDS = {
+        "destino", "data_ida", "data_volta", "qtd_pessoas", "perfil",
+        "tipo_viagem", "preferencias", "orcamento", "tem_passaporte", "observacoes",
+    }
+    campos_atualizados: list[str] = []
     for field, value in extracted.model_dump().items():
+        if field not in _BRIEFING_ORM_FIELDS:
+            continue
         if value not in (None, [], ""):
+            campos_atualizados.append(field)
             setattr(briefing, field, value)
 
-    briefing.completude_pct = calculate_completude(briefing.__dict__)
+    _briefing_dict = {
+        "destino": briefing.destino,
+        "data_ida": briefing.data_ida,
+        "data_volta": briefing.data_volta,
+        "qtd_pessoas": briefing.qtd_pessoas,
+        "perfil": briefing.perfil,
+        "tipo_viagem": briefing.tipo_viagem,
+        "preferencias": briefing.preferencias,
+        "orcamento": briefing.orcamento,
+        "tem_passaporte": briefing.tem_passaporte,
+    }
+    briefing.completude_pct = calculate_completude(_briefing_dict)
 
     lead.score = calculate_score_from_briefing(briefing)
 
+    # Flush pending changes explicitly so constraint violations surface here with a
+    # clean exception rather than silently propagating into later steps.
+    await db.flush()
+
+    # Observabilidade: log de checkpoint de persistência após flush bem-sucedido.
+    # Permite detectar em produção quando a extração devolveu dados mas o
+    # flush não elevou a completude (possível problema no modelo de extração).
+    logger.info(
+        "briefing_persistence_checkpoint",
+        lead_id=str(lead.id),
+        completude_antes=completude_antes,
+        completude_depois=briefing.completude_pct,
+        campos_atualizados=campos_atualizados,
+    )
+
     if briefing.completude_pct >= 60 and lead.status == LeadStatus.em_atendimento:
+        # Pass commit=False so the qualification is part of the same transaction
+        # as the briefing — no intermediate commit that would make a partial state
+        # observable and force a second flush/rollback cycle.
         await update_lead_status(
-            db, lead, LeadStatus.qualificado, triggered_by="ai_auto"
+            db, lead, LeadStatus.qualificado, triggered_by="ai_auto", commit=False
         )
         logger.info(
             "lead_qualified", lead_id=str(lead.id), completude=briefing.completude_pct
@@ -550,11 +612,12 @@ async def update_briefing_from_extraction(
     )
     recent = list(interacoes_result.scalars().all())
     engajamento = _is_engajamento_rapido(recent)
-    await _persist_score(db, lead, engajamento_rapido=engajamento, motivo="auto")
+    await _persist_score(db, lead, engajamento_rapido=engajamento, motivo="auto", briefing=briefing)
 
-    await db.commit()
-    await db.refresh(briefing)
-    await db.refresh(lead)
+    if commit:
+        await db.commit()
+        await db.refresh(briefing)
+        await db.refresh(lead)
 
     all_fields = ["destino", "data_ida", "data_volta", "qtd_pessoas", "perfil",
                   "tipo_viagem", "preferencias", "orcamento", "tem_passaporte"]
@@ -562,7 +625,22 @@ async def update_briefing_from_extraction(
     if briefing.completude_pct > 40 and filled >= 5:
         from app.services.checkpoint_service import activate_checkpoint, SISTEMA
         from app.domain.entities.enums import TravelCheckpoint
-        await activate_checkpoint(db, lead.id, TravelCheckpoint.briefing_coletado, SISTEMA)
+        try:
+            # Always commit=False here: the checkpoint record must be part of the
+            # same transaction as the briefing (whether caller commits or not).
+            # activate_checkpoint uses a savepoint internally so a duplicate-key
+            # error (409) rolls back only the checkpoint insert, not the briefing.
+            await activate_checkpoint(
+                db, lead.id, TravelCheckpoint.briefing_coletado, SISTEMA, commit=False
+            )
+        except Exception as checkpoint_exc:
+            # Checkpoint já existe (409) ou erro transitório — não propaga para não
+            # invalidar o briefing que já foi salvo com sucesso.
+            logger.info(
+                "checkpoint_skipped",
+                lead_id=str(lead.id),
+                reason=str(checkpoint_exc),
+            )
 
     return briefing
 
@@ -574,6 +652,7 @@ async def save_interacao(
     msg_ia: Optional[str],
     tipo: TipoMensagem = TipoMensagem.texto,
     whatsapp_message_id: Optional[str] = None,
+    commit: bool = True,
 ) -> Interacao:
     if whatsapp_message_id:
         existing = await db.execute(
@@ -592,7 +671,14 @@ async def save_interacao(
         whatsapp_message_id=whatsapp_message_id,
     )
     db.add(interacao)
-    await db.commit()
+    if commit:
+        await db.commit()
+        await db.refresh(interacao)  # garante id/timestamp gerados pelo DB disponíveis
+    else:
+        # Flush so the DB assigns server-default values (id, timestamp) before
+        # update_interacao_send_result accesses them in the same transaction.
+        await db.flush()
+        await db.refresh(interacao)
     return interacao
 
 
@@ -600,12 +686,16 @@ async def update_interacao_send_result(
     db: AsyncSession,
     interacao: Interacao,
     result: SendResult,
+    commit: bool = True,
 ) -> None:
     """Persist outbound WhatsApp send outcome — spec §9.1 / §12.1."""
     interacao.enviado_em = datetime.now(timezone.utc) if result.success else None
     interacao.status_envio = "sent" if result.success else "failed"
     interacao.erro_envio = result.error if not result.success else None
-    await db.commit()
+    if commit:
+        await db.commit()
+    else:
+        await db.flush()
 
 
 async def get_recent_interacoes(

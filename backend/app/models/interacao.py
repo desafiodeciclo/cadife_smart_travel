@@ -49,4 +49,19 @@ class Interacao(Base):
     )  # "sent" | "failed"
     erro_envio: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
-    lead: Mapped["Lead"] = relationship("Lead", back_populates="interacoes")
+    lead: Mapped["Lead"] = relationship("Lead", back_populates="interacoes", lazy="noload")
+
+
+class InteracaoResponse(BaseModel):
+    id: uuid.UUID
+    mensagem_cliente: Optional[str]
+    mensagem_ia: Optional[str]
+    tipo_mensagem: TipoMensagem
+    timestamp: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class InteracaoListResponse(BaseModel):
+    items: list[InteracaoResponse]
+    total: int

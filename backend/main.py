@@ -5,6 +5,7 @@ FastAPI application factory following Clean Architecture.
 Registers middlewares, routers, and startup/shutdown lifecycle hooks.
 """
 
+import re
 from contextlib import asynccontextmanager
 
 import sys
@@ -16,8 +17,10 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI, Depends, status, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+from sqlalchemy.exc import MissingGreenlet
 from slowapi.middleware import SlowAPIMiddleware
 
 # Core / Infra
@@ -128,7 +131,35 @@ app = FastAPI(
 
 # Exception Handlers & Middlewares
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_exception_handler(
+    RateLimitExceeded,
+    _rate_limit_exceeded_handler,
+)
+
+
+@app.exception_handler(MissingGreenlet)
+async def missing_greenlet_handler(request: Request, exc: MissingGreenlet) -> JSONResponse:
+    """
+    Catch SQLAlchemy MissingGreenlet at the HTTP boundary so the error is
+    always logged with full context and returns a clean 500 instead of an
+    unhandled exception trace.  This exception means an ORM lazy-load was
+    attempted outside of an async greenlet — a session/lifecycle bug.
+    """
+    logger.error(
+        "missing_greenlet_detected",
+        path=request.url.path,
+        method=request.method,
+        error=str(exc),
+        exc_info=True,
+    )
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Erro interno de persistência. Os dados podem não ter sido salvos."},
+    )
+
+# -------------------------------------------------------------------
+# Middlewares
+# -------------------------------------------------------------------
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
@@ -149,7 +180,20 @@ app.add_middleware(
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(AuditTrailMiddleware)
 
-# Router Registration
+
+# Normaliza barras duplas vindas de proxies upstream (ex: AlphaEdtech //health → /health)
+@app.middleware("http")
+async def normalize_double_slash(request, call_next):
+    if "//" in request.url.path:
+        scope = request.scope
+        scope["path"] = re.sub(r"/+", "/", scope["path"])
+        scope["raw_path"] = scope["path"].encode()
+    return await call_next(request)
+
+# -------------------------------------------------------------------
+# Routers
+# -------------------------------------------------------------------
+
 app.include_router(webhook.router)
 app.include_router(leads.router)
 app.include_router(ia.router)

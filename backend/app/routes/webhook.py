@@ -1,10 +1,9 @@
 import structlog
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi.responses import PlainTextResponse
 
 from app.core.config import Settings, get_settings
 from app.application.use_cases import process_whatsapp_message
-from app.core.dependencies import get_db
 from app.presentation.schemas.common_errors import HTTPErrorResponse
 from app.services import whatsapp_service
 
@@ -60,7 +59,7 @@ async def verify_webhook(
 
     if mode == "subscribe" and token == settings.VERIFY_TOKEN:
         logger.info("webhook_verified")
-        return int(challenge) if challenge else 0
+        return PlainTextResponse(challenge or "")
 
     logger.warning("webhook_verify_failed", mode=mode)
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
@@ -86,11 +85,10 @@ async def receive_whatsapp(
     request: Request,
     background_tasks: BackgroundTasks,
     _body: bytes = Depends(require_meta_signature),
-    db: AsyncSession = Depends(get_db),
 ):
     try:
         payload = await request.json()
-        background_tasks.add_task(process_whatsapp_message.execute, payload, db)
+        background_tasks.add_task(process_whatsapp_message.execute_with_own_session, payload)
     except Exception as exc:
         logger.error("webhook_parse_error", error=str(exc))
 

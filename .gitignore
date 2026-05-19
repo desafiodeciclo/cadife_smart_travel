@@ -158,6 +158,7 @@ backend/chroma_db_local/
 backend/chroma_db_gemini/
 backend/validation_report*.json
 google_service_account.json
+google_calendar_credentials.json
 
 # ========================
 # ARTEFATOS TEMPORÁRIOS / DEV
