@@ -1,8 +1,10 @@
+import 'package:cadife_smart_travel/config/router/routes.dart';
 import 'package:cadife_smart_travel/core/analytics/analytics_service.dart';
 import 'package:cadife_smart_travel/core/di/service_locator.dart';
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/providers/lead_detail_provider.dart';
+import 'package:cadife_smart_travel/l10n/app_localizations.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/empty_state/empty_type.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/state_container.dart';
 import 'package:flutter/material.dart';
@@ -34,7 +36,7 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
   }
 
   void _navigateToCreateProposal() {
-    context.push('/agency/proposals/${widget.leadId}/new');
+    context.push(Routes.proposalCreate(widget.leadId));
   }
 
   @override
@@ -102,17 +104,17 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
                     icon: const Icon(Icons.more_vert, color: AppColors.white),
                     onSelected: (value) {
                       if (value == 'edit') {
-                        context.push('/agency/leads/${widget.leadId}/edit');
+                        context.push(Routes.leadEdit(widget.leadId));
                       }
                     },
                     itemBuilder: (context) => [
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'edit',
                         child: Row(
                           children: [
-                            Icon(Icons.edit_outlined, size: 20),
-                            SizedBox(width: 8),
-                            Text('Editar Lead'),
+                            const Icon(Icons.edit_outlined, size: 20),
+                            const SizedBox(width: 8),
+                            Text(AppLocalizations.of(context)!.editLead),
                           ],
                         ),
                       ),
@@ -140,10 +142,10 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
                     labelColor: AppColors.primary,
                     unselectedLabelColor: context.cadife.textSecondary,
                     indicatorColor: AppColors.primary,
-                    tabs: const [
-                      Tab(text: 'Briefing'),
-                      Tab(text: 'Timeline'),
-                      Tab(text: 'Propostas'),
+                    tabs: [
+                      Tab(text: AppLocalizations.of(context)!.tabBriefing),
+                      Tab(text: AppLocalizations.of(context)!.tabTimeline),
+                      Tab(text: AppLocalizations.of(context)!.tabProposals),
                     ],
                   ),
                   SizedBox(
@@ -272,14 +274,14 @@ class _ActionButtons extends StatelessWidget {
         Expanded(
           child: ShadButton.outline(
             onPressed: () {},
-            child: const Text('Agendar Call'),
+            child: Text(AppLocalizations.of(context)!.scheduleCall),
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: ShadButton(
             onPressed: onCreateProposal,
-            child: const Text('Criar Proposta'),
+            child: Text(AppLocalizations.of(context)!.createProposal),
           ),
         ),
       ],

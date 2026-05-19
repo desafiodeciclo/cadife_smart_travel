@@ -27,6 +27,11 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
   @override
   void initState() {
     super.initState();
+    // AVISO DE ARQUITETURA E SEGURANÇA:
+    // Nunca instancie o cliente HTTP diretamente via `Dio()`.
+    // Utilize sempre o `sl<Dio>()` fornecido pelo Service Locator para garantir
+    // que interceptadores cruciais (como de autenticação com token JWT, tratamento de
+    // erros robusto, persistência offline e SSL Pinning) não sejam contornados.
     _dio = sl<Dio>();
   }
 

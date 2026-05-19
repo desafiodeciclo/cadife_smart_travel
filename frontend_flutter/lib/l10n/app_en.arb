@@ -1,0 +1,9 @@
+{
+  "@@locale": "en",
+  "editLead": "Edit Lead",
+  "tabBriefing": "Briefing",
+  "tabTimeline": "Timeline",
+  "tabProposals": "Proposals",
+  "scheduleCall": "Schedule Call",
+  "createProposal": "Create Proposal"
+}

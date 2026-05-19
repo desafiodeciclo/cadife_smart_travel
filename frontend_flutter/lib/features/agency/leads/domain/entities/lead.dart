@@ -240,16 +240,15 @@ class ManualLeadCreate extends Equatable {
   final String? preferencias;
 
   Map<String, dynamic> toJson() => {
-    'name': name,
-    'phone': phone,
+    'nome': name,
+    'telefone': phone,
     'email': email,
     'origem': origem.toSnakeCase(),
     'consultor_id': consultorId,
     'force_create': forceCreate,
-    'destino': destino,
-    'data_ida': dataIda?.toIso8601String(),
-    'num_pessoas': numPessoas,
-    'orcamento_faixa': orcamentoFaixa,
+    'destino_interesse': destino,
+    'numero_passageiros': numPessoas,
+    'orcamento_estimado': orcamentoFaixa,
     'preferencias': preferencias,
   };
 
