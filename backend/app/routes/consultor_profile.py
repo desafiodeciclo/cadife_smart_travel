@@ -75,7 +75,7 @@ def _resize_to_512(data: bytes) -> bytes:
 
 
 def _require_consultor_or_admin(user: User) -> None:
-    if str(user.perfil) not in ("consultor", "admin"):
+    if str(user.perfil) not in ("consultor", "admin", "agencia"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="endpoint_apenas_para_consultor_ou_admin",

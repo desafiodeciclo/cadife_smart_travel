@@ -9,8 +9,6 @@ import 'package:cadife_smart_travel/features/agency/leads/presentation/providers
 import 'package:cadife_smart_travel/features/agency/leads/presentation/widgets/lead_card.dart';
 import 'package:cadife_smart_travel/features/notifications/presentation/widgets/notification_bell.dart';
 import 'package:cadife_smart_travel/providers/dashboard_provider.dart';
-import 'package:cadife_smart_travel/shared/presentation/widgets/error_state/app_error_state.dart';
-import 'package:cadife_smart_travel/shared/presentation/widgets/error_state/error_type.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -27,26 +25,19 @@ class DashboardScreen extends ConsumerWidget {
 
   Widget _buildDashboardContent(BuildContext context, WidgetRef ref) {
     final metricsAsync = ref.watch(dashboardMetricsProvider);
-
-    return metricsAsync.when(
-      data: (metrics) => _buildMetrics(context, metrics, ref),
-      loading: () => const _LoadingShimmer(),
-      error: (e, st) => AppErrorState(
-        type: ErrorType.genericError,
-        customSubtitle: e.toString(),
-        onRetry: () => ref.read(dashboardMetricsProvider.notifier).refresh(),
-      ),
-    );
-  }
-
-  Widget _buildMetrics(
-    BuildContext context,
-    DashboardMetrics metrics,
-    WidgetRef ref,
-  ) {
     final statsAsync = ref.watch(dashboardStatsProvider);
     final leadsAsync = ref.watch(leadsNotifierProvider);
     final agendaAsync = ref.watch(agendaProvider);
+
+    // Use metrics when available; fall back to zeros so the rest of the
+    // dashboard still renders even if /users/me/metrics returns 403/500.
+    final metrics = metricsAsync.valueOrNull ??
+        DashboardMetrics(
+          leadsQualified: 0,
+          conversionRate: 0,
+          monthlyRevenue: 0,
+          activeClients: 0,
+        );
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -82,25 +73,29 @@ class DashboardScreen extends ConsumerWidget {
               delegate: SliverChildListDelegate([
                 _MetricCard(
                   label: 'Leads Qualificados',
-                  value: '${metrics.leadsQualified}',
+                  value: metricsAsync.isLoading ? '–' : '${metrics.leadsQualified}',
                   icon: LucideIcons.userCheck,
                   color: AppColors.primary,
                 ),
                 _MetricCard(
                   label: 'Taxa de Conversão',
-                  value: '${metrics.conversionRate.toStringAsFixed(1)}%',
+                  value: metricsAsync.isLoading
+                      ? '–'
+                      : '${metrics.conversionRate.toStringAsFixed(1)}%',
                   icon: LucideIcons.trendingUp,
                   color: AppColors.success,
                 ),
                 _MetricCard(
                   label: 'Receita Mensal',
-                  value: 'R\$ ${metrics.monthlyRevenue.toStringAsFixed(0)}',
+                  value: metricsAsync.isLoading
+                      ? '–'
+                      : 'R\$ ${metrics.monthlyRevenue.toStringAsFixed(0)}',
                   icon: LucideIcons.banknote,
                   color: AppColors.info,
                 ),
                 _MetricCard(
                   label: 'Clientes Ativos',
-                  value: '${metrics.activeClients}',
+                  value: metricsAsync.isLoading ? '–' : '${metrics.activeClients}',
                   icon: LucideIcons.users,
                   color: AppColors.warning,
                 ),

@@ -67,7 +67,7 @@ logger = structlog.get_logger()
 router = APIRouter(
     prefix="/agenda",
     tags=["Agenda"],
-    dependencies=[Depends(RequiresRole("consultor", "admin"))],
+    dependencies=[Depends(RequiresRole("consultor", "admin", "agencia"))],
 )
 
 # ── Business config ─────────────────────────────────────────────────────────

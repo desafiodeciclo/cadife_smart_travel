@@ -30,10 +30,19 @@ class LeadApiModel extends Lead {
   });
 
   factory LeadApiModel.fromJson(Map<String, dynamic> json) {
+    // Backend list endpoint uses Portuguese field names (nome, telefone_mascarado,
+    // criado_em, atualizado_em). Detail endpoint may use English names. Accept both.
+    final id = json['id']?.toString() ?? '';
+    final name = (json['nome'] ?? json['name'] ?? '') as String;
+    final phone = (json['telefone_mascarado'] ?? json['phone'] ?? json['telefone'] ?? '') as String;
+    final rawCreatedAt = json['criado_em'] ?? json['created_at'];
+    final rawUpdatedAt = json['atualizado_em'] ?? json['updated_at'];
+    final rawConsultorId = json['consultor_id']?.toString() ?? json['assigned_to']?.toString();
+
     return LeadApiModel(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      phone: json['phone'] as String,
+      id: id,
+      name: name,
+      phone: phone,
       email: json['email'] as String?,
       ayaAtivo: json['aya_ativo'] as bool? ?? true,
       status: LeadStatus.fromSnakeCase(json['status'] as String? ?? 'novo'),
@@ -57,16 +66,12 @@ class LeadApiModel extends Lead {
       orcamentoFaixa: json['orcamento_faixa'] as String?,
       passaporteValido: json['passaporte_valido'] as bool?,
       experienciaInternacional: json['experiencia_internacional'] as bool?,
-      assignedTo: json['assigned_to'] as String? ?? json['consultor_id'] as String?,
+      assignedTo: rawConsultorId,
       consultorNome: json['consultor_nome'] as String?,
       consultorAvatar: json['consultor_avatar'] as String?,
       imageUrl: json['image_url'] as String?,
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'] as String)
-          : null,
-      updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'] as String)
-          : null,
+      createdAt: rawCreatedAt != null ? DateTime.parse(rawCreatedAt as String) : null,
+      updatedAt: rawUpdatedAt != null ? DateTime.parse(rawUpdatedAt as String) : null,
     );
   }
 
