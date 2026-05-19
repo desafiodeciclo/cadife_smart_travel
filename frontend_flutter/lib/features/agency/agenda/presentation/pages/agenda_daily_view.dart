@@ -396,7 +396,7 @@ class _StatusChip extends StatelessWidget {
     final label = StatusAgendamento.values
         .firstWhere(
           (e) => e.name == status,
-          orElse: () => StatusAgendamento.pendente,
+          orElse: () => StatusAgendamento.confirmado,
         )
         .label;
 
@@ -425,7 +425,7 @@ class _MeetingActionsSheet extends StatelessWidget {
     required this.meeting,
     required this.onEdit,
     required this.onCancel,
-    required this.onViewLead,
+    this.onViewLead,
   });
 
   final Agendamento meeting;
@@ -472,7 +472,7 @@ class _MeetingActionsSheet extends StatelessWidget {
             _ActionTile(
               icon: Icons.person_outline,
               label: 'Ver perfil do lead',
-              onTap: onViewLead,
+              onTap: onViewLead!,
             ),
           _ActionTile(
             icon: Icons.cancel_outlined,

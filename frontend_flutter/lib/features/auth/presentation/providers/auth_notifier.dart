@@ -2,6 +2,7 @@ import 'package:cadife_smart_travel/core/error/failures.dart';
 import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
 import 'package:cadife_smart_travel/features/auth/domain/repositories/i_auth_repository.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_repository_provider.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart';
 
@@ -26,11 +27,18 @@ class AuthNotifier extends AsyncNotifier<AuthUser?> {
   }
 
   Future<void> login(String email, String password) async {
+    debugPrint('AUTH_NOTIFIER: Starting login for $email');
     state = const AsyncValue.loading();
     final result = await _repository.login(email, password);
     state = result.fold(
-      (failure) => AsyncValue.error(failure.message, StackTrace.current),
-      AsyncValue.data,
+      (failure) {
+        debugPrint('AUTH_NOTIFIER: Login FAILED: ${failure.message}');
+        return AsyncValue.error(failure.message, StackTrace.current);
+      },
+      (user) {
+        debugPrint('AUTH_NOTIFIER: Login SUCCESS: ${user.email} (Role: ${user.role})');
+        return AsyncValue.data(user);
+      },
     );
   }
 

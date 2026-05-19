@@ -31,6 +31,7 @@ class AuthInterceptor extends Interceptor {
     RequestInterceptorHandler handler,
   ) async {
     final token = await _secureConfig.getAccessToken();
+    debugPrint('DEBUG: AuthInterceptor.onRequest path=${options.path} hasToken=${token != null}');
     if (token != null) {
       options.headers['Authorization'] = 'Bearer $token';
     }

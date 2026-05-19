@@ -6,6 +6,7 @@ Uma linha é inserida a cada chamada ao LeadScoringService, jamais atualizada.
 """
 
 import uuid
+from app.infrastructure.persistence.types import GUID
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
@@ -24,10 +25,10 @@ class LeadScoreHistory(Base):
     __table_args__ = {"extend_existing": True}
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+        GUID(), primary_key=True, default=uuid.uuid4
     )
     lead_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        GUID(),
         ForeignKey("leads.id", ondelete="CASCADE"),
         nullable=False,
         index=True,

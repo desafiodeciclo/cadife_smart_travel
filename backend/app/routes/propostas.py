@@ -48,8 +48,8 @@ from app.presentation.schemas.proposta_schema import (
 )
 from app.models.user import User
 from app.presentation.schemas.common_errors import HTTPErrorResponse
-from app.services import lead_service, proposta_versao_service
 from app.services.fcm_service import send_push_notification
+from app.services import lead_service, proposta_versao_service, audit_service
 
 logger = structlog.get_logger()
 
@@ -147,6 +147,12 @@ async def create_proposta(
         expiration_hours=body.expiration_hours,
     )
     db.add(proposta)
+    
+    # Sincronização de status do Lead (Pipeline CRM §3.3)
+    await lead_service.update_lead_status(
+        db, lead, LeadStatus.proposta, triggered_by="proposta_criada"
+    )
+
     await db.flush()  # populate proposta.id before snapshot
     await proposta_versao_service.snapshot(
         db, proposta, motivo="criacao", by=current_user.id
@@ -466,6 +472,14 @@ async def enviar_proposta(
 
     proposta.status = PropostaStatus.enviada
     proposta.enviado_em = datetime.now(timezone.utc)
+    
+    # Sincronização de status do Lead (Pipeline CRM §3.3)
+    lead = await lead_service.get_lead_by_id(db, proposta.lead_id)
+    if lead:
+        await lead_service.update_lead_status(
+            db, lead, LeadStatus.proposta, triggered_by="proposta_enviada"
+        )
+
     await db.commit()
     await db.refresh(proposta)
 
@@ -601,6 +615,18 @@ async def update_proposta_legacy(
     await db.commit()
     await db.refresh(proposta)
 
+    if new_status in (PropostaStatus.aprovada, PropostaStatus.recusada):
+        await audit_service.log_event(
+            db,
+            event_type=f"proposta_{new_status.value}",
+            resource_type="proposta",
+            resource_id=proposta.id,
+            user_id=current_user.id,
+            user_email=current_user.email,
+            description=f"Proposta {new_status.value} por {current_user.perfil}",
+            payload={"status": new_status.value}
+        )
+
     # Checkpoint triggers + goal increment (preserving legacy behavior)
     if new_status is not None and old_status != new_status:
         from app.services.checkpoint_service import activate_checkpoint, SISTEMA
@@ -633,5 +659,20 @@ async def update_proposta_legacy(
                         consultor_id=str(proposta.consultor_id),
                         error=str(exc),
                     )
+            
+            # 5. Notificação FCM ao Consultor (Task 3.6)
+            if current_user.perfil == "cliente" and proposta.consultor_id:
+                consultor = await db.get(User, proposta.consultor_id)
+                if consultor and consultor.fcm_token:
+                    status_pt = "aprovada" if new_status == PropostaStatus.aprovada else "recusada"
+                    try:
+                        await send_push_notification(
+                            fcm_token=consultor.fcm_token,
+                            title=f"Proposta {status_pt}!",
+                            body=f"O cliente {current_user.nome} acabou de marcar a proposta como {status_pt}.",
+                            data={"type": "proposta_status_change", "proposal_id": str(proposta.id), "status": new_status.value}
+                        )
+                    except Exception as exc:
+                        logger.warning("proposta_status_fcm_consultor_failed", error=str(exc))
 
     return PropostaResponse.model_validate(proposta)

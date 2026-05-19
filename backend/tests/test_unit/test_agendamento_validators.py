@@ -12,7 +12,7 @@ import pytest
 from pydantic import ValidationError
 
 from app.domain.entities.enums import AgendamentoTipo, MotivoBloqueio
-from app.models.agendamento import AgendamentoCreate, AgendamentoPatch
+from app.presentation.schemas.agendamento_schema import AgendamentoCreate, AgendamentoPatch
 
 
 class TestAgendamentoCreateValidator:

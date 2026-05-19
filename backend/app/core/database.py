@@ -9,4 +9,5 @@ from app.infrastructure.persistence.database import (  # noqa: F401
     Base,
     create_tables,
     engine,
+    Base,
 )

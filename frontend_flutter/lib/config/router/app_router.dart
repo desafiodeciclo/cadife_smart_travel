@@ -3,7 +3,13 @@ import 'package:cadife_smart_travel/config/router/agency_shell.dart';
 import 'package:cadife_smart_travel/config/router/client_shell.dart';
 import 'package:cadife_smart_travel/config/router/transitions/custom_page_route.dart';
 import 'package:cadife_smart_travel/core/analytics/analytics_navigation_observer.dart';
-/*
+import 'package:cadife_smart_travel/features/admin/presentation/pages/admin_all_leads_page.dart';
+import 'package:cadife_smart_travel/features/admin/presentation/pages/admin_consultant_list_page.dart';
+import 'package:cadife_smart_travel/features/admin/presentation/pages/admin_overview_page.dart';
+import 'package:cadife_smart_travel/features/admin/presentation/pages/consultor_detail_page.dart';
+import 'package:cadife_smart_travel/features/admin/presentation/pages/consultor_edit_page.dart';
+import 'package:cadife_smart_travel/features/admin/presentation/pages/create_consultant_page.dart';
+import 'package:cadife_smart_travel/features/agency/agenda/presentation/pages/agenda_page.dart';
 import 'package:cadife_smart_travel/features/agency/dashboard/dashboard_screen.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/pages/lead_detail_page.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/pages/lead_edit_page.dart';
@@ -13,7 +19,7 @@ import 'package:cadife_smart_travel/features/agency/offers/presentation/screens/
 import 'package:cadife_smart_travel/features/agency/offers/presentation/screens/offers_management_screen.dart';
 import 'package:cadife_smart_travel/features/agency/propostas/presentation/pages/proposal_create_page.dart';
 import 'package:cadife_smart_travel/features/agency/propostas/presentation/pages/proposals_page.dart';
-*/
+import 'package:cadife_smart_travel/screens/consultant/profile_screen.dart' as agency_profile;
 import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:cadife_smart_travel/features/auth/presentation/screens/forgot_password_screen.dart';
@@ -34,10 +40,6 @@ import 'package:cadife_smart_travel/features/client/offers/presentation/screens/
 import 'package:cadife_smart_travel/features/client/profile/presentation/pages/profile_page.dart' as client_profile;
 import 'package:cadife_smart_travel/features/client/profile/presentation/pages/travel_journal_detail_screen.dart';
 import 'package:cadife_smart_travel/features/notifications/presentation/screens/notification_center_screen.dart';
-/*
-import 'package:cadife_smart_travel/screens/consultant/lead_detail_screen.dart';
-import 'package:cadife_smart_travel/screens/consultant/profile_screen.dart';
-*/
 import 'package:cadife_smart_travel/screens/settings_screen.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -162,7 +164,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           return AgencyShell(location: state.matchedLocation, child: child);
         },
         routes: [
-          /*
           GoRoute(
             path: '/agency/dashboard',
             name: 'agency_dashboard',
@@ -214,8 +215,6 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          */
-          /*
           GoRoute(
             path: '/agency/proposals/:leadId',
             name: 'agency_proposals',
@@ -277,7 +276,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             name: 'agency_agenda',
             pageBuilder: (context, state) => SlideTransitionPage(
               name: state.name,
-              child: const Scaffold(body: Center(child: Text('Em manutenção'))), // AgendaScreen(),
+              child: const AgendaScreen(),
             ),
           ),
           GoRoute(
@@ -285,10 +284,9 @@ final routerProvider = Provider<GoRouter>((ref) {
             name: 'agency_profile',
             pageBuilder: (context, state) => SlideTransitionPage(
               name: state.name,
-              child: const Scaffold(body: Center(child: Text('Em manutenção'))), // ProfileScreen(),
+              child: const agency_profile.ProfileScreen(),
             ),
           ),
-          */
           GoRoute(
             path: '/agency/settings',
             name: 'agency_settings',
@@ -298,7 +296,6 @@ final routerProvider = Provider<GoRouter>((ref) {
             ),
           ),
           // Admin routes (protected by AdminGuard redirect above)
-          /*
           GoRoute(
             path: '/agency/admin',
             name: 'agency_admin',
@@ -362,7 +359,6 @@ final routerProvider = Provider<GoRouter>((ref) {
               child: const AdminAllLeadsPage(),
             ),
           ),
-          */
         ],
       ),
 

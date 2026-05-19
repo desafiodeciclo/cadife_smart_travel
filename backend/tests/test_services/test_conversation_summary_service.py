@@ -151,13 +151,20 @@ async def test_summarise_one_closed_session(db_session):
     db_session.add(user)
     await db_session.flush()
 
-    lead = LeadModel(
-        id=uuid.uuid4(),
-        telefone=f"+5511{uuid.uuid4().int % 900000000 + 100000000:09d}",
-        origem="whatsapp",
-        status="novo",
+    from sqlalchemy import text
+    lead_id = uuid.uuid4()
+    await db_session.execute(
+        text("INSERT INTO leads (id, telefone, origem, status, aya_ativo, is_archived, criado_em, atualizado_em) VALUES (:id, :tel, :origem, :status, :aya, :archived, :now, :now)"),
+        {
+            "id": str(lead_id),
+            "tel": f"+5511{uuid.uuid4().int % 900000000 + 100000000:09d}",
+            "origem": "whatsapp",
+            "status": "novo",
+            "aya": True,
+            "archived": False,
+            "now": datetime.now(timezone.utc)
+        }
     )
-    db_session.add(lead)
     await db_session.flush()
 
     session1 = [_make_interacao(i * 5) for i in range(3)]
@@ -177,7 +184,7 @@ async def test_summarise_one_closed_session(db_session):
         "app.services.conversation_summary_service._generate_topics",
         new=AsyncMock(return_value=(mock_topics, 150)),
     ):
-        created = await summarise_closed_sessions(db_session, lead.id, interacoes)
+        created = await summarise_closed_sessions(db_session, lead_id, interacoes)
 
     assert len(created) == 1
     assert created[0].resumo_pendente is False
@@ -204,13 +211,20 @@ async def test_summarise_idempotent(db_session):
     db_session.add(user)
     await db_session.flush()
 
-    lead = LeadModel(
-        id=uuid.uuid4(),
-        telefone=f"+5511{uuid.uuid4().int % 900000000 + 100000000:09d}",
-        origem="whatsapp",
-        status="novo",
+    from sqlalchemy import text
+    lead_id = uuid.uuid4()
+    await db_session.execute(
+        text("INSERT INTO leads (id, telefone, origem, status, aya_ativo, is_archived, criado_em, atualizado_em) VALUES (:id, :tel, :origem, :status, :aya, :archived, :now, :now)"),
+        {
+            "id": str(lead_id),
+            "tel": f"+5511{uuid.uuid4().int % 900000000 + 100000000:09d}",
+            "origem": "whatsapp",
+            "status": "novo",
+            "aya": True,
+            "archived": False,
+            "now": datetime.now(timezone.utc)
+        }
     )
-    db_session.add(lead)
     await db_session.flush()
 
     session1 = [_make_interacao(i * 5) for i in range(2)]
@@ -223,8 +237,8 @@ async def test_summarise_idempotent(db_session):
         "app.services.conversation_summary_service._generate_topics",
         new=AsyncMock(return_value=(mock_topics, 100)),
     ):
-        first = await summarise_closed_sessions(db_session, lead.id, interacoes)
-        second = await summarise_closed_sessions(db_session, lead.id, interacoes)
+        first = await summarise_closed_sessions(db_session, lead_id, interacoes)
+        second = await summarise_closed_sessions(db_session, lead_id, interacoes)
 
     assert len(first) == 1
     assert len(second) == 0  # already exists → skipped
@@ -233,9 +247,6 @@ async def test_summarise_idempotent(db_session):
 @pytest.mark.asyncio
 async def test_summarise_fallback_on_llm_failure(db_session):
     """LLM failure → row persisted with resumo_pendente=True."""
-    from app.infrastructure.persistence.models.lead_model import LeadModel
-    from app.infrastructure.persistence.models.user_model import UserModel
-
     user = UserModel(
         id=uuid.uuid4(),
         nome="Consultor",
@@ -247,13 +258,20 @@ async def test_summarise_fallback_on_llm_failure(db_session):
     db_session.add(user)
     await db_session.flush()
 
-    lead = LeadModel(
-        id=uuid.uuid4(),
-        telefone=f"+5511{uuid.uuid4().int % 900000000 + 100000000:09d}",
-        origem="whatsapp",
-        status="novo",
+    from sqlalchemy import text
+    lead_id = uuid.uuid4()
+    await db_session.execute(
+        text("INSERT INTO leads (id, telefone, origem, status, aya_ativo, is_archived, criado_em, atualizado_em) VALUES (:id, :tel, :origem, :status, :aya, :archived, :now, :now)"),
+        {
+            "id": str(lead_id),
+            "tel": f"+5511{uuid.uuid4().int % 900000000 + 100000000:09d}",
+            "origem": "whatsapp",
+            "status": "novo",
+            "aya": True,
+            "archived": False,
+            "now": datetime.now(timezone.utc)
+        }
     )
-    db_session.add(lead)
     await db_session.flush()
 
     session1 = [_make_interacao(i * 5) for i in range(2)]
@@ -264,7 +282,7 @@ async def test_summarise_fallback_on_llm_failure(db_session):
         "app.services.conversation_summary_service._generate_topics",
         new=AsyncMock(return_value=(None, 0)),
     ):
-        created = await summarise_closed_sessions(db_session, lead.id, interacoes)
+        created = await summarise_closed_sessions(db_session, lead_id, interacoes)
 
     assert len(created) == 1
     assert created[0].resumo_pendente is True

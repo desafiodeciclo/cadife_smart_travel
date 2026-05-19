@@ -50,8 +50,17 @@ from app.infrastructure.persistence.models.travel_model import (
 from app.infrastructure.persistence.models.itinerary_model import (
     ItineraryItemModel,
 )  # noqa: F401
+from app.infrastructure.persistence.models.revoked_token_model import (
+    RevokedTokenModel,
+)  # noqa: F401
+from app.infrastructure.persistence.models.sale_goal_model import (
+    SaleGoalModel,
+)  # noqa: F401
 from app.infrastructure.persistence.models.proposta_versao_model import (
     PropostaVersaoModel,
+)  # noqa: F401
+from app.infrastructure.persistence.models.audit_log_model import (
+    AuditLog,
 )  # noqa: F401
 from app.infrastructure.persistence.models.password_reset_token_model import (
     PasswordResetTokenModel,
@@ -78,8 +87,11 @@ __all__ = [
     "ConversationSummaryModel",
     "TravelModel",
     "ItineraryItemModel",
+    "RevokedTokenModel",
+    "SaleGoalModel",
     "PropostaVersaoModel",
     "PasswordResetTokenModel",
     "NotificationQueue",
     "DeadLetterQueue",
+    "AuditLog",
 ]

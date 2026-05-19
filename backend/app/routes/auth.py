@@ -1,37 +1,43 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi.security import HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import datetime, timezone, timedelta
+import structlog
+import hashlib
 
-from app.core.dependencies import get_current_user, get_db
-from app.middleware.auth import verify_jwt
+from app.core.dependencies import get_current_user, bearer_scheme, get_db
+from app.infrastructure.persistence.models.revoked_token_model import RevokedTokenModel
+from app.infrastructure.security.jwt import decode_token, create_reset_token
 from app.core.security import (
     create_access_token,
     create_refresh_token,
-    create_reset_token,
-    decode_token,
     verify_password,
 )
 from app.models.user import (
     ChangePasswordRequest,
-    FcmTokenRequest,
-    FcmTokenResponse,
     ForgotPasswordRequest,
-    LoginRequest,
-    RefreshRequest,
     RegisterRequest,
-    TokenResponse,
+    ResetPasswordRequest,
     User,
-    UserProfileUpdate,
-    UserResponse,
+)
+from app.presentation.schemas.user_schema import (
+    LoginRequest,
+    TokenResponse,
+    RefreshRequest,
 )
 from app.presentation.schemas.common_errors import HTTPErrorResponse
 from app.services.user_service import (
     create_user,
     get_user_by_email,
     get_user_by_id,
-    update_fcm_token,
-    update_user_profile,
+    update_password,
 )
 from app.infrastructure.security.rate_limiter import limiter
+
+logger = structlog.get_logger()
+
+def hash_pii(email: str) -> str:
+    return hashlib.sha256(email.lower().strip().encode()).hexdigest()
 
 router = APIRouter(tags=["Auth"])
 
@@ -40,47 +46,29 @@ router = APIRouter(tags=["Auth"])
     "/auth/register",
     response_model=TokenResponse,
     status_code=status.HTTP_201_CREATED,
-    summary="Cadastro de novo usuário",
-    description="Cria uma conta de cliente e retorna um par de tokens JWT.",
+    summary="Registro de novo usuário",
+    description="Cria uma nova conta de usuário (cliente) e retorna um par de tokens JWT.",
     responses={
-        409: {"description": "E-mail já cadastrado", "model": HTTPErrorResponse},
-        422: {"description": "Erro de validação no body", "model": HTTPErrorResponse},
-        429: {"description": "Too Many Requests - Rate Limit excedido"},
+        409: {"description": "E-mail já registrado", "model": HTTPErrorResponse},
+        422: {"description": "Erro de validação no body (senha fraca, etc)", "model": HTTPErrorResponse},
+        429: {"description": "Too Many Requests"},
     },
 )
 @limiter.limit("5/minute")
-async def register(
-    request: Request,
-    body: RegisterRequest,
-    db: AsyncSession = Depends(get_db),
-) -> TokenResponse:
+async def register(request: Request, response: Response, body: RegisterRequest, db: AsyncSession = Depends(get_db)):
     existing = await get_user_by_email(db, body.email)
     if existing:
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="E-mail já cadastrado",
+            status_code=status.HTTP_409_CONFLICT, detail="email_already_registered"
         )
-    user = await create_user(db, nome=body.nome, email=body.email, password=body.password)
+    
+    user = await create_user(db, body, role="cliente")
+    logger.info("auth_register", user_id=str(user.id), email_hash=hash_pii(body.email))
+    
     return TokenResponse(
         access_token=create_access_token(str(user.id)),
         refresh_token=create_refresh_token(str(user.id)),
     )
-
-
-@router.post(
-    "/auth/logout",
-    status_code=status.HTTP_200_OK,
-    summary="Logout de usuário",
-    description=(
-        "Encerra a sessão. JWT é stateless — o cliente deve descartar os tokens localmente. "
-        "Endpoint existe para garantir compatibilidade com o contrato da API."
-    ),
-)
-async def logout(
-    _: Request,
-    current_user: User = Depends(verify_jwt),
-) -> dict:
-    return {"detail": "Logout realizado com sucesso"}
 
 
 @router.post(
@@ -94,7 +82,7 @@ async def logout(
         429: {"description": "Too Many Requests - Rate Limit excedido"},
     },
 )
-@limiter.limit("3/minute")
+@limiter.limit("5/minute")
 async def login(request: Request, response: Response, body: LoginRequest, db: AsyncSession = Depends(get_db)):
     user = await get_user_by_email(db, body.email)
     if not user or not verify_password(body.password, user.hashed_password):
@@ -110,6 +98,34 @@ async def login(request: Request, response: Response, body: LoginRequest, db: As
         access_token=create_access_token(str(user.id)),
         refresh_token=create_refresh_token(str(user.id)),
     )
+
+
+@router.post(
+    "/auth/logout",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Encerra a sessão atual (Logout)",
+    description="Adiciona o Access Token atual na lista negra para impedir novas requisições.",
+)
+async def logout(
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+    user = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    try:
+        payload = decode_token(credentials.credentials)
+        exp_timestamp = payload.get("exp")
+        expires_at = datetime.fromtimestamp(exp_timestamp, tz=timezone.utc) if exp_timestamp else (datetime.now(timezone.utc) + timedelta(hours=1))
+    except Exception:
+        expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
+        
+    revoked = RevokedTokenModel(
+        token=credentials.credentials,
+        expires_at=expires_at
+    )
+    db.add(revoked)
+    await db.commit()
+    logger.info("auth_logout", user_id=str(user.id))
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post(
@@ -141,6 +157,16 @@ async def refresh_token(body: RefreshRequest, db: AsyncSession = Depends(get_db)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuário não encontrado"
         )
+        
+    # Check if refresh token was issued before a global logout
+    iat = payload.get("iat")
+    if iat and user.global_logout_at:
+        token_issued_at = datetime.fromtimestamp(iat, tz=timezone.utc)
+        if token_issued_at <= user.global_logout_at:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Sessão revogada (logout global)"
+            )
 
     return TokenResponse(
         access_token=create_access_token(str(user.id)),
@@ -149,140 +175,113 @@ async def refresh_token(body: RefreshRequest, db: AsyncSession = Depends(get_db)
 
 
 @router.post(
-    "/auth/change-password",
-    status_code=status.HTTP_200_OK,
-    summary="Alterar senha do usuário",
-    description=(
-        "Altera a senha de um usuário autenticado. Requer a senha atual para validação. "
-        "A nova senha deve ter no mínimo 8 caracteres."
-    ),
-    responses={
-        401: {"description": "Senha atual incorreta ou usuário não encontrado", "model": HTTPErrorResponse},
-        422: {"description": "Erro de validação (nova senha fraca)", "model": HTTPErrorResponse},
-    },
+    "/auth/logout-all-devices",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Desconecta de todos os dispositivos",
+    description="Atualiza a data de logout global do usuário, invalidando todos os tokens gerados anteriormente.",
 )
-@limiter.limit("5/minute")
-async def change_password(
-    request: Request,
-    body: ChangePasswordRequest,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(verify_jwt),
-) -> dict:
-    user = await get_user_by_id(db, str(current_user.id) if hasattr(current_user, 'id') else current_user)
-    if not user or not verify_password(body.current_password, user.hashed_password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Senha atual incorreta",
-        )
-    from app.services.user_service import update_password
-    await update_password(db, user, body.new_password)
-    return {"detail": "Senha alterada com sucesso"}
+async def logout_all_devices(
+    user = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    user.global_logout_at = datetime.now(timezone.utc).replace(microsecond=0)
+    await db.commit()
+    logger.info("auth_logout_all", user_id=str(user.id))
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post(
     "/auth/forgot-password",
-    status_code=status.HTTP_200_OK,
-    summary="Solicitar redefinição de senha",
-    description=(
-        "Envia um token de redefinição para o e-mail do usuário (ou retorna token em dev). "
-        "A resposta é sempre 200 para não enumerar usuários existentes."
-    ),
-    responses={
-        200: {"description": "Token gerado ou e-mail enviado"},
-        422: {"description": "Erro de validação no email", "model": HTTPErrorResponse},
-    },
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Solicita recuperação de senha",
+    description="Gera um token de recuperação de senha válido por 15 minutos. Impede enumeração de usuários.",
 )
 @limiter.limit("3/minute")
-async def forgot_password(
-    request: Request,
-    body: ForgotPasswordRequest,
-    db: AsyncSession = Depends(get_db),
-) -> dict:
+async def forgot_password(request: Request, response: Response, body: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)):
     user = await get_user_by_email(db, body.email)
-    # Anti-enumeration: respond 200 even if email doesn't exist
-    if not user:
-        return {"detail": "Se o e-mail existir, você receberá as instruções de recuperação."}
-
-    reset_token = create_reset_token(str(user.id))
-    # TODO: enviar email com reset_token quando infraestrutura de email estiver disponível
-    # Para dev, retornamos o token direto
-    return {
-        "detail": "Se o e-mail existir, você receberá as instruções de recuperação.",
-        "reset_token": reset_token,
-    }
+    if user and user.is_active:
+        reset_token = create_reset_token(str(user.id))
+        try:
+            from app.services.email_service import send_password_reset_email
+            await send_password_reset_email(body.email, reset_token)
+        except Exception:
+            # Em dev, não bloqueamos o fluxo caso não haja SMTP configurado
+            pass
+        logger.info("auth_forgot_password_email_sent", user_id=str(user.id))
+    
+    # Sempre retorna sucesso para não confirmar se o e-mail existe
+    return {"message": "Se o e-mail existir, um link de recuperação foi enviado."}
 
 
 @router.post(
-    "/auth/logout-all-devices",
+    "/auth/reset-password",
     status_code=status.HTTP_200_OK,
-    summary="Desconectar de todos os dispositivos",
-    description=(
-        "Invalida todos os refresh tokens do usuário, desconectando-o de todos os dispositivos. "
-        "Requer autenticação via JWT."
-    ),
+    summary="Redefine a senha do usuário",
+    description="Recebe o token temporário e a nova senha forte. Ao redefinir, desloga o usuário de todos os aparelhos por segurança.",
     responses={
-        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
-    },
+        401: {"description": "Token inválido, expirado ou sessão encerrada", "model": HTTPErrorResponse},
+        422: {"description": "Senha não atende aos requisitos de força", "model": HTTPErrorResponse},
+    }
 )
-@limiter.limit("3/minute")
-async def logout_all_devices(
-    request: Request,
-    current_user: User = Depends(verify_jwt),
-) -> dict:
-    # TODO: Implementar invalidação de tokens via Redis
-    # Salvar timestamp em Redis chave "invalidated_before:{user_id}" para rejeitar tokens antigos
-    # Por enquanto, apenas log da ação
-    return {"detail": "Todos os dispositivos foram desconectados"}
-
-
-@router.get(
-    "/users/me",
-    response_model=UserResponse,
-    summary="Perfil do usuário autenticado",
-    description="Retorna os dados do usuário autenticado via JWT.",
-    responses={
-        401: {"description": "Token inválido ou ausente", "model": HTTPErrorResponse},
-    },
-)
-async def get_me(current_user=Depends(get_current_user)):
-    return UserResponse.model_validate(current_user)
-
-
-@router.patch(
-    "/users/me",
-    response_model=UserResponse,
-    summary="Atualizar perfil do usuário",
-    description="Atualiza campos editáveis do perfil do usuário autenticado.",
-    responses={
-        401: {"description": "Token inválido ou ausente", "model": HTTPErrorResponse},
-        422: {"description": "Erro de validação no body", "model": HTTPErrorResponse},
-    },
-)
-async def update_me(
-    body: UserProfileUpdate,
-    db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
-):
-    updated = await update_user_profile(db, current_user, body)
-    return UserResponse.model_validate(updated)
+async def reset_password(body: ResetPasswordRequest, db: AsyncSession = Depends(get_db)):
+    try:
+        payload = decode_token(body.token)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido ou expirado"
+        )
+        
+    if payload.get("type") != "reset":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido"
+        )
+        
+    user = await get_user_by_id(db, payload["sub"])
+    if not user or not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuário não encontrado"
+        )
+        
+    # Verifica se o token de reset foi gerado antes de um logout global (proteção extra)
+    iat_timestamp = payload.get("iat")
+    if iat_timestamp and user.global_logout_at:
+        iat_dt = datetime.fromtimestamp(iat_timestamp, tz=timezone.utc)
+        if iat_dt < user.global_logout_at:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Token de recuperação expirado (sessão encerrada)"
+            )
+            
+    # O update_password já chama o global_logout_at para derrubar todas as sessões ativas
+    await update_password(db, user, body.new_password.get_secret_value())
+    
+    logger.info("auth_reset_password_success", user_id=str(user.id))
+    return {"message": "Senha atualizada com sucesso"}
 
 
 @router.post(
-    "/users/fcm-token",
-    response_model=FcmTokenResponse,
-    summary="Registrar token FCM",
-    description="Registra ou atualiza o token Firebase Cloud Messaging do dispositivo do usuário.",
+    "/auth/change-password",
+    status_code=status.HTTP_200_OK,
+    summary="Altera a senha do usuário logado",
+    description="Exige a senha antiga para confirmar a identidade e atualiza para a nova senha forte. Ao redefinir, desloga o usuário de todos os aparelhos.",
     responses={
-        401: {"description": "Token inválido ou ausente", "model": HTTPErrorResponse},
-        422: {"description": "Erro de validação no body", "model": HTTPErrorResponse},
-    },
+        400: {"description": "Senha antiga incorreta", "model": HTTPErrorResponse},
+        422: {"description": "Nova senha não atende aos requisitos de força", "model": HTTPErrorResponse},
+    }
 )
-async def register_fcm_token(
-    body: FcmTokenRequest,
-    db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
+@limiter.limit("5/minute")
+async def change_password(
+    request: Request,
+    response: Response,
+    body: ChangePasswordRequest, 
+    user = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ):
-    await update_fcm_token(db, current_user, body.fcm_token)
-    return FcmTokenResponse(message="Token FCM registrado com sucesso")
-
-
+    if not verify_password(body.current_password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Senha antiga incorreta"
+        )
+        
+    await update_password(db, user, body.new_password.get_secret_value())
+    
+    logger.info("auth_change_password_success", user_id=str(user.id))
+    return {"message": "Senha atualizada com sucesso"}

@@ -20,6 +20,7 @@ from app.models.lead import Lead
 from app.domain.entities.enums import UserPerfil
 from app.models.user import User
 from app.services.fcm_service import send_push_notification
+from app.services import audit_service
 
 logger = structlog.get_logger()
 
@@ -240,6 +241,15 @@ async def soft_delete_consultor(
     await db.commit()
     await db.refresh(user)
 
+    await audit_service.log_event(
+        db,
+        event_type="consultor_deactivated",
+        resource_type="user",
+        resource_id=user.id,
+        description=f"Consultor {user.email} desativado. Leads reatribuídos para {reassign_to_id}" if reassign_to_id else f"Consultor {user.email} desativado.",
+        payload={"reassign_to": str(reassign_to_id) if reassign_to_id else None}
+    )
+
     logger.info(
         "admin_user_soft_deleted",
         admin_action="soft_delete_consultor",
@@ -275,6 +285,15 @@ async def reassign_lead(
     await db.commit()
     await db.refresh(lead)
 
+    await audit_service.log_event(
+        db,
+        event_type="lead_reassigned",
+        resource_type="lead",
+        resource_id=lead.id,
+        description=f"Lead reatribuído de {old_consultor_id} para {new_consultor_id}",
+        payload={"old_consultor": str(old_consultor_id), "new_consultor": str(new_consultor_id)}
+    )
+
     # Notify old consultant (if any)
     if old_consultor_id:
         old_result = await db.execute(select(User).where(User.id == old_consultor_id))
@@ -309,3 +328,43 @@ async def reassign_lead(
         "old_consultor_id": old_consultor_id,
         "new_consultor_id": new_consultor_id,
     }
+async def get_conversion_metrics(db: AsyncSession) -> list[dict]:
+    """
+    Calcula métricas de conversão detalhadas por consultor.
+    """
+    # Lista todos os consultores ativos
+    result = await db.execute(
+        select(User).where(
+            User.perfil.in_([UserPerfil.consultor, UserPerfil.agencia]),
+            User.is_active == True
+        )
+    )
+    consultores = result.scalars().all()
+    
+    metrics = []
+    for c in consultores:
+        # Total de leads (não arquivados)
+        total_stmt = select(func.count(Lead.id)).where(
+            Lead.consultor_id == c.id,
+            Lead.is_archived == False
+        )
+        total = (await db.execute(total_stmt)).scalar_one() or 0
+        
+        # Leads fechados
+        closed_stmt = total_stmt.where(Lead.status == "fechado")
+        closed = (await db.execute(closed_stmt)).scalar_one() or 0
+        
+        # Taxa de conversão
+        conversion_rate = (closed / total * 100) if total > 0 else 0.0
+        
+        metrics.append({
+            "consultor_id": str(c.id),
+            "consultor_nome": c.nome,
+            "total_leads": total,
+            "leads_fechados": closed,
+            "taxa_conversao": round(conversion_rate, 2)
+        })
+        
+    # Ordena por melhor taxa de conversão
+    metrics.sort(key=lambda x: x["taxa_conversao"], reverse=True)
+    return metrics

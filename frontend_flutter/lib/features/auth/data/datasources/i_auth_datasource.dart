@@ -9,5 +9,6 @@ abstract class IAuthDatasource {
   Future<void> saveFcmToken(String token);
   Future<void> forgotPassword(String email);
   Future<void> changePassword(String currentPassword, String newPassword);
+  Future<void> resetPassword(String token, String newPassword);
   Future<void> logoutAllDevices();
 }

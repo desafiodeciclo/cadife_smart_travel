@@ -82,6 +82,9 @@ def fake_lead(lead_id=None, consultor_id=None, status=LeadStatus.qualificado.val
     lead.consultor = None
     lead.consultor_nome = None
     lead.consultor_avatar = None
+    lead.briefing = None
+    lead.interacoes = []
+    lead.propostas = []
     return lead
 
 

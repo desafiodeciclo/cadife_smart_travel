@@ -4,9 +4,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import get_db
 from app.middleware.auth import verify_jwt
-from app.presentation.schemas.user_schema import UserProfileUpdate, FcmTokenRequest
+from app.presentation.schemas.user_schema import UserProfileUpdate, FcmTokenRequest, UserResponse
 from app.presentation.schemas.common_errors import HTTPErrorResponse
-from app.presentation.schemas.user_schema import UserResponse
 from app.services.user_service import get_user_by_id, update_user_profile, update_fcm_token
 
 router = APIRouter(prefix="/users", tags=["Users"])
@@ -37,14 +36,15 @@ async def get_me(
         )
     return UserResponse.model_validate(user)
 
+
 @router.patch(
     "/me",
     response_model=UserResponse,
-    summary="Atualização de perfil",
+    summary="Atualizar perfil do usuário",
     description="Atualiza campos editáveis do perfil do usuário autenticado.",
     responses={
-        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
-        404: {"description": "Usuário não encontrado", "model": HTTPErrorResponse},
+        401: {"description": "Token inválido ou ausente", "model": HTTPErrorResponse},
+        422: {"description": "Erro de validação no body", "model": HTTPErrorResponse},
     },
 )
 async def update_me(
@@ -54,13 +54,17 @@ async def update_me(
 ):
     user = await get_user_by_id(db, user_id)
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado")
-    
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Usuário não encontrado"
+        )
     updated = await update_user_profile(db, user, body)
     return UserResponse.model_validate(updated)
 
+
 class FcmTokenResponse(BaseModel):
     message: str
+
 
 @router.post(
     "/fcm-token",

@@ -24,8 +24,8 @@ def configure_logging():
         mask_pii,
     ]
 
-    if settings.APP_ENV == "production":
-        # Em produção, usamos JSON para fácil ingestão em sistemas de log (GCP, ELK, etc)
+    if settings.APP_ENV in ("production", "test"):
+        # Em produção e testes, usamos JSON para evitar problemas de encoding no terminal (ex: cp1252 no Windows)
         processors = shared_processors + [
             structlog.processors.dict_tracebacks,
             structlog.processors.JSONRenderer(),

@@ -35,7 +35,7 @@ SINGLETON_AGENCY_ID = "00000000-0000-0000-0000-000000000001"
 def upgrade() -> None:
     # ── 1. users.bio ────────────────────────────────────────────────────────
     # avatar_url already exists; only bio is missing.
-    op.add_column("users", sa.Column("bio", sa.String(length=500), nullable=True))
+    op.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS bio VARCHAR(500) NULL")
 
     # ── 2. sale_goals ───────────────────────────────────────────────────────
     op.create_table(
@@ -101,7 +101,7 @@ def upgrade() -> None:
             postgresql.JSONB,
             nullable=False,
             server_default=sa.text(
-                "'{\"dias\":[1,2,3,4,5],\"inicio\":\"09:00\",\"fim\":\"16:00\"}'::jsonb"
+                '\'{"dias"\\:[1,2,3,4,5],"inicio"\\:"09:00","fim"\\:"16:00"}\'::jsonb'
             ),
         ),
         sa.Column(
@@ -109,8 +109,7 @@ def upgrade() -> None:
             postgresql.JSONB,
             nullable=False,
             server_default=sa.text(
-                "'{\"leads_qualificados\":true,\"novos_leads\":true,"
-                "\"propostas_aprovadas\":true,\"agendamentos_confirmados\":true}'::jsonb"
+                '\'{"leads_qualificados"\\:true,"novos_leads"\\:true,"propostas_aprovadas"\\:true,"agendamentos_confirmados"\\:true}\'::jsonb'
             ),
         ),
         sa.Column(

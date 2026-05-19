@@ -14,6 +14,7 @@ Constraints:
 """
 
 import uuid
+from app.infrastructure.persistence.types import GUID
 from datetime import datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING, Optional
@@ -67,10 +68,10 @@ class PropostaModel(Base):
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+        GUID(), primary_key=True, default=uuid.uuid4
     )
     lead_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        GUID(),
         ForeignKey("leads.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
@@ -83,7 +84,7 @@ class PropostaModel(Base):
         default=PropostaStatus.rascunho.value,
     )
     consultor_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL")
+        GUID(), ForeignKey("users.id", ondelete="SET NULL")
     )
     expiration_hours: Mapped[int] = mapped_column(
         Integer,
@@ -104,7 +105,7 @@ class PropostaModel(Base):
         DateTime(timezone=True), nullable=True
     )
     deletado_por: Mapped[Optional[uuid.UUID]] = mapped_column(
-        UUID(as_uuid=True),
+        GUID(),
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
     )

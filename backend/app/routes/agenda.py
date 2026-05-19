@@ -44,7 +44,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import get_current_user, get_db
-from app.domain.entities.enums import AgendamentoStatus, AgendamentoTipo
+from app.domain.entities.enums import AgendamentoStatus, AgendamentoTipo, LeadStatus
 from app.infrastructure.security.dependencies import RequiresRole
 from app.infrastructure.security.scope_check import check_lead_access
 from app.models.agendamento import Agendamento
@@ -60,7 +60,8 @@ from app.presentation.schemas.agendamento_schema import (
 )
 from app.models.user import User
 from app.presentation.schemas.common_errors import HTTPErrorResponse
-from app.services import lead_service
+from app.services import lead_service, fcm_service, audit_service
+from app.services.fcm_service import send_push_notification
 
 logger = structlog.get_logger()
 
@@ -307,6 +308,7 @@ async def create_agendamento(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> AgendamentoResponse:
+    lead = None
     # 1. Date / time validation (also applies to bloqueio — same window).
     if body.data.weekday() >= 5:
         raise HTTPException(
@@ -364,8 +366,41 @@ async def create_agendamento(
             consultor_id=current_user.id,
         )
         db.add(ag)
+        
+        # Sincronização de status do Lead (Pipeline CRM §3.3)
+        if lead:
+            await lead_service.update_lead_status(
+                db, lead, LeadStatus.agendado, triggered_by="agendamento_criado"
+            )
+        
         await db.commit()
         await db.refresh(ag)
+        
+        # 5. Notificações FCM (Task 3.6)
+        if lead:
+            client_token = await lead_service._get_client_fcm_token(db, lead)
+            if client_token:
+                try:
+                    await send_push_notification(
+                        fcm_token=client_token,
+                        title="Novo agendamento!",
+                        body=f"Sua consultoria de {body.tipo.value} foi agendada para {body.data.strftime('%d/%m/%Y')} às {body.hora.strftime('%H:%M')}.",
+                        data={"type": "agendamento_criado", "agendamento_id": str(ag.id)}
+                    )
+                except Exception as exc:
+                    logger.warning("agenda_fcm_client_failed", error=str(exc))
+                    
+            # Notificar consultor se houver token
+            if current_user.fcm_token:
+                try:
+                    await send_push_notification(
+                        fcm_token=current_user.fcm_token,
+                        title="Novo lead agendado",
+                        body=f"Lead {lead.nome or lead.telefone} agendado para {body.data.strftime('%d/%m/%Y')}.",
+                        data={"type": "lead_agendado", "lead_id": str(lead.id)}
+                    )
+                except Exception as exc:
+                    logger.warning("agenda_fcm_consultor_failed", error=str(exc))
     except IntegrityError as exc:
         await db.rollback()
         logger.warning("agendamento_integrity_error", error=str(exc.orig))
@@ -624,6 +659,17 @@ async def cancel_agendamento(
 
     await db.commit()
 
+    await audit_service.log_event(
+        db,
+        event_type="agendamento_cancelado",
+        resource_type="agendamento",
+        resource_id=ag.id,
+        user_id=current_user.id,
+        user_email=current_user.email,
+        description=f"Agendamento cancelado por {current_user.perfil}. Motivo: {ag.motivo_cancelamento or 'N/A'}",
+        payload={"previous_status": str(previous_status)}
+    )
+
     logger.info(
         "agendamento_cancelled",
         agendamento_id=str(ag.id),
@@ -632,7 +678,22 @@ async def cancel_agendamento(
         consultor_id=str(current_user.id),
         was_confirmed=(previous_status == AgendamentoStatus.confirmado),
     )
-    # NOTE: FCM notification of cancelled-confirmed appointments is dispatched
-    # by a separate worker watching audit logs; we do not call FCM directly
-    # here to keep the route purely transactional and idempotent.
+    
+    # 5. Notificação FCM de Cancelamento (Task 3.6)
+    if previous_status in (AgendamentoStatus.pendente, AgendamentoStatus.confirmado):
+        if ag.lead_id:
+            lead = await lead_service.get_lead_by_id(db, ag.lead_id)
+            if lead:
+                client_token = await lead_service._get_client_fcm_token(db, lead)
+                if client_token:
+                    try:
+                        await send_push_notification(
+                            fcm_token=client_token,
+                            title="Agendamento cancelado",
+                            body=f"O agendamento do dia {ag.data.strftime('%d/%m/%Y')} foi cancelado.",
+                            data={"type": "agendamento_cancelado", "agendamento_id": str(ag.id)}
+                        )
+                    except Exception as exc:
+                        logger.warning("agenda_cancel_fcm_failed", error=str(exc))
+
     return Response(status_code=status.HTTP_204_NO_CONTENT)

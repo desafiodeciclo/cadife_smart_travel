@@ -1,10 +1,11 @@
 import uuid
+from app.infrastructure.persistence.types import GUID
 from datetime import datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import DateTime, ForeignKey, Integer, Numeric, String, Text, func
-from sqlalchemy.dialects.postgresql import ENUM as PgEnum, JSONB, UUID
+from sqlalchemy import JSON, DateTime, ForeignKey, Integer, Numeric, String, Text, func
+from sqlalchemy.dialects.postgresql import ENUM as PgEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -19,10 +20,10 @@ class Proposta(Base):
     __table_args__ = {"extend_existing": True}
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+        GUID(), primary_key=True, default=uuid.uuid4
     )
     lead_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("leads.id", ondelete="CASCADE"), nullable=False, index=True
+        GUID(), ForeignKey("leads.id", ondelete="CASCADE"), nullable=False, index=True
     )
     descricao: Mapped[str] = mapped_column(Text, nullable=False)
     valor_estimado: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2))
@@ -32,7 +33,7 @@ class Proposta(Base):
         default=PropostaStatus.rascunho,
     )
     consultor_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+        GUID(), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
     expiration_hours: Mapped[int] = mapped_column(
         Integer, nullable=False, server_default="48"
@@ -50,7 +51,7 @@ class Proposta(Base):
         DateTime(timezone=True), nullable=True
     )
     deletado_por: Mapped[Optional[uuid.UUID]] = mapped_column(
-        UUID(as_uuid=True),
+        GUID(),
         ForeignKey("users.id"),
         nullable=True,
     )
@@ -65,19 +66,19 @@ class PropostaVersao(Base):
     __table_args__ = {"extend_existing": True}
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+        GUID(), primary_key=True, default=uuid.uuid4
     )
     proposta_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        GUID(),
         ForeignKey("propostas.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
     numero_versao: Mapped[int] = mapped_column(Integer, nullable=False)
-    snapshot_json: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    snapshot_json: Mapped[dict] = mapped_column(JSON, nullable=False)
     motivo: Mapped[str] = mapped_column(String(50), nullable=False)
     created_by: Mapped[Optional[uuid.UUID]] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id"), nullable=True
+        GUID(), ForeignKey("users.id"), nullable=True
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()

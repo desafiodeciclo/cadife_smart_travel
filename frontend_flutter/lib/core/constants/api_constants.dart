@@ -19,12 +19,13 @@ class ApiConstants {
   static const String login = '/auth/login';
   static const String register = '/auth/register';
   static const String logout = '/auth/logout';
-  static const String logoutAllDevices = '/auth/logout-all-devices';
   static const String refresh = '/auth/refresh';
   static const String registerFcmToken = '/users/fcm-token';
   static const String me = '/users/me';
   static const String forgotPassword = '/auth/forgot-password';
   static const String changePassword = '/auth/change-password';
+  static const String resetPassword = '/auth/reset-password';
+  static const String logoutAllDevices = '/auth/logout-all-devices';
 
   // ── Leads ──────────────────────────────────────────────
   static const String leads = '/leads';

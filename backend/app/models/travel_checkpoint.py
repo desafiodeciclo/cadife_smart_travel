@@ -1,4 +1,5 @@
 import uuid
+from app.infrastructure.persistence.types import GUID
 from datetime import datetime
 from typing import TYPE_CHECKING
 
@@ -21,10 +22,10 @@ class TravelCheckpointRecord(Base):
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+        GUID(), primary_key=True, default=uuid.uuid4
     )
     lead_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("leads.id", ondelete="CASCADE"), nullable=False, index=True
+        GUID(), ForeignKey("leads.id", ondelete="CASCADE"), nullable=False, index=True
     )
     checkpoint: Mapped[TravelCheckpoint] = mapped_column(
         PgEnum(

@@ -221,7 +221,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
-                                    'E-mail ou senha incorretos. Tente novamente.',
+                                    authState.error?.toString() ?? 'Erro ao fazer login.',
                                     style: AppTextStyles.bodySmall
                                         .copyWith(color: AppColors.error),
                                   ),

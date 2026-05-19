@@ -1,4 +1,5 @@
 import uuid
+from app.infrastructure.persistence.types import GUID
 from datetime import date, datetime, time
 from typing import TYPE_CHECKING, Optional
 
@@ -45,10 +46,10 @@ class Agendamento(Base):
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+        GUID(), primary_key=True, default=uuid.uuid4
     )
     lead_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        UUID(as_uuid=True),
+        GUID(),
         ForeignKey("leads.id", ondelete="CASCADE"),
         nullable=True,
         index=True,
@@ -70,7 +71,7 @@ class Agendamento(Base):
         nullable=True,
     )
     consultor_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL")
+        GUID(), ForeignKey("users.id", ondelete="SET NULL")
     )
     notas: Mapped[Optional[str]] = mapped_column(String(2000), nullable=True)
     cancelado_em: Mapped[Optional[datetime]] = mapped_column(

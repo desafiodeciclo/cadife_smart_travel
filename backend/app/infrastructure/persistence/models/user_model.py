@@ -7,6 +7,7 @@ referencing 'users.id' via FK can resolve the table at migration time.
 """
 
 import uuid
+from app.infrastructure.persistence.types import GUID, StringArray
 from datetime import datetime
 from typing import Optional
 
@@ -14,7 +15,6 @@ from sqlalchemy import Boolean, DateTime, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.infrastructure.persistence.database import Base
-from app.infrastructure.persistence.types import GUID, StringArray
 
 
 class UserModel(Base):
@@ -41,3 +41,4 @@ class UserModel(Base):
     tipo_viagem: Mapped[Optional[list]] = mapped_column(StringArray())
     preferencias: Mapped[Optional[list]] = mapped_column(StringArray())
     tem_passaporte: Mapped[Optional[bool]] = mapped_column(Boolean)
+    global_logout_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))

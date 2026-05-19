@@ -1,6 +1,7 @@
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/admin/presentation/providers/admin_providers.dart';
 import 'package:cadife_smart_travel/features/auth/domain/entities/auth_user.dart';
+import 'package:cadife_smart_travel/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:cadife_smart_travel/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -28,6 +29,11 @@ class ProfileScreen extends ConsumerWidget {
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             actions: [
+              IconButton(
+                icon: const Icon(LucideIcons.logOut),
+                tooltip: 'Sair',
+                onPressed: () => _confirmLogout(context, ref),
+              ),
               IconButton(
                 icon: const Icon(LucideIcons.settings),
                 tooltip: 'Configurações',
@@ -125,6 +131,45 @@ class ProfileScreen extends ConsumerWidget {
         body: Center(child: Text('Erro ao carregar perfil')),
       ),
     );
+  }
+
+  void _handleLogout(BuildContext context, WidgetRef ref) {
+    ref.read(authNotifierProvider.notifier).logout();
+    ref.read(currentUserProvider.notifier).logout();
+    context.go('/auth/login');
+  }
+
+  Future<void> _confirmLogout(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showShadDialog<bool>(
+      context: context,
+      builder: (ctx) => ShadDialog(
+        title: const Text('Sair da conta'),
+        description: const Text('Tem certeza que deseja sair?'),
+        actions: [
+          Row(
+            children: [
+              Expanded(
+                child: ShadButton.outline(
+                  onPressed: () => Navigator.of(ctx).pop(false),
+                  child: const Text('Cancelar'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ShadButton.destructive(
+                  onPressed: () => Navigator.of(ctx).pop(true),
+                  child: const Text('Sair'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      _handleLogout(context, ref);
+    }
   }
 }
 

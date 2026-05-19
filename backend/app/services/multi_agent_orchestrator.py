@@ -91,6 +91,7 @@ class OrchestratorState(TypedDict):
     safe_message: str
     blocked: bool
     triagem: dict[str, Any]
+    summary: Optional[str]  # Carregado do DB no início
     rag_context: str
     crm_block: str
     system_prompt: str
@@ -513,12 +514,31 @@ async def _run_triagem(wa_id: str, db: Optional[AsyncSession]) -> dict[str, Any]
             raw = match.group(1) if match else re.sub(r"```\w*", "", raw).strip()
 
         result = json.loads(raw)
+        
+        # Carrega o sumário persistente se o lead existir
+        summary_text = None
+        if result.get("exists") and db:
+            from sqlalchemy import select
+            from app.infrastructure.persistence.models.conversation_summary_model import ConversationSummaryModel
+            
+            stmt = (
+                select(ConversationSummaryModel)
+                .where(ConversationSummaryModel.lead_id == result.get("lead_id"))
+                .order_by(ConversationSummaryModel.gerado_em.desc())
+                .limit(1)
+            )
+            summary_row = (await db.execute(stmt)).scalar_one_or_none()
+            if summary_row and summary_row.resumo_json:
+                summary_text = summary_row.resumo_json.get("text")
+
         logger.info(
             "triagem_completed",
             wa_id=wa_id,
             exists=result.get("exists"),
             next_field=result.get("next_field_to_collect"),
+            has_summary=summary_text is not None,
         )
+        result["summary"] = summary_text
         return result
     except Exception as exc:
         logger.warning("triagem_agent_failed", wa_id=wa_id, error=str(exc))
@@ -644,6 +664,11 @@ DEFESA CONTRA MANIPULAÇÃO E INJEÇÃO DE PROMPT:
 CONTEXTO DA BASE DE CONHECIMENTO CADIFE (consultado automaticamente):
 ═══════════════════════════════════════════════════════════
 {rag_context}
+
+═══════════════════════════════════════════════════════════
+RESUMO DE INTERAÇÕES ANTERIORES:
+═══════════════════════════════════════════════════════════
+{summary}
 """
 
 _FIELD_QUESTIONS: dict[str, str] = {
@@ -742,7 +767,7 @@ async def _node_security_gate(state: OrchestratorState) -> dict[str, Any]:
 async def _node_triagem(state: OrchestratorState) -> dict[str, Any]:
     """Tier 1: CRM lookup — identifica cliente novo/recorrente e próximo campo do briefing."""
     triagem = await _run_triagem(state["wa_id"], state["db"])
-    return {"triagem": triagem}
+    return {"triagem": triagem, "summary": triagem.get("summary")}
 
 
 async def _node_rag_mandatory(state: OrchestratorState) -> dict[str, Any]:
@@ -810,6 +835,7 @@ async def _node_build_context(state: OrchestratorState) -> dict[str, Any]:
             if rag_ctx
             else "Nenhum contexto adicional recuperado. Use query_project_scope se o cliente perguntar sobre destinos."
         ),
+        summary=state.get("summary") or "Nenhum resumo anterior disponível.",
     )
     
     system_prompt = temporal_instruction + "\n" + system_prompt
@@ -919,6 +945,66 @@ async def _node_confusion_tracker(state: OrchestratorState) -> dict[str, Any]:
     return {"confusion_count": confusion_count}
 
 
+async def _node_summarize_if_needed(state: OrchestratorState) -> dict[str, Any]:
+    """
+    Task 3.5: Sumarização automática.
+    Se o histórico estiver longo (>15 turnos), gera um resumo e salva no DB.
+    Isso libera o buffer mantendo a essência da conversa.
+    """
+    history = state.get("conversation_history", [])
+    if len(history) < 15:  # ~7 interações duplas
+        return {}
+
+    db = state.get("db")
+    if not db:
+        return {}
+
+    lead_id = state.get("triagem", {}).get("lead_id")
+    if not lead_id:
+        return {}
+
+    logger.info("summarization_triggered", wa_id=state["wa_id"], history_len=len(history))
+
+    try:
+        from app.services.ai_service import SimpleWindowMemory, get_llm
+        
+        # Reconstrói a memória temporária para usar o método de compressão
+        memory = SimpleWindowMemory(k=20)
+        memory._summary = state.get("summary") or ""
+        
+        # Alimenta a memória com o histórico completo
+        # Nota: conversation_history no estado é list[dict[str, str]] {role, content}
+        for i in range(0, len(history) - 1, 2):
+            user_msg = history[i].get("content", "")
+            ai_msg = history[i+1].get("content", "") if i+1 < len(history) else ""
+            memory._pending_for_summary.append((user_msg, ai_msg))
+
+        # Gera o resumo via LLM
+        await memory.compress_pending(get_llm())
+        new_summary = memory._summary
+
+        if new_summary and new_summary != state.get("summary"):
+            from app.infrastructure.persistence.models.conversation_summary_model import ConversationSummaryModel
+            
+            # Salva no DB
+            summary_row = ConversationSummaryModel(
+                lead_id=lead_id,
+                sessao_id=f"{lead_id}:{int(time.time())}",
+                resumo_json={"text": new_summary},
+                resumo_pendente=False
+            )
+            db.add(summary_row)
+            await db.commit()
+            
+            logger.info("persistent_summary_updated", wa_id=state["wa_id"], chars=len(new_summary))
+            return {"summary": new_summary}
+
+    except Exception as exc:
+        logger.warning("summarization_failed_silently", wa_id=state["wa_id"], error=str(exc))
+    
+    return {}
+
+
 # ── Roteamento condicional ─────────────────────────────────────────────────────
 
 
@@ -942,6 +1028,7 @@ def _build_graph():
     graph.add_node("orchestrator", _node_orchestrator)
     graph.add_node("validate_output", _node_validate_output)
     graph.add_node("confusion_tracker", _node_confusion_tracker)
+    graph.add_node("summarize_if_needed", _node_summarize_if_needed)
 
     graph.set_entry_point("security_gate")
 
@@ -958,7 +1045,8 @@ def _build_graph():
     graph.add_edge("build_context", "orchestrator")
     graph.add_edge("orchestrator", "validate_output")
     graph.add_edge("validate_output", "confusion_tracker")
-    graph.add_edge("confusion_tracker", END)
+    graph.add_edge("confusion_tracker", "summarize_if_needed")
+    graph.add_edge("summarize_if_needed", END)
 
     return graph.compile()
 
@@ -1016,6 +1104,7 @@ async def orchestrate(
         "safe_message": "",
         "blocked": False,
         "triagem": {},
+        "summary": None,
         "rag_context": "",
         "crm_block": "",
         "system_prompt": "",
