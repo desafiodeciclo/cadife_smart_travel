@@ -152,6 +152,12 @@ class GoogleCalendarService:
             )
             meet_link: str = event.get("hangoutLink", "")
         except Exception as exc:
+            logger.error(
+                "gcal_conference_creation_failed",
+                calendar_id=calendar_id,
+                error=str(exc),
+                exc_info=True,
+            )
             if "Invalid conference type value" in str(exc) or "invalidConferenceSource" in str(exc):
                 logger.warning(
                     "gcal_conference_not_supported_falling_back",
