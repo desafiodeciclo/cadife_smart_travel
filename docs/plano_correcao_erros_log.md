@@ -1,113 +1,229 @@
-# Plano de Implementação — Correção de Erros de Log (Ferramentas de IA & Relações CRM)
+# Plano de Implementação — Correção de Avisos e Erros de Log (Cadife Smart Travel)
 
-Este documento descreve o plano detalhado de implementação para corrigir os erros de log identificados no `cadife-backend`. A correção foca em restabelecer a estabilidade do fluxo de atendimento automatizado (AYA), eliminando falhas de leitura do contexto do lead que resultam em confusão sistemática da IA e alertas indevidos de alucinação/transbordo humano.
+Este documento apresenta um plano técnico detalhado para sanar os avisos, restrições e potenciais pontos de falha detectados na análise do log de execução do backend (`cadife-backend`).
+
+Conforme solicitado, **nenhuma alteração direta no código do sistema foi efetuada**. Este é um guia completo e acionável para que a equipe de engenharia implemente as devidas correções sem introduzir regressões.
 
 ---
 
-## 1. Análise de Causa Raiz & Efeitos em Cascata
+## 1. Mapeamento & Análise de Causa Raiz dos Alertas
 
-### 1.1 O Erro Primário (`tool_get_lead_context_failed`)
-No log, identificamos a seguinte falha crítica:
+Após inspeção minuciosa do log fornecido, foram identificados **4 pontos de atenção (Warnings/Warnings de Fluxo)** com severidade média a alta que afetam o desempenho, custos de API e a experiência de notificações dos consultores.
+
+```mermaid
+graph TD
+    A[Logs do Backend] --> B[1. Firebase Credentials Not Found]
+    A --> C[2. No Consultant Tokens]
+    A --> D[3. Context Guardrail Violations]
+    A --> E[4. Tool Result Truncated]
+
+    B --> B1[FCM Desativado no Lifespan]
+    C --> C1[Falha de Envio de Push aos Consultores]
+    D --> D1[Remoção de Chunks de perfis_e_solucoes.md]
+    E --> E1[Estouro de Tokens & Latência com Imagem Base64 3MB]
+```
+
+### 1.1 Aviso 1: `firebase_credentials_not_found`
+* **Log:**
+  ```json
+  {"path": "/opt/cadife/app/backend/firebase_credentials.json", "note": "FCM notifications will be disabled. Add firebase_credentials.json to enable.", "event": "firebase_credentials_not_found", "level": "warning", "timestamp": "2026-05-18T23:46:02.958806Z"}
+  ```
+* **Causa Raiz:** O arquivo de credenciais da conta de serviço do Firebase (`firebase_credentials.json`) não está presente no caminho padrão no ambiente de produção. Isso desativa silenciosamente o Firebase Cloud Messaging (FCM), impedindo o envio de notificações de transbordo e briefing completo.
+
+---
+
+### 1.2 Aviso 2: `no_consultant_tokens_for_notification`
+* **Log:**
+  ```json
+  {"lead_id": "ec22f547-e41c-450f-8b38-56001e65d34f", "event": "no_consultant_tokens_for_notification", "request_id": "8a5c54b3-4969-4382-bb00-09c4fa2dce30", "method": "POST", "path": "/webhook/whatsapp", "level": "warning", "timestamp": "2026-05-18T23:46:41.138211Z"}
+  ```
+* **Causa Raiz:** O sistema tenta disparar uma notificação push para os consultores quando o lead atinge o checkpoint `BRIEFING_COLETADO`. Contudo, nenhum consultor ativo possui tokens FCM registrados no banco de dados, tornando a notificação ineficaz.
+
+---
+
+### 1.3 Aviso 3: `context_guardrail_violations` (Remoção de Contexto RAG)
+* **Log:**
+  ```json
+  {"strategy": "mask", "removed": 4, "total": 4, "violations": [{"source": "perfis_e_solucoes.md", "chunk_index": 12, "reasons": ["Menção a valor monetário detectado: '...média individual**: R$ 8.000-15.000/mês\n**Destin...'"]}], "event": "context_guardrail_violations", "request_id": "6f9eb238-43fb-4616-b778-d4652d798b5d", "level": "warning"}
+  ```
+* **Causa Raiz:** O arquivo `perfis_e_solucoes.md` (chunk index 12) contém referências a faixas salariais/valores de orçamento. O guardrail de preços do RAG (`PriceGuardrail`) foi disparado e aplicou a estratégia de exclusão/máscara (`mask`), descartando **4 chunks informativos inteiros** de uma vez para evitar que a IA cite valores comerciais.
+* **Impacto:** A IA perde contexto valioso sobre os perfis dos clientes por causa de uma simples referência de faixa monetária qualitativa.
+
+---
+
+### 1.4 Aviso Crítico 4: `tool_result_truncated` em `generate_travel_image`
+* **Log:**
+  ```json
+  {"tool": "generate_travel_image", "original_len": 3079342, "event": "tool_result_truncated", "request_id": "6f9eb238-43fb-4616-b778-d4652d798b5d", "level": "warning", "timestamp": "2026-05-18T23:47:55.415577Z"}
+  ```
+* **Causa Raiz:** A API do OpenRouter para o modelo `recraft/recraft-v3` retorna a imagem gerada no formato **Data URI Base64 bruta** diretamente na resposta da ferramenta. Essa string tem um comprimento colossal de **3.079.342 caracteres (~3 MB)**!
+* **Impacto:** O orquestrador detecta que o tamanho é proibitivo para o contexto do chat LLM e trunca o resultado. Além de aumentar astronomicamente os custos de latência e consumo de tokens, isso impede que a IA obtenha a imagem ou a repasse corretamente para o usuário.
+
+---
+
+## 2. Plano de Correções Propostas
+
+Abaixo está o plano de ação passo a passo para corrigir esses 4 problemas identificados de forma elegante e seguindo a Clean Architecture adotada no projeto.
+
+### 2.1 Correção 1: Suporte a Credenciais Firebase por Variável de Ambiente
+Para evitar a dependência estrita de um arquivo físico (`firebase_credentials.json`), que pode falhar em ambientes baseados em containers (como Docker ou AWS ECS) ou sistemas CI/CD, propomos ajustar o adaptador do Firebase.
+
+* **Onde:** `app/infrastructure/adapters/firebase.py`
+* **Como:**
+  Modificar a inicialização do Firebase para permitir carregar o JSON de credenciais a partir de uma variável de ambiente baseada em string (ex: `FIREBASE_CREDENTIALS_JSON`):
+  
+  ```python
+  import os
+  import json
+  import firebase_admin
+  from firebase_admin import credentials
+  from app.infrastructure.config.settings import get_settings
+
+  def init_firebase():
+      settings = get_settings()
+      # Verifica se já está inicializado
+      if firebase_admin._apps:
+          return
+
+      # Prioridade 1: Variável de ambiente com o JSON stringificado
+      firebase_json = os.getenv("FIREBASE_CREDENTIALS_JSON")
+      if firebase_json:
+          try:
+              cred_dict = json.loads(firebase_json)
+              cred = credentials.Certificate(cred_dict)
+              firebase_admin.initialize_app(cred)
+              return
+          except Exception as exc:
+              # Fallback em caso de falha de parse
+              pass
+
+      # Prioridade 2: Arquivo físico padrão
+      path = "/opt/cadife/app/backend/firebase_credentials.json"
+      if os.path.exists(path):
+          cred = credentials.Certificate(path)
+          firebase_admin.initialize_app(cred)
+      else:
+          # Mantém log de aviso sem quebrar a inicialização
+          pass
+  ```
+
+---
+
+### 2.2 Correção 2: Registro de Token FCM no Login & Polling de Fallback
+* **Ação Mobile (Flutter):**
+  Garantir que a aplicação mobile chame o endpoint de atualização de perfil do consultor enviando o token FCM gerado pelo dispositivo imediatamente após o login bem-sucedido ou na renovação do token do dispositivo.
+* **Ação Backend:**
+  Se ao disparar uma notificação para um consultor nenhum token FCM for encontrado, o backend deve automaticamente realizar o registro de notificação interna na tabela de alertas, servindo como fallback para exibição no painel web ou via polling.
+
+---
+
+### 2.3 Correção 3: Higienização da Base de Conhecimento RAG
+Para evitar o mascaramento agressivo do `PriceGuardrail` que remove chunks cruciais de perfil:
+* **Arquivo:** `backend/knowledge_base/perfis_e_solucoes.md`
+* **Solução:**
+  Substituir representações numéricas diretas de moeda por descritores qualitativos.
+  
+  *Antes (Causa o disparo do Guardrail):*
+  > **Renda média individual**: R$ 8.000-15.000/mês
+  
+  *Depois (Não dispara o Guardrail, preservando o chunk):*
+  > **Renda média individual**: Faixa de renda média-alta a alta (confortável)
+
+---
+
+### 2.4 Correção 4: Salvamento de Imagem Local e Retorno de URL Curta
+Esta é a correção mais importante para a estabilidade e performance da IA. A ferramenta `generate_travel_image` não deve retornar o conteúdo de 3MB Base64 bruto no resultado.
+
+#### Passo 1: Montar Diretório Estático no FastAPI
+No arquivo `main.py`, devemos montar uma rota estática para servir arquivos de mídia locais (como imagens de viagem geradas):
+
+```python
+# No arquivo /opt/cadife/app/backend/main.py
+from fastapi.staticfiles import StaticFiles
+
+# Logo após a inicialização de app = FastAPI(...)
+app.mount("/static", StaticFiles(directory="static"), name="static")
+```
+
+#### Passo 2: Otimizar a Ferramenta `generate_travel_image`
+No arquivo `/opt/cadife/app/backend/app/services/ai_tools.py`, reescrever a lógica interna de processamento da imagem em `_generate_travel_image` para capturar a string Base64, gravá-la em disco e retornar apenas o link da imagem local:
+
+```python
+import base64
+import os
+import uuid
+
+# Dentro de _generate_travel_image (linhas ~723-733):
+            image_url = ""
+            if choices:
+                message = choices[0].get("message", {})
+                images = message.get("images", [])
+                if images:
+                    raw_image_data = images[0]
+                    
+                    # Verifica se o retorno é uma imagem codificada em Base64
+                    if raw_image_data.startswith("data:"):
+                        try:
+                            # Formato: data:image/png;base64,iVBORw0KGgoAAAANSU...
+                            header, base64_str = raw_image_data.split(",", 1)
+                            # Extrai extensão
+                            ext = "png"
+                            if "jpeg" in header or "jpg" in header:
+                                ext = "jpg"
+                            
+                            # Decodifica binário
+                            image_bytes = base64.b64decode(base64_str)
+                            
+                            # Caminho local para gravação
+                            filename = f"travel_{uuid.uuid4().hex}.{ext}"
+                            static_dir = os.path.join("static", "media")
+                            os.makedirs(static_dir, exist_ok=True)
+                            
+                            filepath = os.path.join(static_dir, filename)
+                            with open(filepath, "wb") as f:
+                                f.write(image_bytes)
+                            
+                            # Constrói URL pública
+                            image_url = f"{settings.BACKEND_URL}/static/media/{filename}"
+                        except Exception as parse_err:
+                            logger.error("base64_image_parse_failed", error=str(parse_err))
+                            image_url = raw_image_data[:200]  # Fallback seguro para evitar log gigante
+                    else:
+                        image_url = raw_image_data
+```
+
+Com essa alteração, a resposta retornada ao LLM terá o tamanho insignificante de alguns bytes, ex:
 ```json
-{"wa_id": "554791103131", "error": "'str' object has no attribute 'value'", "event": "tool_get_lead_context_failed", "request_id": "7b5d846f-5f67-4251-8631-499e38faa162", "level": "error"}
+{
+  "success": true,
+  "url": "https://api.cadifetour.com/static/media/travel_d3b07384d94.png",
+  "destino": "Italia",
+  "message": "Imagem inspiracional de Italia gerada com sucesso! Compartilhe este link com o cliente..."
+}
 ```
-
-Esta exceção ocorre dentro da função `_get_lead_context_by_wa_id` no arquivo `app/services/ai_tools.py`:
-- A função chama `LeadRepository(db).get_by_phone(wa_id)`.
-- O `LeadRepository` opera com o modelo de infraestrutura/persistência `LeadModel` (definido em `app/infrastructure/persistence/models/lead_model.py`).
-- No `LeadModel`, os campos `status` e `score` são mapeados como strings simples vindas do banco PostgreSQL:
-  ```python
-  status: Mapped[str] = mapped_column(lead_status_enum, ...)
-  score: Mapped[Optional[str]] = mapped_column(lead_score_enum)
-  ```
-- No entanto, o código de `ai_tools.py` tenta ler estes campos como enums Python (acessando a propriedade `.value`):
-  ```python
-  "status": lead.status.value if lead.status else None,
-  "score": lead.score.value if lead.score else None,
-  ```
-- Como `lead.status` e `lead.score` retornados do repositório já são instâncias da classe `str`, a tentativa de acessar `.value` lança `AttributeError: 'str' object has no attribute 'value'`.
+Isso **elimina por completo** o aviso `tool_result_truncated`, economiza 3MB de largura de banda de rede a cada turno e evita a degradação de contexto dos agentes!
 
 ---
 
-### 1.2 Os Efeitos em Cascata (O Loop do Campo `destino`)
-A falha na ferramenta de contexto do lead corrompe todo o fluxo de conversação do WhatsApp da seguinte maneira:
+## 3. Plano de Validação & Testes
 
-1. **Falha na Busca de Contexto**: Como a ferramenta `get_lead_context_by_wa_id` falha com exceção, o fluxo assume que o lead não pôde ser recuperado (`exists: false`) ou que é um novo atendimento.
-2. **Reset do Próximo Campo**: A triagem é forçada a recomeçar do zero, definindo o próximo campo pendente (`next_field`) como `"destino"`.
-3. **Preenchimento Fantasma vs. Triagem Stuck**: Conforme o cliente responde (por exemplo, informando que vai viajar com "amigos" ou com orçamento "alto"), a persistência em segundo plano (`persist_lead_data` ou a extração estruturada) consegue preencher os campos reais no banco (completude sobe para 78%, 89% e até 100%), mas o fluxo de orquestração principal continua achando que o próximo passo é perguntar o `"destino"`.
-4. **Confusão Sistêmica**: A IA tenta encaixar respostas de outros campos no campo `"destino"`, gerando confusão contínua (`stuck_field: "destino"`, `consecutive_attempts` subindo de 3 a 8).
-5. **Transbordo Forçado**: Ao atingir o limite de tentativas frustradas de resolver o `"destino"`, o sistema dispara alertas de alucinação (`ALERT_HALLUCINATION`) para o e-mail de suporte (`frank@cadife.com`) e recomenda transbordo para consultor humano (`human_handoff_recommended`).
+Para validar a correta aplicação destas medidas, execute a seguinte rotina:
 
----
-
-### 1.3 Eventos Auxiliares no Log (Comportamento Normal)
-- **`context_guardrail_violations`**:
-  O log registra avisos de violação de guardrail no arquivo `perfis_e_solucoes.md` (chunk 12) devido à menção a valores monetários (`R$ 8.000-15.000/mês`). A estratégia configurada é `"mask"`. 
-  *Diagnóstico*: **Comportamento correto e esperado.** O `PriceGuardrail` em `app/services/context_guardrails.py` identificou a menção a preços e aplicou o redator ([REDACTED]), evitando que a IA cite valores comerciais diretamente. Nenhuma ação corretiva é necessária para este aviso.
-- **`no_consultant_tokens_for_notification`**:
-  Avisos de que não há tokens FCM configurados para notificar consultores sobre a completude do briefing.
-  *Diagnóstico*: É um aviso padrão do fluxo de notificação móvel que não impede o funcionamento da IA principal.
-
----
-
-## 2. Plano de Ação: Correções Propostas
-
-Para corrigir a falha de forma robusta e defensiva (compatível tanto se a propriedade for uma string simples quanto um Enum puro do Python), aplicaremos a mesma verificação segura já utilizada nos campos de briefing (`perfil` e `orcamento`).
-
-### 2.1 Correção 1 — Ferramenta `_get_lead_context_by_wa_id`
-No arquivo `/opt/cadife/app/backend/app/services/ai_tools.py`, na função `_get_lead_context_by_wa_id`:
-
-*Código Atual (Linhas 353-354)*:
-```python
-"status": lead.status.value if lead.status else None,
-"score": lead.score.value if lead.score else None,
-```
-
-*Correção Proposta*:
-```python
-"status": (lead.status.value if hasattr(lead.status, "value") else lead.status) if lead.status else None,
-"score": (lead.score.value if hasattr(lead.score, "value") else lead.score) if lead.score else None,
-```
-
----
-
-### 2.2 Correção 2 — Ferramenta `_check_existing_lead`
-No mesmo arquivo `/opt/cadife/app/backend/app/services/ai_tools.py`, na função `_check_existing_lead`:
-
-*Código Atual (Linhas 584-585)*:
-```python
-"status": lead.status.value if lead.status else None,
-"score": lead.score.value if lead.score else None,
-```
-
-*Correção Proposta*:
-```python
-"status": (lead.status.value if hasattr(lead.status, "value") else lead.status) if lead.status else None,
-"score": (lead.score.value if hasattr(lead.score, "value") else lead.score) if lead.score else None,
-```
-
----
-
-## 3. Plano de Testes & Validação
-
-Após a aplicação das correções recomendadas, o fluxo deve ser validado através dos seguintes passos:
-
-1. **Execução de Testes Unitários/Integração Existentes**:
-   Navegar até a pasta do backend e rodar a suíte de testes de persistência de webhook para garantir que nenhuma regressão de banco de dados ocorra:
+1. **Validação do RAG:**
+   Após a higienização do arquivo `perfis_e_solucoes.md`, inicie o backend e confirme no log que o evento `rag_knowledge_base_indexed` indica zero falhas e que consultas que tocam os perfis não disparam mais `context_guardrail_violations`.
+2. **Teste de Geração de Imagem:**
+   Crie uma rota de teste provisória ou execute uma chamada direta da ferramenta em um script na pasta `scratch/`:
    ```bash
-   pytest tests/integration/test_webhook_persistence.py
+   python -c "import asyncio; from app.services.ai_tools import _generate_travel_image; asyncio.run(_generate_travel_image('Roma', 'casal'))"
    ```
-2. **Teste de Simulação das Ferramentas**:
-   Criar um pequeno script em `/opt/cadife/app/backend/scratch/test_ai_tools_fix.py` para simular a chamada direta de `execute_tool` para `get_lead_context_by_wa_id` e verificar que o JSON de retorno é gerado sem erros e com os campos `status` e `score` preenchidos como strings normais.
-3. **Verificação do Log de Produção**:
-   Validar que após o processamento da mensagem do WhatsApp, o evento `tool_dispatch` da ferramenta `get_lead_context_by_wa_id` seja seguido por um evento de sucesso, sem disparar a exceção `'str' object has no attribute 'value'`.
+   Certifique-se de que a imagem foi salva no diretório `static/media/` e que a resposta retornada é uma URL válida.
 
 ---
 
-## 4. Conclusão & Próximos Passos
+## 4. Conclusão
 
-Esta correção simples, baseada em reflexão de atributos (`hasattr`), resolve de forma elegante e definitiva o problema de dessincronização de tipos entre os modelos de persistência (`LeadModel` com campos `str`) e as suposições feitas pelas ferramentas de IA.
-
-**Ações sugeridas após aprovação deste plano**:
-1. Aplicar a correção contida na Seção 2 nos respectivos trechos do arquivo `app/services/ai_tools.py`.
-2. Rodar a validação sugerida na Seção 3.
+A aplicação coordenada dessas correções trará os seguintes benefícios imediatos ao sistema **Cadife Smart Travel**:
+* **Alta Estabilidade:** Eliminação de truncamento de logs e estouros de contexto.
+* **Economia de Recursos:** Redução drástica na quantidade de tokens processados por chamada de orquestração.
+* **Melhor RAG:** Preservação de pedaços da base de conhecimento ricos que antes eram descartados.
+* **Infraestrutura Moderna:** Capacidade de rodar notificações push no Firebase a partir de qualquer nuvem sem arquivos rígidos locais.
