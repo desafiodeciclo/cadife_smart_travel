@@ -109,8 +109,9 @@ def upgrade() -> None:
             postgresql.JSONB,
             nullable=False,
             server_default=sa.text(
-                "'{\"leads_qualificados\":true,\"novos_leads\":true,"
-                "\"propostas_aprovadas\":true,\"agendamentos_confirmados\":true}'::jsonb"
+                "jsonb_build_object("
+                "'leads_qualificados', true, 'novos_leads', true, "
+                "'propostas_aprovadas', true, 'agendamentos_confirmados', true)"
             ),
         ),
         sa.Column(

@@ -8,6 +8,13 @@ from app.infrastructure.persistence.types import GUID, StringArray
 from app.core.database import Base
 from app.domain.entities.enums import PerfilViagem, OrcamentoPerfil as OrcamentoNivel
 
+import unicodedata
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+from app.services.ai_normalization import (
+    PERFIL_ALIASES as _PERFIL_ALIASES,
+    ORCAMENTO_ALIASES as _ORCAMENTO_ALIASES,
+)
+
 if TYPE_CHECKING:
     from app.models.lead import Lead
 
