@@ -37,7 +37,7 @@ class AuthRemoteApiDatasource implements IAuthDatasource {
   Future<Map<String, dynamic>> register(String name, String email, String password) async {
     final response = await _dio.post(
       ApiConstants.register,
-      data: {'name': name, 'email': email, 'password': password},
+      data: {'nome': name, 'email': email, 'password': password},
     );
     return response.data as Map<String, dynamic>;
   }

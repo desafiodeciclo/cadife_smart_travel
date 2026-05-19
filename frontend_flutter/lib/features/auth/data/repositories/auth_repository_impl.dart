@@ -21,16 +21,13 @@ class AuthRepositoryImpl implements IAuthRepository {
     try {
       final data = await _remoteDatasource.login(email, password, profileHint: profileHint);
 
-      // Mock format: {user: {...}, token: {access_token, refresh_token}}
-      final tokenData = data['token'] as Map<String, dynamic>?;
-      if (tokenData == null) {
-        return const Left(ServerFailure('Resposta de login inválida.'));
-      }
+      // Supports both nested format {token: {access_token, ...}} and flat format {access_token, ...}
+      final tokenData = data['token'] as Map<String, dynamic>? ?? data;
 
       final accessToken = tokenData['access_token']?.toString();
       final refreshToken = tokenData['refresh_token']?.toString();
       if (accessToken == null || refreshToken == null) {
-        return const Left(ServerFailure('Token ausente na resposta.'));
+        return const Left(ServerFailure('Token ausente na resposta de login.'));
       }
 
       await _secureConfig.saveTokens(
@@ -60,7 +57,39 @@ class AuthRepositoryImpl implements IAuthRepository {
   Future<Either<Failure, AuthUser>> register(String name, String email, String password) async {
     try {
       final data = await _remoteDatasource.register(name, email, password);
-      return Right(AuthUser.fromJson(data));
+
+      // Supports both nested format {token: {access_token, ...}} and flat format {access_token, ...}
+      final tokenData = data['token'] as Map<String, dynamic>? ?? data;
+
+      final accessToken = tokenData['access_token']?.toString();
+      final refreshToken = tokenData['refresh_token']?.toString();
+      
+      if (accessToken == null || refreshToken == null) {
+        // Fallback for mock/legacy formats that return user data directly
+        if (data['id'] != null || data['email'] != null) {
+          return Right(AuthUser.fromJson(data));
+        }
+        return const Left(ServerFailure('Token ou dados do usuário ausentes na resposta de cadastro.'));
+      }
+
+      await _secureConfig.saveTokens(
+        accessToken: accessToken,
+        refreshToken: refreshToken,
+      );
+
+      // Try to get user from register response first
+      final userData = data['user'] as Map<String, dynamic>?;
+      if (userData != null) {
+        return Right(AuthUser.fromJson(userData));
+      }
+      
+      // Fallback: try /me endpoint
+      final currentUserData = await _remoteDatasource.getUserProfile();
+      if (currentUserData != null) {
+        return Right(AuthUser.fromJson(currentUserData));
+      }
+      
+      return const Left(ServerFailure('Dados do usuário ausentes.'));
     } on Exception catch (e) {
       return Left(Failure.fromException(e));
     }

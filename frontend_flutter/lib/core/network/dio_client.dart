@@ -88,8 +88,16 @@ class DioClientFactory {
   }
 
   /// Unpinned Dio for local development only (no certificate validation).
-  static Dio createUnpinned() {
+  static Dio createUnpinned({
+    AuthInterceptor? authInterceptor,
+    ErrorInterceptor? errorInterceptor,
+    OfflineInterceptor? offlineInterceptor,
+  }) {
     final dio = Dio(_baseOptions());
+
+    if (errorInterceptor != null) dio.interceptors.add(errorInterceptor);
+    if (authInterceptor != null) dio.interceptors.add(authInterceptor);
+    if (offlineInterceptor != null) dio.interceptors.add(offlineInterceptor);
 
     if (kDebugMode) {
       dio.interceptors.add(

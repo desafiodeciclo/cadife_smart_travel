@@ -20,7 +20,7 @@ class AppConfig {
   // Pré-configurados
   static const AppConfig dev = AppConfig(
     environment: AppEnvironment.dev,
-    apiBaseUrl: 'http://10.0.2.2:8000', // Use '10.0.2.2' para emulador Android
+    apiBaseUrl: 'https://lab.alphaedtech.org.br/server12',
     firebaseProjectId: 'cadife-dev-123',
     enableDebugLogs: true,
     appName: 'Cadife Dev',
@@ -29,7 +29,7 @@ class AppConfig {
   
   static const AppConfig staging = AppConfig(
     environment: AppEnvironment.staging,
-    apiBaseUrl: 'https://staging-api.cadife.com',
+    apiBaseUrl: 'https://lab.alphaedtech.org.br/server12',
     firebaseProjectId: 'cadife-staging-456',
     enableDebugLogs: true,
     appName: 'Cadife Staging',
@@ -38,7 +38,7 @@ class AppConfig {
   
   static const AppConfig prod = AppConfig(
     environment: AppEnvironment.prod,
-    apiBaseUrl: 'https://api.cadife.com',
+    apiBaseUrl: 'https://lab.alphaedtech.org.br/server12',
     firebaseProjectId: 'cadife-prod-789',
     enableDebugLogs: false,
     appName: 'Cadife',

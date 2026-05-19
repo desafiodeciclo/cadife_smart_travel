@@ -4,7 +4,7 @@ import 'package:cadife_smart_travel/features/client/documentos/presentation/prov
 import 'package:cadife_smart_travel/features/client/documentos/presentation/widgets/cadife_document_card.dart';
 import 'package:cadife_smart_travel/features/client/historico/presentation/providers/historico_notifier.dart';
 import 'package:cadife_smart_travel/features/client/home/domain/entities/client_trip.dart';
-import 'package:cadife_smart_travel/features/client/home/infrastructure/mocks/client_home_mocks.dart';
+import 'package:cadife_smart_travel/features/client/home/presentation/providers/client_home_providers.dart';
 import 'package:cadife_smart_travel/features/client/itinerary/domain/entities/itinerary_day.dart';
 import 'package:cadife_smart_travel/features/client/itinerary/presentation/providers/itinerary_provider.dart';
 import 'package:cadife_smart_travel/features/client/presentation/widgets/trip_status_section.dart';
@@ -88,16 +88,16 @@ class TripDetailsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Current trip is a mock — resolve synchronously with no loading state
-    final currentTrip = ClientHomeMocks.mockCurrentTrip();
-    if (currentTrip.id == tripId) {
+    // Viagem ativa real (backend). Se for o tripId pedido, renderiza completo.
+    final currentTrip = ref.watch(currentClientTripProvider).valueOrNull;
+    if (currentTrip != null && currentTrip.id == tripId) {
       return _DetailView(
         vm: _VM.fromClientTrip(currentTrip),
         clientTrip: currentTrip,
       );
     }
 
-    // Otherwise look up in the travel history provider
+    // Caso contrário, busca no histórico de viagens.
     return ref.watch(travelHistoryProvider).when(
       loading: () => const Scaffold(
         body: Center(child: CircularProgressIndicator()),
