@@ -157,7 +157,6 @@ async def missing_greenlet_handler(request: Request, exc: MissingGreenlet) -> JS
 # -------------------------------------------------------------------
 # Middlewares
 # -------------------------------------------------------------------
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
