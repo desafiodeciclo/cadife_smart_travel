@@ -69,6 +69,7 @@ class TipoMensagem(str, Enum):
     audio = "audio"
     imagem = "imagem"
     documento = "documento"
+    nota_manual = "nota_manual"
 
 
 class AgendamentoStatus(str, Enum):

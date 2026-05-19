@@ -50,6 +50,9 @@ from app.infrastructure.persistence.models.travel_model import (
 from app.infrastructure.persistence.models.itinerary_model import (
     ItineraryItemModel,
 )  # noqa: F401
+from app.infrastructure.persistence.models.itinerary_daily_note_model import (
+    ItineraryDailyNoteModel,
+)  # noqa: F401
 from app.infrastructure.persistence.models.proposta_versao_model import (
     PropostaVersaoModel,
 )  # noqa: F401
@@ -78,6 +81,7 @@ __all__ = [
     "ConversationSummaryModel",
     "TravelModel",
     "ItineraryItemModel",
+    "ItineraryDailyNoteModel",
     "PropostaVersaoModel",
     "PasswordResetTokenModel",
     "NotificationQueue",
