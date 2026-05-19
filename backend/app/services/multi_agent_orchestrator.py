@@ -784,6 +784,20 @@ async def _node_build_context(state: OrchestratorState) -> dict[str, Any]:
     triagem = state.get("triagem", {})
     rag_ctx = state.get("rag_context", "")
 
+    # Injeta a data/hora atual para alinhar a IA temporalmente
+    agora = datetime.now()
+    dias_semana = ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado", "Domingo"]
+    dia_nome = dias_semana[agora.weekday()]
+    data_formatada = agora.strftime("%d/%m/%Y")
+    hora_formatada = agora.strftime("%H:%M")
+    
+    temporal_instruction = (
+        f"CONTEXTO TEMPORAL CRÍTICO (INVIOLÁVEL):\n"
+        f"· Hoje é {dia_nome}, {data_formatada} (Hora atual: {hora_formatada}).\n"
+        f"· NUNCA sugira ou discuta datas anteriores a {data_formatada}.\n"
+        f"· Todos os slots reais retornados pelas ferramentas estarão no ano de {agora.year}.\n"
+    )
+
     crm_block = _build_crm_block(triagem)
     system_prompt = _ORCHESTRATOR_SYSTEM_TEMPLATE.format(
         crm_block=(
@@ -797,6 +811,8 @@ async def _node_build_context(state: OrchestratorState) -> dict[str, Any]:
             else "Nenhum contexto adicional recuperado. Use query_project_scope se o cliente perguntar sobre destinos."
         ),
     )
+    
+    system_prompt = temporal_instruction + "\n" + system_prompt
     return {"crm_block": crm_block, "system_prompt": system_prompt}
 
 
