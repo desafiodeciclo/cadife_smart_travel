@@ -292,3 +292,112 @@ class TestTravelsRoutes:
         resp = await async_client.get("/travels/invalid-uuid/documents")
         assert resp.status_code == 400
         assert resp.json()["detail"] == "Invalid travel ID format"
+
+    async def test_list_travels_empty_for_new_user(
+        self,
+        async_client: AsyncClient,
+    ):
+        """GET /travels para usuario sem viagens retorna 200 com lista vazia."""
+        resp = await async_client.get("/travels")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["count"] == 0
+        assert data["travels"] == []
+
+    async def test_list_travels_returns_all_schema_fields(
+        self,
+        async_client: AsyncClient,
+        db_session: AsyncSession,
+        override_get_current_user,
+    ):
+        """GET /travels retorna todos os campos do schema TravelResponse."""
+        user_id = override_get_current_user.id
+
+        travel = TravelModel(
+            id=uuid.uuid4(),
+            user_id=user_id,
+            destination="Cancun",
+            start_date=datetime(2026, 5, 1, tzinfo=timezone.utc),
+            end_date=datetime(2026, 5, 10, tzinfo=timezone.utc),
+            status="upcoming",
+            image_url="https://example.com/cancun.jpg",
+            description="Lua de mel",
+        )
+        db_session.add(travel)
+        await db_session.commit()
+
+        resp = await async_client.get("/travels")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["count"] == 1
+        t = data["travels"][0]
+        assert t["id"] == str(travel.id)
+        assert t["user_id"] == str(user_id)
+        assert t["destination"] == "Cancun"
+        assert t["status"] == "upcoming"
+        assert t["image_url"] == "https://example.com/cancun.jpg"
+        assert t["description"] == "Lua de mel"
+        assert "created_at" in t
+        assert "start_date" in t
+        assert "end_date" in t
+
+    async def test_get_my_active_travel_with_ongoing_status(
+        self,
+        async_client: AsyncClient,
+        db_session: AsyncSession,
+        override_get_current_user,
+    ):
+        """GET /travels/me/active retorna viagens com status ongoing."""
+        user_id = override_get_current_user.id
+
+        ongoing = TravelModel(
+            id=uuid.uuid4(),
+            user_id=user_id,
+            destination="Roma",
+            start_date=datetime(2026, 3, 1, tzinfo=timezone.utc),
+            end_date=datetime(2026, 3, 10, tzinfo=timezone.utc),
+            status="ongoing",
+        )
+        upcoming = TravelModel(
+            id=uuid.uuid4(),
+            user_id=user_id,
+            destination="Londres",
+            start_date=datetime(2026, 4, 1, tzinfo=timezone.utc),
+            end_date=datetime(2026, 4, 10, tzinfo=timezone.utc),
+            status="upcoming",
+        )
+        db_session.add_all([ongoing, upcoming])
+        await db_session.commit()
+
+        resp = await async_client.get("/travels/me/active")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["count"] == 1
+        assert data["travels"][0]["destination"] == "Roma"
+        assert data["travels"][0]["status"] == "ongoing"
+
+    async def test_get_my_active_travel_empty_when_no_ongoing(
+        self,
+        async_client: AsyncClient,
+        db_session: AsyncSession,
+        override_get_current_user,
+    ):
+        """GET /travels/me/active retorna vazio quando nao ha viagens ongoing."""
+        user_id = override_get_current_user.id
+
+        upcoming = TravelModel(
+            id=uuid.uuid4(),
+            user_id=user_id,
+            destination="Londres",
+            start_date=datetime(2026, 4, 1, tzinfo=timezone.utc),
+            end_date=datetime(2026, 4, 10, tzinfo=timezone.utc),
+            status="upcoming",
+        )
+        db_session.add(upcoming)
+        await db_session.commit()
+
+        resp = await async_client.get("/travels/me/active")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["count"] == 0
+        assert data["travels"] == []

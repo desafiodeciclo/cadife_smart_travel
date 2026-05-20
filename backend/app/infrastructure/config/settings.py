@@ -227,6 +227,21 @@ class Settings(BaseSettings):
         description="Optional HTTP endpoint to POST when proposals are auto-expired (CRM, Slack, etc.)",
     )
 
+    # ── S3 / MinIO Storage ───────────────────────────────────────────────
+    S3_BUCKET_NAME: str = Field(default="cadife-storage", description="Default S3 bucket")
+    S3_ENDPOINT_URL: str = Field(default="", description="MinIO endpoint (optional)")
+    S3_ACCESS_KEY: str = Field(default="", description="S3 access key")
+    S3_SECRET_KEY: str = Field(default="", description="S3 secret key")
+    S3_REGION: str = Field(default="us-east-1", description="S3 region")
+
+    # ── Travel Diary Settings ──────────────────────────────────────────────
+    DIARY_BUCKET_NAME: str = Field(
+        default="cadife-diary", description="S3 bucket for travel diary photos"
+    )
+    DIARY_MAX_SIZE_MB: int = Field(
+        default=5, ge=1, description="Max upload size for diary photos (MB)"
+    )
+
     # ── Request Timeout (spec.md §12.3 — webhook must respond in < 5s) ────
     REQUEST_TIMEOUT_SECONDS: float = Field(
         default=30.0,

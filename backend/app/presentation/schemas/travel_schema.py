@@ -19,6 +19,8 @@ class TravelResponse(BaseModel):
     start_date: datetime
     end_date: Optional[datetime] = None
     status: TravelStatus
+    image_url: Optional[str] = None
+    description: Optional[str] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
 
@@ -26,5 +28,5 @@ class TravelResponse(BaseModel):
 
 
 class TravelListResponse(BaseModel):
-    items: List[TravelResponse]
-    total: int
+    travels: List[TravelResponse]
+    count: int

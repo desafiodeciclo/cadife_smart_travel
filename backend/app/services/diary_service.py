@@ -150,12 +150,17 @@ class DiaryService:
             await self.diary_repo.commit()
 
             # 8. Hydrate presigned URLs for immediate use
-            entry.foto_url = await self.storage.generate_presigned_url(
+            presigned_foto = await self.storage.generate_presigned_url(
                 entry.foto_url, bucket=self.bucket_name
             )
-            entry.thumb_url = await self.storage.generate_presigned_url(
+            if presigned_foto:
+                entry.foto_url = presigned_foto
+
+            presigned_thumb = await self.storage.generate_presigned_url(
                 entry.thumb_url, bucket=self.bucket_name
             )
+            if presigned_thumb:
+                entry.thumb_url = presigned_thumb
 
             logger.info(
                 "diary_entry_created",
@@ -186,19 +191,29 @@ class DiaryService:
         
         # Hydrate URLs
         for entry in entries:
-            entry.foto_url = await self.storage.generate_presigned_url(entry.foto_url, bucket=self.bucket_name)
-            entry.thumb_url = await self.storage.generate_presigned_url(entry.thumb_url, bucket=self.bucket_name)
-            
+            presigned_foto = await self.storage.generate_presigned_url(entry.foto_url, bucket=self.bucket_name)
+            if presigned_foto:
+                entry.foto_url = presigned_foto
+
+            presigned_thumb = await self.storage.generate_presigned_url(entry.thumb_url, bucket=self.bucket_name)
+            if presigned_thumb:
+                entry.thumb_url = presigned_thumb
+
         return entries, total
 
     async def list_user_timeline(self, user_id: uuid.UUID, page: int = 1, limit: int = 20):
         entries, total = await self.diary_repo.list_by_user(user_id, page, limit)
-        
+
         # Hydrate URLs
         for entry in entries:
-            entry.foto_url = await self.storage.generate_presigned_url(entry.foto_url, bucket=self.bucket_name)
-            entry.thumb_url = await self.storage.generate_presigned_url(entry.thumb_url, bucket=self.bucket_name)
-            
+            presigned_foto = await self.storage.generate_presigned_url(entry.foto_url, bucket=self.bucket_name)
+            if presigned_foto:
+                entry.foto_url = presigned_foto
+
+            presigned_thumb = await self.storage.generate_presigned_url(entry.thumb_url, bucket=self.bucket_name)
+            if presigned_thumb:
+                entry.thumb_url = presigned_thumb
+
         return entries, total
 
     async def delete_entry(self, entry_id: uuid.UUID, user_id: uuid.UUID):
@@ -206,7 +221,7 @@ class DiaryService:
         if not entry:
             logger.warning("diary_delete_entry_not_found", entry_id=str(entry_id))
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Memória não encontrada")
-        
+
         if entry.user_id != user_id:
             logger.warning(
                 "diary_delete_ownership_violation",
@@ -215,15 +230,20 @@ class DiaryService:
                 requester_id=str(user_id),
             )
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
-            
+
+        # Capture raw S3 keys before any mutation (get_by_id returns raw keys,
+        # but we guard against future hydration changes)
+        foto_key = entry.foto_url
+        thumb_key = entry.thumb_url
+
         # 1. Delete from DB first (source of truth)
         await self.diary_repo.delete(entry_id)
         await self.diary_repo.commit()
-        
+
         # 2. Delete from S3 (best effort cleanup)
         try:
-            await self.storage.delete_file(entry.foto_url, bucket=self.bucket_name)
-            await self.storage.delete_file(entry.thumb_url, bucket=self.bucket_name)
+            await self.storage.delete_file(foto_key, bucket=self.bucket_name)
+            await self.storage.delete_file(thumb_key, bucket=self.bucket_name)
         except Exception as e:
             logger.error(
                 "diary_s3_cleanup_failed_after_db_delete",

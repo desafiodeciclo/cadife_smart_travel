@@ -114,9 +114,11 @@ class CurrentTripBanner extends StatelessWidget {
                             ),
                             const SizedBox(width: 5),
                             Text(
-                              '${trip.startDate.day}/${trip.startDate.month}'
-                              ' — '
-                              '${trip.endDate.day}/${trip.endDate.month}/${trip.endDate.year}',
+                              trip.endDate != null
+                                  ? '${trip.startDate.day}/${trip.startDate.month}'
+                                    ' — '
+                                    '${trip.endDate!.day}/${trip.endDate!.month}/${trip.endDate!.year}'
+                                  : '${trip.startDate.day}/${trip.startDate.month}',
                               style: const TextStyle(
                                 color: Colors.white70,
                                 fontSize: 12,
