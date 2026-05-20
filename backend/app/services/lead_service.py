@@ -241,12 +241,18 @@ async def create_manual_lead(db: AsyncSession, data: "ManualLeadCreate") -> Lead
         except ValueError:
             logger.debug("invalid_budget_string_mapping", value=data.orcamento_estimado)
 
+    observacoes_parts: list[str] = []
+    if data.datas_aproximadas:
+        observacoes_parts.append(f"Data aproximada: {data.datas_aproximadas}")
+    if data.preferencias:
+        observacoes_parts.append(data.preferencias)
+
     briefing = Briefing(
         lead_id=lead.id,
         destino=data.destino_interesse,
         orcamento=orcamento_enum,
         qtd_pessoas=data.numero_passageiros,
-        observacoes=f"Data aproximada: {data.datas_aproximadas}" if data.datas_aproximadas else None
+        observacoes="\n".join(observacoes_parts) if observacoes_parts else None
     )
 
     lead.score = calculate_score_from_briefing(briefing)

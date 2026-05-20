@@ -247,6 +247,7 @@ class ManualLeadCreate extends Equatable {
     'consultor_id': consultorId,
     'force_create': forceCreate,
     'destino_interesse': destino,
+    'datas_aproximadas': dataIda?.toIso8601String(),
     'numero_passageiros': numPessoas,
     'orcamento_estimado': orcamentoFaixa,
     'preferencias': preferencias,

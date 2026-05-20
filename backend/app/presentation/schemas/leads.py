@@ -99,6 +99,7 @@ class ManualLeadCreate(BaseModel):
     numero_passageiros: Optional[int] = None
     origem: LeadOrigem = Field(..., description="Must be one of the manual origins")
     consultor_id: Optional[uuid.UUID] = None
+    preferencias: Optional[str] = None
     force_create: bool = Field(
         default=False, description="If True, bypasses phone duplication check"
     )

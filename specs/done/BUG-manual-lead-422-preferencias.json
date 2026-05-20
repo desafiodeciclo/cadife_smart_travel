@@ -1,0 +1,54 @@
+{
+  "id": "BUG-manual-lead-422-preferencias",
+  "title": "Corrigir erro 422 ao criar lead manual no app Flutter",
+  "type": "bug",
+  "status": "done",
+  "priority": "high",
+  "owner": "Jakeline / Otávio Grotto",
+  "created_at": "2026-05-19",
+  "user_story": "Como consultor, quero criar um lead manual pelo app sem receber erro 422, para que o atendimento ao cliente não seja interrompido.",
+  "acceptance_criteria": [
+    "POST /leads/manual aceita o campo 'preferencias' sem retornar 422",
+    "A data prevista selecionada no Flutter é serializada e enviada como 'datas_aproximadas'",
+    "O texto de 'Observações / Preferências' é persistido em briefing.observacoes no backend",
+    "Todos os testes existentes continuam passando",
+    "Novo teste cobre criação manual com preferencias e datas_aproximadas preenchidas"
+  ],
+  "steps": [
+    {
+      "id": "step-1",
+      "description": "Backend schema: adicionar campo 'preferencias: Optional[str]' ao ManualLeadCreate em presentation/schemas/leads.py",
+      "status": "done"
+    },
+    {
+      "id": "step-2",
+      "description": "Backend service: em create_manual_lead, concatenar preferencias em briefing.observacoes",
+      "status": "done"
+    },
+    {
+      "id": "step-3",
+      "description": "Flutter entity: adicionar 'datas_aproximadas' ao toJson() de ManualLeadCreate",
+      "status": "done"
+    },
+    {
+      "id": "step-4",
+      "description": "Atualizar testes backend para cobrir preferencias e datas_aproximadas",
+      "status": "done"
+    },
+    {
+      "id": "step-5",
+      "description": "Rodar testes (pytest backend) e validar que nada quebrou",
+      "status": "done"
+    }
+  ],
+  "dependencies": [
+    "B-feat-leads-crud-idempotency"
+  ],
+  "estimated_hours": 2,
+  "files_changed": [
+    "backend/app/presentation/schemas/leads.py",
+    "backend/app/services/lead_service.py",
+    "frontend_flutter/lib/features/agency/leads/domain/entities/lead.dart",
+    "backend/tests/test_services/test_manual_lead.py"
+  ]
+}
