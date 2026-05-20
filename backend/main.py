@@ -119,11 +119,56 @@ async def lifespan(app: FastAPI):
 # FastAPI App Construction
 # -------------------------------------------------------------------
 
+OPENAPI_TAGS = [
+    {"name": "Health", "description": "Healthcheck e status do serviço."},
+    {"name": "Webhook", "description": "Endpoints de webhook da Meta WhatsApp Cloud API."},
+    {"name": "Auth", "description": "Login, refresh token e gerenciamento de sessão JWT."},
+    {"name": "Leads", "description": "CRUD e pipeline de leads (NOVO → FECHADO/PERDIDO)."},
+    {"name": "IA", "description": "Chamadas da camada de IA (briefing, RAG, classificação)."},
+    {"name": "Agenda", "description": "Agendamento de curadorias e integração Google Calendar."},
+    {"name": "Propostas", "description": "Gestão de propostas comerciais e expiração SLA."},
+    {"name": "Documentos", "description": "Upload e gestão de documentos do cliente."},
+    {"name": "Mala", "description": "Mala de viagem do cliente (checklist offline-first)."},
+    {"name": "Offers", "description": "Ofertas e promoções enviadas ao cliente."},
+    {"name": "Diary", "description": "Diário de viagem do cliente (fotos, anotações)."},
+    {"name": "Travels", "description": "Viagens ativas e itinerários consolidados."},
+    {"name": "Itinerario", "description": "Itinerário detalhado dia-a-dia."},
+    {"name": "Admin", "description": "Endpoints administrativos restritos."},
+    {"name": "AgencySettings", "description": "Configurações da agência (Cadife Tour)."},
+    {"name": "ConsultorProfile", "description": "Perfil do consultor humano."},
+]
+
 app = FastAPI(
     title="Cadife Smart Travel API",
     version="2.0.0",
+    description=(
+        "API do **Cadife Smart Travel** — plataforma de atendimento turístico inteligente "
+        "para a Cadife Tour.\n\n"
+        "Inclui:\n"
+        "- Webhook Meta WhatsApp (AYA bot de pré-atendimento)\n"
+        "- Camada de IA com LangChain + RAG (Gemini via OpenRouter)\n"
+        "- CRM da agência (leads, propostas, agenda, documentos)\n"
+        "- Portal do cliente (viagens, mala, diário, ofertas)\n\n"
+        "**Autenticação:** JWT Bearer em todos os endpoints, exceto `/health`, "
+        "`/webhook/whatsapp` e `/auth/login`."
+    ),
+    contact={
+        "name": "Cadife Tour — Time de Engenharia",
+        "email": "engenharia@cadifetour.com.br",
+    },
+    license_info={"name": "Proprietary"},
+    openapi_tags=OPENAPI_TAGS,
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json",
+    swagger_ui_parameters={
+        "persistAuthorization": True,
+        "displayRequestDuration": True,
+        "filter": True,
+        "tryItOutEnabled": True,
+        "docExpansion": "none",
+    },
     lifespan=lifespan,
-    # ... rest of metadata ...
 )
 
 # Exception Handlers & Middlewares
