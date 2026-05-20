@@ -74,7 +74,7 @@ class S3StorageAdapter:
         target_bucket = bucket or self.bucket_name
         try:
             async with self.session.client(**self._get_client_args()) as s3:
-                url = s3.generate_presigned_url(
+                url = await s3.generate_presigned_url(
                     "get_object",
                     Params={"Bucket": target_bucket, "Key": object_key},
                     ExpiresIn=expires_in,
