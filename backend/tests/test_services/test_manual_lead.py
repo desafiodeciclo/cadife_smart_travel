@@ -28,15 +28,41 @@ async def test_create_manual_lead_success(db_session: AsyncSession):
     assert lead.origem == LeadOrigem.indicacao
     assert lead.status == LeadStatus.novo
     assert lead.score == LeadScore.morno
-    
+
     # Valida persistência e relação com briefing via nova query
     stmt = select(Lead).options(selectinload(Lead.briefing)).where(Lead.id == lead.id)
     res = await db_session.execute(stmt)
     lead_db = res.scalar_one()
-    
+
     assert lead_db.briefing is not None
     assert lead_db.briefing.destino == "Paris"
     assert lead_db.briefing.completude_pct > 0
+
+
+@pytest.mark.asyncio
+async def test_create_manual_lead_with_preferencias_and_datas(db_session: AsyncSession):
+    """Testa que preferencias e datas_aproximadas são persistidas em observacoes."""
+    data = ManualLeadCreate(
+        nome="Maria Souza",
+        telefone="+5511777777777",
+        origem=LeadOrigem.presencial,
+        destino_interesse="Maldivas",
+        numero_passageiros=2,
+        datas_aproximadas="2026-12-20",
+        preferencias="Hotel beira-mar, voo noturno",
+    )
+
+    lead = await create_manual_lead(db_session, data)
+
+    stmt = select(Lead).options(selectinload(Lead.briefing)).where(Lead.id == lead.id)
+    res = await db_session.execute(stmt)
+    lead_db = res.scalar_one()
+
+    assert lead_db.briefing is not None
+    assert lead_db.briefing.observacoes is not None
+    assert "2026-12-20" in lead_db.briefing.observacoes
+    assert "Hotel beira-mar" in lead_db.briefing.observacoes
+    assert "voo noturno" in lead_db.briefing.observacoes
 
 @pytest.mark.asyncio
 async def test_create_manual_lead_duplication_blocked(db_session: AsyncSession):
