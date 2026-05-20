@@ -202,3 +202,45 @@ async def test_diary_heic_upload(async_client, test_lead):
         
         # Verify that Image.open was called (HEIC processing path)
         mock_image_open.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_diary_timeline_s3_presigned_failure_returns_200(async_client, test_lead, db_session):
+    """
+    Regression test: when S3/MinIO fails to generate presigned URLs,
+    the API must still return 200 with the raw S3 keys, never 500.
+    """
+    from app.infrastructure.persistence.models.travel_diary_model import TravelDiaryEntryModel
+
+    entry_id = uuid.uuid4()
+    raw_foto_key = f"diary/{test_lead.id}/{entry_id}_original.jpg"
+    raw_thumb_key = f"diary/{test_lead.id}/{entry_id}_thumb.jpg"
+
+    # Inject a diary entry directly into the DB
+    entry = TravelDiaryEntryModel(
+        id=entry_id,
+        lead_id=test_lead.id,
+        user_id=uuid.UUID("deadeade-dead-dead-dead-deadeadeadea"),
+        foto_url=raw_foto_key,
+        thumb_url=raw_thumb_key,
+        nota="Regressão: S3 indisponível",
+        data_entrada=datetime.now()
+    )
+    db_session.add(entry)
+    await db_session.commit()
+
+    print("\n[TEST] Simulando falha no S3 (generate_presigned_url retorna None)...")
+
+    with patch("app.services.diary_service.S3StorageAdapter.generate_presigned_url", new_callable=AsyncMock) as mock_url:
+        mock_url.return_value = None
+
+        response = await async_client.get("/users/me/diary")
+
+        # MUST NOT return 500; should return 200 with raw keys preserved
+        assert response.status_code == status.HTTP_200_OK, f"Esperado 200, obtido {response.status_code}"
+        data = response.json()
+        assert data["total"] >= 1
+        first_entry = data["entries"][0]
+        assert first_entry["foto_url"] == raw_foto_key
+        assert first_entry["thumb_url"] == raw_thumb_key
+        print("✅ Timeline retornou 200 mesmo com S3 indisponível.")
