@@ -1,0 +1,24 @@
+{
+  "id": "F-fix-offers-null-price-cast",
+  "title": "Correção de crash nas abas Início e Ofertas ao carregar ofertas com price nulo",
+  "status": "in-progress",
+  "owner": "Otávio Grotto",
+  "created_at": "2026-05-20",
+  "sprint": "ciclo-2",
+  "depends_on": [],
+  "blocks": [],
+  "description": "O app cliente crasha com erro de tipo 'Null' is not a subtype of type 'num' in type cast ao carregar ofertas nas abas Início e Ofertas. A causa é o cast inseguro (json['price'] as num) no factory Offer.fromJson, que falha quando o backend retorna price ou base_price como null.",
+  "user_story": "Como cliente logado no app, quero visualizar a home e a lista de ofertas sem crashes, mesmo que alguma oferta tenha campos numéricos nulos no backend.",
+  "acceptance_criteria": [
+    "Aba Início carrega sem erro mesmo se ofertas retornarem price=null",
+    "Aba Ofertas carrega sem erro mesmo se ofertas retornarem price=null",
+    "Offer.fromJson trata campos nulos com fallback para 0.0",
+    "Teste unitário valida deserialização de JSON com price e base_price nulos"
+  ],
+  "steps": [
+    {"id": 1, "description": "Criar spec do bugfix e mover para active", "status": "done"},
+    {"id": 2, "description": "Corrigir Offer.fromJson — usar as num? ?? 0.0 em price e basePrice", "status": "done"},
+    {"id": 3, "description": "Adicionar teste unitário para deserialização com campos nulos", "status": "done"},
+    {"id": 4, "description": "Mover spec para done e validar", "status": "done"}
+  ]
+}

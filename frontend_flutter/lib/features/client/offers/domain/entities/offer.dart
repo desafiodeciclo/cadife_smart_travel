@@ -71,7 +71,7 @@ class Offer extends Equatable {
       destination: json['destination'] as String,
       category: json['category'] as String? ?? 'Geral',
       description: json['description'] as String? ?? '',
-      price: (json['price'] as num).toDouble(),
+      price: (json['price'] as num? ?? 0.0).toDouble(),
       imageUrl: json['image_url'] as String? ?? '',
       rating: (json['rating'] as num? ?? 0.0).toDouble(),
       daysCount: json['days_count'] as int? ?? 0,
@@ -89,7 +89,7 @@ class Offer extends Equatable {
       amenities: (json['amenities'] as List?)?.map((e) => e as String).toList() ?? const [],
       currency: json['currency'] as String? ?? 'BRL',
       travelers: json['travelers'] as int? ?? 1,
-      basePrice: (json['base_price'] as num? ?? (json['price'] as num)).toDouble(),
+      basePrice: (json['base_price'] as num? ?? (json['price'] as num? ?? 0.0)).toDouble(),
     );
   }
 
