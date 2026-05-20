@@ -14,6 +14,8 @@ import 'package:go_router/go_router.dart';
 
 enum _EmailState { idle, validating, valid, invalid }
 
+enum _PhoneState { idle, valid, invalid }
+
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
 
@@ -31,6 +33,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   _EmailState _emailState = _EmailState.idle;
   Timer? _emailDebounce;
+  _PhoneState _phoneState = _PhoneState.idle;
+  Timer? _phoneDebounce;
   bool _acceptedTerms = false;
 
   late TapGestureRecognizer _termsRecognizer;
@@ -59,6 +63,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _emailDebounce?.cancel();
+    _phoneDebounce?.cancel();
     _termsRecognizer.dispose();
     _privacyRecognizer.dispose();
     super.dispose();
@@ -77,6 +82,22 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         _emailState = value.trim().isValidEmail
             ? _EmailState.valid
             : _EmailState.invalid;
+      });
+    });
+  }
+
+  void _onPhoneChanged(String value) {
+    _phoneDebounce?.cancel();
+    if (value.trim().isEmpty) {
+      setState(() => _phoneState = _PhoneState.idle);
+      return;
+    }
+    _phoneDebounce = Timer(const Duration(milliseconds: 600), () {
+      if (!mounted) return;
+      setState(() {
+        _phoneState = value.trim().isValidPhone
+            ? _PhoneState.valid
+            : _PhoneState.invalid;
       });
     });
   }
@@ -190,15 +211,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // ── Theme toggle ──────────────────────────────────────────────
-            Align(
-              alignment: Alignment.centerRight,
-              child: Padding(
-                padding: const EdgeInsets.only(top: 8, right: 12, bottom: 4),
-                child: _ThemeToggle(isDark: isDark),
-              ),
-            ),
-
             // ── Scrollable form ───────────────────────────────────────────
             Expanded(
               child: SingleChildScrollView(
@@ -271,16 +283,58 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             return null;
                           },
                         ),
+                        if (_emailState == _EmailState.validating) ...[
+                          const SizedBox(height: 4),
+                          const _InlineValidationHint(
+                            isLoading: true,
+                            text: 'Verificando...',
+                          ),
+                        ] else if (_emailState == _EmailState.valid) ...[
+                          const SizedBox(height: 4),
+                          const _InlineValidationHint(
+                            isValid: true,
+                            text: 'E-mail válido',
+                          ),
+                        ] else if (_emailState == _EmailState.invalid) ...[
+                          const SizedBox(height: 4),
+                          const _InlineValidationHint(
+                            isValid: false,
+                            text: 'Formato de e-mail inválido',
+                          ),
+                        ],
                         const SizedBox(height: 16),
 
                         // ── Telefone ──────────────────────────────────────
                         CadifeInput(
                           key: const ValueKey('phone_field'),
-                          label: 'Telefone (opcional)',
+                          label: 'Telefone',
                           hint: '(11) 9 0000-0000',
                           controller: _phoneController,
                           keyboardType: TextInputType.phone,
+                          onChanged: _onPhoneChanged,
+                          validator: (v) {
+                            if (v == null || v.trim().isEmpty) {
+                              return 'Informe o telefone';
+                            }
+                            if (!v.trim().isValidPhone) {
+                              return 'Telefone inválido — informe DDD + número (10 ou 11 dígitos)';
+                            }
+                            return null;
+                          },
                         ),
+                        if (_phoneState == _PhoneState.valid) ...[
+                          const SizedBox(height: 4),
+                          const _InlineValidationHint(
+                            isValid: true,
+                            text: 'Telefone válido',
+                          ),
+                        ] else if (_phoneState == _PhoneState.invalid) ...[
+                          const SizedBox(height: 4),
+                          const _InlineValidationHint(
+                            isValid: false,
+                            text: 'Informe DDD + número (10 ou 11 dígitos)',
+                          ),
+                        ],
                         const SizedBox(height: 16),
 
                         // ── Senha ─────────────────────────────────────────
@@ -295,7 +349,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             if (v == null || v.isEmpty) {
                               return 'Informe a senha';
                             }
-                            if (v.length < 6) return 'Mínimo 6 caracteres';
+                            if (v.length < 8) return 'Mínimo 8 caracteres';
                             return null;
                           },
                         ),
@@ -485,37 +539,57 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
 // ── Sub-widgets ──────────────────────────────────────────────────────────────
 
-class _ThemeToggle extends ConsumerWidget {
-  const _ThemeToggle({required this.isDark});
-  final bool isDark;
+class _InlineValidationHint extends StatelessWidget {
+  const _InlineValidationHint({
+    required this.text,
+    this.isValid,
+    this.isLoading = false,
+  });
+
+  final String text;
+  final bool? isValid;
+  final bool isLoading;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return GestureDetector(
-      onTap: () =>
-          ref.read(themeNotifierProvider.notifier).toggleDarkMode(context),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: isDark ? Colors.white12 : context.cadife.surface,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isDark ? Colors.white24 : context.cadife.cardBorder,
+  Widget build(BuildContext context) {
+    if (isLoading) {
+      return Row(
+        children: [
+          SizedBox(
+            width: 12,
+            height: 12,
+            child: CircularProgressIndicator(
+              strokeWidth: 1.5,
+              color: context.cadife.textSecondary,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            text,
+            style: AppTextStyles.labelSmall.copyWith(
+              color: context.cadife.textSecondary,
+            ),
+          ),
+        ],
+      );
+    }
+
+    final color = isValid == true ? AppColors.success : AppColors.error;
+    final icon = isValid == true
+        ? Icons.check_circle_outline
+        : Icons.error_outline;
+
+    return Row(
+      children: [
+        Icon(icon, size: 13, color: color),
+        const SizedBox(width: 5),
+        Flexible(
+          child: Text(
+            text,
+            style: AppTextStyles.labelSmall.copyWith(color: color),
           ),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.wb_sunny_rounded,
-                size: 16,
-                color: isDark ? Colors.white38 : AppColors.warning),
-            const SizedBox(width: 6),
-            Icon(Icons.nightlight_round,
-                size: 16,
-                color: isDark ? Colors.white : context.cadife.textSecondary),
-          ],
-        ),
-      ),
+      ],
     );
   }
 }

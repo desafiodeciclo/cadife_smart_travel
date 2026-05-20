@@ -14,6 +14,9 @@ extension StringExtensions on String {
   }
 
   bool get isValidPhone {
-    return RegExp(r'^\+?[\d\s()-]{10,}$').hasMatch(this);
+    final digits = replaceAll(RegExp(r'\D'), '');
+    // Brazilian phones: 10 digits (landline) or 11 digits (mobile with 9th digit)
+    if (digits.length < 10 || digits.length > 11) return false;
+    return RegExp(r'^\d{10,11}$').hasMatch(digits);
   }
 }
