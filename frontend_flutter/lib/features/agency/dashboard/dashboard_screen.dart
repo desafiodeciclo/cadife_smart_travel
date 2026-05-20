@@ -72,7 +72,7 @@ class DashboardScreen extends ConsumerWidget {
               ),
               delegate: SliverChildListDelegate([
                 _MetricCard(
-                  label: 'Leads Qualificados',
+                  label: 'Leads Atribuídos',
                   value: metricsAsync.isLoading ? '–' : '${metrics.leadsQualified}',
                   icon: LucideIcons.userCheck,
                   color: AppColors.primary,

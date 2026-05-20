@@ -1,0 +1,98 @@
+{
+  "id": "F-feat-agenda-individual-per-user",
+  "title": "(F) feat/agenda-individual-per-user",
+  "priority": "high",
+  "assignee": "Jakeline / Frontend",
+  "sprint": 7,
+  "status": "pending",
+  "description": "A tela de Agenda atualmente mostra agendamentos compartilhados (no caso do admin, todos os consultores aparecem misturados; e, dado o bug reportado, o consultor também está enxergando reuniões alheias). Implementar agenda individual por usuário: cada consultor vê SOMENTE os próprios agendamentos; o admin vê SOMENTE os próprios por padrão, com seletor para alternar para a agenda de um consultor específico. Backend já filtra por consultor para role consultor (routes/agenda.py L196-208) e aceita query param `consultor_id` para admin — esta spec é majoritariamente frontend + pequeno ajuste no default do admin.",
+  "dependencies": [
+    "F-feat-admin-consultant-management"
+  ],
+  "estimated_hours": "5h",
+  "steps": [
+    {
+      "id": "1.1",
+      "name": "Mover esta spec de pending/ para active/ e marcar status=in-progress",
+      "status": "pending"
+    },
+    {
+      "id": "2.1",
+      "name": "Backend: ajustar GET /agenda em routes/agenda.py para que, quando admin NÃO informar consultor_id, o default seja current_user.id (admin vê própria agenda) ao invés de retornar todos. Manter possibilidade de admin passar consultor_id explicitamente para visualizar agenda de outro consultor.",
+      "status": "pending"
+    },
+    {
+      "id": "2.2",
+      "name": "Backend: idêntico ajuste em GET /agenda/disponibilidade — slots livres calculados em relação ao próprio consultor logado (ou ao consultor_id explícito, se admin).",
+      "status": "pending"
+    },
+    {
+      "id": "2.3",
+      "name": "Backend: testes de integração (pytest + httpx) cobrindo: (a) consultor vê apenas próprios; (b) admin sem query vê apenas próprios; (c) admin com ?consultor_id=X vê os de X; (d) consultor que tentar passar consultor_id de terceiro tem o parâmetro ignorado.",
+      "status": "pending"
+    },
+    {
+      "id": "3.1",
+      "name": "Frontend: adicionar parâmetro opcional `consultorId` em IAgendaRepository.getAgenda e getAvailableSlots; propagar como query param `consultor_id` em agenda_repository_impl.dart.",
+      "status": "pending"
+    },
+    {
+      "id": "3.2",
+      "name": "Frontend: criar selectedConsultorIdProvider (StateProvider<String?>) em agenda_provider.dart. AgendaNotifier passa a observar este provider e refazer fetch quando mudar. Cache offline (chave _cacheKeyPrefix) deve incluir consultor_id no namespace.",
+      "status": "pending"
+    },
+    {
+      "id": "3.3",
+      "name": "Frontend: em AgendaScreen (agenda_page.dart), quando user.role == admin, exibir DropdownButton/ShadSelect no AppBar (ou abaixo do toggle Mês/Dia) listando 'Minha agenda' + lista de consultores via adminConsultantsProvider. onChanged → atualiza selectedConsultorIdProvider. Consultor não vê o seletor.",
+      "status": "pending"
+    },
+    {
+      "id": "3.4",
+      "name": "Frontend: garantir que ScheduleAppointmentNotifier.confirmAppointment e AgendaNotifier.scheduleSlot/blockSlot, quando admin está vendo agenda de outro consultor, criem o agendamento atribuído ao consultor selecionado (passar consultor_id no CreateAgendaRequest). Requer extensão de CreateAgendaRequest com campo opcional consultorId e ajuste no backend para aceitar (apenas para role admin).",
+      "status": "pending"
+    },
+    {
+      "id": "3.5",
+      "name": "Frontend: atualizar título do AppBar para refletir consultor visualizado (ex.: 'Agenda — Fulano' quando admin filtra por outro consultor; 'Minha Agenda' caso contrário).",
+      "status": "pending"
+    },
+    {
+      "id": "3.6",
+      "name": "Frontend: invalidar caches Isar (agenda_cache) ao trocar de consultor para evitar exibir dados incorretos durante transição offline-first.",
+      "status": "pending"
+    },
+    {
+      "id": "4.1",
+      "name": "Validação manual (mock + real): (a) consultor A só vê próprios; (b) consultor A não enxerga agendamentos do consultor B; (c) admin abre Agenda → vê apenas próprios; (d) admin troca seletor → vê agenda do consultor escolhido; (e) admin cria agendamento na visão de outro consultor → registro fica atribuído ao consultor correto.",
+      "status": "pending"
+    },
+    {
+      "id": "4.2",
+      "name": "Code review por 2 membros (PO Diego para critério de aceitação UX) e merge na servidor.",
+      "status": "pending"
+    }
+  ],
+  "acceptance_criteria": [
+    "Consultor não consegue visualizar agendamentos de outros consultores em nenhuma view (mês, dia, disponibilidade).",
+    "Admin, ao abrir /agency/agenda, vê SOMENTE seus próprios agendamentos por padrão.",
+    "Admin possui controle visível (dropdown/select) para alternar a visualização para a agenda individual de qualquer consultor ativo.",
+    "Quando admin está visualizando a agenda de um consultor X e cria um novo agendamento, o registro é persistido com consultor_id = X (não admin).",
+    "Backend rejeita ou ignora consultor_id enviado por usuário com role consultor (segurança).",
+    "Cache offline (Isar) é segregado por consultor_id para evitar mistura de dados ao trocar de contexto."
+  ],
+  "files_impacted": {
+    "backend": [
+      "backend/app/routes/agenda.py",
+      "backend/app/presentation/schemas/agendamento_schema.py",
+      "backend/tests/integration/test_agenda.py"
+    ],
+    "frontend": [
+      "frontend_flutter/lib/features/agency/agenda/domain/repositories/i_agenda_repository.dart",
+      "frontend_flutter/lib/features/agency/agenda/data/repositories/agenda_repository_impl.dart",
+      "frontend_flutter/lib/features/agency/agenda/domain/entities/agendamento.dart",
+      "frontend_flutter/lib/features/agency/agenda/presentation/providers/agenda_provider.dart",
+      "frontend_flutter/lib/features/agency/agenda/presentation/providers/schedule_appointment_provider.dart",
+      "frontend_flutter/lib/features/agency/agenda/presentation/pages/agenda_page.dart"
+    ]
+  }
+}
