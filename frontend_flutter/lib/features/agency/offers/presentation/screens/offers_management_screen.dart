@@ -129,8 +129,10 @@ class OffersManagementScreen extends ConsumerWidget {
               const Icon(Icons.calendar_today, size: 12, color: AppColors.zinc400),
               const SizedBox(width: 6),
               Text(
-                '${offer.departureDate.day}/${offer.departureDate.month} a '
-                '${offer.returnDate.day}/${offer.returnDate.month}',
+                offer.dates != null
+                    ? '${offer.departureDate!.day}/${offer.departureDate!.month} a '
+                      '${offer.returnDate!.day}/${offer.returnDate!.month}'
+                    : 'Datas a definir',
                 style: const TextStyle(fontSize: 12, color: AppColors.zinc400),
               ),
             ],
