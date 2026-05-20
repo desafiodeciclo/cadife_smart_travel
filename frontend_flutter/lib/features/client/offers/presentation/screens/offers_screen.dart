@@ -192,24 +192,25 @@ class OffersScreen extends ConsumerWidget {
                           ),
                         ),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.zinc100,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          '${offer.durationDays} DIAS',
-                          style: const TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.zinc700,
+                      if (offer.durationDays != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.zinc100,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            '${offer.durationDays} DIAS',
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.zinc700,
+                            ),
                           ),
                         ),
-                      ),
                     ],
                   ),
                   const SizedBox(height: 4),
@@ -232,8 +233,10 @@ class OffersScreen extends ConsumerWidget {
                       const Icon(Icons.calendar_today_outlined, size: 14, color: AppColors.zinc500),
                       const SizedBox(width: 6),
                       Text(
-                        '${offer.departureDate.day}/${offer.departureDate.month} a '
-                        '${offer.returnDate.day}/${offer.returnDate.month}/${offer.returnDate.year}',
+                        offer.dates != null
+                            ? '${offer.departureDate!.day}/${offer.departureDate!.month} a '
+                              '${offer.returnDate!.day}/${offer.returnDate!.month}/${offer.returnDate!.year}'
+                            : 'Datas a definir',
                         style: const TextStyle(
                           fontSize: 12,
                           color: AppColors.textSecondary,

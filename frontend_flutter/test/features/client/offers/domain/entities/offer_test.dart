@@ -96,5 +96,46 @@ void main() {
       expect(offer.currency, 'BRL');
       expect(offer.travelers, 1);
     });
+
+    test('parses offer when dates is null', () {
+      final json = Map<String, dynamic>.from(fullJson);
+      json['dates'] = null;
+
+      final offer = Offer.fromJson(json);
+
+      expect(offer.dates, isNull);
+      expect(offer.departureDate, isNull);
+      expect(offer.returnDate, isNull);
+      expect(offer.durationDays, isNull);
+    });
+
+    test('parses offer when dates field is absent', () {
+      final json = Map<String, dynamic>.from(fullJson);
+      json.remove('dates');
+
+      final offer = Offer.fromJson(json);
+
+      expect(offer.dates, isNull);
+      expect(offer.departureDate, isNull);
+      expect(offer.returnDate, isNull);
+    });
+
+    test('serializes offer with dates null', () {
+      final offer = Offer(
+        id: 'offer-003',
+        title: 'Sem datas',
+        destination: 'Bahamas',
+        category: 'Praia',
+        description: 'Pacote sem datas definidas',
+        price: 8000.0,
+        imageUrl: '',
+        rating: 0.0,
+        daysCount: 0,
+        basePrice: 8000.0,
+      );
+
+      final json = offer.toJson();
+      expect(json['dates'], isNull);
+    });
   });
 }

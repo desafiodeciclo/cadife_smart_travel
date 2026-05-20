@@ -11,7 +11,7 @@ class Offer extends Equatable {
   final String imageUrl;
   final double rating;
   final int daysCount;
-  final DateRange dates;
+  final DateRange? dates;
   final bool hasDiscount;
   final double discountPercent;
   final bool availableSpot;
@@ -39,7 +39,7 @@ class Offer extends Equatable {
     required this.imageUrl,
     required this.rating,
     required this.daysCount,
-    required this.dates,
+    this.dates,
     required this.basePrice,
     this.hasDiscount = false,
     this.discountPercent = 0.0,
@@ -59,9 +59,9 @@ class Offer extends Equatable {
   double get estimatedPrice => price;
   double get finalPrice => hasDiscount ? price * (1 - discountPercent / 100) : price;
   String get destinationImageUrl => imageUrl;
-  DateTime get departureDate => dates.start;
-  DateTime get returnDate => dates.end;
-  int get durationDays => dates.durationInDays;
+  DateTime? get departureDate => dates?.start;
+  DateTime? get returnDate => dates?.end;
+  int? get durationDays => dates?.durationInDays;
   List<String> get includedServices => amenities;
 
   factory Offer.fromJson(Map<String, dynamic> json) {
@@ -75,7 +75,9 @@ class Offer extends Equatable {
       imageUrl: json['image_url'] as String? ?? '',
       rating: (json['rating'] as num? ?? 0.0).toDouble(),
       daysCount: json['days_count'] as int? ?? 0,
-      dates: DateRange.fromJson(json['dates'] as Map<String, dynamic>),
+      dates: json['dates'] != null
+          ? DateRange.fromJson(json['dates'] as Map<String, dynamic>)
+          : null,
       hasDiscount: json['has_discount'] as bool? ?? false,
       discountPercent: (json['discount_percent'] as num? ?? 0.0).toDouble(),
       availableSpot: json['available_spot'] as bool? ?? true,
@@ -103,7 +105,7 @@ class Offer extends Equatable {
     'image_url': imageUrl,
     'rating': rating,
     'days_count': daysCount,
-    'dates': dates.toJson(),
+    'dates': dates?.toJson(),
     'has_discount': hasDiscount,
     'discount_percent': discountPercent,
     'available_spot': availableSpot,
@@ -131,6 +133,7 @@ class Offer extends Equatable {
     double? rating,
     int? daysCount,
     DateRange? dates,
+    bool clearDates = false,
     bool? hasDiscount,
     double? discountPercent,
     bool? availableSpot,
@@ -156,7 +159,7 @@ class Offer extends Equatable {
       imageUrl: imageUrl ?? this.imageUrl,
       rating: rating ?? this.rating,
       daysCount: daysCount ?? this.daysCount,
-      dates: dates ?? this.dates,
+      dates: clearDates ? null : (dates ?? this.dates),
       hasDiscount: hasDiscount ?? this.hasDiscount,
       discountPercent: discountPercent ?? this.discountPercent,
       availableSpot: availableSpot ?? this.availableSpot,
