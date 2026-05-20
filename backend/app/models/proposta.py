@@ -55,7 +55,7 @@ class Proposta(Base):
         nullable=True,
     )
 
-    lead: Mapped["Lead"] = relationship("Lead", back_populates="propostas")
+    lead: Mapped["Lead"] = relationship("Lead", back_populates="propostas", overlaps="lead,propostas")
 
 
 class PropostaVersao(Base):

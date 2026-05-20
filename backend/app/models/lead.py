@@ -77,16 +77,20 @@ class Lead(Base):
 
     # Relacionamentos Base
     briefing: Mapped[Optional["Briefing"]] = relationship(
-        "Briefing", back_populates="lead", uselist=False, lazy="selectin"
+        "Briefing", back_populates="lead", uselist=False, lazy="selectin",
+        overlaps="briefing,lead",
     )
     interacoes: Mapped[list["Interacao"]] = relationship(
-        "Interacao", back_populates="lead", lazy="selectin"
+        "Interacao", back_populates="lead", lazy="selectin",
+        overlaps="interacoes,lead",
     )
     agendamentos: Mapped[list["Agendamento"]] = relationship(
-        "Agendamento", back_populates="lead", lazy="selectin"
+        "Agendamento", back_populates="lead", lazy="selectin",
+        overlaps="agendamentos,lead",
     )
     propostas: Mapped[list["Proposta"]] = relationship(
-        "Proposta", back_populates="lead", lazy="selectin"
+        "Proposta", back_populates="lead", lazy="selectin",
+        overlaps="lead,propostas",
     )
     consultor: Mapped[Optional["User"]] = relationship(
         "User",
@@ -109,6 +113,7 @@ class Lead(Base):
         back_populates="lead",
         lazy="selectin",
         order_by="LeadScoreHistory.criado_em.desc()",
+        overlaps="lead,score_history",
     )
 
 
