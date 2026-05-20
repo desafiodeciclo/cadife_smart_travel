@@ -2,6 +2,7 @@ import 'package:cadife_smart_travel/config/router/routes.dart';
 import 'package:cadife_smart_travel/core/analytics/analytics_service.dart';
 import 'package:cadife_smart_travel/core/di/service_locator.dart';
 import 'package:cadife_smart_travel/design_system/design_system.dart';
+import 'package:cadife_smart_travel/features/agency/agenda/presentation/widgets/schedule_appointment_modal.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/providers/lead_detail_provider.dart';
 import 'package:cadife_smart_travel/l10n/app_localizations.dart';
@@ -273,7 +274,7 @@ class _ActionButtons extends StatelessWidget {
       children: [
         Expanded(
           child: ShadButton.outline(
-            onPressed: () {},
+            onPressed: () => ScheduleAppointmentModal.show(context, lead),
             child: Text(AppLocalizations.of(context)!.scheduleCall),
           ),
         ),
