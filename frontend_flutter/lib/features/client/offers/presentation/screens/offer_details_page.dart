@@ -620,7 +620,7 @@ class _OfferDetailsPageState extends ConsumerState<OfferDetailsPage> {
       destination: offer.destination,
       category: offer.category,
       description: offer.description,
-      estimatedPrice: offer.estimatedPrice,
+      estimatedPrice: offer.basePrice,
       imageUrl: offer.imageUrl,
       updatedAt: DateTime.now(),
     );

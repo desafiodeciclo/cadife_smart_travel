@@ -57,7 +57,7 @@ class Offer extends Equatable {
   });
 
   double get estimatedPrice => price;
-  double get finalPrice => hasDiscount ? price * (1 - discountPercent / 100) : price;
+  double get finalPrice => price; // Backend already computes final_price
   String get destinationImageUrl => imageUrl;
   DateTime? get departureDate => dates?.start;
   DateTime? get returnDate => dates?.end;
@@ -65,33 +65,61 @@ class Offer extends Equatable {
   List<String> get includedServices => amenities;
 
   factory Offer.fromJson(Map<String, dynamic> json) {
+    // Derive discount info from backend discounts dict
+    final discountsRaw = json['discounts'] != null
+        ? Map<String, dynamic>.from(json['discounts'] as Map)
+        : null;
+    final hasDiscount = discountsRaw != null && discountsRaw.isNotEmpty;
+    final discountPercent = hasDiscount
+        ? discountsRaw.values
+            .map((v) => (v as num).toDouble())
+            .reduce((a, b) => a > b ? a : b)
+        : 0.0;
+
+    // Derive availability from backend spot counts
+    final availableSpots = json['available_spots'] as int? ?? 0;
+    final spotsReserved = json['spots_reserved'] as int? ?? 0;
+    final availableSpot = availableSpots > spotsReserved;
+
+    // Parse dates from flat backend fields
+    DateRange? dates;
+    final departureDateStr = json['departure_date'] as String?;
+    final returnDateStr = json['return_date'] as String?;
+    if (departureDateStr != null && returnDateStr != null) {
+      dates = DateRange(
+        start: DateTime.parse(departureDateStr),
+        end: DateTime.parse(returnDateStr),
+      );
+    } else if (json['dates'] != null) {
+      // Fallback for legacy cached data
+      dates = DateRange.fromJson(json['dates'] as Map<String, dynamic>);
+    }
+
     return Offer(
       id: json['id'] as String,
       title: json['title'] as String,
       destination: json['destination'] as String,
       category: json['category'] as String? ?? 'Geral',
       description: json['description'] as String? ?? '',
-      price: (json['price'] as num? ?? 0.0).toDouble(),
-      imageUrl: json['image_url'] as String? ?? '',
-      rating: (json['rating'] as num? ?? 0.0).toDouble(),
-      daysCount: json['days_count'] as int? ?? 0,
-      dates: json['dates'] != null
-          ? DateRange.fromJson(json['dates'] as Map<String, dynamic>)
-          : null,
-      hasDiscount: json['has_discount'] as bool? ?? false,
-      discountPercent: (json['discount_percent'] as num? ?? 0.0).toDouble(),
-      availableSpot: json['available_spot'] as bool? ?? true,
-      status: json['status'] as String? ?? 'published',
+      price: double.parse(json['final_price']?.toString() ?? '0.0'),
+      imageUrl: json['destination_image_url'] as String? ?? '',
+      rating: 0.0, // Backend does not send ratings
+      daysCount: json['duration_days'] as int? ?? 0,
+      dates: dates,
+      hasDiscount: hasDiscount,
+      discountPercent: discountPercent,
+      availableSpot: availableSpot,
+      status: (json['status'] as String? ?? 'published').toLowerCase(),
       views: json['views'] as int? ?? 0,
       interests: json['interests'] as int? ?? 0,
       conversions: json['conversions'] as int? ?? 0,
-      availableSpots: json['available_spots'] as int? ?? 0,
-      spotsReserved: json['spots_reserved'] as int? ?? 0,
+      availableSpots: availableSpots,
+      spotsReserved: spotsReserved,
       highlights: (json['highlights'] as List?)?.map((e) => e as String).toList() ?? const [],
       amenities: (json['amenities'] as List?)?.map((e) => e as String).toList() ?? const [],
       currency: json['currency'] as String? ?? 'BRL',
       travelers: json['travelers'] as int? ?? 1,
-      basePrice: (json['base_price'] as num? ?? (json['price'] as num? ?? 0.0)).toDouble(),
+      basePrice: double.parse(json['base_price']?.toString() ?? '0.0'),
     );
   }
 
@@ -101,25 +129,26 @@ class Offer extends Equatable {
     'destination': destination,
     'category': category,
     'description': description,
-    'price': price,
-    'image_url': imageUrl,
+    'final_price': price.toStringAsFixed(2),
+    'base_price': basePrice.toStringAsFixed(2),
+    'destination_image_url': imageUrl,
     'rating': rating,
-    'days_count': daysCount,
-    'dates': dates?.toJson(),
-    'has_discount': hasDiscount,
-    'discount_percent': discountPercent,
-    'available_spot': availableSpot,
+    'duration_days': daysCount,
+    'departure_date': dates?.start.toIso8601String(),
+    'return_date': dates?.end.toIso8601String(),
+    'discounts': hasDiscount
+        ? {'default': discountPercent}
+        : null,
+    'available_spots': availableSpots,
+    'spots_reserved': spotsReserved,
     'status': status,
     'views': views,
     'interests': interests,
     'conversions': conversions,
-    'available_spots': availableSpots,
-    'spots_reserved': spotsReserved,
     'highlights': highlights,
     'amenities': amenities,
     'currency': currency,
     'travelers': travelers,
-    'base_price': basePrice,
   };
 
   Offer copyWith({
