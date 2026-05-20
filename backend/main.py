@@ -8,10 +8,6 @@ Registers middlewares, routers, and startup/shutdown lifecycle hooks.
 import re
 from contextlib import asynccontextmanager
 
-import sys
-from unittest.mock import MagicMock
-sys.modules["aioboto3"] = MagicMock()
-
 import structlog
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI, Depends, status, Request
