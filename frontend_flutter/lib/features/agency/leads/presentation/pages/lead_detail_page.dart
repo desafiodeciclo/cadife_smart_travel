@@ -3,9 +3,15 @@ import 'package:cadife_smart_travel/core/analytics/analytics_service.dart';
 import 'package:cadife_smart_travel/core/di/service_locator.dart';
 import 'package:cadife_smart_travel/design_system/design_system.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/presentation/widgets/schedule_appointment_modal.dart';
+import 'package:cadife_smart_travel/features/agency/leads/domain/entities/briefing.dart';
+import 'package:cadife_smart_travel/features/agency/leads/domain/entities/conversation_summary.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
 import 'package:cadife_smart_travel/features/agency/leads/presentation/providers/lead_detail_provider.dart';
+import 'package:cadife_smart_travel/features/agency/leads/presentation/providers/leads_usecases_providers.dart';
+import 'package:cadife_smart_travel/features/agency/propostas/presentation/widgets/proposals_history_tab.dart';
 import 'package:cadife_smart_travel/l10n/app_localizations.dart';
+import 'package:cadife_smart_travel/providers/leads_provider.dart';
+import 'package:cadife_smart_travel/shared/domain/entities/interacao.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/empty_state/empty_type.dart';
 import 'package:cadife_smart_travel/shared/presentation/widgets/state_container.dart';
 import 'package:flutter/material.dart';
@@ -155,7 +161,7 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
                       controller: _tabController,
                       children: [
                         _BriefingTab(lead: lead),
-                        const _ChatTimelineTab(),
+                        _ChatTimelineTab(leadId: lead.id),
                         _ProposalsHistoryTab(lead: lead),
                       ],
                     ),
@@ -290,24 +296,541 @@ class _ActionButtons extends StatelessWidget {
   }
 }
 
-class _BriefingTab extends StatelessWidget {
+// ─── Briefing Tab ────────────────────────────────────────────────────────────
+
+class _BriefingTab extends ConsumerWidget {
   final Lead lead;
   const _BriefingTab({required this.lead});
 
   @override
-  Widget build(BuildContext context) {
-    return const Center(child: Text('Briefing Tab Content'));
+  Widget build(BuildContext context, WidgetRef ref) {
+    final briefingAsync = ref.watch(
+      _briefingProvider(lead.id),
+    );
+
+    return StateContainer<Briefing>(
+      state: briefingAsync,
+      onRetry: () => ref.refresh(_briefingProvider(lead.id)),
+      isEmpty: false,
+      dataBuilder: (briefing) => _BriefingContent(briefing: briefing),
+    );
   }
 }
 
-class _ChatTimelineTab extends StatelessWidget {
-  const _ChatTimelineTab();
+final _briefingProvider =
+    FutureProvider.family<Briefing, String>((ref, leadId) async {
+  final result = await ref.watch(getBriefingUseCaseProvider).call(leadId);
+  return result.fold((f) => throw f, (b) => b);
+});
+
+class _BriefingContent extends StatelessWidget {
+  final Briefing briefing;
+  const _BriefingContent({required this.briefing});
 
   @override
   Widget build(BuildContext context) {
-    return const Center(child: Text('Timeline Tab Content'));
+    final dateFmt = DateFormat('dd/MM/yyyy');
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        // Completude
+        ShadCard(
+          padding: const EdgeInsets.all(16),
+          radius: BorderRadius.circular(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Completude do Briefing',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: context.cadife.textPrimary,
+                    ),
+                  ),
+                  Text(
+                    '${briefing.completudePct}%',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: _completudeColor(briefing.completudePct),
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: briefing.completudePct / 100,
+                  minHeight: 8,
+                  backgroundColor:
+                      _completudeColor(briefing.completudePct).withValues(alpha: 0.15),
+                  valueColor: AlwaysStoppedAnimation(
+                    _completudeColor(briefing.completudePct),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Dados da viagem
+        ShadCard(
+          padding: const EdgeInsets.all(16),
+          radius: BorderRadius.circular(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Dados da Viagem',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              ),
+              const SizedBox(height: 12),
+              _BriefingRow(
+                icon: Icons.place_outlined,
+                label: 'Destino',
+                value: briefing.destino,
+              ),
+              _BriefingRow(
+                icon: Icons.flight_takeoff_outlined,
+                label: 'Data de Ida',
+                value: briefing.dataIda != null
+                    ? dateFmt.format(briefing.dataIda!)
+                    : null,
+              ),
+              _BriefingRow(
+                icon: Icons.flight_land_outlined,
+                label: 'Data de Volta',
+                value: briefing.dataVolta != null
+                    ? dateFmt.format(briefing.dataVolta!)
+                    : null,
+              ),
+              _BriefingRow(
+                icon: Icons.people_outline,
+                label: 'Passageiros',
+                value: briefing.numPessoas?.toString(),
+              ),
+              _BriefingRow(
+                icon: Icons.card_travel_outlined,
+                label: 'Tipo de Viagem',
+                value: briefing.tipoViagem,
+              ),
+              _BriefingRow(
+                icon: Icons.person_outline,
+                label: 'Perfil',
+                value: briefing.perfil,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Perfil e preferências
+        ShadCard(
+          padding: const EdgeInsets.all(16),
+          radius: BorderRadius.circular(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Preferências e Perfil',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              ),
+              const SizedBox(height: 12),
+              _BriefingRow(
+                icon: Icons.attach_money_outlined,
+                label: 'Orçamento',
+                value: briefing.orcamentoFaixa,
+              ),
+              _BriefingRow(
+                icon: Icons.book_outlined,
+                label: 'Preferências',
+                value: briefing.preferencias,
+              ),
+              _BriefingRow(
+                icon: Icons.badge_outlined,
+                label: 'Passaporte válido',
+                value: briefing.passaporteValido == null
+                    ? null
+                    : briefing.passaporteValido!
+                        ? 'Sim'
+                        : 'Não',
+              ),
+              _BriefingRow(
+                icon: Icons.public_outlined,
+                label: 'Exp. internacional',
+                value: briefing.experienciaInternacional == null
+                    ? null
+                    : briefing.experienciaInternacional!
+                        ? 'Sim'
+                        : 'Não',
+              ),
+            ],
+          ),
+        ),
+
+        if (briefing.resumoConversa != null) ...[
+          const SizedBox(height: 12),
+          ShadCard(
+            padding: const EdgeInsets.all(16),
+            radius: BorderRadius.circular(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Resumo da Conversa',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  briefing.resumoConversa!,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: context.cadife.textSecondary,
+                    height: 1.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+        const SizedBox(height: 80),
+      ],
+    );
+  }
+
+  Color _completudeColor(int pct) {
+    if (pct >= 80) return AppColors.success;
+    if (pct >= 50) return AppColors.warning;
+    return AppColors.error;
   }
 }
+
+class _BriefingRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String? value;
+
+  const _BriefingRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final displayValue = (value == null || value!.isEmpty) ? '—' : value!;
+    final isEmpty = value == null || value!.isEmpty;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 16, color: AppColors.primary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: context.cadife.textSecondary,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  displayValue,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: isEmpty
+                        ? context.cadife.textSecondary
+                        : context.cadife.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Timeline Tab ─────────────────────────────────────────────────────────────
+
+class _ChatTimelineTab extends ConsumerWidget {
+  final String leadId;
+  const _ChatTimelineTab({required this.leadId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final summaryAsync = ref.watch(_conversationSummaryProvider(leadId));
+    final interacoesAsync = ref.watch(_interacoesProvider(leadId));
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        // Resumo inteligente da conversa
+        summaryAsync.when(
+          loading: () => const Center(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: CircularProgressIndicator(),
+            ),
+          ),
+          error: (_, err) => const SizedBox.shrink(),
+          data: (summary) {
+            if (summary == null || summary.resumoPendente) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: ShadCard(
+                  padding: const EdgeInsets.all(16),
+                  radius: BorderRadius.circular(12),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.auto_awesome_outlined,
+                          color: AppColors.primary, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          summary?.resumoPendente == true
+                              ? 'Resumo sendo gerado pela AYA…'
+                              : 'Nenhum resumo disponível ainda.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: context.cadife.textSecondary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            final r = summary.resumo;
+            if (r == null) return const SizedBox.shrink();
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: ShadCard(
+                padding: const EdgeInsets.all(16),
+                radius: BorderRadius.circular(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.auto_awesome_outlined,
+                            color: AppColors.primary, size: 18),
+                        SizedBox(width: 6),
+                        Text(
+                          'Resumo da AYA',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    if (r.intencaoPrincipal != null)
+                      _SummaryTopic(
+                          label: 'Intenção', value: r.intencaoPrincipal!),
+                    if (r.datasEPassageiros != null)
+                      _SummaryTopic(
+                          label: 'Datas e passageiros',
+                          value: r.datasEPassageiros!),
+                    if (r.orcamento != null)
+                      _SummaryTopic(
+                          label: 'Orçamento', value: r.orcamento!),
+                    if (r.restricoesEPreferencias != null)
+                      _SummaryTopic(
+                          label: 'Restrições',
+                          value: r.restricoesEPreferencias!),
+                    if (r.decisoesTomadas != null)
+                      _SummaryTopic(
+                          label: 'Decisões', value: r.decisoesTomadas!),
+                    if (r.proximosPassos != null)
+                      _SummaryTopic(
+                          label: 'Próximos passos',
+                          value: r.proximosPassos!),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+
+        // Timeline de interações
+        interacoesAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => Center(
+            child: Text(
+              'Erro ao carregar histórico',
+              style: TextStyle(color: context.cadife.textSecondary),
+            ),
+          ),
+          data: (interacoes) {
+            if (interacoes.isEmpty) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Text(
+                    'Nenhuma interação registrada.',
+                    style: TextStyle(color: context.cadife.textSecondary),
+                  ),
+                ),
+              );
+            }
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 8),
+                  child: Text(
+                    'Histórico de mensagens',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                ),
+                ...interacoes.map((i) => _InteracaoItem(interacao: i)),
+              ],
+            );
+          },
+        ),
+        const SizedBox(height: 80),
+      ],
+    );
+  }
+}
+
+final _conversationSummaryProvider =
+    FutureProvider.family<ConversationSummary?, String>((ref, leadId) async {
+  final result =
+      await ref.watch(getConversationSummaryUseCaseProvider).call(leadId);
+  return result.fold((f) => throw f, (s) => s);
+});
+
+final _interacoesProvider =
+    FutureProvider.family<List<Interacao>, String>((ref, leadId) async {
+  final repo = ref.watch(leadsRepositoryProvider);
+  final result = await repo.getInteractions(leadId);
+  return result.fold((f) => throw f, (list) => list);
+});
+
+class _SummaryTopic extends StatelessWidget {
+  final String label;
+  final String value;
+  const _SummaryTopic({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '$label: ',
+            style: const TextStyle(
+                fontWeight: FontWeight.w600, fontSize: 13),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                  fontSize: 13, color: context.cadife.textSecondary),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InteracaoItem extends StatelessWidget {
+  final Interacao interacao;
+  const _InteracaoItem({required this.interacao});
+
+  @override
+  Widget build(BuildContext context) {
+    final isClient = interacao.direction == 'inbound';
+    final dateFmt = DateFormat('dd/MM HH:mm');
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Linha da timeline
+          Column(
+            children: [
+              Container(
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isClient ? AppColors.primary : AppColors.success,
+                ),
+              ),
+              Container(
+                width: 2,
+                height: 40,
+                color: context.cadife.textSecondary.withValues(alpha: 0.2),
+              ),
+            ],
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      isClient ? 'Cliente' : 'AYA',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                        color: isClient
+                            ? AppColors.primary
+                            : AppColors.success,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      dateFmt.format(interacao.timestamp),
+                      style: TextStyle(
+                          fontSize: 11,
+                          color: context.cadife.textSecondary),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  interacao.content,
+                  style: const TextStyle(fontSize: 13),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Proposals Tab ────────────────────────────────────────────────────────────
 
 class _ProposalsHistoryTab extends StatelessWidget {
   final Lead lead;
@@ -315,6 +838,6 @@ class _ProposalsHistoryTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(child: Text('Proposals Tab Content'));
+    return ProposalsHistoryTab(lead: lead);
   }
 }
