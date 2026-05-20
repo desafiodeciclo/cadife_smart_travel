@@ -34,6 +34,31 @@ SCORE_QUENTE_FIELDS = {"destino", "data_ida", "qtd_pessoas", "orcamento"}
 ENGAJAMENTO_RAPIDO_MINUTOS = 30
 
 
+async def _notify_consultor_new_lead(consultor: User, lead: Lead) -> None:
+    """Best-effort FCM push for a newly auto-assigned lead. Never raises."""
+    if not getattr(consultor, "fcm_token", None):
+        return
+    try:
+        from app.services.fcm_service import send_push_notification
+
+        await send_push_notification(
+            fcm_token=consultor.fcm_token,
+            title="Novo lead atribuído",
+            body=f"Você recebeu um novo lead: {lead.nome or lead.telefone}",
+            data={
+                "type": "lead_auto_assigned",
+                "lead_id": str(lead.id),
+            },
+        )
+    except Exception as exc:  # pragma: no cover — notification must not block
+        logger.warning(
+            "lead_auto_assign_notification_failed",
+            consultor_id=str(consultor.id),
+            lead_id=str(lead.id),
+            error=str(exc),
+        )
+
+
 def calculate_score_from_briefing(briefing: Briefing | None) -> LeadScore | None:
     """
     Compute lead temperature score from briefing data (spec.md §8.3).
@@ -134,11 +159,17 @@ async def get_or_create_by_phone(
                 await db.commit()
             return lead
 
+        from app.services import lead_assignment_service
+
+        consultor = await lead_assignment_service.pick_next_consultor(db)
+        consultor_id = consultor.id if consultor else None
+
         lead = Lead(
             telefone=phone,
             telefone_hash=phone_hash,
             nome=name,
             status=LeadStatus.novo,
+            consultor_id=consultor_id,
         )
         db.add(lead)
         await db.flush()
@@ -148,7 +179,15 @@ async def get_or_create_by_phone(
 
         await db.commit()
         await db.refresh(lead)
-        logger.info("lead_created", lead_id=str(lead.id), phone=phone)
+        logger.info(
+            "lead_created",
+            lead_id=str(lead.id),
+            phone=phone,
+            consultor_id=str(consultor_id) if consultor_id else None,
+            auto_assigned=consultor_id is not None,
+        )
+        if consultor is not None:
+            await _notify_consultor_new_lead(consultor, lead)
         return lead
     except Exception as e:
         await db.rollback()
@@ -173,6 +212,15 @@ async def create_manual_lead(db: AsyncSession, data: "ManualLeadCreate") -> Lead
             logger.warning("manual_lead_duplicate_attempt", phone=data.telefone, lead_id=str(existing.id))
             raise ValueError(f"DUPLICATE_LEAD:{existing.id}")
 
+    consultor_id = data.consultor_id
+    auto_assigned_consultor: Optional[User] = None
+    if consultor_id is None:
+        from app.services import lead_assignment_service
+
+        auto_assigned_consultor = await lead_assignment_service.pick_next_consultor(db)
+        if auto_assigned_consultor is not None:
+            consultor_id = auto_assigned_consultor.id
+
     lead = Lead(
         id=uuid.uuid4(),
         nome=data.nome,
@@ -180,7 +228,7 @@ async def create_manual_lead(db: AsyncSession, data: "ManualLeadCreate") -> Lead
         telefone_hash=phone_hash,
         origem=data.origem,
         status=LeadStatus.novo,
-        consultor_id=data.consultor_id,
+        consultor_id=consultor_id,
         criado_em=datetime.now(timezone.utc)
     )
     db.add(lead)
@@ -220,7 +268,16 @@ async def create_manual_lead(db: AsyncSession, data: "ManualLeadCreate") -> Lead
     try:
         await db.commit()
         await db.refresh(lead)
-        logger.info("manual_lead_created", lead_id=str(lead.id), phone=data.telefone, score=lead.score)
+        logger.info(
+            "manual_lead_created",
+            lead_id=str(lead.id),
+            phone=data.telefone,
+            score=lead.score,
+            consultor_id=str(consultor_id) if consultor_id else None,
+            auto_assigned=auto_assigned_consultor is not None,
+        )
+        if auto_assigned_consultor is not None:
+            await _notify_consultor_new_lead(auto_assigned_consultor, lead)
         return lead
     except Exception as e:
         await db.rollback()

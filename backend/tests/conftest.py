@@ -61,6 +61,7 @@ import app.infrastructure.persistence.models.conversation_summary_model  # noqa:
 import app.infrastructure.persistence.models.itinerary_model  # noqa: F401
 import app.infrastructure.persistence.models.aya_toggle_history_model  # noqa: F401
 import app.infrastructure.persistence.models.lead_score_history_model  # noqa: F401
+import app.infrastructure.persistence.models.lead_assignment_cursor_model  # noqa: F401
 
 from main import app
 from app.infrastructure.persistence.database import Base as InfraBase

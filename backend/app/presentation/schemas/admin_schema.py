@@ -81,6 +81,16 @@ class AgenciaMetricsResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+class AdminAutoAssignOrphansResponse(BaseModel):
+    """Result of sweeping orphan leads and assigning via round-robin."""
+
+    assigned: int = 0
+    skipped: int = 0
+    no_consultor_available: bool = False
+
+    model_config = ConfigDict(extra="forbid")
+
+
 class AdminLeadReassignRequest(BaseModel):
     """Payload for reassigning a lead to another consultant."""
 

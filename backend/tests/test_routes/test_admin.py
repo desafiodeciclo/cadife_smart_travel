@@ -281,6 +281,38 @@ async def test_agency_metrics_forbidden_for_consultor(
 
 
 @pytest.mark.asyncio
+async def test_auto_assign_orphans_endpoint_distributes(
+    async_client_no_auth, db_session
+):
+    admin = await create_admin(db_session)
+    consultor_a = await create_consultor(db_session, email="ana@x.com")
+    consultor_b = await create_consultor(db_session, email="bia@x.com")
+
+    # 5 orphan leads
+    for i in range(5):
+        phone = f"+551199999{i:04d}"
+        lead = Lead(
+            nome=f"Orphan {i}",
+            telefone=phone,
+            telefone_hash=hmac_hash(phone),
+            consultor_id=None,
+        )
+        db_session.add(lead)
+    await db_session.commit()
+
+    token = create_access_token(str(admin.id))
+    response = await async_client_no_auth.post(
+        "/admin/leads/auto-assign-orphans",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data["assigned"] == 5
+    assert data["skipped"] == 0
+    assert data["no_consultor_available"] is False
+
+
+@pytest.mark.asyncio
 async def test_non_admin_cannot_access_admin_routes(async_client_no_auth, db_session):
     consultor = await create_consultor(db_session)
     token = create_access_token(str(consultor.id))

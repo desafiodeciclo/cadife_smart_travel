@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.security.dependencies import RequiresRole, get_current_user, get_db
 from app.presentation.schemas.admin_schema import (
+    AdminAutoAssignOrphansResponse,
     AdminLeadReassignRequest,
     AdminLeadReassignResponse,
     AdminUserCreate,
@@ -21,6 +22,7 @@ from app.presentation.schemas.admin_schema import (
     AdminUserUpdate,
     AgenciaMetricsResponse,
 )
+from app.services import lead_assignment_service
 from app.domain.entities.enums import UserPerfil
 from app.models.lead import Lead
 from app.models.user import User
@@ -213,6 +215,33 @@ async def delete_user(
             detail=error,
         )
     return None
+
+
+@router.post(
+    "/leads/auto-assign-orphans",
+    response_model=AdminAutoAssignOrphansResponse,
+    summary="Atribuir leads órfãos via round-robin",
+    description=(
+        "Varre todos os leads com consultor_id IS NULL (não arquivados, não "
+        "deletados) e atribui em batch ao próximo consultor ativo via "
+        "round-robin. Retorna contagem de atribuídos e pulados."
+    ),
+    dependencies=[Depends(RequiresRole("admin"))],
+    responses={
+        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
+        403: {"description": "Sem permissão", "model": HTTPErrorResponse},
+    },
+)
+async def auto_assign_orphan_leads(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> AdminAutoAssignOrphansResponse:
+    result = await lead_assignment_service.auto_assign_orphans(db)
+    return AdminAutoAssignOrphansResponse(
+        assigned=result["assigned"],
+        skipped=result["skipped"],
+        no_consultor_available=result["no_consultor_available"],
+    )
 
 
 @router.patch(

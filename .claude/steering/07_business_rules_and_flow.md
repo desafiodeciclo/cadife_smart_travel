@@ -60,3 +60,18 @@ Ciclo de vida obrigatório:
 | **10** | **Dashboard Agência** | Consultor vê card do lead em tempo real com todos os dados estruturados | App Agência |
 | **11** | **Curadoria Humana** | Consultor pesquisa operadoras, monta proposta personalizada | Consultor |
 | **12** | **Retorno ao Cliente** | Proposta enviada via WhatsApp ou atualização de status no App Cliente | Consultor |
+
+### 9.2 Atribuição Automática de Leads (Round-Robin)
+
+Todo lead criado (webhook WhatsApp, criação manual via app, conversão de oferta) recebe `consultor_id` automaticamente via round-robin entre consultores ativos.
+
+| Regra | Detalhe |
+|---|---|
+| **Pool de atribuição** | Usuários com `perfil in [consultor, agencia]` AND `is_active=true`. Admin é excluído. |
+| **Ordem** | (nome ASC, id ASC) — determinística. |
+| **Cursor** | Singleton em `lead_assignment_cursor` (`last_assigned_user_id`); SELECT FOR UPDATE serializa concorrência. |
+| **Tiebreaker** | Se o pick do round-robin tem `(active_leads - min_load) > 5`, prefere o consultor menos carregado. |
+| **Sem consultor ativo** | Lead criado com `consultor_id=NULL` + log `no_active_consultor_available`. Não bloqueia criação. |
+| **Reatribuição manual** | `PATCH /admin/leads/{id}/reassign` (admin-only) sobrescreve a atribuição automática. |
+| **Sweep de órfãos** | `POST /admin/leads/auto-assign-orphans` aplica round-robin aos leads com `consultor_id IS NULL` legados. |
+| **Notificação** | FCM push ao consultor atribuído (best-effort; não bloqueia). |
