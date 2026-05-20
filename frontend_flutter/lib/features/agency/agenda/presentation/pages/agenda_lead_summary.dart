@@ -312,12 +312,17 @@ class _LeadSelectSheet extends ConsumerStatefulWidget {
 class _LeadSelectSheetState extends ConsumerState<_LeadSelectSheet> {
   String _search = '';
   bool _isScheduling = false;
-  String? _schedulingLeadId;
+  String? _schedulingId;
+  // 0 = clientes, 1 = consultores (apenas admin)
+  int _tab = 0;
 
   @override
   Widget build(BuildContext context) {
     final leadsAsync = ref.watch(leadsNotifierProvider);
+    final consultoresAsync = ref.watch(adminConsultantsProvider);
     final timeStr = DateFormat('HH:mm').format(widget.slotStart);
+    final user = ref.watch(authNotifierProvider).valueOrNull;
+    final isAdmin = user?.role == UserRole.admin;
 
     return Container(
       margin: const EdgeInsets.only(top: 60),
@@ -353,16 +358,41 @@ class _LeadSelectSheetState extends ConsumerState<_LeadSelectSheet> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Selecione o lead para vincular a esta reunião',
+                  isAdmin
+                      ? 'Selecione o cliente ou consultor para a reunião'
+                      : 'Selecione o cliente para vincular a esta reunião',
                   style: TextStyle(
                     fontSize: 13,
                     color: context.cadife.textSecondary,
                   ),
                 ),
+                if (isAdmin) ...[
+                  const SizedBox(height: 12),
+                  ShadTabs<int>(
+                    value: _tab,
+                    onChanged: (v) => setState(() {
+                      _tab = v;
+                      _search = '';
+                    }),
+                    tabs: const [
+                      ShadTab(
+                        value: 0,
+                        content: SizedBox.shrink(),
+                        child: Text('Clientes'),
+                      ),
+                      ShadTab(
+                        value: 1,
+                        content: SizedBox.shrink(),
+                        child: Text('Consultores'),
+                      ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 12),
                 CadifeInput(
-                  label: 'Buscar lead',
-                  hintText: 'Nome do cliente...',
+                  label: _tab == 1 ? 'Buscar consultor' : 'Buscar lead',
+                  hintText:
+                      _tab == 1 ? 'Nome do consultor...' : 'Nome do cliente...',
                   prefixIcon: Icons.search,
                   onChanged: (v) => setState(() => _search = v),
                 ),
@@ -371,83 +401,145 @@ class _LeadSelectSheetState extends ConsumerState<_LeadSelectSheet> {
             ),
           ),
           Expanded(
-            child: leadsAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (_, _) => const Center(
-                child: Text('Não foi possível carregar os leads.'),
-              ),
-              data: (leads) {
-                final eligible = leads
-                    .where(
-                      (l) =>
-                          (l.status == LeadStatus.qualificado ||
-                              l.status == LeadStatus.emAtendimento) &&
-                          (_search.isEmpty ||
-                              l.name
-                                  .toLowerCase()
-                                  .contains(_search.toLowerCase())),
-                    )
-                    .toList();
-
-                if (eligible.isEmpty) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(32),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.person_search,
-                              size: 48,
-                              color: context.cadife.textSecondary),
-                          const SizedBox(height: 12),
-                          Text(
-                            _search.isEmpty
-                                ? 'Sem leads qualificados disponíveis'
-                                : 'Nenhum lead encontrado',
-                            style: TextStyle(
-                              color: context.cadife.textSecondary,
-                              fontSize: 14,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-
-                return ListView.separated(
-                  padding:
-                      const EdgeInsets.fromLTRB(16, 4, 16, 24),
-                  itemCount: eligible.length,
-                  separatorBuilder: (_, _) =>
-                      const SizedBox(height: 8),
-                  itemBuilder: (context, index) {
-                    final lead = eligible[index];
-                    final isLoading = _isScheduling &&
-                        _schedulingLeadId == lead.id;
-
-                    return _LeadSelectTile(
-                      lead: lead,
-                      isLoading: isLoading,
-                      onTap: _isScheduling
-                          ? null
-                          : () => _schedule(lead),
-                    );
-                  },
-                );
-              },
-            ),
+            child: isAdmin && _tab == 1
+                ? _buildConsultoresTab(consultoresAsync)
+                : _buildLeadsTab(leadsAsync),
           ),
         ],
       ),
     );
   }
 
-  Future<void> _schedule(Lead lead) async {
+  Widget _buildLeadsTab(AsyncValue<List<Lead>> leadsAsync) {
+    return leadsAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (_, _) => const Center(
+        child: Text('Não foi possível carregar os leads.'),
+      ),
+      data: (leads) {
+        final eligible = leads
+            .where(
+              (l) =>
+                  (l.status == LeadStatus.qualificado ||
+                      l.status == LeadStatus.emAtendimento) &&
+                  (_search.isEmpty ||
+                      l.name.toLowerCase().contains(_search.toLowerCase())),
+            )
+            .toList();
+
+        if (eligible.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.person_search,
+                      size: 48, color: context.cadife.textSecondary),
+                  const SizedBox(height: 12),
+                  Text(
+                    _search.isEmpty
+                        ? 'Sem leads qualificados disponíveis'
+                        : 'Nenhum lead encontrado',
+                    style: TextStyle(
+                      color: context.cadife.textSecondary,
+                      fontSize: 14,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        return ListView.separated(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+          itemCount: eligible.length,
+          separatorBuilder: (_, _) => const SizedBox(height: 8),
+          itemBuilder: (context, index) {
+            final lead = eligible[index];
+            final isLoading = _isScheduling && _schedulingId == lead.id;
+
+            return _LeadSelectTile(
+              lead: lead,
+              isLoading: isLoading,
+              onTap: _isScheduling ? null : () => _scheduleWithLead(lead),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildConsultoresTab(AsyncValue<List<AdminConsultant>> consultoresAsync) {
+    return consultoresAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (_, _) => const Center(
+        child: Text('Não foi possível carregar os consultores.'),
+      ),
+      data: (consultores) {
+        final eligible = consultores
+            .where(
+              (c) =>
+                  c.isActive &&
+                  (_search.isEmpty ||
+                      c.name.toLowerCase().contains(_search.toLowerCase())),
+            )
+            .toList();
+
+        if (eligible.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.manage_accounts,
+                      size: 48, color: context.cadife.textSecondary),
+                  const SizedBox(height: 12),
+                  Text(
+                    _search.isEmpty
+                        ? 'Nenhum consultor ativo encontrado'
+                        : 'Nenhum consultor encontrado',
+                    style: TextStyle(
+                      color: context.cadife.textSecondary,
+                      fontSize: 14,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        return ListView.separated(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+          itemCount: eligible.length,
+          separatorBuilder: (_, _) => const SizedBox(height: 8),
+          itemBuilder: (context, index) {
+            final consultor = eligible[index];
+            final isLoading =
+                _isScheduling && _schedulingId == consultor.id;
+
+            return _ConsultorSelectTile(
+              consultor: consultor,
+              isLoading: isLoading,
+              onTap: _isScheduling
+                  ? null
+                  : () => _scheduleWithConsultor(consultor),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _scheduleWithLead(Lead lead) async {
     setState(() {
       _isScheduling = true;
-      _schedulingLeadId = lead.id;
+      _schedulingId = lead.id;
     });
 
     final ok = await ref.read(agendaProvider.notifier).scheduleSlot(
@@ -468,6 +560,114 @@ class _LeadSelectSheetState extends ConsumerState<_LeadSelectSheet> {
         ),
       );
     }
+  }
+
+  Future<void> _scheduleWithConsultor(AdminConsultant consultor) async {
+    setState(() {
+      _isScheduling = true;
+      _schedulingId = consultor.id;
+    });
+
+    final ok = await ref.read(agendaProvider.notifier).scheduleSlot(
+          dateTime: widget.slotStart,
+          notes: 'Reunião com consultor: ${consultor.name}',
+        );
+
+    if (mounted) {
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            ok
+                ? 'Reunião agendada com ${consultor.name}'
+                : 'Erro ao agendar. Tente novamente.',
+          ),
+          backgroundColor: ok ? AppColors.success : AppColors.error,
+        ),
+      );
+    }
+  }
+}
+
+// ─── Consultor select tile (admin only) ──────────────────────────────────────
+
+class _ConsultorSelectTile extends StatelessWidget {
+  const _ConsultorSelectTile({
+    required this.consultor,
+    required this.isLoading,
+    required this.onTap,
+  });
+
+  final AdminConsultant consultor;
+  final bool isLoading;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: context.cadife.cardBackground,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: AppColors.primary.withValues(alpha: 0.15),
+                child: Text(
+                  consultor.name.isNotEmpty
+                      ? consultor.name[0].toUpperCase()
+                      : '?',
+                  style: const TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      consultor.name,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: context.cadife.textPrimary,
+                        fontSize: 14,
+                      ),
+                    ),
+                    Text(
+                      consultor.email,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: context.cadife.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              if (isLoading)
+                const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              else
+                const Icon(
+                  Icons.add_circle_outline,
+                  color: AppColors.primary,
+                  size: 22,
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

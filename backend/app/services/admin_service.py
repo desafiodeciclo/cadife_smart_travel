@@ -10,14 +10,21 @@ import uuid
 from typing import Optional
 
 import structlog
+from datetime import datetime, timedelta, timezone
+
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import hash_password
 from app.infrastructure.config.settings import get_settings
-from app.presentation.schemas.admin_schema import AdminUserMetrics
+from app.presentation.schemas.admin_schema import (
+    AdminUserMetrics,
+    AgenciaMetricsResponse,
+)
 from app.models.lead import Lead
-from app.domain.entities.enums import UserPerfil
+from app.domain.entities.enums import LeadStatus, PropostaStatus, UserPerfil
+from app.infrastructure.persistence.models.lead_model import LeadModel
+from app.infrastructure.persistence.models.proposta_model import PropostaModel
 from app.models.user import User
 from app.services.fcm_service import send_push_notification
 
@@ -140,7 +147,7 @@ async def list_consultores(
     """
     result = await db.execute(
         select(User).where(
-            User.perfil.in_([UserPerfil.consultor, UserPerfil.agencia, UserPerfil.admin])
+            User.perfil.in_([UserPerfil.consultor, UserPerfil.agencia])
         )
     )
     users = list(result.scalars().all())
@@ -167,6 +174,75 @@ async def list_consultores(
         )
 
     return [{"user": u, "metrics": metrics_map.get(u.id, AdminUserMetrics())} for u in users]
+
+
+async def agency_metrics(db: AsyncSession) -> AgenciaMetricsResponse:
+    """
+    Agency-wide metrics for the admin dashboard.
+
+    Counts ALL non-archived leads regardless of consultor assignment, sums
+    realized revenue from approved proposals on closed leads, and reports
+    the 30-day window for novo/fechado/perdido. Consultores ativos counts
+    only roles 'consultor' and 'agencia' (admin is excluded).
+    """
+    now = datetime.now(timezone.utc)
+    window_start = now - timedelta(days=30)
+
+    lead_counts_stmt = select(
+        func.count().label("total"),
+        func.count()
+        .filter(LeadModel.status == LeadStatus.fechado.value)
+        .label("fechados"),
+        func.count()
+        .filter(
+            LeadModel.status == LeadStatus.novo.value,
+            LeadModel.criado_em >= window_start,
+        )
+        .label("novos_mes"),
+        func.count()
+        .filter(
+            LeadModel.status == LeadStatus.fechado.value,
+            LeadModel.criado_em >= window_start,
+        )
+        .label("fechados_mes"),
+        func.count()
+        .filter(
+            LeadModel.status == LeadStatus.perdido.value,
+            LeadModel.criado_em >= window_start,
+        )
+        .label("perdidos_mes"),
+    ).where(LeadModel.deletado_em.is_(None))
+
+    row = (await db.execute(lead_counts_stmt)).one()
+    total = int(row.total or 0)
+    fechados = int(row.fechados or 0)
+
+    receita_stmt = (
+        select(func.coalesce(func.sum(PropostaModel.valor_estimado), 0))
+        .join(LeadModel, LeadModel.id == PropostaModel.lead_id)
+        .where(
+            PropostaModel.status == PropostaStatus.aprovada.value,
+            LeadModel.status == LeadStatus.fechado.value,
+            LeadModel.deletado_em.is_(None),
+        )
+    )
+    receita = (await db.execute(receita_stmt)).scalar_one()
+
+    consultores_ativos_stmt = select(func.count()).where(
+        User.perfil.in_([UserPerfil.consultor, UserPerfil.agencia]),
+        User.is_active.is_(True),
+    )
+    consultores_ativos = (await db.execute(consultores_ativos_stmt)).scalar_one()
+
+    return AgenciaMetricsResponse(
+        total_leads=total,
+        taxa_conversao=(fechados / total) if total else 0.0,
+        receita_estimada=float(receita or 0),
+        consultores_ativos=int(consultores_ativos or 0),
+        leads_novos_mes=int(row.novos_mes or 0),
+        leads_fechados_mes=int(row.fechados_mes or 0),
+        leads_perdidos_mes=int(row.perdidos_mes or 0),
+    )
 
 
 async def update_consultor(

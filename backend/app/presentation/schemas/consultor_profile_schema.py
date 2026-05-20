@@ -30,8 +30,10 @@ class BioUpdateRequest(BaseModel):
 class ConsultorMetricsResponse(BaseModel):
     leads_total: int = Field(ge=0)
     leads_qualificados: int = Field(ge=0)
+    leads_ativos: int = Field(ge=0, default=0)
     propostas_enviadas: int = Field(ge=0)
     vendas_fechadas: int = Field(ge=0)
+    receita_gerada: float = Field(ge=0.0, default=0.0)
     taxa_conversao: float = Field(ge=0.0, le=1.0)
     gerado_em: datetime
 

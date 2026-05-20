@@ -88,27 +88,7 @@ class AdminRepository {
   }
 
   Future<AgenciaMetrics> getMetrics() async {
-    final consultores = await getConsultores();
-    var totalLeadsAtivos = 0;
-    var totalLeadsAtendidos = 0;
-    var somaTaxaConversao = 0.0;
-    var consultoresAtivos = 0;
-    for (final c in consultores) {
-      totalLeadsAtivos += c.leadsAtivos;
-      totalLeadsAtendidos += c.totalLeadsAtendidos ?? 0;
-      somaTaxaConversao += c.taxaConversao;
-      if (c.isActive) consultoresAtivos++;
-    }
-    final media =
-        consultores.isEmpty ? 0.0 : somaTaxaConversao / consultores.length;
-    return AgenciaMetrics(
-      totalLeads: totalLeadsAtivos,
-      taxaConversao: media,
-      receitaEstimada: 0,
-      consultoresAtivos: consultoresAtivos,
-      leadsNovosMes: 0,
-      leadsFechadosMes: totalLeadsAtendidos,
-      leadsPerdidosMes: 0,
-    );
+    final res = await _dio.get<Map<String, dynamic>>('$_base/admin/metrics');
+    return AgenciaMetrics.fromJson(res.data!);
   }
 }

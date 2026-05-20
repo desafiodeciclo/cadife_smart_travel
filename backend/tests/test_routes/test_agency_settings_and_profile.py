@@ -315,6 +315,9 @@ class TestMetrics:
         body = resp.json()
         assert body["leads_total"] == 0
         assert body["taxa_conversao"] == 0.0
+        # New fields added in B-fix-dashboard-metrics-admin-consultor
+        assert body["leads_ativos"] == 0
+        assert body["receita_gerada"] == 0.0
 
 
 # ══════════════════════════════════════════════════════════════════════════════

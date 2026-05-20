@@ -127,8 +127,8 @@ class AgendaNotifier extends AsyncNotifier<List<Agendamento>> {
   }
 
   Future<bool> scheduleSlot({
-    required String leadId,
     required DateTime dateTime,
+    String? leadId,
     String? notes,
   }) async {
     final agendaRepository = ref.read(agendaRepositoryProvider);

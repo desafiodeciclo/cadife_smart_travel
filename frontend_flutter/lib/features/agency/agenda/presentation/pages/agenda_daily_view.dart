@@ -865,6 +865,8 @@ class _EmptySlotCard extends ConsumerWidget {
   }
 
   void _showSlotOptions(BuildContext context, WidgetRef ref, DateTime slot) {
+    final user = ref.read(authNotifierProvider).valueOrNull;
+    final isAdmin = user?.role == UserRole.admin;
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -873,6 +875,7 @@ class _EmptySlotCard extends ConsumerWidget {
       ),
       builder: (sheetContext) => _SlotOptionsSheet(
         slotStart: slot,
+        isAdmin: isAdmin,
         onSchedule: () {
           Navigator.of(sheetContext).pop();
           showModalBottomSheet<void>(
@@ -902,11 +905,13 @@ class _SlotOptionsSheet extends StatefulWidget {
     required this.slotStart,
     required this.onSchedule,
     required this.onBlock,
+    this.isAdmin = false,
   });
 
   final DateTime slotStart;
   final VoidCallback onSchedule;
   final Future<void> Function(MotivoBloqueio? motivo, String? notes) onBlock;
+  final bool isAdmin;
 
   @override
   State<_SlotOptionsSheet> createState() => _SlotOptionsSheetState();
@@ -1008,7 +1013,9 @@ class _SlotOptionsSheetState extends State<_SlotOptionsSheet> {
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
-              children: MotivoBloqueio.values.map((m) {
+              children: MotivoBloqueio.values
+                  .where((m) => widget.isAdmin || m != MotivoBloqueio.reuniaoInterna)
+                  .map((m) {
                 final selected = _selectedMotivo == m;
                 return ChoiceChip(
                   label: Text(m.label),

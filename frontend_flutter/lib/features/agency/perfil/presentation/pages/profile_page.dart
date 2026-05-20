@@ -565,7 +565,7 @@ class _MetricsSection extends StatelessWidget {
               ),
               _MetricCard(
                 icon: Icons.track_changes_rounded,
-                value: '${metrics.taxaConversao.toStringAsFixed(1)}%',
+                value: '${(metrics.taxaConversao * 100).toStringAsFixed(1)}%',
                 label: 'Taxa de Conversão',
                 color: AppColors.success,
               ),

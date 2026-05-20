@@ -68,6 +68,10 @@ async def consultor_metrics(
         LeadStatus.proposta.value,
         LeadStatus.fechado.value,
     )
+    inactive_statuses = (
+        LeadStatus.fechado.value,
+        LeadStatus.perdido.value,
+    )
 
     lead_stmt = select(
         func.count().label("total"),
@@ -77,6 +81,9 @@ async def consultor_metrics(
         func.count()
         .filter(LeadModel.status == LeadStatus.fechado.value)
         .label("fechados"),
+        func.count()
+        .filter(LeadModel.status.notin_(inactive_statuses))
+        .label("ativos"),
     ).where(
         LeadModel.consultor_id == user_id,
         LeadModel.deletado_em.is_(None),
@@ -95,13 +102,29 @@ async def consultor_metrics(
     )
     propostas_enviadas = (await db.execute(proposta_stmt)).scalar_one()
 
+    # Receita realizada: SUM(proposta.valor_estimado) onde proposta foi aprovada
+    # E o lead correspondente está fechado.
+    receita_stmt = (
+        select(func.coalesce(func.sum(PropostaModel.valor_estimado), 0))
+        .join(LeadModel, LeadModel.id == PropostaModel.lead_id)
+        .where(
+            PropostaModel.consultor_id == user_id,
+            PropostaModel.status == PropostaStatus.aprovada.value,
+            LeadModel.status == LeadStatus.fechado.value,
+            LeadModel.deletado_em.is_(None),
+        )
+    )
+    receita_gerada = (await db.execute(receita_stmt)).scalar_one()
+
     total = int(lead_row.total or 0)
     fechados = int(lead_row.fechados or 0)
     response = ConsultorMetricsResponse(
         leads_total=total,
         leads_qualificados=int(lead_row.qualificados or 0),
+        leads_ativos=int(lead_row.ativos or 0),
         propostas_enviadas=int(propostas_enviadas),
         vendas_fechadas=fechados,
+        receita_gerada=float(receita_gerada or 0),
         taxa_conversao=(fechados / total) if total else 0.0,
         gerado_em=datetime.now(timezone.utc),
     )

@@ -67,6 +67,20 @@ class AdminUserListResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+class AgenciaMetricsResponse(BaseModel):
+    """Aggregated agency-wide metrics for the admin dashboard."""
+
+    total_leads: int = 0
+    taxa_conversao: float = 0.0
+    receita_estimada: float = 0.0
+    consultores_ativos: int = 0
+    leads_novos_mes: int = 0
+    leads_fechados_mes: int = 0
+    leads_perdidos_mes: int = 0
+
+    model_config = ConfigDict(extra="forbid")
+
+
 class AdminLeadReassignRequest(BaseModel):
     """Payload for reassigning a lead to another consultant."""
 

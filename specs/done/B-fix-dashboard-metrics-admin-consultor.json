@@ -1,0 +1,51 @@
+{
+  "id": "B-fix-dashboard-metrics-admin-consultor",
+  "title": "(B) fix/dashboard-metrics-admin-consultor",
+  "priority": "high",
+  "assignee": "Backend / Flutter",
+  "sprint": 8,
+  "status": "completed",
+  "context": "Telas de admin (perfil + dashboard 'Visão Geral da Agência') e consultor (dashboard + perfil) exibem zeros em todas as métricas de leads. Diagnóstico: (1) ConsultantMetrics.fromJson no Flutter lê chaves camelCase enquanto o backend /users/me/metrics retorna snake_case → todos os campos defaultam para 0; (2) não existe endpoint admin global — AdminRepository.getMetrics agrega somando per-consultor de /admin/users com receitaEstimada/leadsNovosMes/leadsPerdidosMes hardcoded em 0; (3) list_consultores inclui o próprio admin (que não tem leads), poluindo agregações. Regra de domínio: admin vê todos os leads/consultores; consultor vê apenas seus clientes.",
+  "steps": [
+    {
+      "id": "1.1",
+      "name": "Backend: adicionar receita_gerada (SUM proposta.valor_estimado WHERE lead.status='fechado') em ConsultorMetricsResponse",
+      "status": "done"
+    },
+    {
+      "id": "1.2",
+      "name": "Backend: atualizar metrics_service.consultor_metrics para calcular receita_gerada e leads_ativos (status != fechado, != perdido)",
+      "status": "done"
+    },
+    {
+      "id": "2.1",
+      "name": "Backend: criar schema AgenciaMetricsResponse (total_leads, taxa_conversao, receita_estimada, consultores_ativos, leads_novos_mes, leads_fechados_mes, leads_perdidos_mes)",
+      "status": "done"
+    },
+    {
+      "id": "2.2",
+      "name": "Backend: criar GET /admin/metrics — agrega TODOS os leads (sem filtro consultor_id), contagens por janela 30 dias, soma de propostas fechadas",
+      "status": "done"
+    },
+    {
+      "id": "2.3",
+      "name": "Backend: excluir admin de list_consultores (perfil in [consultor, agencia] apenas)",
+      "status": "done"
+    },
+    {
+      "id": "3.1",
+      "name": "Flutter: corrigir ConsultantMetrics.fromJson para ler snake_case (leads_total, taxa_conversao, vendas_fechadas, receita_gerada, gerado_em) — mapear para os campos atuais do model",
+      "status": "done"
+    },
+    {
+      "id": "3.2",
+      "name": "Flutter: substituir AdminRepository.getMetrics() para consumir GET /admin/metrics via AgenciaMetrics.fromJson (já suporta snake_case)",
+      "status": "done"
+    },
+    {
+      "id": "4.1",
+      "name": "Backend: testes para /admin/metrics (admin vê todos os leads, consultor 403) e /users/me/metrics com receita_gerada",
+      "status": "done"
+    }
+  ]
+}

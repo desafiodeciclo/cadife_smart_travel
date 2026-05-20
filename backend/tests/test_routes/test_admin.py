@@ -134,9 +134,9 @@ async def test_list_users_returns_consultores(async_client_no_auth, db_session):
 
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
-    assert data["total"] >= 2
     emails = {u["email"] for u in data["items"]}
-    assert admin.email in emails
+    # Admin é excluído da lista de consultores; apenas consultor/agencia aparecem.
+    assert admin.email not in emails
     assert consultor.email in emails
 
 
@@ -230,6 +230,54 @@ async def test_reassign_lead_same_consultor_returns_422(async_client_no_auth, db
 
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
     assert "já pertence" in response.json()["detail"]
+
+
+@pytest.mark.asyncio
+async def test_agency_metrics_returns_global_aggregation(
+    async_client_no_auth, db_session
+):
+    admin = await create_admin(db_session)
+    consultor = await create_consultor(db_session)
+    # Lead with consultor assigned
+    await create_lead(db_session, consultor_id=consultor.id)
+    # Orphan lead (no consultor) — must still be counted globally
+    orphan_phone = "+5511977777777"
+    orphan = Lead(
+        nome="Orphan Lead",
+        telefone=orphan_phone,
+        telefone_hash=hmac_hash(orphan_phone),
+        consultor_id=None,
+    )
+    db_session.add(orphan)
+    await db_session.commit()
+
+    token = create_access_token(str(admin.id))
+    response = await async_client_no_auth.get(
+        "/admin/metrics",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data["total_leads"] >= 2
+    assert data["consultores_ativos"] >= 1
+    assert "receita_estimada" in data
+    assert "leads_novos_mes" in data
+    assert "leads_fechados_mes" in data
+    assert "leads_perdidos_mes" in data
+
+
+@pytest.mark.asyncio
+async def test_agency_metrics_forbidden_for_consultor(
+    async_client_no_auth, db_session
+):
+    consultor = await create_consultor(db_session)
+    token = create_access_token(str(consultor.id))
+    response = await async_client_no_auth.get(
+        "/admin/metrics",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
 @pytest.mark.asyncio

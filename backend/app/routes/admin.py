@@ -19,6 +19,7 @@ from app.presentation.schemas.admin_schema import (
     AdminUserListResponse,
     AdminUserResponse,
     AdminUserUpdate,
+    AgenciaMetricsResponse,
 )
 from app.domain.entities.enums import UserPerfil
 from app.models.lead import Lead
@@ -108,6 +109,28 @@ async def list_users(
         for r in results
     ]
     return AdminUserListResponse(items=items, total=len(items))
+
+
+@router.get(
+    "/metrics",
+    response_model=AgenciaMetricsResponse,
+    summary="Métricas agregadas da agência",
+    description=(
+        "Agregação global de leads (todos os consultores), receita realizada via "
+        "propostas aprovadas em leads fechados, e janela de 30 dias para "
+        "novos/fechados/perdidos."
+    ),
+    dependencies=[Depends(RequiresRole("admin"))],
+    responses={
+        401: {"description": "Não autenticado", "model": HTTPErrorResponse},
+        403: {"description": "Sem permissão", "model": HTTPErrorResponse},
+    },
+)
+async def get_agency_metrics(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> AgenciaMetricsResponse:
+    return await admin_service.agency_metrics(db)
 
 
 @router.patch(

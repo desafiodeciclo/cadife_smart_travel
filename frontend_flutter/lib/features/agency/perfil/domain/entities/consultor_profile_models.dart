@@ -122,15 +122,24 @@ class ConsultantMetrics extends Equatable {
 
   factory ConsultantMetrics.fromJson(Map<String, dynamic> json) =>
       ConsultantMetrics(
-        totalLeadsAtendidos:
-            (json['totalLeadsAtendidos'] as int?) ?? 0,
-        taxaConversao:
-            (json['taxaConversao'] as num?)?.toDouble() ?? 0.0,
-        receitaGerada:
-            (json['receitaGerada'] as num?)?.toDouble() ?? 0.0,
-        leadsAtivosAgora: (json['leadsAtivosAgora'] as int?) ?? 0,
+        // Backend snake_case is authoritative; camelCase fallbacks keep
+        // shared-prefs cache (serialized by toJson) deserializable.
+        totalLeadsAtendidos: (json['leads_total'] as int?) ??
+            (json['totalLeadsAtendidos'] as int?) ??
+            0,
+        // 0..1 ratio (matches backend ConsultorMetricsResponse).
+        taxaConversao: (json['taxa_conversao'] as num?)?.toDouble() ??
+            (json['taxaConversao'] as num?)?.toDouble() ??
+            0.0,
+        receitaGerada: (json['receita_gerada'] as num?)?.toDouble() ??
+            (json['receitaGerada'] as num?)?.toDouble() ??
+            0.0,
+        leadsAtivosAgora: (json['leads_ativos'] as int?) ??
+            (json['leadsAtivosAgora'] as int?) ??
+            0,
         ultimaAtualizacao: DateTime.tryParse(
-                json['ultimaAtualizacao'] as String? ?? '') ??
+                (json['gerado_em'] ?? json['ultimaAtualizacao']) as String? ??
+                    '') ??
             DateTime.now(),
       );
 

@@ -1,4 +1,5 @@
 import 'package:cadife_smart_travel/design_system/design_system.dart';
+import 'package:cadife_smart_travel/features/agency/admin/presentation/providers/admin_consultants_provider.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/domain/entities/agendamento.dart';
 import 'package:cadife_smart_travel/features/agency/agenda/presentation/providers/agenda_provider.dart';
 import 'package:cadife_smart_travel/features/agency/leads/domain/entities/lead.dart';
