@@ -83,4 +83,4 @@ class Agendamento(Base):
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
-    lead: Mapped[Optional["Lead"]] = relationship("Lead", back_populates="agendamentos")
+    lead: Mapped[Optional["Lead"]] = relationship("Lead", back_populates="agendamentos", overlaps="agendamentos,lead")

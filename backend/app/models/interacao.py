@@ -49,7 +49,7 @@ class Interacao(Base):
     )  # "sent" | "failed"
     erro_envio: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
-    lead: Mapped["Lead"] = relationship("Lead", back_populates="interacoes", lazy="noload")
+    lead: Mapped["Lead"] = relationship("Lead", back_populates="interacoes", lazy="noload", overlaps="interacoes,lead")
 
 
 class InteracaoResponse(BaseModel):

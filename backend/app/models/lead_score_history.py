@@ -40,4 +40,4 @@ class LeadScoreHistory(Base):
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
-    lead: Mapped["Lead"] = relationship("Lead", back_populates="score_history")
+    lead: Mapped["Lead"] = relationship("Lead", back_populates="score_history", overlaps="lead,score_history")
