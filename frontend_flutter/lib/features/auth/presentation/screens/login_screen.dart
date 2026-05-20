@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
-
 import 'package:cadife_smart_travel/core/constants/assets_constants.dart';
 import 'package:cadife_smart_travel/core/utils/extensions/string_extensions.dart';
 import 'package:cadife_smart_travel/design_system/design_system.dart';
@@ -93,7 +91,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final cadife = context.cadife;
 
     final textSecondary = isDark ? Colors.white60 : context.cadife.textSecondary;
-    final dividerColor = isDark ? Colors.white12 : context.cadife.cardBorder;
 
     // ── FIX: Column layout instead of Stack — avoids unbounded constraints
     //         and hit-testing issues that blocked all interactions.
@@ -104,15 +101,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // ── Theme toggle — always on top, never behind ScrollView ──────
-            Align(
-              alignment: Alignment.centerRight,
-              child: Padding(
-                padding: const EdgeInsets.only(top: 8, right: 12, bottom: 4),
-                child: _ThemeToggle(isDark: isDark),
-              ),
-            ),
-
             // ── Scrollable form body ──────────────────────────────────────
             Expanded(
               child: SingleChildScrollView(
@@ -232,54 +220,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ],
                         const SizedBox(height: 28),
 
-                        // ── Divider "ou" ──────────────────────────────────
-                        Row(
-                          children: [
-                            Expanded(child: Divider(color: dividerColor)),
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 16),
-                              child: Text(
-                                'ou',
-                                style: AppTextStyles.bodySmall
-                                    .copyWith(color: textSecondary),
-                              ),
-                            ),
-                            Expanded(child: Divider(color: dividerColor)),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-
-                        // ── Social buttons ────────────────────────────────
-                        Row(
-                          children: [
-                            Expanded(
-                              child: ShadButton.outline(
-                                onPressed: () => ShadToaster.of(context).show(
-                                  const ShadToast(description: Text('Login social em breve')),
-                                ),
-                                leading: const _GoogleIcon(),
-                                child: const Text('Google'),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: ShadButton.outline(
-                                onPressed: () => ShadToaster.of(context).show(
-                                  const ShadToast(description: Text('Login social em breve')),
-                                ),
-                                leading: Icon(
-                                  Icons.apple,
-                                  size: 20,
-                                  color: isDark ? Colors.white : context.cadife.textPrimary,
-                                ),
-                                child: const Text('Apple'),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 28),
-
                         // ── Sign-up CTA ───────────────────────────────────
                         Center(
                           child: RichText(
@@ -324,46 +264,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
 // ── Sub-widgets ──────────────────────────────────────────────────────────────
 
-class _ThemeToggle extends ConsumerWidget {
-  const _ThemeToggle({required this.isDark});
-  final bool isDark;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return GestureDetector(
-      onTap: () {
-        ref.read(themeNotifierProvider.notifier).toggleDarkMode(context);
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: isDark ? Colors.white12 : context.cadife.surface,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isDark ? Colors.white24 : context.cadife.cardBorder,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.wb_sunny_rounded,
-              size: 16,
-              color: isDark ? Colors.white38 : AppColors.warning,
-            ),
-            const SizedBox(width: 6),
-            Icon(
-              Icons.nightlight_round,
-              size: 16,
-              color: isDark ? Colors.white : context.cadife.textSecondary,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _CadifeLogo extends StatelessWidget {
   const _CadifeLogo({required this.isDark});
   final bool isDark;
@@ -379,71 +279,3 @@ class _CadifeLogo extends StatelessWidget {
   }
 }
 
-class _GoogleIcon extends StatelessWidget {
-  const _GoogleIcon();
-
-  @override
-  Widget build(BuildContext context) {
-    return const SizedBox(
-      width: 20,
-      height: 20,
-      child: CustomPaint(painter: _GoogleIconPainter()),
-    );
-  }
-}
-
-// Draws the Google "G" logo using four colored arcs + right-side horizontal bar
-class _GoogleIconPainter extends CustomPainter {
-  const _GoogleIconPainter();
-
-  static const _blue   = AppColors.googleBlue;
-  static const _green  = AppColors.googleGreen;
-  static const _yellow = AppColors.googleYellow;
-  static const _red    = AppColors.googleRed;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final cx = size.width / 2;
-    final cy = size.height / 2;
-    final r = size.width / 2;
-    const strokeW = 3.5;
-    final arcR = r - strokeW / 2;
-
-    void arc(double startDeg, double sweepDeg, Color color) {
-      final paint = Paint()
-        ..color = color
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = strokeW
-        ..strokeCap = StrokeCap.butt;
-      const toRad = math.pi / 180;
-      canvas.drawArc(
-        Rect.fromCircle(center: Offset(cx, cy), radius: arcR),
-        startDeg * toRad,
-        sweepDeg * toRad,
-        false,
-        paint,
-      );
-    }
-
-    // Four colored arc segments of the Google G ring
-    arc(-30, 120, _blue);   // top-right (blue)
-    arc(90, 120, _green);   // bottom (green)
-    arc(210, 90, _yellow);  // bottom-left (yellow)
-    arc(300, 30, _red);     // top-left (red)
-
-    // Horizontal bar inside the G (right half)
-    final barPaint = Paint()
-      ..color = _blue
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeW
-      ..strokeCap = StrokeCap.round;
-    canvas.drawLine(
-      Offset(cx, cy),
-      Offset(cx + arcR, cy),
-      barPaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
