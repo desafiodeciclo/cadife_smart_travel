@@ -1,5 +1,9 @@
 """
-01_users — 4 consultores demo + 3 clientes com preferências de viagem completas.
+01_users — 6 consultores demo + 10 clientes com preferências de viagem.
+
+Consultores: Daniela, Jakeline, Diego, Marcos, Patricia, Bruno
+Clientes: Otávio, Camila, Rafael, Pedro, Luciana, Gabriel, Isabela, Thiago,
+          Priscila, Carla, Amanda, Natália, Felipe
 """
 from __future__ import annotations
 
@@ -48,6 +52,21 @@ async def run(session: AsyncSession) -> None:
         perfil=UserPerfil.consultor,
         telefone="+5511977773333",
     )
+    await get_or_create_user(
+        session,
+        email="patricia.silva@cadifetoure.com.br",
+        nome="Patricia Silva",
+        perfil=UserPerfil.consultor,
+        telefone="+5511966664444",
+    )
+    await get_or_create_user(
+        session,
+        email="bruno.ferreira@cadifetoure.com.br",
+        nome="Bruno Ferreira",
+        perfil=UserPerfil.consultor,
+        telefone="+5511955555000",
+    )
+
     # ── Clientes ──────────────────────────────────────────────────────────────
     await get_or_create_user(
         session,
@@ -79,6 +98,107 @@ async def run(session: AsyncSession) -> None:
         preferencias=["cidade"],
         tem_passaporte=False,
     )
+    await get_or_create_user(
+        session,
+        email="pedro.alves@gmail.com",
+        nome="Pedro Alves",
+        perfil=UserPerfil.cliente,
+        telefone="+5511933333100",
+        tipo_viagem=["aventura", "cultural"],
+        preferencias=["deserto", "história", "pirâmides"],
+        tem_passaporte=True,
+    )
+    await get_or_create_user(
+        session,
+        email="luciana.ferreira@gmail.com",
+        nome="Luciana Ferreira",
+        perfil=UserPerfil.cliente,
+        telefone="+5521988880001",
+        tipo_viagem=["lazer", "romântica"],
+        preferencias=["praias", "mediterrâneo", "ilha"],
+        tem_passaporte=True,
+    )
+    await get_or_create_user(
+        session,
+        email="gabriel.nogueira@gmail.com",
+        nome="Gabriel Nogueira",
+        perfil=UserPerfil.cliente,
+        telefone="+5531977770002",
+        tipo_viagem=["aventura", "natureza"],
+        preferencias=["wildlife", "oceania", "mergulho"],
+        tem_passaporte=True,
+    )
+    await get_or_create_user(
+        session,
+        email="isabela.rocha@gmail.com",
+        nome="Isabela Rocha",
+        perfil=UserPerfil.cliente,
+        telefone="+5511966660003",
+        tipo_viagem=["turismo", "lazer"],
+        preferencias=["parques temáticos", "família", "compras"],
+        tem_passaporte=True,
+    )
+    await get_or_create_user(
+        session,
+        email="thiago.martins@gmail.com",
+        nome="Thiago Martins",
+        perfil=UserPerfil.cliente,
+        telefone="+5511955550004",
+        tipo_viagem=["cultural", "histórico"],
+        preferencias=["museus", "culinária italiana", "arte"],
+        tem_passaporte=True,
+    )
+    await get_or_create_user(
+        session,
+        email="priscila.oliveira@gmail.com",
+        nome="Priscila Oliveira",
+        perfil=UserPerfil.cliente,
+        telefone="+5511944440005",
+        tipo_viagem=["bem-estar", "espiritual"],
+        preferencias=["spa", "yoga", "retiro", "natureza"],
+        tem_passaporte=True,
+    )
+    await get_or_create_user(
+        session,
+        email="carla.mendonca@gmail.com",
+        nome="Carla Mendonça",
+        perfil=UserPerfil.cliente,
+        telefone="+5551933330006",
+        tipo_viagem=["nacional", "romântica"],
+        preferencias=["serras", "vinhos", "gastronomia regional"],
+        tem_passaporte=False,
+    )
+    await get_or_create_user(
+        session,
+        email="amanda.ribeiro@gmail.com",
+        nome="Amanda Ribeiro",
+        perfil=UserPerfil.cliente,
+        telefone="+5511922220007",
+        tipo_viagem=["luxo", "compras"],
+        preferencias=["arranha-céus", "deserto", "experiências únicas"],
+        tem_passaporte=True,
+    )
+    await get_or_create_user(
+        session,
+        email="natalia.costa@gmail.com",
+        nome="Natália Costa",
+        perfil=UserPerfil.cliente,
+        telefone="+5511911110008",
+        tipo_viagem=["cultural", "gastronomia"],
+        preferencias=["história", "vinho", "fado", "tapas"],
+        tem_passaporte=True,
+    )
+    await get_or_create_user(
+        session,
+        email="felipe.souza@gmail.com",
+        nome="Felipe Souza",
+        perfil=UserPerfil.cliente,
+        telefone="+5511900000009",
+        tipo_viagem=["turismo", "lazer"],
+        preferencias=["praia", "sol"],
+        tem_passaporte=False,
+    )
+
     await session.commit()
 
 
