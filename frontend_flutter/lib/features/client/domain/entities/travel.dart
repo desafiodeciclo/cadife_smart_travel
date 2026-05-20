@@ -9,8 +9,8 @@ class Travel {
     required this.userId,
     required this.destination,
     required this.startDate,
-    required this.endDate,
     required this.status,
+    this.endDate,
     this.imageUrl,
     this.description,
   });
@@ -19,7 +19,7 @@ class Travel {
   final String userId;
   final String destination;
   final DateTime startDate;
-  final DateTime endDate;
+  final DateTime? endDate;
   final String status;
   final String? imageUrl;
   final String? description;
@@ -34,7 +34,9 @@ class Travel {
       userId: json['user_id'] as String,
       destination: json['destination'] as String,
       startDate: DateTime.parse(json['start_date'] as String),
-      endDate: DateTime.parse(json['end_date'] as String),
+      endDate: json['end_date'] != null
+          ? DateTime.parse(json['end_date'] as String)
+          : null,
       status: json['status'] as String,
       imageUrl: json['image_url'] as String?,
       description: json['description'] as String?,
@@ -47,7 +49,7 @@ class Travel {
       'user_id': userId,
       'destination': destination,
       'start_date': startDate.toIso8601String(),
-      'end_date': endDate.toIso8601String(),
+      'end_date': endDate?.toIso8601String(),
       'status': status,
       'image_url': imageUrl,
       'description': description,

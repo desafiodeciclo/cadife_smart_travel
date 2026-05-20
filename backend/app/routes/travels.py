@@ -50,6 +50,8 @@ async def list_travels(
             status=travel.status,
             image_url=travel.image_url,
             description=travel.description,
+            created_at=travel.criado_em,
+            updated_at=None,
         )
         for travel in travels
     ]
@@ -74,7 +76,7 @@ async def get_my_active_travel(
     result = await db.execute(
         select(TravelModel).where(
             TravelModel.user_id == current_user.id,
-            TravelModel.status == "ATIVA",
+            TravelModel.status == TravelStatus.ongoing.value,
         ).order_by(TravelModel.start_date.asc())
     )
     travels = result.scalars().all()
@@ -89,6 +91,8 @@ async def get_my_active_travel(
             status=travel.status,
             image_url=travel.image_url,
             description=travel.description,
+            created_at=travel.criado_em,
+            updated_at=None,
         )
         for travel in travels
     ]
@@ -133,6 +137,8 @@ async def get_travel(
         status=travel.status,
         image_url=travel.image_url,
         description=travel.description,
+        created_at=travel.criado_em,
+        updated_at=None,
     )
 
 
